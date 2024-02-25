@@ -1,16 +1,16 @@
 /*
  * freenet - JarClassLoader.java Copyright © 2007 David Roden
- * 
+ *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
  * Foundation; either version 2 of the License, or (at your option) any later
  * version.
- * 
+ *
  * This program is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- * 
+ *
  * You should have received a copy of the GNU General Public License along with
  * this program; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place - Suite 330, Boston, MA 02111-1307, USA.
@@ -18,6 +18,7 @@
 
 package freenet.support;
 
+import freenet.support.io.FileUtil;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.File;
@@ -35,29 +36,29 @@ import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 import java.util.zip.ZipEntry;
 
-import freenet.support.io.FileUtil;
-
 /**
  * Class loader that loads classes from a JAR file. The JAR file gets copied
  * to a temporary location; requests for classes and resources from this class
  * loader are then satisfied from this local copy.
- * 
+ *
  * @author <a href="mailto:dr@ina-germany.de">David Roden</a>
  * @version $Id$
  */
 public class JarClassLoader extends ClassLoader implements Closeable {
+
 	private static volatile boolean logMINOR;
+
 	static {
 		Logger.registerClass(JarClassLoader.class);
 	}
 
 	/** The temporary jar file. */
 	private JarFile tempJarFile;
-	
+
 	/**
 	 * Constructs a new jar class loader that loads classes from the jar file
 	 * with the given name in the local file system.
-	 * 
+	 *
 	 * @param fileName
 	 *            The name of the jar file
 	 * @throws IOException
@@ -70,7 +71,7 @@ public class JarClassLoader extends ClassLoader implements Closeable {
 	/**
 	 * Constructs a new jar class loader that loads classes from the specified
 	 * URL.
-	 * 
+	 *
 	 * @param fileUrl
 	 *            The URL to load the jar file from
 	 * @param length
@@ -86,7 +87,7 @@ public class JarClassLoader extends ClassLoader implements Closeable {
 	/**
 	 * Constructs a new jar class loader that loads classes from the specified
 	 * file.
-	 * 
+	 *
 	 * @param file
 	 *            The file to load classes from
 	 * @throws IOException
@@ -99,7 +100,7 @@ public class JarClassLoader extends ClassLoader implements Closeable {
 	/**
 	 * Copies the contents of the input stream (which are supposed to be the
 	 * contents of a jar file) to a temporary location.
-	 * 
+	 *
 	 * @param inputStream
 	 *            The input stream to read from
 	 * @param length
@@ -108,7 +109,8 @@ public class JarClassLoader extends ClassLoader implements Closeable {
 	 * @throws IOException
 	 *             if an I/O error occurs
 	 */
-	private void copyFileToTemp(InputStream inputStream, long length) throws IOException {
+	private void copyFileToTemp(InputStream inputStream, long length)
+		throws IOException {
 		File tempFile = File.createTempFile("jar-", ".tmp");
 		FileOutputStream fileOutputStream = new FileOutputStream(tempFile);
 		FileUtil.copy(inputStream, fileOutputStream, length);
@@ -122,7 +124,7 @@ public class JarClassLoader extends ClassLoader implements Closeable {
 	 * <p>
 	 * This method searches the temporary copy of the jar file for an entry
 	 * that is specified by the given class name.
-	 * 
+	 *
 	 * @see java.lang.ClassLoader#findClass(java.lang.String)
 	 */
 	@Override
@@ -132,19 +134,33 @@ public class JarClassLoader extends ClassLoader implements Closeable {
 			JarEntry jarEntry = tempJarFile.getJarEntry(pathName);
 			if (jarEntry != null) {
 				long size = jarEntry.getSize();
-				InputStream jarEntryInputStream = tempJarFile.getInputStream(jarEntry);
-				ByteArrayOutputStream classBytesOutputStream = new ByteArrayOutputStream((int) size);
-				FileUtil.copy(jarEntryInputStream, classBytesOutputStream, size);
+				InputStream jarEntryInputStream = tempJarFile.getInputStream(
+					jarEntry
+				);
+				ByteArrayOutputStream classBytesOutputStream =
+					new ByteArrayOutputStream((int) size);
+				FileUtil.copy(
+					jarEntryInputStream,
+					classBytesOutputStream,
+					size
+				);
 				classBytesOutputStream.close();
 				jarEntryInputStream.close();
 				byte[] classBytes = classBytesOutputStream.toByteArray();
 
 				definePackage(name);
-					
-				Class<?> clazz = defineClass(name, classBytes, 0, classBytes.length);
+
+				Class<?> clazz = defineClass(
+					name,
+					classBytes,
+					0,
+					classBytes.length
+				);
 				return clazz;
 			}
-			throw new ClassNotFoundException("could not find jar entry for class " + name);
+			throw new ClassNotFoundException(
+				"could not find jar entry for class " + name
+			);
 		} catch (IOException e) {
 			throw new ClassNotFoundException(e.getMessage(), e);
 		}
@@ -163,20 +179,25 @@ public class JarClassLoader extends ClassLoader implements Closeable {
 			name = name.substring(1);
 		}
 		try {
-			if(tempJarFile.getJarEntry(name)==null) {
+			if (tempJarFile.getJarEntry(name) == null) {
 				return null;
 			}
 
-			return new URL("jar:" + new File(tempJarFile.getName()).toURI().toURL() + "!/" + name);
-		} catch (MalformedURLException e) {
-		}
+			return new URL(
+				"jar:" +
+				new File(tempJarFile.getName()).toURI().toURL() +
+				"!/" +
+				name
+			);
+		} catch (MalformedURLException e) {}
 		return null;
 	}
 
 	@Override
 	protected Enumeration<URL> findResources(String name) {
 		return new Enumeration<URL>() {
-			private final Enumeration<JarEntry> jarFileEntries = tempJarFile.entries();
+			private final Enumeration<JarEntry> jarFileEntries =
+				tempJarFile.entries();
 			private URL nextElement = null;
 
 			@Override
@@ -184,11 +205,20 @@ public class JarClassLoader extends ClassLoader implements Closeable {
 				if (nextElement != null) {
 					return true;
 				}
-				while ((nextElement == null) && jarFileEntries.hasMoreElements()) {
+				while (
+					(nextElement == null) && jarFileEntries.hasMoreElements()
+				) {
 					JarEntry jarEntry = jarFileEntries.nextElement();
 					if (jarEntry.getName().equals(name)) {
 						try {
-							nextElement = new URL("jar:" + new File(tempJarFile.getName()).toURI().toURL() + "!/" + name);
+							nextElement = new URL(
+								"jar:" +
+								new File(tempJarFile.getName())
+									.toURI()
+									.toURL() +
+								"!/" +
+								name
+							);
 						} catch (MalformedURLException e) {
 							/* ignore. */
 						}
@@ -215,25 +245,29 @@ public class JarClassLoader extends ClassLoader implements Closeable {
 	 * If the resource is found in this jar, opens the stream using ZipEntry's,
 	 * so when tempJarFile is closed, so are all the streams, hence we can delete
 	 * the jar on Windows.
-	 * 
+	 *
 	 * @see java.lang.ClassLoader#getResourceAsStream(java.lang.String)
 	 */
 	@Override
 	public InputStream getResourceAsStream(String name) {
-		if(logMINOR) Logger.minor(this, "Requested resource: " + name, new Exception("debug"));
+		if (logMINOR) Logger.minor(
+			this,
+			"Requested resource: " + name,
+			new Exception("debug")
+		);
 		URL url = getResource(name);
-		if (url == null)
-			return null;
-		if(logMINOR) Logger.minor(this, "Found resource at URL: " + url);
+		if (url == null) return null;
+		if (logMINOR) Logger.minor(this, "Found resource at URL: " + url);
 
 		// If the resource is not from our jar, return it as normal
 		URL localUrl = findResource(name);
-		if (localUrl == null || !url.toString().equals(localUrl.toString()))
-			try {
-				return url.openStream();
-			} catch (IOException e) {
-				return null;
-			}
+		if (
+			localUrl == null || !url.toString().equals(localUrl.toString())
+		) try {
+			return url.openStream();
+		} catch (IOException e) {
+			return null;
+		}
 
 		// If the resource is from our jar, open InputStream explicitly from the jar
 		// so that we can close() all opened streams later and let the jar file
@@ -255,7 +289,7 @@ public class JarClassLoader extends ClassLoader implements Closeable {
 	/**
 	 * Transforms the class name into a file name that can be used to locate
 	 * an entry in the jar file.
-	 * 
+	 *
 	 * @param name
 	 *            The name of the class
 	 * @return The path name of the entry in the jar file
@@ -263,8 +297,9 @@ public class JarClassLoader extends ClassLoader implements Closeable {
 	private String transformName(String name) {
 		return name.replace('.', '/') + ".class";
 	}
-	
-	protected Package definePackage(String name) throws IllegalArgumentException {
+
+	protected Package definePackage(String name)
+		throws IllegalArgumentException {
 		Package pkg = null;
 		int i = name.lastIndexOf('.');
 		if (i != -1) {
@@ -273,17 +308,27 @@ public class JarClassLoader extends ClassLoader implements Closeable {
 			if (pkg == null) {
 				try {
 					Manifest man = tempJarFile.getManifest();
-					if(man == null) throw new IOException();
+					if (man == null) throw new IOException();
 					pkg = definePackage(pkgname, man);
 				} catch (IOException e) {
-					pkg = definePackage(pkgname, null, null, null, null, null, null, null);
+					pkg = definePackage(
+						pkgname,
+						null,
+						null,
+						null,
+						null,
+						null,
+						null,
+						null
+					);
 				}
 			}
 		}
 		return pkg;
 	}
 
-	protected Package definePackage(String name, Manifest man) throws IllegalArgumentException {
+	protected Package definePackage(String name, Manifest man)
+		throws IllegalArgumentException {
 		String path = name.replace('.', '/').concat("/");
 		String specTitle = null, specVersion = null, specVendor = null;
 		String implTitle = null, implVersion = null, implVendor = null;
@@ -324,9 +369,18 @@ public class JarClassLoader extends ClassLoader implements Closeable {
 				sealed = attr.getValue(Name.SEALED);
 			}
 		}
-		return definePackage(name, specTitle, specVersion, specVendor, implTitle, implVersion, implVendor, sealBase);
+		return definePackage(
+			name,
+			specTitle,
+			specVersion,
+			specVendor,
+			implTitle,
+			implVersion,
+			implVendor,
+			sealBase
+		);
 	}
-	
+
 	@Override
 	public void close() throws IOException {
 		tempJarFile.close();

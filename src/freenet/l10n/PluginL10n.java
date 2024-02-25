@@ -38,9 +38,13 @@ public class PluginL10n {
 	 * @param lang Language to use.
 	 */
 	public PluginL10n(FredPluginBaseL10n plugin, final LANGUAGE lang) {
-		this.b = new BaseL10n(plugin.getL10nFilesBasePath(),
-				plugin.getL10nFilesMask(), plugin.getL10nOverrideFilesMask()
-				, lang, plugin.getPluginClassLoader());
+		this.b = new BaseL10n(
+			plugin.getL10nFilesBasePath(),
+			plugin.getL10nFilesMask(),
+			plugin.getL10nOverrideFilesMask(),
+			lang,
+			plugin.getPluginClassLoader()
+		);
 	}
 
 	/**

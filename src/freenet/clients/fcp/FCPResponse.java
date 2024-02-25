@@ -7,6 +7,7 @@ import freenet.support.SimpleFieldSet;
  * FCP message sent from the node to the client.
  */
 public abstract class FCPResponse extends FCPMessage {
+
 	protected final SimpleFieldSet fs;
 
 	/**
@@ -27,9 +28,14 @@ public abstract class FCPResponse extends FCPMessage {
 	public abstract String getName();
 
 	@Override
-	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
-		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, getName() +
-		         " is a reply from the node; the client should not send it.", null, false);
+	public void run(FCPConnectionHandler handler, Node node)
+		throws MessageInvalidException {
+		throw new MessageInvalidException(
+			ProtocolErrorMessage.INVALID_MESSAGE,
+			getName() +
+			" is a reply from the node; the client should not send it.",
+			null,
+			false
+		);
 	}
-
 }

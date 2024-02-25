@@ -15,8 +15,8 @@ public class GetRequestStatusMessage extends FCPMessage {
 	final String identifier;
 	final boolean global;
 	final boolean onlyData;
-	final static String NAME = "GetRequestStatus";
-	
+	static final String NAME = "GetRequestStatus";
+
 	public GetRequestStatusMessage(SimpleFieldSet fs) {
 		this.identifier = fs.get("Identifier");
 		this.global = fs.getBoolean("Global", false);
@@ -37,36 +37,67 @@ public class GetRequestStatusMessage extends FCPMessage {
 
 	@Override
 	public void run(final FCPConnectionHandler handler, Node node)
-			throws MessageInvalidException {
-		ClientRequest req = handler.getRebootRequest(global, handler, identifier);
-		if(req == null) {
-			if(node.clientCore.killedDatabase()) {
+		throws MessageInvalidException {
+		ClientRequest req = handler.getRebootRequest(
+			global,
+			handler,
+			identifier
+		);
+		if (req == null) {
+			if (node.clientCore.killedDatabase()) {
 				// Ignore.
 				return;
 			}
 			try {
-                node.clientCore.clientContext.jobRunner.queue(new PersistentJob() {
-                    
-                    @Override
-                    public boolean run(ClientContext context) {
-                        ClientRequest req = handler.getForeverRequest(global, handler, identifier);
-                        if(req == null) {
-                            ProtocolErrorMessage msg = new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_IDENTIFIER, false, null, identifier, global);
-                            handler.send(msg);
-                        } else {
-                            req.sendPendingMessages(handler.outputHandler, identifier, true, onlyData);
-                        }
-                        return false;
-                    }
-                    
-                }, NativeThread.NORM_PRIORITY);
-            } catch (PersistenceDisabledException e) {
-                ProtocolErrorMessage msg = new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_IDENTIFIER, false, null, identifier, global);
-                handler.send(msg);
-            }
+				node.clientCore.clientContext.jobRunner.queue(
+					new PersistentJob() {
+						@Override
+						public boolean run(ClientContext context) {
+							ClientRequest req = handler.getForeverRequest(
+								global,
+								handler,
+								identifier
+							);
+							if (req == null) {
+								ProtocolErrorMessage msg =
+									new ProtocolErrorMessage(
+										ProtocolErrorMessage.NO_SUCH_IDENTIFIER,
+										false,
+										null,
+										identifier,
+										global
+									);
+								handler.send(msg);
+							} else {
+								req.sendPendingMessages(
+									handler.outputHandler,
+									identifier,
+									true,
+									onlyData
+								);
+							}
+							return false;
+						}
+					},
+					NativeThread.NORM_PRIORITY
+				);
+			} catch (PersistenceDisabledException e) {
+				ProtocolErrorMessage msg = new ProtocolErrorMessage(
+					ProtocolErrorMessage.NO_SUCH_IDENTIFIER,
+					false,
+					null,
+					identifier,
+					global
+				);
+				handler.send(msg);
+			}
 		} else {
-			req.sendPendingMessages(handler.outputHandler, identifier, true, onlyData);
+			req.sendPendingMessages(
+				handler.outputHandler,
+				identifier,
+				true,
+				onlyData
+			);
 		}
 	}
-
 }

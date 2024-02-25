@@ -13,5 +13,4 @@ public class NullShortCallback extends ShortCallback {
 	public void set(Short val) throws InvalidConfigValueException {
 		// Ignore
 	}
-
 }

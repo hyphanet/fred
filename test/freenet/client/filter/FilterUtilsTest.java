@@ -5,6 +5,7 @@ import static org.junit.Assert.*;
 import org.junit.Test;
 
 public class FilterUtilsTest {
+
 	@Test
 	public void testValidLengthUnits() {
 		// Test all valid length units for CSS and valid values

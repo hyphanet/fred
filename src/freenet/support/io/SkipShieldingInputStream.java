@@ -37,25 +37,26 @@ import java.io.InputStream;
  * @since 1.17
  */
 public class SkipShieldingInputStream extends FilterInputStream {
-    private static final int SKIP_BUFFER_SIZE = 8192;
-    // we can use a shared buffer as the content is discarded anyway
-    private static final byte[] SKIP_BUFFER = new byte[SKIP_BUFFER_SIZE];
-    public SkipShieldingInputStream(InputStream in) {
-        super(in);
-    }
 
-    @Override
-    public long skip(long n) throws IOException {
-        int retval;
-        if (n < 0) {
-            retval = 0;
-        }
-        else {
-            retval = read(SKIP_BUFFER, 0, (int) Math.min(n, SKIP_BUFFER_SIZE));
-            if (retval < 0) {
-                retval = 0;
-            }
-        }
-        return retval;
-    }
+	private static final int SKIP_BUFFER_SIZE = 8192;
+	// we can use a shared buffer as the content is discarded anyway
+	private static final byte[] SKIP_BUFFER = new byte[SKIP_BUFFER_SIZE];
+
+	public SkipShieldingInputStream(InputStream in) {
+		super(in);
+	}
+
+	@Override
+	public long skip(long n) throws IOException {
+		int retval;
+		if (n < 0) {
+			retval = 0;
+		} else {
+			retval = read(SKIP_BUFFER, 0, (int) Math.min(n, SKIP_BUFFER_SIZE));
+			if (retval < 0) {
+				retval = 0;
+			}
+		}
+		return retval;
+	}
 }

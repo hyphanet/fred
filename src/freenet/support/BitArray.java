@@ -11,7 +11,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
@@ -19,13 +19,12 @@
 
 package freenet.support;
 
+import freenet.io.WritableToDataOutputStream;
 import java.io.DataInput;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.BitSet;
-
-import freenet.io.WritableToDataOutputStream;
 
 public class BitArray implements WritableToDataOutputStream {
 
@@ -36,18 +35,18 @@ public class BitArray implements WritableToDataOutputStream {
 		this.bits = BitSet.valueOf(data);
 		this.size = data.length * 8;
 	}
-	
+
 	public BitArray copy() {
 		return new BitArray(this);
 	}
-	
+
 	/**
 	 * This constructor does not check for unacceptable sizes, and should only be used on trusted data.
 	 */
 	public BitArray(DataInput dis) throws IOException {
 		this(dis, Integer.MAX_VALUE);
 	}
-	
+
 	public BitArray(DataInput dis, int maxSize) throws IOException {
 		this.size = dis.readInt();
 		if (size <= 0 || size > maxSize) {
@@ -66,7 +65,7 @@ public class BitArray implements WritableToDataOutputStream {
 
 	public BitArray(BitArray src) {
 		this.size = src.size;
-		this.bits = (BitSet)src.bits.clone();
+		this.bits = (BitSet) src.bits.clone();
 	}
 
 	public void setBit(int pos, boolean f) {
@@ -97,7 +96,8 @@ public class BitArray implements WritableToDataOutputStream {
 	}
 
 	@Override
-	public void writeToDataOutputStream(DataOutputStream dos) throws IOException {
+	public void writeToDataOutputStream(DataOutputStream dos)
+		throws IOException {
 		dos.writeInt(size);
 		byte[] outputBits = bits.toByteArray();
 		if (outputBits.length != getByteSize()) {
@@ -113,7 +113,7 @@ public class BitArray implements WritableToDataOutputStream {
 	public int getSize() {
 		return size;
 	}
-	
+
 	@Override
 	public boolean equals(Object o) {
 		if (!(o instanceof BitArray)) {
@@ -125,10 +125,10 @@ public class BitArray implements WritableToDataOutputStream {
 		}
 		return bits.equals(ba.bits);
 	}
-	
+
 	@Override
 	public int hashCode() {
-	    return bits.hashCode() ^ size;
+		return bits.hashCode() ^ size;
 	}
 
 	public void setAllOnes() {
@@ -138,7 +138,7 @@ public class BitArray implements WritableToDataOutputStream {
 	public int firstOne(int start) {
 		return bits.nextSetBit(start);
 	}
-	
+
 	public int firstOne() {
 		return firstOne(0);
 	}

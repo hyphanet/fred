@@ -4,6 +4,7 @@ package freenet.clients.fcp;
  * FCP message sent from the node to the client which includes uptime information returned by the endpoint.
  */
 public class ProbeUptime extends FCPResponse {
+
 	/**
 	 * @param fcpIdentifier FCP-level identifier for pairing requests and responses
 	 * @param uptimePercent uptime percentage of endpoint. Depending on the type of the request this may be either

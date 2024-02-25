@@ -2,29 +2,29 @@ package freenet.clients.http;
 
 /** An fproxy fetch which is stalled waiting for either the data or a progress screen. */
 public class FProxyFetchWaiter {
-	
+
 	public FProxyFetchWaiter(FProxyFetchInProgress progress2) {
 		this.progress = progress2;
-		if(progress.finished()) finished = true;
+		if (progress.finished()) finished = true;
 		hasWaited = progress.hasWaited();
 	}
 
 	final FProxyFetchInProgress progress;
-	
+
 	private boolean hasWaited;
 	private boolean finished;
 	private boolean awoken;
-	
+
 	public FProxyFetchResult getResult() {
 		return getResult(false);
 	}
-	
+
 	public FProxyFetchResult getResult(boolean waitForever) {
 		boolean waited;
-		synchronized(this) {
-			if(waitForever) {
+		synchronized (this) {
+			if (waitForever) {
 				// FIXME findbugs thinks this will never exit. It should given wakeUp().
-				while(!finished) {
+				while (!finished) {
 					try {
 						wait();
 						hasWaited = true;
@@ -38,11 +38,11 @@ public class FProxyFetchWaiter {
 				 * because the request has finished checking the datastore
 				 * and has been sent to the network, in which case we want
 				 * to show the progress bar. */
-				if(!(finished || hasWaited || awoken)) {
+				if (!(finished || hasWaited || awoken)) {
 					awoken = false;
 					try {
 						wait(5000);
-					} catch (InterruptedException e) { 
+					} catch (InterruptedException e) {
 						// Not likely
 					}
 					hasWaited = true;
@@ -53,12 +53,12 @@ public class FProxyFetchWaiter {
 		progress.setHasWaited();
 		return progress.innerGetResult(waited);
 	}
-	
+
 	/** Returns the result, without waiting*/
-	public FProxyFetchResult getResultFast(){
+	public FProxyFetchResult getResultFast() {
 		return progress.innerGetResult(false);
 	}
-	
+
 	public FProxyFetchInProgress getProgress() {
 		return progress;
 	}
@@ -66,17 +66,14 @@ public class FProxyFetchWaiter {
 	public void close() {
 		progress.close(this);
 	}
-	
+
 	public synchronized void wakeUp(boolean fin) {
-		if(fin)
-			this.finished = true;
-		else
-			this.awoken = true;
+		if (fin) this.finished = true;
+		else this.awoken = true;
 		notifyAll();
 	}
-	
+
 	public boolean hasWaited() {
 		return hasWaited;
 	}
-	
 }

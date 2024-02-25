@@ -5,9 +5,18 @@ import static org.junit.Assert.*;
 import org.junit.Test;
 
 public class MessageWrapperTest {
+
 	@Test
 	public void testGetFragment() {
-		MessageItem item = new MessageItem(new byte[1024], null, false, null, (short) 0, false, false);
+		MessageItem item = new MessageItem(
+			new byte[1024],
+			null,
+			false,
+			null,
+			(short) 0,
+			false,
+			false
+		);
 		MessageWrapper wrapper = new MessageWrapper(item, 0);
 
 		MessageFragment frag = wrapper.getMessageFragment(128);
@@ -50,10 +59,18 @@ public class MessageWrapperTest {
 		assertFalse(frag.shortMessage);
 		assertSame(wrapper, frag.wrapper);
 	}
-	
+
 	@Test
 	public void testGetFragmentWithLoss() {
-		MessageItem item = new MessageItem(new byte[363], null, false, null, (short) 0, false, false);
+		MessageItem item = new MessageItem(
+			new byte[363],
+			null,
+			false,
+			null,
+			(short) 0,
+			false,
+			false
+		);
 		MessageWrapper wrapper = new MessageWrapper(item, 0);
 
 		MessageFragment frag1 = wrapper.getMessageFragment(128);
@@ -88,11 +105,11 @@ public class MessageWrapperTest {
 		assertEquals(363, frag3.messageLength);
 		assertFalse(frag3.shortMessage);
 		assertSame(wrapper, frag3.wrapper);
-		
+
 		wrapper.ack(0, 120); // frag1
 		wrapper.ack(242, 262); // frag3
 		wrapper.lost(121, 241); // frag 2
-		
+
 		MessageFragment frag = wrapper.getMessageFragment(128);
 		assertNotNull(frag);
 		assertFalse(frag.firstFragment);
@@ -107,27 +124,44 @@ public class MessageWrapperTest {
 
 	@Test
 	public void testLost() {
-		MessageItem item = new MessageItem(new byte[363], null, false, null, (short) 0, false, false);
+		MessageItem item = new MessageItem(
+			new byte[363],
+			null,
+			false,
+			null,
+			(short) 0,
+			false,
+			false
+		);
 		MessageWrapper wrapper = new MessageWrapper(item, 0);
 
 		MessageFragment frag = wrapper.getMessageFragment(128);
 		assertNotNull(frag);
 		assertEquals(121, frag.fragmentLength);
-		wrapper.ack(frag.fragmentOffset, frag.fragmentOffset + frag.fragmentLength - 1);
+		wrapper.ack(
+			frag.fragmentOffset,
+			frag.fragmentOffset + frag.fragmentLength - 1
+		);
 
 		frag = wrapper.getMessageFragment(128);
 		assertNotNull(frag);
 		assertEquals(121, frag.fragmentLength);
-		assertEquals(121, wrapper.lost(frag.fragmentOffset, frag.fragmentOffset + frag.fragmentLength - 1));
+		assertEquals(
+			121,
+			wrapper.lost(
+				frag.fragmentOffset,
+				frag.fragmentOffset + frag.fragmentLength - 1
+			)
+		);
 
 		// 0->120 should still be sent and acked, 121->241 should not
-		for(int[] range : wrapper.getSent()) {
-			if(range[0] >= 121 || range[1] >= 121) {
+		for (int[] range : wrapper.getSent()) {
+			if (range[0] >= 121 || range[1] >= 121) {
 				fail("Expected 0->120, but got " + wrapper.getSent());
 			}
 		}
-		for(int[] range : wrapper.getAcks()) {
-			if(range[0] >= 121 || range[1] >= 121) {
+		for (int[] range : wrapper.getAcks()) {
+			if (range[0] >= 121 || range[1] >= 121) {
 				fail("Expected 0->120, but got " + wrapper.getSent());
 			}
 		}

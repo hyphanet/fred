@@ -1,17 +1,16 @@
 package freenet.config;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import freenet.support.Logger;
-import freenet.support.LoggerHook;
-import freenet.support.SimpleFieldSet;
-import org.junit.Test;
-
 import static freenet.support.Logger.LogLevel.MINIMAL;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
+
+import freenet.support.Logger;
+import freenet.support.LoggerHook;
+import freenet.support.SimpleFieldSet;
+import java.util.ArrayList;
+import java.util.List;
+import org.junit.Test;
 
 public class PersistentConfigTest {
 
@@ -30,7 +29,13 @@ public class PersistentConfigTest {
 		List<String> messages = new ArrayList<>();
 		LoggerHook loggerHook = new LoggerHook(MINIMAL) {
 			@Override
-			public void log(Object o, Class<?> source, String message, Throwable e, LogLevel priority) {
+			public void log(
+				Object o,
+				Class<?> source,
+				String message,
+				Throwable e,
+				LogLevel priority
+			) {
 				if (source == PersistentConfig.class) {
 					messages.add(message);
 				}
@@ -42,18 +47,21 @@ public class PersistentConfigTest {
 		return messages;
 	}
 
-	private final SimpleFieldSet fieldSetWithIgnoredOption = new SimpleFieldSet(true);
+	private final SimpleFieldSet fieldSetWithIgnoredOption = new SimpleFieldSet(
+		true
+	);
 
 	{
 		fieldSetWithIgnoredOption.put("sub.ignored", true);
 	}
 
-	private final PersistentConfig config = new PersistentConfig(fieldSetWithIgnoredOption);
+	private final PersistentConfig config = new PersistentConfig(
+		fieldSetWithIgnoredOption
+	);
 	private final SubConfig subConfig = config.createSubConfig("sub");
 
 	{
 		subConfig.registerIgnoredOption("ignored");
 		subConfig.finishedInitialization();
 	}
-
 }

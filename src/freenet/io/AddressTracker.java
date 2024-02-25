@@ -19,6 +19,13 @@ import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
+import freenet.io.comm.Peer;
+import freenet.l10n.NodeL10n;
+import freenet.node.FSParseException;
+import freenet.node.ProgramDirectory;
+import freenet.support.Logger;
+import freenet.support.SimpleFieldSet;
+import freenet.support.io.FileUtil;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
@@ -34,14 +41,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Iterator;
 
-import freenet.io.comm.Peer;
-import freenet.l10n.NodeL10n;
-import freenet.node.FSParseException;
-import freenet.node.ProgramDirectory;
-import freenet.support.Logger;
-import freenet.support.SimpleFieldSet;
-import freenet.support.io.FileUtil;
-
 /**
  * Track packet traffic to/from specific peers and IP addresses, in order to
  * determine whether we are open to the internet.
@@ -55,11 +54,14 @@ public class AddressTracker {
 	private final HashMap<Peer, PeerAddressTrackerItem> peerTrackers;
 
 	/** InetAddressAddressTrackerItem's by InetAddress */
-	private final HashMap<InetAddress, InetAddressAddressTrackerItem> ipTrackers;
+	private final HashMap<
+		InetAddress,
+		InetAddressAddressTrackerItem
+	> ipTrackers;
 
 	/** Maximum number of Item's of either type */
 	private int MAX_ITEMS = DEFAULT_MAX_ITEMS;
-	
+
 	static final int DEFAULT_MAX_ITEMS = 1000;
 	static final int SEED_MAX_ITEMS = 10000;
 
@@ -71,30 +73,40 @@ public class AddressTracker {
 
 	private long brokenTime;
 
-	public static AddressTracker create(long lastBootID, ProgramDirectory runDir, int port) {
-		File data = runDir.file("packets-"+port+".dat");
-		File dataBak = runDir.file("packets-"+port+".bak");
+	public static AddressTracker create(
+		long lastBootID,
+		ProgramDirectory runDir,
+		int port
+	) {
+		File data = runDir.file("packets-" + port + ".dat");
+		File dataBak = runDir.file("packets-" + port + ".bak");
 		dataBak.delete();
 		FileInputStream fis = null;
 		try {
 			fis = new FileInputStream(data);
 			BufferedInputStream bis = new BufferedInputStream(fis);
-			InputStreamReader ir = new InputStreamReader(bis, StandardCharsets.UTF_8);
+			InputStreamReader ir = new InputStreamReader(
+				bis,
+				StandardCharsets.UTF_8
+			);
 			BufferedReader br = new BufferedReader(ir);
 			SimpleFieldSet fs = new SimpleFieldSet(br, false, true);
 			return new AddressTracker(fs, lastBootID);
 		} catch (IOException e) {
 			// Fall through
 		} catch (FSParseException e) {
-			Logger.warning(AddressTracker.class, "Failed to load from disk for port "+port+": "+e, e);
+			Logger.warning(
+				AddressTracker.class,
+				"Failed to load from disk for port " + port + ": " + e,
+				e
+			);
 			// Fall through
 		} finally {
-			if(fis != null)
-				try {
-					fis.close();
-				} catch (IOException e) {
-					// Ignore
-				}
+			if (fis != null) try {
+				fis.close();
+			} catch (IOException e) {
+				// Ignore
+			}
 		}
 		return new AddressTracker();
 	}
@@ -108,43 +120,56 @@ public class AddressTracker {
 		ipTrackers = new HashMap<InetAddress, InetAddressAddressTrackerItem>();
 	}
 
-	private AddressTracker(SimpleFieldSet fs, long lastBootID) throws FSParseException {
+	private AddressTracker(SimpleFieldSet fs, long lastBootID)
+		throws FSParseException {
 		int version = fs.getInt("Version");
-		if(version != 2)
-			throw new FSParseException("Unknown Version "+version);
+		if (version != 2) throw new FSParseException(
+			"Unknown Version " + version
+		);
 		long savedBootID = fs.getLong("BootID");
-		if(savedBootID != lastBootID) throw new FSParseException("Unable to load address tracker table, assuming an unclean shutdown: Last ID was " +
-				lastBootID+" but stored "+savedBootID);
+		if (savedBootID != lastBootID) throw new FSParseException(
+			"Unable to load address tracker table, assuming an unclean shutdown: Last ID was " +
+			lastBootID +
+			" but stored " +
+			savedBootID
+		);
 		// Sadly we don't know whether there were packets arriving during the gap,
 		// and some insecure firewalls will use incoming packets to keep tunnels open
 		//timeDefinitelyNoPacketsReceived = fs.getLong("TimeDefinitelyNoPacketsReceived");
 		timeDefinitelyNoPacketsReceivedPeer = System.currentTimeMillis();
 		timeDefinitelyNoPacketsReceivedIP = System.currentTimeMillis();
-		timeDefinitelyNoPacketsSentPeer = fs.getLong("TimeDefinitelyNoPacketsSentPeer");
-		timeDefinitelyNoPacketsSentIP = fs.getLong("TimeDefinitelyNoPacketsSentIP");
+		timeDefinitelyNoPacketsSentPeer = fs.getLong(
+			"TimeDefinitelyNoPacketsSentPeer"
+		);
+		timeDefinitelyNoPacketsSentIP = fs.getLong(
+			"TimeDefinitelyNoPacketsSentIP"
+		);
 		peerTrackers = new HashMap<Peer, PeerAddressTrackerItem>();
 		SimpleFieldSet peers = fs.subset("Peers");
-		if(peers != null) {
-		Iterator<String> i = peers.directSubsetNameIterator();
-		if(i != null) {
-		while(i.hasNext()) {
-			SimpleFieldSet peer = peers.subset(i.next());
-			PeerAddressTrackerItem item = new PeerAddressTrackerItem(peer);
-			peerTrackers.put(item.peer, item);
-		}
-		}
+		if (peers != null) {
+			Iterator<String> i = peers.directSubsetNameIterator();
+			if (i != null) {
+				while (i.hasNext()) {
+					SimpleFieldSet peer = peers.subset(i.next());
+					PeerAddressTrackerItem item = new PeerAddressTrackerItem(
+						peer
+					);
+					peerTrackers.put(item.peer, item);
+				}
+			}
 		}
 		ipTrackers = new HashMap<InetAddress, InetAddressAddressTrackerItem>();
 		SimpleFieldSet ips = fs.subset("IPs");
-		if(ips != null) {
-		Iterator<String> i = ips.directSubsetNameIterator();
-		if(i != null) {
-		while(i.hasNext()) {
-			SimpleFieldSet peer = ips.subset(i.next());
-			InetAddressAddressTrackerItem item = new InetAddressAddressTrackerItem(peer);
-			ipTrackers.put(item.addr, item);
-		}
-		}
+		if (ips != null) {
+			Iterator<String> i = ips.directSubsetNameIterator();
+			if (i != null) {
+				while (i.hasNext()) {
+					SimpleFieldSet peer = ips.subset(i.next());
+					InetAddressAddressTrackerItem item =
+						new InetAddressAddressTrackerItem(peer);
+					ipTrackers.put(item.addr, item);
+				}
+			}
 		}
 	}
 
@@ -158,20 +183,28 @@ public class AddressTracker {
 
 	private void packetTo(Peer peer, boolean sent) {
 		Peer peer2 = peer.dropHostName();
-		if(peer2 == null) {
-			Logger.error(this, "Impossible: No host name in AddressTracker.packetTo for "+peer);
+		if (peer2 == null) {
+			Logger.error(
+				this,
+				"Impossible: No host name in AddressTracker.packetTo for " +
+				peer
+			);
 			return;
 		}
 		peer = peer2;
 
 		InetAddress ip = peer.getAddress();
 		long now = System.currentTimeMillis();
-		synchronized(this) {
+		synchronized (this) {
 			PeerAddressTrackerItem peerItem = peerTrackers.get(peer);
-			if(peerItem == null) {
-				peerItem = new PeerAddressTrackerItem(timeDefinitelyNoPacketsReceivedPeer, timeDefinitelyNoPacketsSentPeer, peer);
-				if(peerTrackers.size() > MAX_ITEMS) {
-					Logger.error(this, "Clearing peer trackers on "+this);
+			if (peerItem == null) {
+				peerItem = new PeerAddressTrackerItem(
+					timeDefinitelyNoPacketsReceivedPeer,
+					timeDefinitelyNoPacketsSentPeer,
+					peer
+				);
+				if (peerTrackers.size() > MAX_ITEMS) {
+					Logger.error(this, "Clearing peer trackers on " + this);
 					peerTrackers.clear();
 					ipTrackers.clear();
 					timeDefinitelyNoPacketsReceivedPeer = now;
@@ -179,15 +212,17 @@ public class AddressTracker {
 				}
 				peerTrackers.put(peer, peerItem);
 			}
-			if(sent)
-				peerItem.sentPacket(now);
-			else
-				peerItem.receivedPacket(now);
+			if (sent) peerItem.sentPacket(now);
+			else peerItem.receivedPacket(now);
 			InetAddressAddressTrackerItem ipItem = ipTrackers.get(ip);
-			if(ipItem == null) {
-				ipItem = new InetAddressAddressTrackerItem(timeDefinitelyNoPacketsReceivedIP, timeDefinitelyNoPacketsSentIP, ip);
-				if(ipTrackers.size() > MAX_ITEMS) {
-					Logger.error(this, "Clearing IP trackers on "+this);
+			if (ipItem == null) {
+				ipItem = new InetAddressAddressTrackerItem(
+					timeDefinitelyNoPacketsReceivedIP,
+					timeDefinitelyNoPacketsSentIP,
+					ip
+				);
+				if (ipTrackers.size() > MAX_ITEMS) {
+					Logger.error(this, "Clearing IP trackers on " + this);
 					peerTrackers.clear();
 					ipTrackers.clear();
 					timeDefinitelyNoPacketsReceivedIP = now;
@@ -195,10 +230,8 @@ public class AddressTracker {
 				}
 				ipTrackers.put(ip, ipItem);
 			}
-			if(sent)
-				ipItem.sentPacket(now);
-			else
-				ipItem.receivedPacket(now);
+			if (sent) ipItem.sentPacket(now);
+			else ipItem.receivedPacket(now);
 		}
 	}
 
@@ -213,12 +246,14 @@ public class AddressTracker {
 	}
 
 	public synchronized PeerAddressTrackerItem[] getPeerAddressTrackerItems() {
-		PeerAddressTrackerItem[] items = new PeerAddressTrackerItem[peerTrackers.size()];
+		PeerAddressTrackerItem[] items =
+			new PeerAddressTrackerItem[peerTrackers.size()];
 		return peerTrackers.values().toArray(items);
 	}
 
 	public synchronized InetAddressAddressTrackerItem[] getInetAddressTrackerItems() {
-		InetAddressAddressTrackerItem[] items = new InetAddressAddressTrackerItem[ipTrackers.size()];
+		InetAddressAddressTrackerItem[] items =
+			new InetAddressAddressTrackerItem[ipTrackers.size()];
 		return ipTrackers.values().toArray(items);
 	}
 
@@ -229,16 +264,18 @@ public class AddressTracker {
 		MAYBE_NATED,
 		DONT_KNOW,
 		MAYBE_PORT_FORWARDED,
-		DEFINITELY_PORT_FORWARDED
+		DEFINITELY_PORT_FORWARDED,
 	}
-	
+
 	/** If the minimum gap is at least this, we might be port forwarded.
 	 * RFC 4787 requires at least 2 minutes, but many NATs have shorter timeouts. */
-	public final static long MAYBE_TUNNEL_LENGTH = MINUTES.toMillis(5) + SECONDS.toMillis(1);
+	public static final long MAYBE_TUNNEL_LENGTH =
+		MINUTES.toMillis(5) + SECONDS.toMillis(1);
 	/** If the minimum gap is at least this, we are almost certainly port forwarded.
 	 * Some stateful firewalls do at least 30 minutes. Hopefully the below is
 	 * sufficiently over the top! */
-	public final static long DEFINITELY_TUNNEL_LENGTH = HOURS.toMillis(12) + MINUTES.toMillis(1);
+	public static final long DEFINITELY_TUNNEL_LENGTH =
+		HOURS.toMillis(12) + MINUTES.toMillis(1);
 	/** Time after which we ignore evidence that we are port forwarded */
 	public static final long HORIZON = HOURS.toMillis(24);
 
@@ -255,28 +292,30 @@ public class AddressTracker {
 		long longestGap = -1;
 		long now = System.currentTimeMillis();
 		PeerAddressTrackerItem[] items = getPeerAddressTrackerItems();
-		for(PeerAddressTrackerItem item: items) {
-			if(item.packetsReceived() <= 0) continue;
-			if(!item.peer.isRealInternetAddress(false, false, false)) continue;
+		for (PeerAddressTrackerItem item : items) {
+			if (item.packetsReceived() <= 0) continue;
+			if (!item.peer.isRealInternetAddress(false, false, false)) continue;
 			longestGap = Math.max(longestGap, item.longestGap(horizon, now));
 		}
 		return longestGap;
-
 	}
 
 	public Status getPortForwardStatus() {
 		long minGap = getLongestSendReceiveGap(HORIZON);
 
-		if(minGap > DEFINITELY_TUNNEL_LENGTH)
-			return Status.DEFINITELY_PORT_FORWARDED;
-		if(minGap > MAYBE_TUNNEL_LENGTH)
-			return Status.MAYBE_PORT_FORWARDED;
+		if (
+			minGap > DEFINITELY_TUNNEL_LENGTH
+		) return Status.DEFINITELY_PORT_FORWARDED;
+		if (minGap > MAYBE_TUNNEL_LENGTH) return Status.MAYBE_PORT_FORWARDED;
 		// Only take isBroken into account if we're not sure.
 		// Somebody could be playing with us by sending bogus FNPSentPackets...
-		synchronized(this) {
-			if(isBroken()) return Status.DEFINITELY_NATED;
-			if(minGap == 0 && timePresumeGuilty > 0 && System.currentTimeMillis() > timePresumeGuilty)
-				return Status.MAYBE_NATED;
+		synchronized (this) {
+			if (isBroken()) return Status.DEFINITELY_NATED;
+			if (
+				minGap == 0 &&
+				timePresumeGuilty > 0 &&
+				System.currentTimeMillis() > timePresumeGuilty
+			) return Status.MAYBE_NATED;
 		}
 		return Status.DONT_KNOW;
 	}
@@ -286,21 +325,25 @@ public class AddressTracker {
 	}
 
 	public static String statusString(Status status) {
-		return NodeL10n.getBase().getString("ConnectivityToadlet.status."+status);
+		return NodeL10n.getBase()
+			.getString("ConnectivityToadlet.status." + status);
 	}
 
 	/** Persist the table to disk */
 	public void storeData(long bootID, ProgramDirectory runDir, int port) {
 		// Don't write to disk if we know we're NATed anyway!
-		if(isBroken()) return;
-		File data = runDir.file("packets-"+port+".dat");
-		File dataBak = runDir.file("packets-"+port+".bak");
+		if (isBroken()) return;
+		File data = runDir.file("packets-" + port + ".dat");
+		File dataBak = runDir.file("packets-" + port + ".bak");
 		dataBak.delete();
 		FileOutputStream fos = null;
 		try {
 			fos = new FileOutputStream(dataBak);
 			BufferedOutputStream bos = new BufferedOutputStream(fos);
-			OutputStreamWriter osw = new OutputStreamWriter(bos, StandardCharsets.UTF_8);
+			OutputStreamWriter osw = new OutputStreamWriter(
+				bos,
+				StandardCharsets.UTF_8
+			);
 			BufferedWriter bw = new BufferedWriter(osw);
 			SimpleFieldSet fs = getFieldset(bootID);
 			fs.writeTo(bw);
@@ -312,12 +355,11 @@ public class AddressTracker {
 			Logger.error(this, "Cannot store packet tracker to disk");
 			return;
 		} finally {
-			if(fos != null)
-				try {
-					fos.close();
-				} catch (IOException e) {
-					// Ignore
-				}
+			if (fos != null) try {
+				fos.close();
+			} catch (IOException e) {
+				// Ignore
+			}
 		}
 	}
 
@@ -325,23 +367,37 @@ public class AddressTracker {
 		SimpleFieldSet sfs = new SimpleFieldSet(true);
 		sfs.put("Version", 2);
 		sfs.put("BootID", bootID);
-		sfs.put("TimeDefinitelyNoPacketsReceivedPeer", timeDefinitelyNoPacketsReceivedPeer);
-		sfs.put("TimeDefinitelyNoPacketsReceivedIP", timeDefinitelyNoPacketsReceivedIP);
-		sfs.put("TimeDefinitelyNoPacketsSentPeer", timeDefinitelyNoPacketsSentPeer);
+		sfs.put(
+			"TimeDefinitelyNoPacketsReceivedPeer",
+			timeDefinitelyNoPacketsReceivedPeer
+		);
+		sfs.put(
+			"TimeDefinitelyNoPacketsReceivedIP",
+			timeDefinitelyNoPacketsReceivedIP
+		);
+		sfs.put(
+			"TimeDefinitelyNoPacketsSentPeer",
+			timeDefinitelyNoPacketsSentPeer
+		);
 		sfs.put("TimeDefinitelyNoPacketsSentIP", timeDefinitelyNoPacketsSentIP);
 		PeerAddressTrackerItem[] peerItems = getPeerAddressTrackerItems();
 		SimpleFieldSet items = new SimpleFieldSet(true);
-		if(peerItems.length > 0) {
-			for(int i = 0; i < peerItems.length; i++)
-				items.put(Integer.toString(i), peerItems[i].toFieldSet());
+		if (peerItems.length > 0) {
+			for (int i = 0; i < peerItems.length; i++) items.put(
+				Integer.toString(i),
+				peerItems[i].toFieldSet()
+			);
 			sfs.put("Peers", items);
 		}
-		InetAddressAddressTrackerItem[] inetItems = getInetAddressTrackerItems();
+		InetAddressAddressTrackerItem[] inetItems =
+			getInetAddressTrackerItems();
 		items = new SimpleFieldSet(true);
-		if(inetItems.length > 0) {
-		    for(int i = 0; i < inetItems.length; i++)
-			items.put(Integer.toString(i), inetItems[i].toFieldSet());
-		    sfs.put("IPs", items);
+		if (inetItems.length > 0) {
+			for (int i = 0; i < inetItems.length; i++) items.put(
+				Integer.toString(i),
+				inetItems[i].toFieldSet()
+			);
+			sfs.put("IPs", items);
 		}
 		return sfs;
 	}
@@ -358,8 +414,7 @@ public class AddressTracker {
 	private long timePresumeGuilty = -1;
 
 	public synchronized void setPresumedGuiltyAt(long l) {
-		if(timePresumeGuilty <= 0)
-			timePresumeGuilty = l;
+		if (timePresumeGuilty <= 0) timePresumeGuilty = l;
 	}
 
 	public synchronized void setPresumedInnocent() {

@@ -5,7 +5,5 @@ package freenet.support;
  * @see NumberedItem
  */
 public interface IntNumberedItem {
-
-    int getNumber();
-    
+	int getNumber();
 }

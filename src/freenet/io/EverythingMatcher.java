@@ -3,9 +3,9 @@ package freenet.io;
 import java.net.InetAddress;
 
 public class EverythingMatcher implements AddressMatcher {
-	public EverythingMatcher() {
-	}
-	
+
+	public EverythingMatcher() {}
+
 	@Override
 	public boolean matches(InetAddress address) {
 		return true;
@@ -15,5 +15,4 @@ public class EverythingMatcher implements AddressMatcher {
 	public String getHumanRepresentation() {
 		return "*";
 	}
-
 }

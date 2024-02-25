@@ -2,6 +2,15 @@
 
 package freenet.client.filter;
 
+import freenet.clients.http.ToadletContextImpl;
+import freenet.l10n.NodeL10n;
+import freenet.support.HTMLDecoder;
+import freenet.support.HTMLEncoder;
+import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
+import freenet.support.URLDecoder;
+import freenet.support.URLEncodedFormatException;
+import freenet.support.io.NullWriter;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
@@ -31,19 +40,10 @@ import java.util.Set;
 import java.util.Stack;
 import java.util.StringTokenizer;
 
-import freenet.clients.http.ToadletContextImpl;
-import freenet.l10n.NodeL10n;
-import freenet.support.HTMLDecoder;
-import freenet.support.HTMLEncoder;
-import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
-import freenet.support.URLDecoder;
-import freenet.support.URLEncodedFormatException;
-import freenet.support.io.NullWriter;
-
 public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 
-	private static final String M3U_PLAYER_TAG_FILE = "freenet/clients/http/staticfiles/js/m3u-player.js";
+	private static final String M3U_PLAYER_TAG_FILE =
+		"freenet/clients/http/staticfiles/js/m3u-player.js";
 	/** if true, embed m3u player. Enabled when fproxy javascript is enabled. **/
 	public static boolean embedM3uPlayer = true;
 	private static boolean logMINOR;
@@ -64,16 +64,22 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	/** -1 means don't allow it */
 	public static int metaRefreshRedirectMinInterval = 30;
 
-	private static final String m3uPlayerScriptTagContent = m3uPlayerScriptTagContent();
+	private static final String m3uPlayerScriptTagContent =
+		m3uPlayerScriptTagContent();
 
 	@Override
 	public void readFilter(
-      InputStream input, OutputStream output, String charset, Map<String, String> otherParams,
-      String schemeHostAndPort, FilterCallback cb) throws DataFilterException, IOException {
-		if(cb == null) cb = new NullFilterCallback();
+		InputStream input,
+		OutputStream output,
+		String charset,
+		Map<String, String> otherParams,
+		String schemeHostAndPort,
+		FilterCallback cb
+	) throws DataFilterException, IOException {
+		if (cb == null) cb = new NullFilterCallback();
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
-		if(logMINOR) Logger.minor(this, "readFilter(): charset="+charset);
+		if (logMINOR) Logger.minor(this, "readFilter(): charset=" + charset);
 		Reader r = null;
 		Writer w = null;
 		InputStreamReader isr = null;
@@ -83,7 +89,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			osw = new OutputStreamWriter(output, charset);
 			r = new BufferedReader(isr, 4096);
 			w = new BufferedWriter(osw, 4096);
-		} catch(UnsupportedEncodingException e) {
+		} catch (UnsupportedEncodingException e) {
 			throw UnknownCharsetException.create(e, charset);
 		}
 		HTMLParseContext pc = new HTMLParseContext(r, w, charset, cb, false);
@@ -92,22 +98,41 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	}
 
 	@Override
-	public String getCharset(byte[] input, int length, String parseCharset) throws DataFilterException, IOException {
+	public String getCharset(byte[] input, int length, String parseCharset)
+		throws DataFilterException, IOException {
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-		if(logMINOR) Logger.minor(this, "getCharset(): default="+parseCharset);
-		if(length > getCharsetBufferSize() && Logger.shouldLog(LogLevel.MINOR, this)) {
-			Logger.minor(this, "More data than was strictly needed was passed to the charset extractor for extraction");
+		if (logMINOR) Logger.minor(
+			this,
+			"getCharset(): default=" + parseCharset
+		);
+		if (
+			length > getCharsetBufferSize() &&
+			Logger.shouldLog(LogLevel.MINOR, this)
+		) {
+			Logger.minor(
+				this,
+				"More data than was strictly needed was passed to the charset extractor for extraction"
+			);
 		}
 		ByteArrayInputStream strm = new ByteArrayInputStream(input, 0, length);
 		Writer w = new NullWriter();
 		Reader r;
 		try {
-			r = new BufferedReader(new InputStreamReader(strm, parseCharset), 4096);
+			r = new BufferedReader(
+				new InputStreamReader(strm, parseCharset),
+				4096
+			);
 		} catch (UnsupportedEncodingException e) {
 			strm.close();
 			throw e;
 		}
-		HTMLParseContext pc = new HTMLParseContext(r, w, null, new NullFilterCallback(), true);
+		HTMLParseContext pc = new HTMLParseContext(
+			r,
+			w,
+			null,
+			new NullFilterCallback(),
+			true
+		);
 		try {
 			pc.run();
 		} catch (MalformedInputException e) {
@@ -117,48 +142,70 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			throw e;
 		} catch (Throwable t) {
 			// Ignore ALL errors
-			if(logMINOR) Logger.minor(this, "Caught "+t+" trying to detect MIME type with "+parseCharset);
+			if (logMINOR) Logger.minor(
+				this,
+				"Caught " +
+				t +
+				" trying to detect MIME type with " +
+				parseCharset
+			);
 		}
 		try {
 			r.close();
 		} catch (IOException e) {
 			throw e;
 		} catch (Throwable t) {
-			if(logMINOR) Logger.minor(this, "Caught "+t+" closing stream after trying to detect MIME type with "+parseCharset);
+			if (logMINOR) Logger.minor(
+				this,
+				"Caught " +
+				t +
+				" closing stream after trying to detect MIME type with " +
+				parseCharset
+			);
 		}
-		if(logMINOR) Logger.minor(this, "Returning charset "+pc.detectedCharset);
+		if (logMINOR) Logger.minor(
+			this,
+			"Returning charset " + pc.detectedCharset
+		);
 		return pc.detectedCharset;
 	}
 
 	class HTMLParseContext {
+
 		Reader r;
 		Writer w;
 		String charset;
 		String detectedCharset;
 		final FilterCallback cb;
 		final boolean onlyDetectingCharset;
-		boolean isXHTML=false;
+		boolean isXHTML = false;
 		Stack<String> openElements;
 		boolean failedDetectCharset;
 
 		/** If <head> is found, then it is true. It is needed that if <title> or <meta> is found outside <head> or if a <body> is found first, then insert a <head> too*/
-		boolean wasHeadElementFound=false;
+		boolean wasHeadElementFound = false;
 		/** We can only have <head> once, and <meta>/<title> can't be outside it. This helps with robustness against charset attacks and allows us to stop looking for <meta> as soon as we see </head> when detecting charset. */
-		boolean headEnded=false;
-		/** if a &lt;video&gt; or &lt;audio&gt; tag is present in the file, it makes sense to include the media player. */ 
-		boolean wasMediaElementFound=false;
+		boolean headEnded = false;
+		/** if a &lt;video&gt; or &lt;audio&gt; tag is present in the file, it makes sense to include the media player. */
+		boolean wasMediaElementFound = false;
 
-		HTMLParseContext(Reader r, Writer w, String charset, FilterCallback cb, boolean onlyDetectingCharset) {
+		HTMLParseContext(
+			Reader r,
+			Writer w,
+			String charset,
+			FilterCallback cb,
+			boolean onlyDetectingCharset
+		) {
 			this.r = r;
 			this.w = w;
 			this.charset = charset;
 			this.cb = cb;
 			this.onlyDetectingCharset = onlyDetectingCharset;
-			openElements=new Stack<String>();
+			openElements = new Stack<String>();
 		}
 
 		public void setisXHTML(boolean value) {
-			isXHTML=value;
+			isXHTML = value;
 		}
 
 		public boolean getisXHTML() {
@@ -170,19 +217,16 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		}
 
 		public String popElementFromStack() {
-			if(openElements.size()>0)
-				return openElements.pop();
-			else
-				return null;
+			if (openElements.size() > 0) return openElements.pop();
+			else return null;
 		}
 
 		public String peekTopElement() {
-			if(openElements.isEmpty()) return null;
+			if (openElements.isEmpty()) return null;
 			return openElements.peek();
 		}
 
 		void run() throws IOException, DataFilterException {
-
 			/**
 			 * TOKENIZE Modes:
 			 * <p>0) in text transitions: '<' ->(1) 1) in tag, not in
@@ -213,56 +257,66 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 
 			while (true) {
 				// If detecting charset, stop after </head> even if haven't found <meta> charset tag.
-				if(onlyDetectingCharset && failedDetectCharset)
-					return;
+				if (onlyDetectingCharset && failedDetectCharset) return;
 				// If detecting charset, and found it, stop afterwards.
-				if(onlyDetectingCharset && detectedCharset != null)
-					return;
+				if (onlyDetectingCharset && detectedCharset != null) return;
 				int x;
 
 				try {
 					x = r.read();
-				}
-				/**
+				} /**
 				 * libgcj up to at least 4.2.2 has a bug: InputStreamReader.refill() throws this exception when BufferedInputReader.refill() returns false for EOF. See:
 				 * line 299 at InputStreamReader.java (in refill()): http://www.koders.com/java/fidD8F7E2EB1E4C22DA90EBE0130306AE30F876AB00.aspx?s=refill#L279
 				 * line 355 at BufferedInputStream.java (in refill()): http://www.koders.com/java/fid1949641524FAC0083432D79793F554CD85F46759.aspx?s=refill#L355
 				 * TODO: remove this when the gcj bug is fixed and the affected gcj versions are outdated.
 				 */
-				catch(java.io.CharConversionException cce) {
-					if(freenet.node.Node.checkForGCJCharConversionBug()) /* only ignore the exception on affected libgcj */
-						x = -1;
-					else
-						throw cce;
+				catch (java.io.CharConversionException cce) {
+					if (
+						freenet.node.Node.checkForGCJCharConversionBug()
+					)/* only ignore the exception on affected libgcj */ x = -1;
+					else throw cce;
 				}
 
 				if (x == -1) {
 					switch (mode) {
-						case INTEXT :
-							if(textAllowed) {
+						case INTEXT:
+							if (textAllowed) {
 								saveText(b, currentTag, w, this);
 							} else {
-								if(!b.toString().trim().isEmpty())
-									throwFilterException(l10n("textBeforeHTML"));
+								if (
+									!b.toString().trim().isEmpty()
+								) throwFilterException(l10n("textBeforeHTML"));
 							}
 							break;
 						case INTAG:
-							w.write("<!-- truncated page: last tag not unfinished -->");
+							w.write(
+								"<!-- truncated page: last tag not unfinished -->"
+							);
 							break;
 						case INTAGQUOTES:
-							w.write("<!-- truncated page: deleted unfinished tag: still in quotes -->");
+							w.write(
+								"<!-- truncated page: deleted unfinished tag: still in quotes -->"
+							);
 							break;
 						case INTAGSQUOTES:
-							w.write("<!-- truncated page: deleted unfinished tag: still in single quotes -->");
+							w.write(
+								"<!-- truncated page: deleted unfinished tag: still in single quotes -->"
+							);
 							break;
 						case INTAGWHITESPACE:
-							w.write("<!-- truncated page: deleted unfinished tag: still in whitespace -->");
+							w.write(
+								"<!-- truncated page: deleted unfinished tag: still in whitespace -->"
+							);
 							break;
 						case INTAGCOMMENT:
-							w.write("<!-- truncated page: deleted unfinished comment -->");
+							w.write(
+								"<!-- truncated page: deleted unfinished comment -->"
+							);
 							break;
 						case INTAGCOMMENTCLOSING:
-							w.write("<!-- truncated page: deleted unfinished comment, might be closing -->");
+							w.write(
+								"<!-- truncated page: deleted unfinished comment, might be closing -->"
+							);
 							break;
 						default:
 							// Dump unfinished tag
@@ -273,29 +327,31 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					pprevC = prevC;
 					prevC = c;
 					c = (char) x;
-					if(c == 0xFEFF) {
-						if(firstChar) {
+					if (c == 0xFEFF) {
+						if (firstChar) {
 							// BOM
-							if(w != null)
-								w.write(c);
+							if (w != null) w.write(c);
 						} else {
 							// Null character (zero width non breaking space). Get rid.
 						}
 						continue;
 					}
-					if(c == 0) {
+					if (c == 0) {
 						// Delete nulls. They can cause all sorts of problems and also can result from messing around with charsets.
 						continue;
 					}
 					firstChar = false;
 					switch (mode) {
-						case INTEXT :
+						case INTEXT:
 							if (c == '<') {
-								if(textAllowed) {
+								if (textAllowed) {
 									saveText(b, currentTag, w, this);
 								} else {
-									if(!b.toString().trim().isEmpty())
-										throwFilterException(l10n("textBeforeHTML"));
+									if (
+										!b.toString().trim().isEmpty()
+									) throwFilterException(
+										l10n("textBeforeHTML")
+									);
 								}
 								b.setLength(0);
 								balt.setLength(0);
@@ -304,20 +360,26 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 								b.append(c);
 							}
 							break;
-						case INTAG :
+						case INTAG:
 							balt.append(c);
 							if (HTMLDecoder.isWhitespace(c)) {
 								splitTag.add(b.toString());
 								mode = INTAGWHITESPACE;
 								b.setLength(0);
-							} else if ((c == '<') && Character.isWhitespace(balt.charAt(0))) {
+							} else if (
+								(c == '<') &&
+								Character.isWhitespace(balt.charAt(0))
+							) {
 								// Previous was an un-escaped < in a script.
 
-								if(textAllowed) {
+								if (textAllowed) {
 									saveText(b, currentTag, w, this);
 								} else {
-									if(!b.toString().trim().isEmpty())
-										throwFilterException(l10n("textBeforeHTML"));
+									if (
+										!b.toString().trim().isEmpty()
+									) throwFilterException(
+										l10n("textBeforeHTML")
+									);
 								}
 
 								balt.setLength(0);
@@ -331,13 +393,19 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 								splitTag.clear();
 								balt.setLength(0);
 								mode = INTEXT;
-								if(s != null && (allowNoHTMLTag || (s.equals("html") || (!isXHTML) && s.equalsIgnoreCase("html"))))
-									textAllowed = true;
+								if (
+									s != null &&
+									(allowNoHTMLTag ||
+										(s.equals("html") ||
+											((!isXHTML) &&
+												s.equalsIgnoreCase("html"))))
+								) textAllowed = true;
 							} else if (
-								(b.length() == 2)
-									&& (c == '-')
-									&& (prevC == '-')
-									&& (pprevC == '!')) {
+								(b.length() == 2) &&
+								(c == '-') &&
+								(prevC == '-') &&
+								(pprevC == '!')
+							) {
 								mode = INTAGCOMMENT;
 								b.append(c);
 							} else if (c == '"') {
@@ -346,14 +414,15 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 							} else if (c == '\'') {
 								mode = INTAGSQUOTES;
 								b.append(c);
-							} else if (c == '/') { /* Probable end tag */
-								currentTag = null; /* We didn't remember what was the last tag, so ... */
+							} else if (c == '/') {/* Probable end tag */
+								currentTag =
+									null;/* We didn't remember what was the last tag, so ... */
 								b.append(c);
 							} else {
 								b.append(c);
 							}
 							break;
-						case INTAGQUOTES :
+						case INTAGQUOTES:
 							// Inside double-quotes, single quotes are just another character, perfectly legal in a URL.
 							if (c == '"') {
 								mode = INTAG;
@@ -362,16 +431,15 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 								b.append("&gt;");
 							} else if (c == '<') {
 								b.append("&lt;");
-//							} else if (c=='&') {
-//								b.append("&amp;");
-							} else if (c== '\u00A0') {
+								//							} else if (c=='&') {
+								//								b.append("&amp;");
+							} else if (c == '\u00A0') {
 								b.append("&nbsp;");
-							}
-							else {
+							} else {
 								b.append(c);
 							}
 							break;
-						case INTAGSQUOTES :
+						case INTAGSQUOTES:
 							if (c == '\'') {
 								mode = INTAG;
 								b.append(c); // Part of the element
@@ -379,52 +447,53 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 								b.append("&lt;");
 							} else if (c == '>') {
 								b.append("&gt;");
-//							}else if (c=='&') {
-//								b.append("&amp;");
-							} else if (c== '\u00A0') {
+								//							}else if (c=='&') {
+								//								b.append("&amp;");
+							} else if (c == '\u00A0') {
 								b.append("&nbsp;");
-							}
-							else {
+							} else {
 								b.append(c);
 							}
 							break;
-							/*
-							 * Comments are often used to temporarily disable
-							 * markup; I shall allow it. (avian) White space is
-							 * not permitted between the markup declaration
-							 * open delimiter ("
-							 * <!") and the comment open delimiter ("--"), but
-							 * is permitted between the comment close delimiter
-							 * ("--") and the markup declaration close
-							 * delimiter (">"). A common error is to include a
-							 * string of hyphens ("---") within a comment.
-							 * Authors should avoid putting two or more
-							 * adjacent hyphens inside comments. However, the
-							 * only browser that actually gets it right is IE
-							 * (others either don't allow it or allow other
-							 * chars as well). The only safe course of action
-							 * is to allow any and all chars, but eat them.
-							 * (avian)
-							 */
-						case INTAGCOMMENT :
-							if ((b.length() >= 4) && (c == '-') && (prevC == '-')) {
+						/*
+						 * Comments are often used to temporarily disable
+						 * markup; I shall allow it. (avian) White space is
+						 * not permitted between the markup declaration
+						 * open delimiter ("
+						 * <!") and the comment open delimiter ("--"), but
+						 * is permitted between the comment close delimiter
+						 * ("--") and the markup declaration close
+						 * delimiter (">"). A common error is to include a
+						 * string of hyphens ("---") within a comment.
+						 * Authors should avoid putting two or more
+						 * adjacent hyphens inside comments. However, the
+						 * only browser that actually gets it right is IE
+						 * (others either don't allow it or allow other
+						 * chars as well). The only safe course of action
+						 * is to allow any and all chars, but eat them.
+						 * (avian)
+						 */
+						case INTAGCOMMENT:
+							if (
+								(b.length() >= 4) &&
+								(c == '-') &&
+								(prevC == '-')
+							) {
 								b.append(c);
 								mode = INTAGCOMMENTCLOSING;
-							} else
-								b.append(c);
+							} else b.append(c);
 							break;
-						case INTAGCOMMENTCLOSING :
+						case INTAGCOMMENTCLOSING:
 							if (c == '>') {
 								saveComment(b, w, this);
 								b.setLength(0);
 								mode = INTEXT;
 							} else {
 								b.append(c);
-								if(c != '-')
-									mode = INTAGCOMMENT;
+								if (c != '-') mode = INTAGCOMMENT;
 							}
 							break;
-						case INTAGWHITESPACE :
+						case INTAGWHITESPACE:
 							if (c == '"') {
 								mode = INTAGQUOTES;
 								b.append(c);
@@ -446,16 +515,29 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 								b.setLength(0);
 								balt.setLength(0);
 								mode = INTEXT;
-								if(currentTag != null && (allowNoHTMLTag || (currentTag.equals("html") || (!isXHTML) && currentTag.equalsIgnoreCase("html"))))
-									textAllowed = true;
-							} else if ((c == '<') && Character.isWhitespace(balt.charAt(0))) {
+								if (
+									currentTag != null &&
+									(allowNoHTMLTag ||
+										(currentTag.equals("html") ||
+											((!isXHTML) &&
+												currentTag.equalsIgnoreCase(
+													"html"
+												))))
+								) textAllowed = true;
+							} else if (
+								(c == '<') &&
+								Character.isWhitespace(balt.charAt(0))
+							) {
 								// Previous was an un-escaped < in a script.
 
-								if(textAllowed) {
+								if (textAllowed) {
 									saveText(b, currentTag, w, this);
 								} else {
-									if(!b.toString().trim().isEmpty())
-										throwFilterException(l10n("textBeforeHTML"));
+									if (
+										!b.toString().trim().isEmpty()
+									) throwFilterException(
+										l10n("textBeforeHTML")
+									);
 								}
 								balt.setLength(0);
 								b.setLength(0);
@@ -474,18 +556,19 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			 * the interval which we are examining, something is wrong, and it's
 			 * possible that the file has been given a freakishly large head, so
 			 * that we'll miss a charset declaration.*/
-			if(onlyDetectingCharset && openElements.contains("head")) {
-				throw new MalformedInputException(1024*64);
+			if (onlyDetectingCharset && openElements.contains("head")) {
+				throw new MalformedInputException(1024 * 64);
 			}
 			//Writing the remaining tags for XHTML if any
-			if(getisXHTML())
-			{
-				while(openElements.size()>0)
-					w.write("</"+openElements.pop()+">");
+			if (getisXHTML()) {
+				while (openElements.size() > 0) w.write(
+					"</" + openElements.pop() + ">"
+				);
 			}
 			w.flush();
 			return;
 		}
+
 		int mode;
 		static final int INTEXT = 0;
 		static final int INTAG = 1;
@@ -508,49 +591,51 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 
 		public void closeXHTMLTag(String element, Writer w) throws IOException {
 			// Assume that missing closes are way more common than extra closes.
-			if(openElements.isEmpty()) return;
-			if(element.equals(openElements.peek())) {
-				w.write("</"+openElements.pop()+">");
-			}
-			else {
-				if(openElements.contains(element)) {
-					while(true) {
+			if (openElements.isEmpty()) return;
+			if (element.equals(openElements.peek())) {
+				w.write("</" + openElements.pop() + ">");
+			} else {
+				if (openElements.contains(element)) {
+					while (true) {
 						String top = openElements.pop();
-						w.write("</"+top+">");
-						if(top.equals(element)) return;
+						w.write("</" + top + ">");
+						if (top.equals(element)) return;
 					}
 				} // Else it has already been closed.
 			}
 		}
 	}
 
+	void saveText(
+		StringBuilder s,
+		String tagName,
+		Writer w,
+		HTMLParseContext pc
+	) throws IOException {
+		if (pc.onlyDetectingCharset) return;
 
-	void saveText(StringBuilder s, String tagName, Writer w, HTMLParseContext pc)
-		throws IOException {
-
-		if(pc.onlyDetectingCharset) return;
-
-		if(logDEBUG) Logger.debug(this, "Saving text: "+s.toString());
+		if (logDEBUG) Logger.debug(this, "Saving text: " + s.toString());
 		if (pc.killText) {
 			return;
 		}
 
-		StringBuilder out = new StringBuilder(s.length()*2);
+		StringBuilder out = new StringBuilder(s.length() * 2);
 
-		for(int i=0;i<s.length();i++) {
+		for (int i = 0; i < s.length(); i++) {
 			char c = s.charAt(i);
-			if(c == '<' && !(pc.inStyle || pc.inScript)) {
+			if (c == '<' && !(pc.inStyle || pc.inScript)) {
 				//Scripts and styles parsed elsewhere
 				out.append("&lt;");
-			}
-			else if((c < 32) && (c != '\t') && (c != '\n') && (c != '\r')) {
+			} else if ((c < 32) && (c != '\t') && (c != '\n') && (c != '\r')) {
 				// Not a real character
 				// STRONGLY suggests somebody is using a bogus charset.
 				// This could be in order to break the filter.
-				if(logDEBUG) Logger.debug(this, "Removing '"+c+"' from the output stream");
+				if (logDEBUG) Logger.debug(
+					this,
+					"Removing '" + c + "' from the output stream"
+				);
 				continue;
-			}
-			else {
+			} else {
 				out.append(c);
 			}
 		}
@@ -560,21 +645,29 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			pc.currentStyleScriptChunk += sout;
 			return; // is parsed and written elsewhere
 		}
-		if(pc.cb != null)
-			pc.cb.onText(HTMLDecoder.decode(sout), tagName); /* Tag name is given as type for the text */
+		if (pc.cb != null) pc.cb.onText(
+			HTMLDecoder.decode(sout),
+			tagName
+		);/* Tag name is given as type for the text */
 
 		w.write(sout);
 	}
 
 	static String m3uPlayerScriptTagContent() {
-		InputStream m3uPlayerTagStream = HTMLFilter.class.getClassLoader()
+		InputStream m3uPlayerTagStream =
+			HTMLFilter.class.getClassLoader()
 				.getResourceAsStream(M3U_PLAYER_TAG_FILE);
-		String errorTag = "/* Error: could not load " + M3U_PLAYER_TAG_FILE + " */";
+		String errorTag =
+			"/* Error: could not load " + M3U_PLAYER_TAG_FILE + " */";
 		if (m3uPlayerTagStream == null) {
 			return errorTag;
 		}
 		String tagContent;
-		try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(m3uPlayerTagStream))) {
+		try (
+			BufferedReader bufferedReader = new BufferedReader(
+				new InputStreamReader(m3uPlayerTagStream)
+			)
+		) {
 			StringBuilder stringBuilder = new StringBuilder("<script>");
 			String line;
 			while ((line = bufferedReader.readLine()) != null) {
@@ -584,7 +677,10 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			stringBuilder.append("</script>");
 			tagContent = stringBuilder.toString();
 		} catch (IOException e) {
-			Logger.error(HTMLFilter.class, "Could not read m3uPlayer inline-script.");
+			Logger.error(
+				HTMLFilter.class,
+				"Could not read m3uPlayer inline-script."
+			);
 			return errorTag;
 		}
 		return tagContent;
@@ -593,9 +689,11 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	String processTag(List<String> splitTag, Writer w, HTMLParseContext pc)
 		throws IOException, DataFilterException {
 		// First, check that it is a recognized tag
-		if(logDEBUG) {
-			for(int i=0;i<splitTag.size();i++)
-				Logger.debug(this, "Tag["+i+"]="+splitTag.get(i));
+		if (logDEBUG) {
+			for (int i = 0; i < splitTag.size(); i++) Logger.debug(
+				this,
+				"Tag[" + i + "]=" + splitTag.get(i)
+			);
 		}
 		ParsedTag t = new ParsedTag(splitTag);
 		if (!pc.killTag) {
@@ -606,81 +704,107 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 
 				//We need to make sure that <head> is present in the document. If it is not, then GWT javascript won't get loaded.
 				//To achieve this, we keep track whether we processed the <head>
-				if(t.element.compareTo("head")==0 && !t.startSlash){
-					pc.wasHeadElementFound=true;
-				} else if ((t.element.compareTo("video")==0 || t.element.compareTo("audio")==0) && !t.startSlash) {
-					pc.wasMediaElementFound=true;
-				} else if(t.element.compareTo("head")==0 && t.startSlash) {
+				if (t.element.compareTo("head") == 0 && !t.startSlash) {
+					pc.wasHeadElementFound = true;
+				} else if (
+					(t.element.compareTo("video") == 0 ||
+						t.element.compareTo("audio") == 0) &&
+					!t.startSlash
+				) {
+					pc.wasMediaElementFound = true;
+				} else if (t.element.compareTo("head") == 0 && t.startSlash) {
 					pc.headEnded = true;
-					if(pc.onlyDetectingCharset) pc.failedDetectCharset = true;
-				//If we found a <title> or a <meta> without a <head>, then we need to add them to a <head>
-				}else if((t.element.compareTo("meta")==0 || t.element.compareTo("title")==0) && pc.wasHeadElementFound==false){
+					if (pc.onlyDetectingCharset) pc.failedDetectCharset = true;
+					//If we found a <title> or a <meta> without a <head>, then we need to add them to a <head>
+				} else if (
+					(t.element.compareTo("meta") == 0 ||
+						t.element.compareTo("title") == 0) &&
+					pc.wasHeadElementFound == false
+				) {
 					pc.openElements.push("head");
-					pc.wasHeadElementFound=true;
-					String headContent=pc.cb.processTag(new ParsedTag("head", new HashMap<String, String>()));
-					if(headContent!=null && !pc.onlyDetectingCharset){
+					pc.wasHeadElementFound = true;
+					String headContent = pc.cb.processTag(
+						new ParsedTag("head", new HashMap<String, String>())
+					);
+					if (headContent != null && !pc.onlyDetectingCharset) {
 						w.write(headContent);
 					}
-				}else if((t.element.compareTo("meta")==0 || t.element.compareTo("title")==0) && pc.headEnded){
+				} else if (
+					(t.element.compareTo("meta") == 0 ||
+						t.element.compareTo("title") == 0) &&
+					pc.headEnded
+				) {
 					throwFilterException(l10n("metaOutsideHead"));
-				//If we found a <body> and haven't closed <head> already, then we do
-				}else if(t.element.compareTo("body") == 0 &&  pc.openElements.contains("head")){
-					if(!pc.onlyDetectingCharset) {
+					//If we found a <body> and haven't closed <head> already, then we do
+				} else if (
+					t.element.compareTo("body") == 0 &&
+					pc.openElements.contains("head")
+				) {
+					if (!pc.onlyDetectingCharset) {
 						w.write("</head>");
 					}
 					pc.headEnded = true;
-					if(pc.onlyDetectingCharset) pc.failedDetectCharset = true;
+					if (pc.onlyDetectingCharset) pc.failedDetectCharset = true;
 					pc.openElements.pop();
-				//If we found a <body> and no <head> before it, then we insert it
-				}else if(t.element.compareTo("body")==0 && pc.wasHeadElementFound==false){
-					pc.wasHeadElementFound=true;
-					String headContent=pc.cb.processTag(new ParsedTag("head", new HashMap<String, String>()));
-					if(headContent!=null){
-						if(!pc.onlyDetectingCharset) {
-							w.write(headContent+"</head>");
+					//If we found a <body> and no <head> before it, then we insert it
+				} else if (
+					t.element.compareTo("body") == 0 &&
+					pc.wasHeadElementFound == false
+				) {
+					pc.wasHeadElementFound = true;
+					String headContent = pc.cb.processTag(
+						new ParsedTag("head", new HashMap<String, String>())
+					);
+					if (headContent != null) {
+						if (!pc.onlyDetectingCharset) {
+							w.write(headContent + "</head>");
 						}
 						pc.headEnded = true;
-						if(pc.onlyDetectingCharset) pc.failedDetectCharset = true;
+						if (pc.onlyDetectingCharset) pc.failedDetectCharset =
+							true;
 					}
-				// if the body is ended and we found a media tag (<video> or <audio>) we include the m3u-player just before the end of the body. 
-				}else if(t.element.compareTo("body")==0 && t.startSlash && pc.wasMediaElementFound) {
+					// if the body is ended and we found a media tag (<video> or <audio>) we include the m3u-player just before the end of the body.
+				} else if (
+					t.element.compareTo("body") == 0 &&
+					t.startSlash &&
+					pc.wasMediaElementFound
+				) {
 					if (embedM3uPlayer) {
 						w.write(m3uPlayerScriptTagContent);
 					}
 				}
 
-				if(!pc.onlyDetectingCharset) {
-
+				if (!pc.onlyDetectingCharset) {
 					//If the tag needs replacement, then replace it
-					String newContent=pc.cb.processTag(t);
-					if(newContent!=null){
+					String newContent = pc.cb.processTag(t);
+					if (newContent != null) {
 						w.write(newContent);
-						if(t.endSlash==false){
+						if (t.endSlash == false) {
 							pc.openElements.push(t.element);
 						}
-					}else{
+					} else {
 						if (pc.writeStyleScriptWithTag) {
 							pc.writeStyleScriptWithTag = false;
 							String style = pc.currentStyleScriptChunk;
-							if ((style == null) || (style.length() == 0))
-								pc.writeAfterTag.append("<!-- "+l10n("deletedUnknownStyle")+" -->");
-							else
-								w.write(style);
+							if (
+								(style == null) || (style.length() == 0)
+							) pc.writeAfterTag.append(
+								"<!-- " + l10n("deletedUnknownStyle") + " -->"
+							);
+							else w.write(style);
 							pc.currentStyleScriptChunk = "";
 						}
 
-						t.write(w,pc);
+						t.write(w, pc);
 						if (pc.writeAfterTag.length() > 0) {
 							w.write(pc.writeAfterTag.toString());
 							pc.writeAfterTag = new StringBuilder(1024);
 						}
 					}
-				} else
-					pc.writeStyleScriptWithTag = false;
+				} else pc.writeStyleScriptWithTag = false;
 			}
-			if(t == null || t.startSlash || t.endSlash) {
-				if(!pc.openElements.isEmpty())
-					return pc.openElements.peek();
+			if (t == null || t.startSlash || t.endSlash) {
+				if (!pc.openElements.isEmpty()) return pc.openElements.peek();
 				if (pc.writeAfterTag.length() > 0) {
 					w.write(pc.writeAfterTag.toString());
 					pc.writeAfterTag = new StringBuilder(1024);
@@ -696,17 +820,19 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 
 	void saveComment(StringBuilder s, Writer w, HTMLParseContext pc)
 		throws IOException {
-		if(pc.onlyDetectingCharset) return;
-		if((s.length() > 3) && (s.charAt(0) == '!') && (s.charAt(1) == '-') && (s.charAt(2) == '-')) {
+		if (pc.onlyDetectingCharset) return;
+		if (
+			(s.length() > 3) &&
+			(s.charAt(0) == '!') &&
+			(s.charAt(1) == '-') &&
+			(s.charAt(2) == '-')
+		) {
 			s.delete(0, 3);
-			if(s.charAt(s.length()-1) == '-')
-				s.setLength(s.length()-1);
-			if(s.charAt(s.length()-1) == '-')
-				s.setLength(s.length()-1);
+			if (s.charAt(s.length() - 1) == '-') s.setLength(s.length() - 1);
+			if (s.charAt(s.length() - 1) == '-') s.setLength(s.length() - 1);
 		}
-		if(logDEBUG) Logger.debug(this, "Saving comment: "+s.toString());
-		if (pc.expectingBadComment)
-			return; // ignore it
+		if (logDEBUG) Logger.debug(this, "Saving comment: " + s.toString());
+		if (pc.expectingBadComment) return; // ignore it
 
 		if (pc.inStyle || pc.inScript) {
 			pc.currentStyleScriptChunk += s;
@@ -717,11 +843,11 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			return;
 		}
 		StringBuilder sb = new StringBuilder();
-		for(int i=0;i<s.length();i++) {
+		for (int i = 0; i < s.length(); i++) {
 			char c = s.charAt(i);
-			if(c == '<') {
+			if (c == '<') {
 				sb.append("&lt;");
-			} else if(c == '>') {
+			} else if (c == '>') {
 				sb.append("&gt;");
 			} else {
 				sb.append(c);
@@ -740,24 +866,26 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	}
 
 	public static class ParsedTag {
+
 		public final String element;
 		public final String[] unparsedAttrs;
 		final boolean startSlash;
 		final boolean endSlash;
+
 		/*
 		 * public ParsedTag(ParsedTag t) { this.element = t.element;
 		 * this.unparsedAttrs = (String[]) t.unparsedAttrs.clone();
 		 * this.startSlash = t.startSlash; this.endSlash = t.endSlash; }
 		 */
 
-		public ParsedTag(String elementName,Map<String,String> attributes){
-			this.element=elementName;
-			startSlash=false;
-			endSlash=true;
-			String[] attrs=new String[attributes.size()];
-			int pos=0;
-			for(Entry<String,String> entry:attributes.entrySet()){
-				attrs[pos++]=entry.getKey()+"=\""+entry.getValue()+"\"";
+		public ParsedTag(String elementName, Map<String, String> attributes) {
+			this.element = elementName;
+			startSlash = false;
+			endSlash = true;
+			String[] attrs = new String[attributes.size()];
+			int pos = 0;
+			for (Entry<String, String> entry : attributes.entrySet()) {
+				attrs[pos++] = entry.getKey() + "=\"" + entry.getValue() + "\"";
 			}
 			this.unparsedAttrs = attrs;
 		}
@@ -769,11 +897,11 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			this.endSlash = t.endSlash;
 		}
 
-		public ParsedTag(ParsedTag t, Map<String,String> attributes){
-			String[] attrs=new String[attributes.size()];
-			int pos=0;
-			for(Entry<String,String> entry:attributes.entrySet()){
-				attrs[pos++]=entry.getKey()+"=\""+entry.getValue()+"\"";
+		public ParsedTag(ParsedTag t, Map<String, String> attributes) {
+			String[] attrs = new String[attributes.size()];
+			int pos = 0;
+			for (Entry<String, String> entry : attributes.entrySet()) {
+				attrs[pos++] = entry.getKey() + "=\"" + entry.getValue() + "\"";
 			}
 			this.element = t.element;
 			this.unparsedAttrs = attrs;
@@ -793,8 +921,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			if (((len - 1 != 0) || (s.length() > 1)) && s.endsWith("/")) {
 				s = s.substring(0, s.length() - 1);
 				v.set(len - 1, s);
-				if (s.length() == 0)
-					len--;
+				if (s.length() == 0) len--;
 				endSlash = true;
 				// Don't need to set it back because everything is an I-value
 			} else endSlash = false;
@@ -807,24 +934,29 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			element = v.get(0);
 			if (len > 1) {
 				unparsedAttrs = new String[len - 1];
-				for (int x = 1; x < len; x++)
-					unparsedAttrs[x - 1] = v.get(x);
-			} else
-				unparsedAttrs = new String[0];
-			if(logDEBUG) Logger.debug(this, "Element = "+element);
+				for (int x = 1; x < len; x++) unparsedAttrs[x - 1] = v.get(x);
+			} else unparsedAttrs = new String[0];
+			if (logDEBUG) Logger.debug(this, "Element = " + element);
 		}
 
-		public ParsedTag sanitize(HTMLParseContext pc) throws DataFilterException {
-			TagVerifier tv =
-				allowedTagsVerifiers.get(element.toLowerCase());
-			if(logDEBUG) Logger.debug(this, "Got verifier: "+tv+" for "+element);
+		public ParsedTag sanitize(HTMLParseContext pc)
+			throws DataFilterException {
+			TagVerifier tv = allowedTagsVerifiers.get(element.toLowerCase());
+			if (logDEBUG) Logger.debug(
+				this,
+				"Got verifier: " + tv + " for " + element
+			);
 			if (tv == null) {
 				if (deleteWierdStuff) {
 					return null;
 				} else {
-					String err = "<!-- "+HTMLEncoder.encode(l10n("unknownTag", "tag", element))+ " -->";
-					if (!deleteErrors)
-						throwFilterException(l10n("unknownTagLabel") + ' ' + err);
+					String err =
+						"<!-- " +
+						HTMLEncoder.encode(l10n("unknownTag", "tag", element)) +
+						" -->";
+					if (!deleteErrors) throwFilterException(
+						l10n("unknownTagLabel") + ' ' + err
+					);
 					return null;
 				}
 			}
@@ -833,11 +965,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 
 		@Override
 		public String toString() {
-			if (element == null)
-				return "";
+			if (element == null) return "";
 			StringBuilder sb = new StringBuilder("<");
-			if (startSlash)
-				sb.append('/');
+			if (startSlash) sb.append('/');
 			sb.append(element);
 			if (unparsedAttrs != null) {
 				int n = unparsedAttrs.length;
@@ -845,29 +975,33 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					sb.append(' ').append(unparsedAttrs[i]);
 				}
 			}
-			if (endSlash)
-				sb.append(" /");
+			if (endSlash) sb.append(" /");
 			sb.append('>');
 			return sb.toString();
 		}
 
-		public Map<String,String> getAttributesAsMap(){
-			Map<String,String> map=new HashMap<String, String>();
-			for(String attr: unparsedAttrs) {
-				String name=attr.substring(0,attr.indexOf('='));
-				String value=attr.substring(attr.indexOf('=')+2,attr.length()-1);
+		public Map<String, String> getAttributesAsMap() {
+			Map<String, String> map = new HashMap<String, String>();
+			for (String attr : unparsedAttrs) {
+				String name = attr.substring(0, attr.indexOf('='));
+				String value = attr.substring(
+					attr.indexOf('=') + 2,
+					attr.length() - 1
+				);
 				map.put(name, value);
 			}
 			return map;
 		}
 
-		public void htmlwrite(Writer w,HTMLParseContext pc) throws IOException {
+		public void htmlwrite(Writer w, HTMLParseContext pc)
+			throws IOException {
 			String s = toString();
-			if(pc.getisXHTML())
-			{
-				if(ElementInfo.isVoidElement(element) && s.charAt(s.length()-2)!='/')
-				{
-					s=s.substring(0,s.length()-1)+" />";
+			if (pc.getisXHTML()) {
+				if (
+					ElementInfo.isVoidElement(element) &&
+					s.charAt(s.length() - 2) != '/'
+				) {
+					s = s.substring(0, s.length() - 1) + " />";
 				}
 			}
 			if (s != null) {
@@ -875,24 +1009,21 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			}
 		}
 
-		public void write(Writer w,HTMLParseContext pc) throws IOException {
-			if(!startSlash)
-			{
-				if(ElementInfo.tryAutoClose(element) && element.equals(pc.peekTopElement()))
+		public void write(Writer w, HTMLParseContext pc) throws IOException {
+			if (!startSlash) {
+				if (
+					ElementInfo.tryAutoClose(element) &&
+					element.equals(pc.peekTopElement())
+				) pc.closeXHTMLTag(element, w);
+				if (
+					pc.getisXHTML() && !ElementInfo.isVoidElement(element)
+				) pc.pushElementInStack(element);
+				htmlwrite(w, pc);
+			} else {
+				if (pc.getisXHTML()) {
 					pc.closeXHTMLTag(element, w);
-				if(pc.getisXHTML() &&  !ElementInfo.isVoidElement(element))
-					pc.pushElementInStack(element);
-				htmlwrite(w,pc);
-			}
-			else
-			{
-				if(pc.getisXHTML())
-				{
-					pc.closeXHTMLTag(element, w);
-				}
-				else
-				{
-					htmlwrite(w,pc);
+				} else {
+					htmlwrite(w, pc);
 				}
 			}
 		}
@@ -907,14 +1038,17 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		Collections.unmodifiableMap(getAllowedTagVerifiers());
 	private static final String[] emptyStringArray = new String[0];
 
-	private static Map<String, TagVerifier> getAllowedTagVerifiers()
-	{
-		Map<String, TagVerifier> allowedTagsVerifiers = new HashMap<String, TagVerifier>();
+	private static Map<String, TagVerifier> getAllowedTagVerifiers() {
+		Map<String, TagVerifier> allowedTagsVerifiers = new HashMap<
+			String,
+			TagVerifier
+		>();
 
 		allowedTagsVerifiers.put("?xml", new XmlTagVerifier());
 		allowedTagsVerifiers.put(
 			"!doctype",
-			new DocTypeTagVerifier("!doctype"));
+			new DocTypeTagVerifier("!doctype")
+		);
 		allowedTagsVerifiers.put("html", new HtmlTagVerifier());
 		allowedTagsVerifiers.put(
 			"head",
@@ -925,10 +1059,13 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				// We don't know what format they might be in, whether they will be parsed even though they have bogus MIME types (which seems likely), etc.
 				new String[] { /*"profile"*/ },
 				null,
-				emptyStringArray));
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
 			"title",
-			new TagVerifier("title", new String[] { "id" }));
+			new TagVerifier("title", new String[] { "id" })
+		);
 		allowedTagsVerifiers.put("meta", new MetaTagVerifier());
 		allowedTagsVerifiers.put(
 			"body",
@@ -938,74 +1075,87 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				null,
 				new String[] { "background" },
 				new String[] { "onload", "onunload" },
-				emptyStringArray));
-		String[] group =
-			{ "div", "h1", "h2", "h3", "h4", "h5", "h6", "p", "caption" };
-		for (String x: group)
-			allowedTagsVerifiers.put(
+				emptyStringArray
+			)
+		);
+		String[] group = {
+			"div",
+			"h1",
+			"h2",
+			"h3",
+			"h4",
+			"h5",
+			"h6",
+			"p",
+			"caption",
+		};
+		for (String x : group) allowedTagsVerifiers.put(
+			x,
+			new CoreTagVerifier(
 				x,
-				new CoreTagVerifier(
-					x,
-					new String[] { "align" },
-					emptyStringArray,
-					emptyStringArray,
-					emptyStringArray,
-					emptyStringArray));
-		String[] group2 =
-			{
-				"span",
-				"address",
-				"em",
-				"strong",
-				"dfn",
-				"code",
-				"samp",
-				"kbd",
-				"var",
-				"cite",
-				"abbr",
-				"acronym",
-				"sub",
-				"sup",
-				"dt",
-				"dd",
-				"tt",
-				"i",
-				"b",
-				"big",
-				"small",
-				"strike",
-				"s",
-				"u",
-				"noframes",
-				"fieldset",
-// Delete <noscript> / </noscript>. So we can at least see the non-scripting code.
-//				"noscript",
-				"xmp",
-				"listing",
-				"plaintext",
-				"center",
-				"bdo",
-				"aside",
-				"header",
-				"nav",
-				"footer",
-				"article",
-				"section",
-				"hgroup",
-				"wbr",
-				"summary",
-				"details"};
-		for (String x: group2)
-			allowedTagsVerifiers.put(
+				new String[] { "align" },
+				emptyStringArray,
+				emptyStringArray,
+				emptyStringArray,
+				emptyStringArray
+			)
+		);
+		String[] group2 = {
+			"span",
+			"address",
+			"em",
+			"strong",
+			"dfn",
+			"code",
+			"samp",
+			"kbd",
+			"var",
+			"cite",
+			"abbr",
+			"acronym",
+			"sub",
+			"sup",
+			"dt",
+			"dd",
+			"tt",
+			"i",
+			"b",
+			"big",
+			"small",
+			"strike",
+			"s",
+			"u",
+			"noframes",
+			"fieldset",
+			// Delete <noscript> / </noscript>. So we can at least see the non-scripting code.
+			//				"noscript",
+			"xmp",
+			"listing",
+			"plaintext",
+			"center",
+			"bdo",
+			"aside",
+			"header",
+			"nav",
+			"footer",
+			"article",
+			"section",
+			"hgroup",
+			"wbr",
+			"summary",
+			"details",
+		};
+		for (String x : group2) allowedTagsVerifiers.put(
+			x,
+			new CoreTagVerifier(
 				x,
-				new CoreTagVerifier(
-					x,
-					emptyStringArray,
-					emptyStringArray,
-					emptyStringArray,
-					emptyStringArray,
-					emptyStringArray));
+				emptyStringArray,
+				emptyStringArray,
+				emptyStringArray,
+				emptyStringArray,
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
 			"blockquote",
 			new CoreTagVerifier(
@@ -1014,7 +1164,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				new String[] { "cite" },
 				emptyStringArray,
 				emptyStringArray,
-				emptyStringArray));
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
 			"q",
 			new CoreTagVerifier(
@@ -1023,7 +1175,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				new String[] { "cite" },
 				emptyStringArray,
 				emptyStringArray,
-				emptyStringArray));
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
 			"br",
 			new BaseCoreTagVerifier(
@@ -1031,7 +1185,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				new String[] { "clear" },
 				emptyStringArray,
 				emptyStringArray,
-				emptyStringArray));
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
 			"pre",
 			new CoreTagVerifier(
@@ -1040,7 +1196,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				emptyStringArray,
 				emptyStringArray,
 				emptyStringArray,
-				emptyStringArray));
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
 			"ins",
 			new CoreTagVerifier(
@@ -1049,7 +1207,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				new String[] { "cite" },
 				emptyStringArray,
 				emptyStringArray,
-				emptyStringArray));
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
 			"del",
 			new CoreTagVerifier(
@@ -1058,7 +1218,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				new String[] { "cite" },
 				emptyStringArray,
 				emptyStringArray,
-				emptyStringArray));
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
 			"ul",
 			new CoreTagVerifier(
@@ -1067,7 +1229,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				emptyStringArray,
 				emptyStringArray,
 				emptyStringArray,
-				emptyStringArray));
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
 			"ol",
 			new CoreTagVerifier(
@@ -1076,7 +1240,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				emptyStringArray,
 				emptyStringArray,
 				emptyStringArray,
-				emptyStringArray));
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
 			"li",
 			new CoreTagVerifier(
@@ -1085,7 +1251,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				emptyStringArray,
 				emptyStringArray,
 				emptyStringArray,
-				emptyStringArray));
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
 			"dl",
 			new CoreTagVerifier(
@@ -1094,7 +1262,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				emptyStringArray,
 				emptyStringArray,
 				emptyStringArray,
-				emptyStringArray));
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
 			"dir",
 			new CoreTagVerifier(
@@ -1103,7 +1273,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				emptyStringArray,
 				emptyStringArray,
 				emptyStringArray,
-				emptyStringArray));
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
 			"menu",
 			new CoreTagVerifier(
@@ -1112,7 +1284,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				emptyStringArray,
 				emptyStringArray,
 				emptyStringArray,
-				emptyStringArray));
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
 			"table",
 			new CoreTagVerifier(
@@ -1126,11 +1300,14 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					"cellspacing",
 					"cellpadding",
 					"align",
-					"bgcolor" },
+					"bgcolor",
+				},
 				emptyStringArray,
 				new String[] { "background" },
 				emptyStringArray,
-				emptyStringArray));
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
 			"thead",
 			new CoreTagVerifier(
@@ -1139,7 +1316,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				emptyStringArray,
 				emptyStringArray,
 				emptyStringArray,
-				emptyStringArray));
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
 			"tfoot",
 			new CoreTagVerifier(
@@ -1148,7 +1327,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				emptyStringArray,
 				emptyStringArray,
 				emptyStringArray,
-				emptyStringArray));
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
 			"tbody",
 			new CoreTagVerifier(
@@ -1157,7 +1338,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				emptyStringArray,
 				emptyStringArray,
 				emptyStringArray,
-				emptyStringArray));
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
 			"colgroup",
 			new CoreTagVerifier(
@@ -1168,11 +1351,14 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					"align",
 					"char",
 					"charoff",
-					"valign" },
+					"valign",
+				},
 				emptyStringArray,
 				emptyStringArray,
 				emptyStringArray,
-				emptyStringArray));
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
 			"col",
 			new CoreTagVerifier(
@@ -1183,11 +1369,14 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					"align",
 					"char",
 					"charoff",
-					"valign" },
+					"valign",
+				},
 				emptyStringArray,
 				emptyStringArray,
 				emptyStringArray,
-				emptyStringArray));
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
 			"tr",
 			new CoreTagVerifier(
@@ -1197,11 +1386,14 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					"char",
 					"charoff",
 					"valign",
-					"bgcolor" },
+					"bgcolor",
+				},
 				emptyStringArray,
 				emptyStringArray,
 				emptyStringArray,
-				emptyStringArray));
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
 			"th",
 			new CoreTagVerifier(
@@ -1220,11 +1412,14 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					"nowrap",
 					"bgcolor",
 					"width",
-					"height" },
+					"height",
+				},
 				emptyStringArray,
 				new String[] { "background" },
 				emptyStringArray,
-				emptyStringArray));
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
 			"td",
 			new CoreTagVerifier(
@@ -1243,11 +1438,14 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					"nowrap",
 					"bgcolor",
 					"width",
-					"height" },
+					"height",
+				},
 				emptyStringArray,
 				new String[] { "background" },
 				emptyStringArray,
-				emptyStringArray));
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
 			"a",
 			new LinkTagVerifier(
@@ -1258,10 +1456,13 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					"name",
 					"shape",
 					"coords",
-					"target" },
+					"target",
+				},
 				emptyStringArray,
 				emptyStringArray,
-				new String[] { "onfocus", "onblur" }));
+				new String[] { "onfocus", "onblur" }
+			)
+		);
 		allowedTagsVerifiers.put(
 			"link",
 			new LinkTagVerifier(
@@ -1269,13 +1470,17 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				new String[] { "media", "target" },
 				emptyStringArray,
 				emptyStringArray,
-				emptyStringArray));
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
 			"base",
 			new BaseHrefTagVerifier(
 				"base",
 				new String[] { "id", "target" },
-				new String[] { /* explicitly sanitized by class */ }));
+				new String[] { /* explicitly sanitized by class */ }
+			)
+		);
 		allowedTagsVerifiers.put(
 			"img",
 			new CoreTagVerifier(
@@ -1289,11 +1494,14 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					"align",
 					"border",
 					"hspace",
-					"vspace" },
+					"vspace",
+				},
 				new String[] { "longdesc", "usemap" },
 				new String[] { "src" },
 				emptyStringArray,
-				emptyStringArray));
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
 			"map",
 			new CoreTagVerifier(
@@ -1302,7 +1510,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				emptyStringArray,
 				emptyStringArray,
 				emptyStringArray,
-				emptyStringArray));
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
 			"area",
 			new CoreTagVerifier(
@@ -1314,11 +1524,14 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					"coords",
 					"nohref",
 					"alt",
-					"target" },
+					"target",
+				},
 				new String[] { "href" },
 				emptyStringArray,
 				new String[] { "onfocus", "onblur" },
-				emptyStringArray));
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
 			"audio", // currently just minimal support
 			new MediaTagVerifier(
@@ -1330,19 +1543,25 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				new String[] { // boolean attributes
 					"preload",
 					"controls",
-					"loop"}));
+					"loop",
+				}
+			)
+		);
 		allowedTagsVerifiers.put(
 			"video", // currently just minimal support
 			new MediaTagVerifier(
 				"video",
-				new String[] {"width", "height" },
+				new String[] { "width", "height" },
 				emptyStringArray, // uris
 				new String[] { "src", "poster" }, // inline uris
 				emptyStringArray,
 				new String[] { // boolean attributes
 					"preload",
 					"controls",
-					"loop"}));
+					"loop",
+				}
+			)
+		);
 		allowedTagsVerifiers.put(
 			"source", // currently just minimal support
 			new MediaTagVerifier(
@@ -1351,7 +1570,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				emptyStringArray, // uris
 				new String[] { "src" }, // inline uris
 				emptyStringArray,
-				emptyStringArray));
+				emptyStringArray
+			)
+		);
 		// TODO: param tag?
 		// http://www.w3.org/TR/html4/struct/objects.html#h-13.3.2
 		// applet tag PROHIBITED - we do not support applets
@@ -1363,7 +1584,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				new String[] { "size", "color", "face" },
 				emptyStringArray,
 				emptyStringArray,
-				emptyStringArray));
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
 			"basefont",
 			new BaseCoreTagVerifier(
@@ -1371,7 +1594,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				new String[] { "size", "color", "face" },
 				emptyStringArray,
 				emptyStringArray,
-				emptyStringArray));
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
 			"hr",
 			new CoreTagVerifier(
@@ -1380,7 +1605,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				emptyStringArray,
 				emptyStringArray,
 				emptyStringArray,
-				emptyStringArray));
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
 			"frameset",
 			new CoreTagVerifier(
@@ -1390,7 +1617,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				emptyStringArray,
 				new String[] { "onload", "onunload" },
 				emptyStringArray,
-				false));
+				false
+			)
+		);
 		allowedTagsVerifiers.put(
 			"frame",
 			new BaseCoreTagVerifier(
@@ -1401,10 +1630,13 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					"marginwidth",
 					"marginheight",
 					"noresize",
-					"scrolling" },
-				new String[]  { "longdesc" },
+					"scrolling",
+				},
+				new String[] { "longdesc" },
 				new String[] { "src" },
-				emptyStringArray));
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
 			"iframe",
 			new BaseCoreTagVerifier(
@@ -1417,20 +1649,24 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					"scrolling",
 					"align",
 					"height",
-					"width" },
-				new String[] { "longdesc"},
+					"width",
+				},
+				new String[] { "longdesc" },
 				new String[] { "src" },
-				emptyStringArray));
+				emptyStringArray
+			)
+		);
 
 		allowedTagsVerifiers.put(
 			"form",
 			new FormTagVerifier(
 				"form",
-				new String[] {
-					"name" }, // FIXME add a whitelist filter for accept
-					// All other attributes are handled by FormTagVerifier.
-				new String[] { },
-				new String[] { "onsubmit", "onreset" }));
+				new String[] { "name" }, // FIXME add a whitelist filter for accept
+				// All other attributes are handled by FormTagVerifier.
+				new String[] {},
+				new String[] { "onsubmit", "onreset" }
+			)
+		);
 		allowedTagsVerifiers.put(
 			"input",
 			new InputTagVerifier(
@@ -1449,10 +1685,13 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					"alt",
 					"ismap",
 					"accept",
-					"align" },
+					"align",
+				},
 				new String[] { "usemap" },
 				new String[] { "src" },
-				new String[] { "onfocus", "onblur", "onselect", "onchange" }));
+				new String[] { "onfocus", "onblur", "onselect", "onchange" }
+			)
+		);
 		allowedTagsVerifiers.put(
 			"button",
 			new CoreTagVerifier(
@@ -1463,11 +1702,14 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					"name",
 					"value",
 					"type",
-					"disabled" },
+					"disabled",
+				},
 				emptyStringArray,
 				emptyStringArray,
 				new String[] { "onfocus", "onblur" },
-				emptyStringArray));
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
 			"select",
 			new CoreTagVerifier(
@@ -1477,11 +1719,14 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					"size",
 					"multiple",
 					"disabled",
-					"tabindex" },
+					"tabindex",
+				},
 				emptyStringArray,
 				emptyStringArray,
 				new String[] { "onfocus", "onblur", "onchange" },
-				emptyStringArray));
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
 			"optgroup",
 			new CoreTagVerifier(
@@ -1490,7 +1735,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				emptyStringArray,
 				emptyStringArray,
 				emptyStringArray,
-				emptyStringArray));
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
 			"option",
 			new CoreTagVerifier(
@@ -1499,7 +1746,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				emptyStringArray,
 				emptyStringArray,
 				emptyStringArray,
-				emptyStringArray));
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
 			"textarea",
 			new CoreTagVerifier(
@@ -1511,11 +1760,14 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					"rows",
 					"cols",
 					"disabled",
-					"readonly" },
+					"readonly",
+				},
 				emptyStringArray,
 				emptyStringArray,
 				new String[] { "onfocus", "onblur", "onselect", "onchange" },
-				emptyStringArray));
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
 			"isindex",
 			new BaseCoreTagVerifier(
@@ -1523,7 +1775,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				new String[] { "prompt" },
 				emptyStringArray,
 				emptyStringArray,
-				emptyStringArray));
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
 			"label",
 			new CoreTagVerifier(
@@ -1532,7 +1786,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				emptyStringArray,
 				emptyStringArray,
 				new String[] { "onfocus", "onblur" },
-				emptyStringArray));
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
 			"legend",
 			new CoreTagVerifier(
@@ -1541,7 +1797,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				emptyStringArray,
 				emptyStringArray,
 				emptyStringArray,
-				emptyStringArray));
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put("script", new ScriptTagVerifier());
 		/* MathML 3.0 support for presentation markup, deprecated attributes
 		 * not included so don't try using them. xref not supported as it is
@@ -1646,92 +1904,113 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					"superscriptshift",
 					"symmetric",
 					"voffset",
-					"width" },
+					"width",
+				},
 				new String[] { "href" },
 				new String[] { "altimg" },
 				emptyStringArray,
-                emptyStringArray));
+				emptyStringArray
+			)
+		);
 		//MathML Presentation tags follow
-		String[] mathmlempty =
-			{
-				"mprescripts",
-				"none"};
-		for (String x: mathmlempty)
-			allowedTagsVerifiers.put(
+		String[] mathmlempty = { "mprescripts", "none" };
+		for (String x : mathmlempty) allowedTagsVerifiers.put(
+			x,
+			new CoreTagVerifier(
 				x,
-				new CoreTagVerifier(
-					x,
-					emptyStringArray,
-					emptyStringArray,
-					emptyStringArray,
-					emptyStringArray,
-					emptyStringArray));
-		String[] mathmlpresent =
-			{
-				"merror",
-				"mphantom",
-				"mroot",
-				"msqrt"};
-		for (String x: mathmlpresent)
-			allowedTagsVerifiers.put(
+				emptyStringArray,
+				emptyStringArray,
+				emptyStringArray,
+				emptyStringArray,
+				emptyStringArray
+			)
+		);
+		String[] mathmlpresent = { "merror", "mphantom", "mroot", "msqrt" };
+		for (String x : mathmlpresent) allowedTagsVerifiers.put(
+			x,
+			new CoreTagVerifier(
 				x,
-				new CoreTagVerifier(
-					x,
-					new String[] { "mathbackground", "mathcolor" },
-					new String[] { "href" },
-					emptyStringArray,
-					emptyStringArray,
-					emptyStringArray));
+				new String[] { "mathbackground", "mathcolor" },
+				new String[] { "href" },
+				emptyStringArray,
+				emptyStringArray,
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
 			"msub",
 			new CoreTagVerifier(
 				"msub",
-				new String[] { "mathbackground", "mathcolor", "subscriptshift" },
+				new String[] {
+					"mathbackground",
+					"mathcolor",
+					"subscriptshift",
+				},
 				new String[] { "href" },
 				emptyStringArray,
 				emptyStringArray,
-                    emptyStringArray));
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
 			"msup",
 			new CoreTagVerifier(
 				"msup",
-				new String[] { "mathbackground", "mathcolor", "superscriptshift" },
+				new String[] {
+					"mathbackground",
+					"mathcolor",
+					"superscriptshift",
+				},
 				new String[] { "href" },
 				emptyStringArray,
 				emptyStringArray,
-					emptyStringArray));
-		String[] mathmlscripts =
-			{
-				"msubsup",
-				"mmultiscripts"};
-		for (String x: mathmlscripts)
-			allowedTagsVerifiers.put(
+				emptyStringArray
+			)
+		);
+		String[] mathmlscripts = { "msubsup", "mmultiscripts" };
+		for (String x : mathmlscripts) allowedTagsVerifiers.put(
+			x,
+			new CoreTagVerifier(
 				x,
-				new CoreTagVerifier(
-					x,
-					new String[] { "mathbackground", "mathcolor", "subscriptshift", "superscriptshift" },
-					new String[] { "href" },
-					emptyStringArray,
-					emptyStringArray,
-					emptyStringArray));
+				new String[] {
+					"mathbackground",
+					"mathcolor",
+					"subscriptshift",
+					"superscriptshift",
+				},
+				new String[] { "href" },
+				emptyStringArray,
+				emptyStringArray,
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
-		    "msrow",
+			"msrow",
 			new CoreTagVerifier(
 				"msrow",
 				new String[] { "mathbackground", "mathcolor", "position" },
 				new String[] { "href" },
 				emptyStringArray,
 				emptyStringArray,
-					emptyStringArray));
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
 			"msgroup",
 			new CoreTagVerifier(
 				"msgroup",
-				new String[] { "mathbackground", "mathcolor", "position", "shift" },
+				new String[] {
+					"mathbackground",
+					"mathcolor",
+					"position",
+					"shift",
+				},
 				new String[] { "href" },
 				emptyStringArray,
 				emptyStringArray,
-					emptyStringArray));
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
 			"menclose",
 			new CoreTagVerifier(
@@ -1740,16 +2019,28 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				new String[] { "href" },
 				emptyStringArray,
 				emptyStringArray,
-					emptyStringArray));
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
 			"msline",
 			new CoreTagVerifier(
 				"msline",
-				new String[] { "leftoverhang", "length", "mathbackground", "mathcolor", "mslinethickness", "position", "rightoverhang" },
+				new String[] {
+					"leftoverhang",
+					"length",
+					"mathbackground",
+					"mathcolor",
+					"mslinethickness",
+					"position",
+					"rightoverhang",
+				},
 				new String[] { "href" },
 				emptyStringArray,
 				emptyStringArray,
-					emptyStringArray));
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
 			"maligngroup",
 			new CoreTagVerifier(
@@ -1758,7 +2049,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				new String[] { "href" },
 				emptyStringArray,
 				emptyStringArray,
-					emptyStringArray));
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
 			"malignmark",
 			new CoreTagVerifier(
@@ -1767,7 +2060,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				new String[] { "href" },
 				emptyStringArray,
 				emptyStringArray,
-					emptyStringArray));
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
 			"mrow",
 			new CoreTagVerifier(
@@ -1776,40 +2071,65 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				new String[] { "href" },
 				emptyStringArray,
 				emptyStringArray,
-					emptyStringArray));
-		String[] mathmlitem =
-			{
-				"mi",
-				"mn",
-				"mtext"};
-		for (String x: mathmlitem)
-			allowedTagsVerifiers.put(
-				x,
-				new CoreTagVerifier(
-					x,
-					new String[] { "dir", "mathbackground", "mathcolor", "mathsize", "mathvariant" },
-					new String[] { "href" },
-					emptyStringArray,
-					emptyStringArray,
-					emptyStringArray));
-	    allowedTagsVerifiers.put(
-			"ms",
+				emptyStringArray
+			)
+		);
+		String[] mathmlitem = { "mi", "mn", "mtext" };
+		for (String x : mathmlitem) allowedTagsVerifiers.put(
+			x,
 			new CoreTagVerifier(
-				"ms",
-				new String[] { "dir", "lquote", "mathbackground", "mathcolor", "mathsize", "mathvariant", "rquote" },
+				x,
+				new String[] {
+					"dir",
+					"mathbackground",
+					"mathcolor",
+					"mathsize",
+					"mathvariant",
+				},
 				new String[] { "href" },
 				emptyStringArray,
 				emptyStringArray,
-					emptyStringArray));
+				emptyStringArray
+			)
+		);
+		allowedTagsVerifiers.put(
+			"ms",
+			new CoreTagVerifier(
+				"ms",
+				new String[] {
+					"dir",
+					"lquote",
+					"mathbackground",
+					"mathcolor",
+					"mathsize",
+					"mathvariant",
+					"rquote",
+				},
+				new String[] { "href" },
+				emptyStringArray,
+				emptyStringArray,
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
 			"mpadded",
 			new CoreTagVerifier(
 				"mpadded",
-				new String[] { "depth", "height", "lspace", "mathbackground", "mathcolor", "voffset", "width" },
+				new String[] {
+					"depth",
+					"height",
+					"lspace",
+					"mathbackground",
+					"mathcolor",
+					"voffset",
+					"width",
+				},
 				new String[] { "href" },
 				emptyStringArray,
 				emptyStringArray,
-					emptyStringArray));
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
 			"mspace",
 			new CoreTagVerifier(
@@ -1830,99 +2150,177 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					"mathcolor",
 					"mathsize",
 					"mathvariant",
-					"width" },
+					"width",
+				},
 				new String[] { "href" },
 				emptyStringArray,
 				emptyStringArray,
-					emptyStringArray));
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
 			"mscarry",
 			new CoreTagVerifier(
 				"mscarry",
-				new String[] { "crossout", "location", "mathbackground", "mathcolor" },
+				new String[] {
+					"crossout",
+					"location",
+					"mathbackground",
+					"mathcolor",
+				},
 				new String[] { "href" },
 				emptyStringArray,
 				emptyStringArray,
-					emptyStringArray));
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
 			"mscarries",
 			new CoreTagVerifier(
 				"mscarries",
-				new String[] { "crossout", "location", "mathbackground", "mathcolor", "position", "scriptsizemultiplier" },
+				new String[] {
+					"crossout",
+					"location",
+					"mathbackground",
+					"mathcolor",
+					"position",
+					"scriptsizemultiplier",
+				},
 				new String[] { "href" },
 				emptyStringArray,
 				emptyStringArray,
-					emptyStringArray));
-		String[] mathmltr =
-			{
-				"mtr",
-				"mlabeledtr"};
-		for (String x: mathmltr)
-			allowedTagsVerifiers.put(
+				emptyStringArray
+			)
+		);
+		String[] mathmltr = { "mtr", "mlabeledtr" };
+		for (String x : mathmltr) allowedTagsVerifiers.put(
+			x,
+			new CoreTagVerifier(
 				x,
-				new CoreTagVerifier(
-					x,
-					new String[] { "columnalign", "groupalign", "mathbackground", "mathcolor", "rowalign" },
-					new String[] { "href" },
-					emptyStringArray,
-					emptyStringArray,
-					emptyStringArray));
+				new String[] {
+					"columnalign",
+					"groupalign",
+					"mathbackground",
+					"mathcolor",
+					"rowalign",
+				},
+				new String[] { "href" },
+				emptyStringArray,
+				emptyStringArray,
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
 			"mtd",
 			new CoreTagVerifier(
 				"mtd",
-				new String[] { "columnalign", "columnspan", "groupalign", "mathbackground", "mathcolor", "rowalign", "rowspan" },
+				new String[] {
+					"columnalign",
+					"columnspan",
+					"groupalign",
+					"mathbackground",
+					"mathcolor",
+					"rowalign",
+					"rowspan",
+				},
 				new String[] { "href" },
 				emptyStringArray,
 				emptyStringArray,
-					emptyStringArray));
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
 			"mfenced",
 			new CoreTagVerifier(
 				"mfenced",
-				new String[] { "close", "mathbackground", "mathcolor", "open", "separators" },
+				new String[] {
+					"close",
+					"mathbackground",
+					"mathcolor",
+					"open",
+					"separators",
+				},
 				new String[] { "href" },
 				emptyStringArray,
 				emptyStringArray,
-					emptyStringArray));
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
 			"mfrac",
 			new CoreTagVerifier(
 				"mfrac",
-				new String[] { "bevelled", "denomalign", "linethickness", "mathbackground", "mathcolor", "numalign" },
+				new String[] {
+					"bevelled",
+					"denomalign",
+					"linethickness",
+					"mathbackground",
+					"mathcolor",
+					"numalign",
+				},
 				new String[] { "href" },
 				emptyStringArray,
 				emptyStringArray,
-				emptyStringArray));
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
 			"mglyph",
 			new CoreTagVerifier(
 				"mglyph",
-				new String[] { "alt", "height", "mathbackground", "mathcolor", "valign", "width" },
+				new String[] {
+					"alt",
+					"height",
+					"mathbackground",
+					"mathcolor",
+					"valign",
+					"width",
+				},
 				new String[] { "href" },
 				new String[] { "src" },
 				emptyStringArray,
-				emptyStringArray));
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
 			"mstack",
 			new CoreTagVerifier(
 				"mstack",
-				new String[] { "align", "charalign", "charspacing", "mathbackground", "mathcolor", "stackalign" },
+				new String[] {
+					"align",
+					"charalign",
+					"charspacing",
+					"mathbackground",
+					"mathcolor",
+					"stackalign",
+				},
 				new String[] { "href" },
 				emptyStringArray,
 				emptyStringArray,
-				emptyStringArray));
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
 			"mlongdiv",
 			new CoreTagVerifier(
 				"mlongdiv",
-				new String[] { "align", "charalign", "charspacing", "longdivstyle", "mathbackground", "mathcolor", "stackalign" },
+				new String[] {
+					"align",
+					"charalign",
+					"charspacing",
+					"longdivstyle",
+					"mathbackground",
+					"mathcolor",
+					"stackalign",
+				},
 				new String[] { "href" },
 				emptyStringArray,
 				emptyStringArray,
-				emptyStringArray));
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
-		    "mtable",
+			"mtable",
 			new CoreTagVerifier(
 				"mtable",
 				new String[] {
@@ -1945,20 +2343,30 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					"rowlines",
 					"rowspacing",
 					"side",
-					"width" },
+					"width",
+				},
 				new String[] { "href" },
 				emptyStringArray,
 				emptyStringArray,
-				emptyStringArray));
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
 			"munder",
 			new CoreTagVerifier(
 				"munder",
-				new String[] { "accentunder", "align", "mathbackground", "mathcolor" },
+				new String[] {
+					"accentunder",
+					"align",
+					"mathbackground",
+					"mathcolor",
+				},
 				new String[] { "href" },
 				emptyStringArray,
 				emptyStringArray,
-				emptyStringArray));
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
 			"mo",
 			new CoreTagVerifier(
@@ -1991,29 +2399,47 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					"rspace",
 					"separator",
 					"stretchy",
-					"symmetric" },
+					"symmetric",
+				},
 				new String[] { "href" },
 				emptyStringArray,
 				emptyStringArray,
-				emptyStringArray));
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
 			"mover",
 			new CoreTagVerifier(
 				"mover",
-				new String[] { "accent", "align", "mathbackground", "mathcolor" },
+				new String[] {
+					"accent",
+					"align",
+					"mathbackground",
+					"mathcolor",
+				},
 				new String[] { "href" },
 				emptyStringArray,
 				emptyStringArray,
-				emptyStringArray));
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
 			"munderover",
 			new CoreTagVerifier(
 				"munderover",
-				new String[] { "accent", "accentunder", "align", "mathbackground", "mathcolor" },
+				new String[] {
+					"accent",
+					"accentunder",
+					"align",
+					"mathbackground",
+					"mathcolor",
+				},
 				new String[] { "href" },
 				emptyStringArray,
 				emptyStringArray,
-				emptyStringArray));
+				emptyStringArray
+			)
+		);
 		allowedTagsVerifiers.put(
 			"mstyle",
 			new CoreTagVerifier(
@@ -2100,11 +2526,14 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					"superscriptshift",
 					"symmetric",
 					"voffset",
-					"width" },
+					"width",
+				},
 				new String[] { "href" },
 				emptyStringArray,
 				emptyStringArray,
-				emptyStringArray));
+				emptyStringArray
+			)
+		);
 		// <maction> would go here though it seems a bit pointless and may require extra filtering
 		// MathML content tags would go here if anyone used them
 
@@ -2112,6 +2541,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	}
 
 	static class TagVerifier {
+
 		private final String tag;
 		//Attributes which need no sanitation
 		private final HashSet<String> allowedAttrs;
@@ -2125,33 +2555,41 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			this(tag, allowedAttrs, null, null, null);
 		}
 
-		TagVerifier(String tag, String[] allowedAttrs, String[] uriAttrs, String[] inlineURIAttrs, String[] booleanAttrs) {
+		TagVerifier(
+			String tag,
+			String[] allowedAttrs,
+			String[] uriAttrs,
+			String[] inlineURIAttrs,
+			String[] booleanAttrs
+		) {
 			this.tag = tag;
 			this.allowedAttrs = new HashSet<String>();
 			this.parsedAttrs = new HashSet<String>();
 			if (allowedAttrs != null) {
-				for (String allowedAttr: allowedAttrs)
-					this.allowedAttrs.add(allowedAttr);
+				for (String allowedAttr : allowedAttrs) this.allowedAttrs.add(
+						allowedAttr
+					);
 			}
 			this.uriAttrs = new HashSet<String>();
 			if (uriAttrs != null) {
-				for (String uriAttr: uriAttrs)
-					this.uriAttrs.add(uriAttr);
+				for (String uriAttr : uriAttrs) this.uriAttrs.add(uriAttr);
 			}
 			this.inlineURIAttrs = new HashSet<String>();
 			if (inlineURIAttrs != null) {
-				for (String inlineURIAttr: inlineURIAttrs)
-					this.inlineURIAttrs.add(inlineURIAttr);
+				for (String inlineURIAttr : inlineURIAttrs) this.inlineURIAttrs.add(
+						inlineURIAttr
+					);
 			}
 			this.booleanAttrs = new HashSet<String>();
 			if (booleanAttrs != null) {
-				for(int x = 0; x < booleanAttrs.length; x++) {
+				for (int x = 0; x < booleanAttrs.length; x++) {
 					this.booleanAttrs.add(booleanAttrs[x]);
 				}
 			}
 		}
 
-		ParsedTag sanitize(ParsedTag t, HTMLParseContext pc) throws DataFilterException {
+		ParsedTag sanitize(ParsedTag t, HTMLParseContext pc)
+			throws DataFilterException {
 			/** Map contains the attributes, in order. The key is always the name
 			 * of the attribute, but the value can be a raw Object if it has no value.
 			 * "src" is different to "src=". Arguably we should probably use null in
@@ -2159,82 +2597,88 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			Map<String, Object> h = new LinkedHashMap<String, Object>();
 			boolean equals = false;
 			String prevX = "";
-			if (t.unparsedAttrs != null)
-				for (String s: t.unparsedAttrs) {
-					if (equals) {
-						equals = false;
-						s = stripQuotes(s);
-						h.remove(prevX);
-						h.put(prevX, s);
-						prevX = "";
-					} else {
-						int idx = s.indexOf('=');
-						if (idx == s.length() - 1) {
-							equals = true;
-							if (idx == 0) {
-								// prevX already set
-							} else {
-								prevX = s.substring(0, s.length() - 1);
-								prevX = prevX.toLowerCase();
-							}
-						} else if (idx > -1) {
-							String x = s.substring(0, idx);
-							if (x.length() == 0)
-								x = prevX;
-							x = x.toLowerCase();
-							String y;
-							if (idx == s.length() - 1)
-								y = "";
-							else
-								y = s.substring(idx + 1, s.length());
-							y = stripQuotes(y);
-							h.remove(x);
-							h.put(x, y);
-							prevX = x;
+			if (t.unparsedAttrs != null) for (String s : t.unparsedAttrs) {
+				if (equals) {
+					equals = false;
+					s = stripQuotes(s);
+					h.remove(prevX);
+					h.put(prevX, s);
+					prevX = "";
+				} else {
+					int idx = s.indexOf('=');
+					if (idx == s.length() - 1) {
+						equals = true;
+						if (idx == 0) {
+							// prevX already set
 						} else {
-							h.remove(s);
-							h.put(s, new Object());
-							prevX = s;
+							prevX = s.substring(0, s.length() - 1);
+							prevX = prevX.toLowerCase();
 						}
+					} else if (idx > -1) {
+						String x = s.substring(0, idx);
+						if (x.length() == 0) x = prevX;
+						x = x.toLowerCase();
+						String y;
+						if (idx == s.length() - 1) y = "";
+						else y = s.substring(idx + 1, s.length());
+						y = stripQuotes(y);
+						h.remove(x);
+						h.put(x, y);
+						prevX = x;
+					} else {
+						h.remove(s);
+						h.put(s, new Object());
+						prevX = s;
 					}
 				}
+			}
 			h = sanitizeHash(h, t, pc);
 			if (h == null) return null;
 			//Remove any blank entries
-			for(Iterator<Entry<String, Object>> it = h.entrySet().iterator(); it.hasNext();){
+			for (
+				Iterator<Entry<String, Object>> it = h.entrySet().iterator();
+				it.hasNext();
+			) {
 				Map.Entry<String, Object> entry = it.next();
-				if(entry.getValue() == null || entry.getValue().equals("") && pc.isXHTML){
+				if (
+					entry.getValue() == null ||
+					(entry.getValue().equals("") && pc.isXHTML)
+				) {
 					it.remove();
 				}
 			}
 			//If the tag has no attributes, and this is not allowable, remove it
-            if(h.isEmpty() && expungeTagIfNoAttributes()) return null;
-			if (t.startSlash)
-				return new ParsedTag(t, (String[])null);
+			if (h.isEmpty() && expungeTagIfNoAttributes()) return null;
+			if (t.startSlash) return new ParsedTag(t, (String[]) null);
 			String[] outAttrs = new String[h.size()];
 			int i = 0;
 			for (Map.Entry<String, Object> entry : h.entrySet()) {
 				String x = entry.getKey();
 				Object o = entry.getValue();
 				String y;
-				if (o instanceof String)
-					y = (String) o;
-				else
-					y = null;
+				if (o instanceof String) y = (String) o;
+				else y = null;
 				StringBuilder out = new StringBuilder(x);
-				if (y != null)
-					out.append( "=\"" ).append( y ).append( '"' );
+				if (y != null) out.append("=\"").append(y).append('"');
 				outAttrs[i++] = out.toString();
 			}
 			return new ParsedTag(t, outAttrs);
 		}
 
-		Map<String, Object> sanitizeHash(Map<String, Object> h,
+		Map<String, Object> sanitizeHash(
+			Map<String, Object> h,
 			ParsedTag p,
-			HTMLParseContext pc) throws DataFilterException {
+			HTMLParseContext pc
+		) throws DataFilterException {
 			Map<String, Object> hn = new LinkedHashMap<String, Object>();
 			for (Map.Entry<String, Object> entry : h.entrySet()) {
-				if(logDEBUG) Logger.debug(this, "HTML Filter is sanitizing: "+entry.getKey()+" = "+entry.getValue());
+				if (logDEBUG) Logger.debug(
+					this,
+					"HTML Filter is sanitizing: " +
+					entry.getKey() +
+					" = " +
+					entry.getValue()
+				);
 				String x = entry.getKey();
 				Object o = entry.getValue();
 
@@ -2242,17 +2686,31 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 
 				//URI attributes require additional processing
 				if (inline || uriAttrs.contains(x)) {
-					if(!inline) {
-						if(logMINOR) Logger.minor(this, "Non-inline URI attribute: "+x);
+					if (!inline) {
+						if (logMINOR) Logger.minor(
+							this,
+							"Non-inline URI attribute: " + x
+						);
 					} else {
-						if(logMINOR) Logger.minor(this, "Inline URI attribute: "+x);
+						if (logMINOR) Logger.minor(
+							this,
+							"Inline URI attribute: " + x
+						);
 					}
 					// URI
 					if (o instanceof String) {
 						// Java's URL handling doesn't seem suitable
 						String uri = (String) o;
 						uri = HTMLDecoder.decode(uri);
-						uri = htmlSanitizeURI(uri, null, null, null, pc.cb, pc, inline);
+						uri = htmlSanitizeURI(
+							uri,
+							null,
+							null,
+							null,
+							pc.cb,
+							pc,
+							inline
+						);
 						if (uri == null) {
 							continue;
 						}
@@ -2260,7 +2718,15 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 						o = uri;
 					}
 					// FIXME: rewrite absolute URLs, handle ?date= etc
-					if(logDEBUG) Logger.debug(this, "HTML Filter is putting "+(inline?"inline":"")+" uri attribute: "+x+" =  "+o);
+					if (logDEBUG) Logger.debug(
+						this,
+						"HTML Filter is putting " +
+						(inline ? "inline" : "") +
+						" uri attribute: " +
+						x +
+						" =  " +
+						o
+					);
 					hn.put(x, o);
 					continue;
 				}
@@ -2269,21 +2735,24 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				 * sanitized output. This ensures the order of the attributes.
 				 * Subclasses will take care of parsing and replacing these values.
 				 * If they don't, we'll remove the placeholder later.*/
-				if(parsedAttrs.contains(x)) {
+				if (parsedAttrs.contains(x)) {
 					hn.put(x, null);
 					continue;
 				}
 
 				/*If the attribute is to be passed through without sanitation*/
-				if(allowedAttrs.contains(x)) {
+				if (allowedAttrs.contains(x)) {
 					hn.put(x, o);
 					continue;
 				}
 				/*Boolean attributes must either be empty or equal to their own name*/
-				if(booleanAttrs.contains(x)) {
+				if (booleanAttrs.contains(x)) {
 					String value = null;
-					if(o instanceof String ) value = (String) o;
-					if((value != null && value.equalsIgnoreCase(x)) || (!pc.isXHTML && o == null)) {
+					if (o instanceof String) value = (String) o;
+					if (
+						(value != null && value.equalsIgnoreCase(x)) ||
+						(!pc.isXHTML && o == null)
+					) {
 						hn.put(x, o);
 						continue;
 					}
@@ -2291,8 +2760,18 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				// lang, xml:lang and dir can go on anything
 				// lang or xml:lang = language [ "-" country [ "-" variant ] ]
 				// The variant can be just about anything; no way to test (avian)
-				if (x.equals("xml:lang") ||x.equals("lang") || (x.equals("dir") && (o instanceof String) && (((String)o).equalsIgnoreCase("ltr") || ((String)o).equalsIgnoreCase("rtl")))) {
-					if(logDEBUG) Logger.debug(this, "HTML Filter is putting attribute: "+x+" =  "+o);
+				if (
+					x.equals("xml:lang") ||
+					x.equals("lang") ||
+					(x.equals("dir") &&
+						(o instanceof String) &&
+						(((String) o).equalsIgnoreCase("ltr") ||
+							((String) o).equalsIgnoreCase("rtl")))
+				) {
+					if (logDEBUG) Logger.debug(
+						this,
+						"HTML Filter is putting attribute: " + x + " =  " + o
+					);
 					hn.put(x, o);
 				}
 			}
@@ -2313,10 +2792,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			for (int x = 0; x < n; x++) {
 				char cc = quotes.charAt(x);
 				if ((s.charAt(0) == cc) && (s.charAt(s.length() - 1) == cc)) {
-					if (s.length() > 2)
-						s = s.substring(1, s.length() - 1);
-					else
-						s = "";
+					if (s.length() > 2) s = s.substring(1, s.length() - 1);
+					else s = "";
 					break;
 				}
 			}
@@ -2326,11 +2803,13 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 
 	//	static String[] titleString = new String[] {"title"};
 
-	static abstract class ScriptStyleTagVerifier extends TagVerifier {
+	abstract static class ScriptStyleTagVerifier extends TagVerifier {
+
 		ScriptStyleTagVerifier(
 			String tag,
 			String[] allowedAttrs,
-			String[] uriAttrs) {
+			String[] uriAttrs
+		) {
 			super(tag, allowedAttrs, uriAttrs, null, null);
 		}
 
@@ -2341,9 +2820,11 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		abstract void processStyle(HTMLParseContext pc);
 
 		@Override
-		Map<String, Object> sanitizeHash(Map<String, Object> h,
+		Map<String, Object> sanitizeHash(
+			Map<String, Object> h,
 			ParsedTag p,
-			HTMLParseContext pc) throws DataFilterException {
+			HTMLParseContext pc
+		) throws DataFilterException {
 			Map<String, Object> hn = super.sanitizeHash(h, p, pc);
 			if (p.startSlash) {
 				return finish(h, hn, pc);
@@ -2352,21 +2833,25 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			}
 		}
 
-		Map<String, Object> finish(Map<String, Object> h, Map<String, Object> hn,
-			HTMLParseContext pc) throws DataFilterException {
-			if(logDEBUG) Logger.debug(this, "Finishing script/style");
+		Map<String, Object> finish(
+			Map<String, Object> h,
+			Map<String, Object> hn,
+			HTMLParseContext pc
+		) throws DataFilterException {
+			if (logDEBUG) Logger.debug(this, "Finishing script/style");
 			// Finishing
 			setStyle(false, pc);
 			pc.styleScriptRecurseCount--;
 			if (pc.styleScriptRecurseCount < 0) {
-				if (deleteErrors)
-					pc.writeAfterTag.append(
-						"<!-- " + l10n("tooManyNestedStyleOrScriptTags") + " -->");
-				else
-					throwFilterException(l10n("tooManyNestedStyleOrScriptTagsLong"));
+				if (deleteErrors) pc.writeAfterTag.append(
+					"<!-- " + l10n("tooManyNestedStyleOrScriptTags") + " -->"
+				);
+				else throwFilterException(
+					l10n("tooManyNestedStyleOrScriptTagsLong")
+				);
 				return null;
 			}
-			if(!pc.killStyle) {
+			if (!pc.killStyle) {
 				processStyle(pc);
 				pc.writeStyleScriptWithTag = true;
 			} else {
@@ -2378,22 +2863,26 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			return hn;
 		}
 
-		Map<String, Object> start(Map<String, Object> h, Map<String, Object> hn, HTMLParseContext pc)
-		        throws DataFilterException {
-			if(logDEBUG) Logger.debug(this, "Starting script/style");
+		Map<String, Object> start(
+			Map<String, Object> h,
+			Map<String, Object> hn,
+			HTMLParseContext pc
+		) throws DataFilterException {
+			if (logDEBUG) Logger.debug(this, "Starting script/style");
 			pc.styleScriptRecurseCount++;
 			if (pc.styleScriptRecurseCount > 1) {
-				if (deleteErrors)
-					pc.writeAfterTag.append("<!-- " + l10n("tooManyNestedStyleOrScriptTags") + " -->");
-				else
-					throwFilterException(l10n("tooManyNestedStyleOrScriptTagsLong"));
+				if (deleteErrors) pc.writeAfterTag.append(
+					"<!-- " + l10n("tooManyNestedStyleOrScriptTags") + " -->"
+				);
+				else throwFilterException(
+					l10n("tooManyNestedStyleOrScriptTagsLong")
+				);
 				return null;
 			}
 			setStyle(true, pc);
 			String type = getHashString(h, "type");
 			if (type != null) {
-				if (!type.equalsIgnoreCase("text/css") /* FIXME */
-					) {
+				if (!type.equalsIgnoreCase("text/css")/* FIXME */) {
 					pc.killStyle = true;
 					pc.expectingBadComment = true;
 					return null; // kill the tag
@@ -2405,11 +2894,13 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	}
 
 	static class StyleTagVerifier extends ScriptStyleTagVerifier {
+
 		StyleTagVerifier() {
 			super(
 				"style",
 				new String[] { "id", "media", "title", "xml:space" },
-				emptyStringArray);
+				emptyStringArray
+			);
 		}
 
 		@Override
@@ -2425,16 +2916,21 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		@Override
 		void processStyle(HTMLParseContext pc) {
 			try {
-				pc.currentStyleScriptChunk =
-					sanitizeStyle(pc.currentStyleScriptChunk, pc.cb, pc, false);
+				pc.currentStyleScriptChunk = sanitizeStyle(
+					pc.currentStyleScriptChunk,
+					pc.cb,
+					pc,
+					false
+				);
 			} catch (DataFilterException e) {
-				Logger.error(this, "Error parsing style: "+e, e);
+				Logger.error(this, "Error parsing style: " + e, e);
 				pc.currentStyleScriptChunk = "";
 			}
 		}
 	}
 
 	static class ScriptTagVerifier extends ScriptStyleTagVerifier {
+
 		ScriptTagVerifier() {
 			super(
 				"script",
@@ -2444,8 +2940,10 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					"type",
 					"language",
 					"defer",
-					"xml:space" },
-				new String[] { "src" });
+					"xml:space",
+				},
+				new String[] { "src" }
+			);
 			/*
 			 * FIXME: src not supported type ignored (we will need to check
 			 * this when if/when we support scripts charset ignored
@@ -2453,8 +2951,11 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		}
 
 		@Override
-		Map<String, Object> sanitizeHash(Map<String, Object> hn, ParsedTag p, HTMLParseContext pc)
-		        throws DataFilterException {
+		Map<String, Object> sanitizeHash(
+			Map<String, Object> hn,
+			ParsedTag p,
+			HTMLParseContext pc
+		) throws DataFilterException {
 			// Call parent so we swallow the scripting
 			super.sanitizeHash(hn, p, pc);
 			return null; // Lose the tags
@@ -2472,34 +2973,40 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 
 		@Override
 		void processStyle(HTMLParseContext pc) {
-			pc.currentStyleScriptChunk =
-				sanitizeScripting(pc.currentStyleScriptChunk);
+			pc.currentStyleScriptChunk = sanitizeScripting(
+				pc.currentStyleScriptChunk
+			);
 		}
 	}
 
 	static class BaseCoreTagVerifier extends TagVerifier {
+
 		private static final String[] locallyVerifiedAttrs = new String[] {
 			"id",
 			"class",
-			"style"
+			"style",
 		};
 
 		BaseCoreTagVerifier(
 			String tag,
 			String[] allowedAttrs,
 			String[] uriAttrs,
-			String[] inlineURIAttrs, String[] booleanAttrs) {
+			String[] inlineURIAttrs,
+			String[] booleanAttrs
+		) {
 			super(tag, allowedAttrs, uriAttrs, inlineURIAttrs, booleanAttrs);
 			allowedHTMLTags.add(tag);
-			for(String attr : locallyVerifiedAttrs) {
+			for (String attr : locallyVerifiedAttrs) {
 				this.parsedAttrs.add(attr);
 			}
 		}
 
 		@Override
-		Map<String, Object> sanitizeHash(Map<String, Object> h,
+		Map<String, Object> sanitizeHash(
+			Map<String, Object> h,
 			ParsedTag p,
-			HTMLParseContext pc) throws DataFilterException {
+			HTMLParseContext pc
+		) throws DataFilterException {
 			Map<String, Object> hn = super.sanitizeHash(h, p, pc);
 			// %i18n dealt with by TagVerifier
 			// %coreattrs
@@ -2517,10 +3024,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			String style = getHashString(h, "style");
 			if (style != null) {
 				style = sanitizeStyle(style, pc.cb, pc, true);
-				if (style != null)
-					style = escapeQuotes(style);
-				if (style != null)
-					hn.put("style", style);
+				if (style != null) style = escapeQuotes(style);
+				if (style != null) hn.put("style", style);
 			}
 			String title = getHashString(h, "title");
 			if (title != null) {
@@ -2532,33 +3037,33 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	}
 
 	static class CoreTagVerifier extends BaseCoreTagVerifier {
+
 		private final HashSet<String> eventAttrs;
-		private static final String[] stdEvents =
-			new String[] {
-				"onclick",
-				"ondblclick",
-				"onmousedown",
-				"onmouseup",
-				"onmouseover",
-				"onmousemove",
-				"onmouseout",
-				"onkeypress",
-				"onkeydown",
-				"onkeyup",
-				"onload",
-				"onfocus",
-				"onblur",
-				"oncontextmenu",
-				"onresize",
-				"onscroll",
-				"onunload",
-				"onmouseenter",
-				"onchange",
-				"onreset",
-				"onselect",
-				"onsubmit",
-				"onerror",
-			};
+		private static final String[] stdEvents = new String[] {
+			"onclick",
+			"ondblclick",
+			"onmousedown",
+			"onmouseup",
+			"onmouseover",
+			"onmousemove",
+			"onmouseout",
+			"onkeypress",
+			"onkeydown",
+			"onkeyup",
+			"onload",
+			"onfocus",
+			"onblur",
+			"oncontextmenu",
+			"onresize",
+			"onscroll",
+			"onunload",
+			"onmouseenter",
+			"onchange",
+			"onreset",
+			"onselect",
+			"onsubmit",
+			"onerror",
+		};
 
 		CoreTagVerifier(
 			String tag,
@@ -2566,8 +3071,17 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			String[] uriAttrs,
 			String[] inlineURIAttrs,
 			String[] eventAttrs,
-            String[] booleanAttrs) {
-			this(tag, allowedAttrs, uriAttrs, inlineURIAttrs, eventAttrs, booleanAttrs, true);
+			String[] booleanAttrs
+		) {
+			this(
+				tag,
+				allowedAttrs,
+				uriAttrs,
+				inlineURIAttrs,
+				eventAttrs,
+				booleanAttrs,
+				true
+			);
 		}
 
 		CoreTagVerifier(
@@ -2576,17 +3090,19 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			String[] uriAttrs,
 			String[] inlineURIAttrs,
 			String[] eventAttrs,
-			String[] booleanAttrs, boolean addStdEvents) {
+			String[] booleanAttrs,
+			boolean addStdEvents
+		) {
 			super(tag, allowedAttrs, uriAttrs, inlineURIAttrs, booleanAttrs);
 			this.eventAttrs = new HashSet<String>();
 			if (eventAttrs != null) {
-				for (String eventAttr: eventAttrs) {
+				for (String eventAttr : eventAttrs) {
 					this.eventAttrs.add(eventAttr);
 					this.parsedAttrs.add(eventAttr);
 				}
 			}
 			if (addStdEvents) {
-				for (String stdEvent: stdEvents) {
+				for (String stdEvent : stdEvents) {
 					this.eventAttrs.add(stdEvent);
 					this.parsedAttrs.add(stdEvent);
 				}
@@ -2594,17 +3110,18 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		}
 
 		@Override
-		Map<String, Object> sanitizeHash(Map<String, Object> h,
+		Map<String, Object> sanitizeHash(
+			Map<String, Object> h,
 			ParsedTag p,
-			HTMLParseContext pc) throws DataFilterException {
+			HTMLParseContext pc
+		) throws DataFilterException {
 			Map<String, Object> hn = super.sanitizeHash(h, p, pc);
 			// events (default and added)
-			for (String name: eventAttrs) {
+			for (String name : eventAttrs) {
 				String arg = getHashString(h, name);
 				if (arg != null) {
 					arg = sanitizeScripting(arg);
-					if (arg != null)
-						hn.put(name, arg);
+					if (arg != null) hn.put(name, arg);
 				}
 			}
 
@@ -2613,6 +3130,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	}
 
 	static class LinkTagVerifier extends CoreTagVerifier {
+
 		private static final String[] locallyVerifiedAttrs = new String[] {
 			"type",
 			"charset",
@@ -2620,7 +3138,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			"rev",
 			"media",
 			"hreflang",
-			"href"
+			"href",
 		};
 
 		LinkTagVerifier(
@@ -2628,17 +3146,27 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			String[] allowedAttrs,
 			String[] uriAttrs,
 			String[] inlineURIAttrs,
-			String[] eventAttrs) {
-			super(tag, allowedAttrs, uriAttrs, inlineURIAttrs, eventAttrs, null);
-			for(String attr : locallyVerifiedAttrs) {
+			String[] eventAttrs
+		) {
+			super(
+				tag,
+				allowedAttrs,
+				uriAttrs,
+				inlineURIAttrs,
+				eventAttrs,
+				null
+			);
+			for (String attr : locallyVerifiedAttrs) {
 				this.parsedAttrs.add(attr);
 			}
 		}
 
 		@Override
-		Map<String, Object> sanitizeHash(Map<String, Object> h,
+		Map<String, Object> sanitizeHash(
+			Map<String, Object> h,
 			ParsedTag p,
-			HTMLParseContext pc) throws DataFilterException {
+			HTMLParseContext pc
+		) throws DataFilterException {
 			Map<String, Object> hn = super.sanitizeHash(h, p, pc);
 			String hreflang = getHashString(h, "hreflang");
 			String charset = null;
@@ -2647,30 +3175,26 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			if (type != null) {
 				String[] typesplit = splitType(type);
 				type = typesplit[0];
-				if ((typesplit[1] != null) && (typesplit[1].length() > 0))
-					charset = typesplit[1];
-				if(logDEBUG)
-					Logger.debug(
-							this,
-							"Processing link tag, type="
-							+ type
-							+ ", charset="
-							+ charset);
+				if (
+					(typesplit[1] != null) && (typesplit[1].length() > 0)
+				) charset = typesplit[1];
+				if (logDEBUG) Logger.debug(
+					this,
+					"Processing link tag, type=" + type + ", charset=" + charset
+				);
 			}
 			String c = getHashString(h, "charset");
-			if (c != null)
-				charset = c;
-			if(charset != null) {
+			if (c != null) charset = c;
+			if (charset != null) {
 				try {
 					charset = URLDecoder.decode(charset, false);
 				} catch (URLEncodedFormatException e) {
 					charset = null;
 				}
 			}
-			if(charset != null && charset.indexOf('&') != -1)
-				charset = null;
-			if(charset != null && !Charset.isSupported(charset))
-				charset = null;
+			if (charset != null && charset.indexOf('&') != -1) charset = null;
+			if (charset != null && !Charset.isSupported(charset)) charset =
+				null;
 
 			// Is it a style sheet?
 			// Also, sanitise rel type
@@ -2682,31 +3206,34 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			boolean isStylesheet = false;
 			boolean isIcon = false;
 
-			if(rel != null) {
-
+			if (rel != null) {
 				rel = rel.toLowerCase();
 
 				StringTokenizer tok = new StringTokenizer(rel, " ");
-				int i=0;
+				int i = 0;
 				String prevToken = null;
 				StringBuffer sb = new StringBuffer(rel.length());
 				while (tok.hasMoreTokens()) {
 					String token = tok.nextToken();
-					if(token.equalsIgnoreCase("stylesheet")) {
-						if(token.equalsIgnoreCase("stylesheet")) {
+					if (token.equalsIgnoreCase("stylesheet")) {
+						if (token.equalsIgnoreCase("stylesheet")) {
 							isStylesheet = true;
-							if(!((i == 0 || i == 1 && prevToken != null && prevToken.equalsIgnoreCase("alternate"))))
-								return null;
-							if(tok.hasMoreTokens())
-								return null; // Disallow extra tokens after "stylesheet"
+							if (
+								!((i == 0 ||
+										(i == 1 &&
+											prevToken != null &&
+											prevToken.equalsIgnoreCase(
+												"alternate"
+											))))
+							) return null;
+							if (tok.hasMoreTokens()) return null; // Disallow extra tokens after "stylesheet"
 						}
 					} else if (token.equalsIgnoreCase("icon")) {
 						isIcon = true;
-					} else if(!isStandardLinkType(token)) continue;
+					} else if (!isStandardLinkType(token)) continue;
 
 					i++;
-					if(sb.length() == 0)
-						sb.append(token);
+					if (sb.length() == 0) sb.append(token);
 					else {
 						sb.append(' ');
 						sb.append(token);
@@ -2718,8 +3245,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			}
 
 			String rev = getHashString(h, "rev");
-			if(rev != null) {
-
+			if (rev != null) {
 				StringBuffer sb = new StringBuffer(rev.length());
 				rev = rev.toLowerCase();
 
@@ -2728,38 +3254,34 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 
 				while (tok.hasMoreTokens()) {
 					String token = tok.nextToken();
-					if(!isStandardLinkType(token)) continue;
-					if(sb.length() == 0)
-						sb.append(token);
+					if (!isStandardLinkType(token)) continue;
+					if (sb.length() == 0) sb.append(token);
 					else {
 						sb.append(' ');
 						sb.append(token);
 					}
 				}
 
-
 				parsedRev = sb.toString();
-
 			}
 
 			// Allow no rel or rev, even on <link>, as per HTML spec.
 
-			if(parsedRel.length() != 0)
-				hn.put("rel", parsedRel);
-			if(parsedRev.length() != 0)
-				hn.put("rev", parsedRev);
+			if (parsedRel.length() != 0) hn.put("rel", parsedRel);
+			if (parsedRev.length() != 0) hn.put("rev", parsedRev);
 
-			if(rel != null) {
-				if(rel.equals("stylesheet") || rel.equals("alternate stylesheet"))
-					isStylesheet = true;
+			if (rel != null) {
+				if (
+					rel.equals("stylesheet") ||
+					rel.equals("alternate stylesheet")
+				) isStylesheet = true;
 			} else {
 				// Not a stylesheet.
-				if(type != null && type.startsWith("text/css"))
-					return null; // Not a stylesheet, so can't take a stylesheet type.
+				if (type != null && type.startsWith("text/css")) return null; // Not a stylesheet, so can't take a stylesheet type.
 			}
 
-			if(isStylesheet) {
-				if(charset == null) {
+			if (isStylesheet) {
+				if (charset == null) {
 					// Browser will use the referring document's charset if there
 					// is no BOM and we don't specify one in HTTP.
 					// So we need to pass this information to the filter.
@@ -2770,31 +3292,44 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					maybecharset = pc.charset;
 				}
 				String media = getHashString(h, "media");
-				if(media != null)
-					media = CSSReadFilter.filterMediaList(media);
-				if(media != null)
-					hn.put("media", media);
-				if(type != null && !type.startsWith("text/css"))
-					return null; // Different style language e.g. XSL, not supported.
+				if (media != null) media = CSSReadFilter.filterMediaList(media);
+				if (media != null) hn.put("media", media);
+				if (type != null && !type.startsWith("text/css")) return null; // Different style language e.g. XSL, not supported.
 				type = "text/css";
 			}
 			String href = getHashString(h, "href");
 			if (href != null) {
 				href = HTMLDecoder.decode(href);
 				if (isIcon) {
-					href = htmlSanitizeURI(href, type, null, null, pc.cb, pc, false);
+					href = htmlSanitizeURI(
+						href,
+						type,
+						null,
+						null,
+						pc.cb,
+						pc,
+						false
+					);
 				} else {
-					href = htmlSanitizeURI(href, type, charset, maybecharset, pc.cb, pc, false);
+					href = htmlSanitizeURI(
+						href,
+						type,
+						charset,
+						maybecharset,
+						pc.cb,
+						pc,
+						false
+					);
 				}
 				if (href != null) {
 					href = HTMLEncoder.encode(href);
 					hn.put("href", href);
-					if (type != null)
-						hn.put("type", type);
-					if (charset != null)
-						hn.put("charset", charset);
-					if ((charset != null) && (hreflang != null))
-						hn.put("hreflang", hreflang);
+					if (type != null) hn.put("type", type);
+					if (charset != null) hn.put("charset", charset);
+					if ((charset != null) && (hreflang != null)) hn.put(
+						"hreflang",
+						hreflang
+					);
 				}
 			}
 			// FIXME: allow these if the charset and encoding are encoded into
@@ -2803,23 +3338,26 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		}
 
 		// Does not include stylesheet
-		private static final HashSet<String> standardRelTypes = new HashSet<String>();
+		private static final HashSet<String> standardRelTypes = new HashSet<
+			String
+		>();
+
 		static {
-			for(String s : new String[] {
-					"alternate",
-					"start",
-					"next",
-					"prev",
-					"contents",
-					"index",
-					"glossary",
-					"copyright",
-					"chapter",
-					"section",
-					"subsection",
-					"appendix",
-					"help",
-					"bookmark"
+			for (String s : new String[] {
+				"alternate",
+				"start",
+				"next",
+				"prev",
+				"contents",
+				"index",
+				"glossary",
+				"copyright",
+				"chapter",
+				"section",
+				"subsection",
+				"appendix",
+				"help",
+				"bookmark",
 			}) standardRelTypes.add(s);
 		}
 
@@ -2828,15 +3366,16 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		}
 	}
 
-    /** Verify media tags (audio and video). This needs its own
-     * verifier, because different from images, browsers use content
-     * sniffing to find out whether to display it as media
-     * content. Using text/plain as content type would allow
-     * exploiting this to run unfiltered files as media files. We fix
-     * this by encoding the mime type into the uri.*/
+	/** Verify media tags (audio and video). This needs its own
+	 * verifier, because different from images, browsers use content
+	 * sniffing to find out whether to display it as media
+	 * content. Using text/plain as content type would allow
+	 * exploiting this to run unfiltered files as media files. We fix
+	 * this by encoding the mime type into the uri.*/
 	static class MediaTagVerifier extends CoreTagVerifier {
+
 		private static final String[] locallyVerifiedAttrs = new String[] {
-			"src"
+			"src",
 		};
 
 		MediaTagVerifier(
@@ -2845,17 +3384,27 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			String[] uriAttrs,
 			String[] inlineURIAttrs,
 			String[] eventAttrs,
-			String[] booleanAttrs) {
-			super(tag, allowedAttrs, uriAttrs, inlineURIAttrs, eventAttrs, booleanAttrs);
-			for(String attr : locallyVerifiedAttrs) {
+			String[] booleanAttrs
+		) {
+			super(
+				tag,
+				allowedAttrs,
+				uriAttrs,
+				inlineURIAttrs,
+				eventAttrs,
+				booleanAttrs
+			);
+			for (String attr : locallyVerifiedAttrs) {
 				this.parsedAttrs.add(attr);
 			}
 		}
 
 		@Override
-		Map<String, Object> sanitizeHash(Map<String, Object> h,
+		Map<String, Object> sanitizeHash(
+			Map<String, Object> h,
 			ParsedTag p,
-			HTMLParseContext pc) throws DataFilterException {
+			HTMLParseContext pc
+		) throws DataFilterException {
 			Map<String, Object> hn = super.sanitizeHash(h, p, pc);
 
 			String src = getHashString(h, "src");
@@ -2866,38 +3415,42 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				if (src != null) {
 					src = HTMLEncoder.encode(src);
 					hn.put("src", src);
-                }
+				}
 			}
 			return hn;
 		}
 	}
 
 	// We do not allow forms to act anywhere else than on /
-	static class FormTagVerifier extends CoreTagVerifier{
+	static class FormTagVerifier extends CoreTagVerifier {
+
 		private static final String[] locallyVerifiedAttrs = new String[] {
 			"method",
 			"action",
 			"enctype",
-			"accept-charset"
+			"accept-charset",
 		};
 
 		FormTagVerifier(
 			String tag,
 			String[] allowedAttrs,
 			String[] uriAttrs,
-			String[] eventAttrs) {
+			String[] eventAttrs
+		) {
 			super(tag, allowedAttrs, uriAttrs, null, eventAttrs, null);
-			for(String attr : locallyVerifiedAttrs) {
+			for (String attr : locallyVerifiedAttrs) {
 				this.parsedAttrs.add(attr);
 			}
 		}
 
 		@Override
-		Map<String, Object> sanitizeHash(Map<String, Object> h,
+		Map<String, Object> sanitizeHash(
+			Map<String, Object> h,
 			ParsedTag p,
-			HTMLParseContext pc) throws DataFilterException {
+			HTMLParseContext pc
+		) throws DataFilterException {
 			Map<String, Object> hn = super.sanitizeHash(h, p, pc);
-			if(p.startSlash) {
+			if (p.startSlash) {
 				// Allow, but only with standard elements
 				return hn;
 			}
@@ -2907,10 +3460,13 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			try {
 				finalAction = pc.cb.processForm(method, action);
 			} catch (CommentException e) {
-	            pc.writeAfterTag.append("<!-- ").append(HTMLEncoder.encode(e.toString())).append(" -->");
+				pc.writeAfterTag
+					.append("<!-- ")
+					.append(HTMLEncoder.encode(e.toString()))
+					.append(" -->");
 				return null;
 			}
-			if(finalAction == null) return null;
+			if (finalAction == null) return null;
 			hn.put("method", method);
 			hn.put("action", finalAction);
 			// Force enctype and accept-charset to acceptable values.
@@ -2920,9 +3476,10 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		}
 	}
 
-	static class InputTagVerifier extends CoreTagVerifier{
+	static class InputTagVerifier extends CoreTagVerifier {
+
 		private final HashSet<String> allowedTypes;
-		private String[] types = new String[]{
+		private String[] types = new String[] {
 			"text",
 			"password",
 			"checkbox",
@@ -2932,7 +3489,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			// no ! file
 			"hidden",
 			"image",
-			"button"
+			"button",
 		};
 
 		InputTagVerifier(
@@ -2940,24 +3497,34 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			String[] allowedAttrs,
 			String[] uriAttrs,
 			String[] inlineURIAttrs,
-			String[] eventAttrs) {
-			super(tag, allowedAttrs, uriAttrs, inlineURIAttrs, eventAttrs, null);
+			String[] eventAttrs
+		) {
+			super(
+				tag,
+				allowedAttrs,
+				uriAttrs,
+				inlineURIAttrs,
+				eventAttrs,
+				null
+			);
 			this.allowedTypes = new HashSet<String>();
 			if (types != null) {
-				for (String type: types) {
+				for (String type : types) {
 					this.allowedTypes.add(type);
 				}
 			}
 		}
 
 		@Override
-		Map<String, Object> sanitizeHash(Map<String, Object> h,
+		Map<String, Object> sanitizeHash(
+			Map<String, Object> h,
 			ParsedTag p,
-			HTMLParseContext pc) throws DataFilterException {
+			HTMLParseContext pc
+		) throws DataFilterException {
 			Map<String, Object> hn = super.sanitizeHash(h, p, pc);
 
 			// We drop the whole <input> if type isn't allowed
-			if(!allowedTypes.contains(hn.get("type"))){
+			if (!allowedTypes.contains(hn.get("type"))) {
 				return null;
 			}
 
@@ -2966,25 +3533,29 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	}
 
 	static class MetaTagVerifier extends TagVerifier {
-		private static final String[] allowedContentTypes = ContentFilter.HTML_MIME_TYPES;
+
+		private static final String[] allowedContentTypes =
+			ContentFilter.HTML_MIME_TYPES;
 		private static final String[] locallyVerifiedAttrs = {
 			"http-equiv",
 			"name",
 			"content",
-            "charset"
+			"charset",
 		};
 
 		MetaTagVerifier() {
 			super("meta", new String[] { "id" });
-			for(String attr : locallyVerifiedAttrs) {
+			for (String attr : locallyVerifiedAttrs) {
 				this.parsedAttrs.add(attr);
-				}
 			}
+		}
 
 		@Override
-		Map<String, Object> sanitizeHash(Map<String, Object> h,
+		Map<String, Object> sanitizeHash(
+			Map<String, Object> h,
 			ParsedTag p,
-			HTMLParseContext pc) throws DataFilterException {
+			HTMLParseContext pc
+		) throws DataFilterException {
 			Map<String, Object> hn = super.sanitizeHash(h, p, pc);
 			/*
 			 * Several possibilities: a) meta http-equiv=X content=Y b) meta
@@ -2994,7 +3565,17 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			String name = getHashString(h, "name");
 			String content = getHashString(h, "content");
 			String scheme = getHashString(h, "scheme");
-			if(logMINOR) Logger.minor(this, "meta: name="+name+", content="+content+", http-equiv="+http_equiv+", scheme="+scheme);
+			if (logMINOR) Logger.minor(
+				this,
+				"meta: name=" +
+				name +
+				", content=" +
+				content +
+				", http-equiv=" +
+				http_equiv +
+				", scheme=" +
+				scheme
+			);
 			if (content != null) {
 				if ((name != null) && (http_equiv == null)) {
 					if (name.equalsIgnoreCase("Author")) {
@@ -3018,10 +3599,12 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 							return null;
 						}
 					} else if (
-						http_equiv.equalsIgnoreCase("Content-Script-Type")) {
+						http_equiv.equalsIgnoreCase("Content-Script-Type")
+					) {
 						// We don't support script at this time.
 					} else if (
-						http_equiv.equalsIgnoreCase("Content-Style-Type")) {
+						http_equiv.equalsIgnoreCase("Content-Style-Type")
+					) {
 						// FIXME: charsets
 						if (content.equalsIgnoreCase("text/css")) {
 							// FIXME: selectable style languages - only matters
@@ -3036,79 +3619,141 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 						}
 						// FIXME: add some more headers - Dublin Core?
 					} else if (http_equiv.equalsIgnoreCase("Content-Type")) {
-						if(logMINOR) Logger.minor(this, "Found http-equiv content-type="+content);
+						if (logMINOR) Logger.minor(
+							this,
+							"Found http-equiv content-type=" + content
+						);
 						String[] typesplit = splitType(content);
-						if(logDEBUG) {
-							for(int i=0;i<typesplit.length;i++)
-								Logger.debug(this, "["+i+"] = "+typesplit[i]);
+						if (logDEBUG) {
+							for (
+								int i = 0;
+								i < typesplit.length;
+								i++
+							) Logger.debug(
+								this,
+								"[" + i + "] = " + typesplit[i]
+							);
 						}
 						boolean detected = false;
-						for (String allowedContentType: allowedContentTypes) {
-							if (typesplit[0].equalsIgnoreCase(allowedContentType)) {
-								if((typesplit[1] == null) || (pc.charset != null && typesplit[1]
-								        .equalsIgnoreCase(pc.charset))) {
+						for (String allowedContentType : allowedContentTypes) {
+							if (
+								typesplit[0].equalsIgnoreCase(
+										allowedContentType
+									)
+							) {
+								if (
+									(typesplit[1] == null) ||
+									(pc.charset != null &&
+										typesplit[1].equalsIgnoreCase(
+												pc.charset
+											))
+								) {
 									hn.put("http-equiv", http_equiv);
-									hn.put("content", typesplit[0]
-									    + (typesplit[1] != null ? "; charset="
-										+ typesplit[1] : ""));
-								} else if(typesplit[1] != null && pc.charset != null && !typesplit[1].equalsIgnoreCase(pc.charset)) {
-									throwFilterException(l10n("wrongCharsetInMeta"));
-								} else if(typesplit[1] != null) {
-									if(pc.detectedCharset != null)
-										throwFilterException(l10n("multipleCharsetsInMeta"));
+									hn.put(
+										"content",
+										typesplit[0] +
+										(typesplit[1] != null
+												? "; charset=" + typesplit[1]
+												: "")
+									);
+								} else if (
+									typesplit[1] != null &&
+									pc.charset != null &&
+									!typesplit[1].equalsIgnoreCase(pc.charset)
+								) {
+									throwFilterException(
+										l10n("wrongCharsetInMeta")
+									);
+								} else if (typesplit[1] != null) {
+									if (
+										pc.detectedCharset != null
+									) throwFilterException(
+										l10n("multipleCharsetsInMeta")
+									);
 									pc.detectedCharset = typesplit[1].trim();
 								}
 								detected = true;
 								break;
 							}
 						}
-						if(!detected)
-							throwFilterException(l10n("invalidMetaType"));
+						if (!detected) throwFilterException(
+							l10n("invalidMetaType")
+						);
 					} else if (
-						http_equiv.equalsIgnoreCase("Content-Language")) {
-						if(content.matches("((?>[a-zA-Z0-9]*)(?>-[A-Za-z0-9]*)*(?>,\\s*)?)*") && (!content.trim().isEmpty())) {
+						http_equiv.equalsIgnoreCase("Content-Language")
+					) {
+						if (
+							content.matches(
+								"((?>[a-zA-Z0-9]*)(?>-[A-Za-z0-9]*)*(?>,\\s*)?)*"
+							) &&
+							(!content.trim().isEmpty())
+						) {
 							hn.put("http-equiv", "Content-Language");
 							hn.put("content", content);
 						}
 					} else if (http_equiv.equalsIgnoreCase("refresh")) {
 						int idx = content.indexOf(';');
-						if(idx == -1 && metaRefreshSamePageMinInterval >= 0) {
+						if (idx == -1 && metaRefreshSamePageMinInterval >= 0) {
 							try {
 								int seconds = Integer.parseInt(content);
-								if(seconds < 0) return null;
-								if(seconds < metaRefreshSamePageMinInterval)
-									seconds = metaRefreshSamePageMinInterval;
+								if (seconds < 0) return null;
+								if (
+									seconds < metaRefreshSamePageMinInterval
+								) seconds = metaRefreshSamePageMinInterval;
 								hn.put("http-equiv", "refresh");
 								hn.put("content", Integer.toString(seconds));
 							} catch (NumberFormatException e) {
 								// Delete.
-								pc.writeAfterTag.append("<!-- doesn't parse as number in meta refresh -->");
+								pc.writeAfterTag.append(
+									"<!-- doesn't parse as number in meta refresh -->"
+								);
 								return null;
 							}
-						} else if(metaRefreshRedirectMinInterval >= 0) {
+						} else if (metaRefreshRedirectMinInterval >= 0) {
 							int seconds;
 							String before = content.substring(0, idx);
-							String after = content.substring(idx+1).trim();
+							String after = content.substring(idx + 1).trim();
 							try {
 								seconds = Integer.parseInt(before);
-								if(seconds < 0) return null;
-								if(seconds < metaRefreshRedirectMinInterval) seconds = metaRefreshRedirectMinInterval;
-								if(!after.toLowerCase().startsWith("url=")) {
-									pc.writeAfterTag.append("<!-- no url but doesn't parse as number in meta refresh -->");
+								if (seconds < 0) return null;
+								if (
+									seconds < metaRefreshRedirectMinInterval
+								) seconds = metaRefreshRedirectMinInterval;
+								if (!after.toLowerCase().startsWith("url=")) {
+									pc.writeAfterTag.append(
+										"<!-- no url but doesn't parse as number in meta refresh -->"
+									);
 									return null;
 								}
 								after = after.substring("url=".length()).trim();
 								try {
-									String url = sanitizeURI(after, null, null, null, pc.cb, false);
+									String url = sanitizeURI(
+										after,
+										null,
+										null,
+										null,
+										pc.cb,
+										false
+									);
 									hn.put("http-equiv", "refresh");
-									hn.put("content", ""+seconds+"; url="+HTMLEncoder.encode(url));
+									hn.put(
+										"content",
+										"" +
+										seconds +
+										"; url=" +
+										HTMLEncoder.encode(url)
+									);
 								} catch (CommentException e) {
-									pc.writeAfterTag.append("<!-- "+e.getMessage()+"-->");
+									pc.writeAfterTag.append(
+										"<!-- " + e.getMessage() + "-->"
+									);
 									// Delete
 									return null;
 								}
 							} catch (NumberFormatException e) {
-								pc.writeAfterTag.append("<!-- doesn't parse as number in meta refresh possibly with url -->");
+								pc.writeAfterTag.append(
+									"<!-- doesn't parse as number in meta refresh possibly with url -->"
+								);
 								// Delete.
 								return null;
 							}
@@ -3120,7 +3765,10 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			/* try HTML5 meta charset declaration. */
 			String charset = getHashString(h, "charset");
 			if (charset != null) {
-				if ((pc.detectedCharset != null) && !charset.equalsIgnoreCase(pc.detectedCharset)) {
+				if (
+					(pc.detectedCharset != null) &&
+					!charset.equalsIgnoreCase(pc.detectedCharset)
+				) {
 					throwFilterException(l10n("multipleCharsetsInMeta"));
 				}
 				pc.detectedCharset = charset;
@@ -3137,118 +3785,173 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	}
 
 	static class DocTypeTagVerifier extends TagVerifier {
+
 		DocTypeTagVerifier(String tag) {
 			super(tag, null);
 		}
 
-		private static final Map<String, Object> DTDs = new HashMap<String, Object>();
+		private static final Map<String, Object> DTDs = new HashMap<
+			String,
+			Object
+		>();
 
 		static {
 			DTDs.put(
 				"-//W3C//DTD XHTML 1.0 Strict//EN",
-				"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd");
+				"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"
+			);
 			DTDs.put(
 				"-//W3C//DTD XHTML 1.0 Transitional//EN",
-				"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd");
+				"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"
+			);
 			DTDs.put(
 				"-//W3C//DTD XHTML 1.0 Frameset//EN",
-				"http://www.w3.org/TR/xhtml1/DTD/xhtml1-frameset.dtd");
+				"http://www.w3.org/TR/xhtml1/DTD/xhtml1-frameset.dtd"
+			);
 			DTDs.put(
 				"-//W3C//DTD XHTML 1.1//EN",
-				"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd");
+				"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd"
+			);
 			DTDs.put(
 				"-//W3C//DTD HTML 4.01//EN",
-				"http://www.w3.org/TR/html4/strict.dtd");
+				"http://www.w3.org/TR/html4/strict.dtd"
+			);
 			DTDs.put(
 				"-//W3C//DTD HTML 4.01 Transitional//EN",
-				"http://www.w3.org/TR/html4/loose.dtd");
+				"http://www.w3.org/TR/html4/loose.dtd"
+			);
 			DTDs.put(
 				"-//W3C//DTD HTML 4.01 Frameset//EN",
-				"http://www.w3.org/TR/html4/frameset.dtd");
+				"http://www.w3.org/TR/html4/frameset.dtd"
+			);
 			DTDs.put("-//W3C//DTD HTML 3.2 Final//EN", new Object());
 		}
 
 		@Override
 		ParsedTag sanitize(ParsedTag t, HTMLParseContext pc) {
 			// HTML5 is just <!doctype html>
-			if(t.unparsedAttrs.length == 1) {
-				if (!t.unparsedAttrs[0].equalsIgnoreCase("html"))
-					return null;
+			if (t.unparsedAttrs.length == 1) {
+				if (!t.unparsedAttrs[0].equalsIgnoreCase("html")) return null;
 				return t;
 			}
-			if (!((t.unparsedAttrs.length == 3) || (t.unparsedAttrs.length == 4)))
-				return null;
-			if (!t.unparsedAttrs[0].equalsIgnoreCase("html"))
-				return null;
-			if(t.unparsedAttrs[1].equalsIgnoreCase("system") && t.unparsedAttrs.length == 3) {
+			if (
+				!((t.unparsedAttrs.length == 3) ||
+					(t.unparsedAttrs.length == 4))
+			) return null;
+			if (!t.unparsedAttrs[0].equalsIgnoreCase("html")) return null;
+			if (
+				t.unparsedAttrs[1].equalsIgnoreCase("system") &&
+				t.unparsedAttrs.length == 3
+			) {
 				// HTML5 allows <!DOCTYPE html SYSTEM "about:legacy-compat"> (either kind of quotes)
 				String s = stripQuotes(t.unparsedAttrs[2]);
-				if(s.equals("about:legacy-compat") && t.unparsedAttrs.length == 3) {
+				if (
+					s.equals("about:legacy-compat") &&
+					t.unparsedAttrs.length == 3
+				) {
 					return t;
 				} else return null;
 			}
-			if (!t.unparsedAttrs[1].equalsIgnoreCase("public"))
-				return null;
+			if (!t.unparsedAttrs[1].equalsIgnoreCase("public")) return null;
 			String s = stripQuotes(t.unparsedAttrs[2]);
-			if (!DTDs.containsKey(s))
-				return null;
+			if (!DTDs.containsKey(s)) return null;
 			if (t.unparsedAttrs.length == 4) {
 				String ss = stripQuotes(t.unparsedAttrs[3]);
 				String spec = getHashString(DTDs, s);
-				if ((spec != null) && !spec.equals(ss))
-					return null;
+				if ((spec != null) && !spec.equals(ss)) return null;
 			}
 			return t;
 		}
 	}
 
 	static class XmlTagVerifier extends TagVerifier {
+
 		XmlTagVerifier() {
 			super("?xml", null);
 		}
 
 		@Override
-		ParsedTag sanitize(ParsedTag t, HTMLParseContext pc) throws DataFilterException {
+		ParsedTag sanitize(ParsedTag t, HTMLParseContext pc)
+			throws DataFilterException {
 			if (t.unparsedAttrs.length != 2 && t.unparsedAttrs.length != 3) {
-				if (logMINOR) Logger.minor(this, "Deleting xml declaration, invalid length");
+				if (logMINOR) Logger.minor(
+					this,
+					"Deleting xml declaration, invalid length"
+				);
 				return null;
 			}
-			if (t.unparsedAttrs.length == 3 && !t.unparsedAttrs[2].equals("?")) {
-				if (logMINOR) Logger.minor(this, "Deleting xml declaration, invalid ending (length 2)");
+			if (
+				t.unparsedAttrs.length == 3 && !t.unparsedAttrs[2].equals("?")
+			) {
+				if (logMINOR) Logger.minor(
+					this,
+					"Deleting xml declaration, invalid ending (length 2)"
+				);
 				return null;
 			}
-			if (t.unparsedAttrs.length == 2 && !t.unparsedAttrs[1].endsWith("?")) {
-				if (logMINOR) Logger.minor(this, "Deleting xml declaration, invalid ending (length 3)");
+			if (
+				t.unparsedAttrs.length == 2 && !t.unparsedAttrs[1].endsWith("?")
+			) {
+				if (logMINOR) Logger.minor(
+					this,
+					"Deleting xml declaration, invalid ending (length 3)"
+				);
 				return null;
 			}
-			if (!(t.unparsedAttrs[0].equals("version=\"1.0\"") || t.unparsedAttrs[0].equals("version='1.0'"))) {
-				if (logMINOR) Logger.minor(this, "Deleting xml declaration, invalid version");
+			if (
+				!(t.unparsedAttrs[0].equals("version=\"1.0\"") ||
+					t.unparsedAttrs[0].equals("version='1.0'"))
+			) {
+				if (logMINOR) Logger.minor(
+					this,
+					"Deleting xml declaration, invalid version"
+				);
 				return null;
 			}
 			String encodingAttr = t.unparsedAttrs[1];
-			if(encodingAttr.startsWith("encoding=\"")) {
-				if(!encodingAttr.endsWith("\"")) {
-					if (logMINOR) Logger.minor(this, "Deleting xml declaration, invalid encoding");
+			if (encodingAttr.startsWith("encoding=\"")) {
+				if (!encodingAttr.endsWith("\"")) {
+					if (logMINOR) Logger.minor(
+						this,
+						"Deleting xml declaration, invalid encoding"
+					);
 					return null;
 				}
-			} else if(encodingAttr.startsWith("encoding='")) {
-				if(!encodingAttr.endsWith("'")) {
-					if (logMINOR) Logger.minor(this, "Deleting xml declaration, invalid encoding");
+			} else if (encodingAttr.startsWith("encoding='")) {
+				if (!encodingAttr.endsWith("'")) {
+					if (logMINOR) Logger.minor(
+						this,
+						"Deleting xml declaration, invalid encoding"
+					);
 					return null;
 				}
 			} else {
-				if (logMINOR) Logger.minor(this, "Deleting xml declaration, invalid encoding");
+				if (logMINOR) Logger.minor(
+					this,
+					"Deleting xml declaration, invalid encoding"
+				);
 				return null;
 			}
 
-			String charset = encodingAttr.substring("encoding='".length(), encodingAttr.length()-1);
+			String charset = encodingAttr.substring(
+				"encoding='".length(),
+				encodingAttr.length() - 1
+			);
 
 			if (!charset.equalsIgnoreCase(pc.charset)) {
-				if(pc.charset != null && !charset.equalsIgnoreCase(pc.charset)) {
-					if (logMINOR) Logger.minor(this, "Deleting xml declaration (invalid charset "
-							+ charset + " should be "+pc.charset + ")");
+				if (
+					pc.charset != null && !charset.equalsIgnoreCase(pc.charset)
+				) {
+					if (logMINOR) Logger.minor(
+						this,
+						"Deleting xml declaration (invalid charset " +
+						charset +
+						" should be " +
+						pc.charset +
+						")"
+					);
 					return null;
-				} else if(pc.detectedCharset != null) {
+				} else if (pc.detectedCharset != null) {
 					throwFilterException(l10n("multipleCharsetsInMeta"));
 				} else {
 					pc.detectedCharset = charset;
@@ -3259,21 +3962,29 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	}
 
 	static class HtmlTagVerifier extends TagVerifier {
-		private static final String[] locallyVerifiedAttrs = new String[] { "xmlns" };
+
+		private static final String[] locallyVerifiedAttrs = new String[] {
+			"xmlns",
+		};
+
 		HtmlTagVerifier() {
 			super("html", new String[] { "id", "version" });
-			for(String attr : locallyVerifiedAttrs) {
+			for (String attr : locallyVerifiedAttrs) {
 				parsedAttrs.add(attr);
 			}
 		}
 
 		@Override
-		Map<String, Object> sanitizeHash(Map<String, Object> h,
+		Map<String, Object> sanitizeHash(
+			Map<String, Object> h,
 			ParsedTag p,
-			HTMLParseContext pc) throws DataFilterException {
+			HTMLParseContext pc
+		) throws DataFilterException {
 			Map<String, Object> hn = super.sanitizeHash(h, p, pc);
 			String xmlns = getHashString(h, "xmlns");
-			if ((xmlns != null) && xmlns.equals("http://www.w3.org/1999/xhtml")) {
+			if (
+				(xmlns != null) && xmlns.equals("http://www.w3.org/1999/xhtml")
+			) {
 				hn.put("xmlns", xmlns);
 				pc.setisXHTML(true);
 			}
@@ -3282,27 +3993,35 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	}
 
 	static class BaseHrefTagVerifier extends TagVerifier {
-		private static final String[] locallyVerifiedAttrs = new String[] {
-			"href"};
 
-		BaseHrefTagVerifier(String tag, String[] allowedAttrs, String[] uriAttrs) {
+		private static final String[] locallyVerifiedAttrs = new String[] {
+			"href",
+		};
+
+		BaseHrefTagVerifier(
+			String tag,
+			String[] allowedAttrs,
+			String[] uriAttrs
+		) {
 			super(tag, allowedAttrs, uriAttrs, null, emptyStringArray);
-			for(String attr : locallyVerifiedAttrs) {
+			for (String attr : locallyVerifiedAttrs) {
 				this.parsedAttrs.add(attr);
 			}
 		}
 
 		@Override
-		Map<String, Object> sanitizeHash(Map<String, Object> h,
-				ParsedTag p,
-				HTMLParseContext pc) throws DataFilterException {
+		Map<String, Object> sanitizeHash(
+			Map<String, Object> h,
+			ParsedTag p,
+			HTMLParseContext pc
+		) throws DataFilterException {
 			Map<String, Object> hn = super.sanitizeHash(h, p, pc);
 			String baseHref = getHashString(h, "href");
-			if(baseHref != null) {
+			if (baseHref != null) {
 				// Decode and encode for the same reason we do in sanitizeHash().
 				baseHref = HTMLDecoder.decode(baseHref);
 				String ref = pc.cb.onBaseHref(baseHref);
-				if(ref != null) {
+				if (ref != null) {
 					hn.put("href", HTMLEncoder.encode(ref));
 					return hn;
 				}
@@ -3310,39 +4029,47 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			pc.writeAfterTag.append("<!-- deleted invalid base href -->");
 			return null;
 		}
-
 	}
 
-	static String sanitizeStyle(String style, FilterCallback cb, HTMLParseContext hpc, boolean isInline) throws DataFilterException {
-		if(style == null) return null;
-		if(hpc.onlyDetectingCharset) return null;
+	static String sanitizeStyle(
+		String style,
+		FilterCallback cb,
+		HTMLParseContext hpc,
+		boolean isInline
+	) throws DataFilterException {
+		if (style == null) return null;
+		if (hpc.onlyDetectingCharset) return null;
 		Reader r = new StringReader(style);
 		Writer w = new StringWriter();
 		style = style.trim();
-		if(logMINOR) Logger.minor(HTMLFilter.class, "Sanitizing style: " + style);
-		CSSParser pc = new CSSParser(r, w, false, cb, hpc.charset, false, isInline);
+		if (logMINOR) Logger.minor(
+			HTMLFilter.class,
+			"Sanitizing style: " + style
+		);
+		CSSParser pc = new CSSParser(
+			r,
+			w,
+			false,
+			cb,
+			hpc.charset,
+			false,
+			isInline
+		);
 		try {
 			pc.parse();
 		} catch (IOException e) {
-			Logger.error(
-				HTMLFilter.class,
-				"IOException parsing inline CSS!");
+			Logger.error(HTMLFilter.class, "IOException parsing inline CSS!");
 		} catch (Error e) {
 			if (e.getMessage().equals("Error: could not match input")) {
 				// this sucks, it should be a proper exception
-				Logger.normal(
-					HTMLFilter.class,
-					"CSS Parse Error!",
-					e);
-				return "/* "+l10n("couldNotParseStyle")+" */";
-			} else
-				throw e;
+				Logger.normal(HTMLFilter.class, "CSS Parse Error!", e);
+				return "/* " + l10n("couldNotParseStyle") + " */";
+			} else throw e;
 		}
 		String s = w.toString();
-		if ((s == null) || (s.length() == 0))
-			return null;
+		if ((s == null) || (s.length() == 0)) return null;
 		//		Core.logger.log(SaferFilter.class, "Style now: " + s, LogLevel.DEBUG);
-		if(logMINOR) Logger.minor(HTMLFilter.class, "Style finally: " + s);
+		if (logMINOR) Logger.minor(HTMLFilter.class, "Style finally: " + s);
 		return s;
 	}
 
@@ -3364,7 +4091,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		return null;
 	}
 
-	static String sanitizeURI(String uri, FilterCallback cb, boolean inline) throws CommentException {
+	static String sanitizeURI(String uri, FilterCallback cb, boolean inline)
+		throws CommentException {
 		return sanitizeURI(uri, null, null, null, cb, inline);
 	}
 
@@ -3386,8 +4114,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			if (x != -1) {
 				name = param.substring(0, x).trim();
 				value = param.substring(x + 1).trim();
-				if (name.equals("charset"))
-					charset = value;
+				if (name.equals("charset")) charset = value;
 			}
 		}
 		return new String[] { type, charset };
@@ -3396,6 +4123,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	// A simple string splitter
 	// StringTokenizer doesn't work well for our purpose. (avian)
 	static class StringFieldParser {
+
 		private String str;
 		private int maxPos, curPos;
 		private char c;
@@ -3418,11 +4146,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		public String nextField() {
 			int start, end;
 
-			if (curPos > maxPos)
-				return null;
+			if (curPos > maxPos) return null;
 			start = curPos;
-			while ((curPos < maxPos) && (str.charAt(curPos) != c))
-				curPos++;
+			while ((curPos < maxPos) && (str.charAt(curPos) != c)) curPos++;
 			end = curPos;
 			curPos++;
 			return str.substring(start, end);
@@ -3430,17 +4156,28 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	}
 
 	static String htmlSanitizeURI(
-			String suri,
-			String overrideType,
-			String overrideCharset,
-			String maybeCharset,
-			FilterCallback cb,
-			HTMLParseContext pc,
-			boolean inline) {
+		String suri,
+		String overrideType,
+		String overrideCharset,
+		String maybeCharset,
+		FilterCallback cb,
+		HTMLParseContext pc,
+		boolean inline
+	) {
 		try {
-			return sanitizeURI(suri, overrideType, overrideCharset, maybeCharset, cb, inline);
+			return sanitizeURI(
+				suri,
+				overrideType,
+				overrideCharset,
+				maybeCharset,
+				cb,
+				inline
+			);
 		} catch (CommentException e) {
-            pc.writeAfterTag.append("<!-- ").append(HTMLEncoder.encode(e.toString())).append(" -->");
+			pc.writeAfterTag
+				.append("<!-- ")
+				.append(HTMLEncoder.encode(e.toString()))
+				.append(" -->");
 			return null;
 		}
 	}
@@ -3450,44 +4187,54 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		String overrideType,
 		String overrideCharset,
 		String maybeCharset,
-		FilterCallback cb, boolean inline) throws CommentException {
-		if(logMINOR)
-			Logger.minor(HTMLFilter.class, "Sanitizing URI: "+suri+" ( override type "+overrideType +" override charset "+overrideCharset+" ) inline="+inline, new Exception("debug"));
+		FilterCallback cb,
+		boolean inline
+	) throws CommentException {
+		if (logMINOR) Logger.minor(
+			HTMLFilter.class,
+			"Sanitizing URI: " +
+			suri +
+			" ( override type " +
+			overrideType +
+			" override charset " +
+			overrideCharset +
+			" ) inline=" +
+			inline,
+			new Exception("debug")
+		);
 		boolean addMaybe = false;
-		if((overrideCharset != null) && (overrideCharset.length() > 0))
-			overrideType += "; charset="+overrideCharset;
-		else if(maybeCharset != null)
-			addMaybe = true;
+		if (
+			(overrideCharset != null) && (overrideCharset.length() > 0)
+		) overrideType += "; charset=" + overrideCharset;
+		else if (maybeCharset != null) addMaybe = true;
 		String retval = cb.processURI(suri, overrideType, false, inline);
-		if(addMaybe) {
-			if(retval.indexOf('?') != -1)
-				retval += "&maybecharset="+maybeCharset;
-			else
-				retval += "?maybecharset="+maybeCharset;
+		if (addMaybe) {
+			if (retval.indexOf('?') != -1) retval +=
+			"&maybecharset=" + maybeCharset;
+			else retval += "?maybecharset=" + maybeCharset;
 		}
 		return retval;
 	}
 
 	static String getHashString(Map<String, Object> h, String key) {
 		Object o = h.get(key);
-		if (o == null)
-			return null;
-		if (o instanceof String)
-			return (String) o;
-		else
-			return null;
+		if (o == null) return null;
+		if (o instanceof String) return (String) o;
+		else return null;
 	}
 
 	private static String l10n(String key) {
-		return NodeL10n.getBase().getString("HTMLFilter."+key);
+		return NodeL10n.getBase().getString("HTMLFilter." + key);
 	}
 
 	private static String l10n(String key, String pattern, String value) {
-		return NodeL10n.getBase().getString("HTMLFilter."+key, pattern, value);
+		return NodeL10n.getBase()
+			.getString("HTMLFilter." + key, pattern, value);
 	}
 
 	@Override
-	public BOMDetection getCharsetByBOM(byte[] input, int length) throws DataFilterException {
+	public BOMDetection getCharsetByBOM(byte[] input, int length)
+		throws DataFilterException {
 		// No enhanced BOMs.
 		// FIXME XML BOMs???
 		return null;
@@ -3496,7 +4243,6 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	@Override
 	public int getCharsetBufferSize() {
 		//Read in 64 kilobytes. The charset could be defined anywhere in the head section
-		return 1024*64;
+		return 1024 * 64;
 	}
 }
-

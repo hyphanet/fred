@@ -7,6 +7,7 @@ package freenet.client.filter;
 import java.util.Arrays;
 
 public class CodecPacket {
+
 	protected byte[] payload = null;
 
 	CodecPacket(byte[] payload) {
@@ -34,6 +35,4 @@ public class CodecPacket {
 		if (!Arrays.equals(payload, other.payload)) return false;
 		return true;
 	}
-
-	
 }

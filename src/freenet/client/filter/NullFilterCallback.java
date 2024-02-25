@@ -28,13 +28,22 @@ public class NullFilterCallback implements FilterCallback {
 	}
 
 	@Override
-	public String processURI(String uri, String overrideType, boolean noRelative, boolean inline) throws CommentException {
+	public String processURI(
+		String uri,
+		String overrideType,
+		boolean noRelative,
+		boolean inline
+	) throws CommentException {
 		return null;
 	}
 
 	@Override
-	public String processURI(String uri, String overrideType, String forceSchemeHostAndPort, boolean inline)
-			throws CommentException {
+	public String processURI(
+		String uri,
+		String overrideType,
+		String forceSchemeHostAndPort,
+		boolean inline
+	) throws CommentException {
 		return null;
 	}
 
@@ -47,5 +56,4 @@ public class NullFilterCallback implements FilterCallback {
 	public void onFinished() {
 		// Ignore.
 	}
-
 }

@@ -11,5 +11,4 @@ public class MetadataParseException extends Exception {
 	public MetadataParseException(String string) {
 		super(string);
 	}
-
 }

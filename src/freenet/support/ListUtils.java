@@ -3,10 +3,12 @@
  * http://www.gnu.org/ for further details of the GPL. */
 
 package freenet.support;
+
 import java.util.List;
 import java.util.Random;
 
 public class ListUtils {
+
 	/**
 	 * Removes element from List by swapping with last element.
 	 * O(n) comparison, O(1) moves.
@@ -18,8 +20,7 @@ public class ListUtils {
 	 */
 	public static <E> boolean removeBySwapLast(List<E> a, Object o) {
 		int idx = a.indexOf(o);
-		if (idx == -1)
-			return false;
+		if (idx == -1) return false;
 		removeBySwapLast(a, idx);
 		return true;
 	}
@@ -40,16 +41,19 @@ public class ListUtils {
 	 */
 	public static <E> E removeBySwapLast(List<E> a, int idx) {
 		int size = a.size();
-		if (idx < 0 || idx >= size) throw new IndexOutOfBoundsException(idx+" out of range [0;"+size+")");
-		E moved = a.remove(size-1);
-		if (idx != size-1)
-			a.set(idx, moved);
+		if (idx < 0 || idx >= size) throw new IndexOutOfBoundsException(
+			idx + " out of range [0;" + size + ")"
+		);
+		E moved = a.remove(size - 1);
+		if (idx != size - 1) a.set(idx, moved);
 		return moved;
 	}
 
 	public static class RandomRemoveResult<E> {
+
 		public final E removed;
 		public final E moved;
+
 		RandomRemoveResult(E removed, E moved) {
 			this.removed = removed;
 			this.moved = moved;
@@ -66,7 +70,10 @@ public class ListUtils {
 	 * WARNING: amount of fetched random data is implementation-defined
 	 * @return null if list is empty, otherwise RandomRemoveResult(removed_element, moved_element)
 	 */
-	public static <E> RandomRemoveResult<E> removeRandomBySwapLast(Random random, List<E> a) {
+	public static <E> RandomRemoveResult<E> removeRandomBySwapLast(
+		Random random,
+		List<E> a
+	) {
 		int size = a.size();
 		if (size == 0) return null;
 		if (size == 1) {
@@ -78,6 +85,7 @@ public class ListUtils {
 		E removed = a.get(idx);
 		return new RandomRemoveResult<E>(removed, removeBySwapLast(a, idx));
 	}
+
 	/**
 	 * Removes random element from List by swapping with last element.
 	 * O(1) moves.
@@ -101,4 +109,3 @@ public class ListUtils {
 		return removed;
 	}
 }
-

@@ -2,7 +2,10 @@ package freenet.node.useralerts;
 
 public interface UserEvent extends UserAlert {
 	public enum Type {
-		Announcer(true), GetCompleted, PutCompleted, PutDirCompleted;
+		Announcer(true),
+		GetCompleted,
+		PutCompleted,
+		PutDirCompleted;
 
 		private boolean unregisterIndefinitely;
 
@@ -22,7 +25,7 @@ public interface UserEvent extends UserAlert {
 		public boolean unregisterIndefinitely() {
 			return unregisterIndefinitely;
 		}
-	};
+	}
 
 	/**
 	 *

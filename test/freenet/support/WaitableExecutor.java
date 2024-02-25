@@ -1,86 +1,83 @@
 package freenet.support;
 
 public class WaitableExecutor implements Executor {
-    
-    public WaitableExecutor(Executor exec) {
-        this.underlying = exec;
-    }
-    
-    public class Wrapper implements Runnable {
-        
-        final Runnable job;
 
-        public Wrapper(Runnable job) {
-            this.job = job;
-        }
+	public WaitableExecutor(Executor exec) {
+		this.underlying = exec;
+	}
 
-        @Override
-        public void run() {
-            try {
-                job.run();
-            } finally {
-                synchronized(WaitableExecutor.this) {
-                    count--;
-                    if(count == 0) WaitableExecutor.this.notifyAll();
-                }
-            }
-        }
+	public class Wrapper implements Runnable {
 
-    }
+		final Runnable job;
 
-    private final Executor underlying;
-    private int count;
+		public Wrapper(Runnable job) {
+			this.job = job;
+		}
 
-    @Override
-    public void execute(Runnable job) {
-        synchronized(this) {
-            count++;
-        }
-        underlying.execute(new Wrapper(job));
-    }
+		@Override
+		public void run() {
+			try {
+				job.run();
+			} finally {
+				synchronized (WaitableExecutor.this) {
+					count--;
+					if (count == 0) WaitableExecutor.this.notifyAll();
+				}
+			}
+		}
+	}
 
-    @Override
-    public void execute(Runnable job, String jobName) {
-        synchronized(this) {
-            count++;
-        }
-        underlying.execute(new Wrapper(job), jobName);
-    }
+	private final Executor underlying;
+	private int count;
 
-    @Override
-    public void execute(Runnable job, String jobName, boolean fromTicker) {
-        synchronized(this) {
-            count++;
-        }
-        underlying.execute(new Wrapper(job), jobName, fromTicker);
-    }
+	@Override
+	public void execute(Runnable job) {
+		synchronized (this) {
+			count++;
+		}
+		underlying.execute(new Wrapper(job));
+	}
 
-    @Override
-    public int[] waitingThreads() {
-        return underlying.waitingThreads();
-    }
+	@Override
+	public void execute(Runnable job, String jobName) {
+		synchronized (this) {
+			count++;
+		}
+		underlying.execute(new Wrapper(job), jobName);
+	}
 
-    @Override
-    public int[] runningThreads() {
-        return underlying.runningThreads();
-    }
+	@Override
+	public void execute(Runnable job, String jobName, boolean fromTicker) {
+		synchronized (this) {
+			count++;
+		}
+		underlying.execute(new Wrapper(job), jobName, fromTicker);
+	}
 
-    @Override
-    public int getWaitingThreadsCount() {
-        return underlying.getWaitingThreadsCount();
-    }
-    
-    public synchronized void waitForIdle() {
-        while(count > 0)
-            try {
-                wait();
-            } catch (InterruptedException e) {
-                // Ignore.
-            }
-    }
+	@Override
+	public int[] waitingThreads() {
+		return underlying.waitingThreads();
+	}
 
-    public synchronized boolean isIdle() {
-        return count == 0;
-    }
+	@Override
+	public int[] runningThreads() {
+		return underlying.runningThreads();
+	}
 
+	@Override
+	public int getWaitingThreadsCount() {
+		return underlying.getWaitingThreadsCount();
+	}
+
+	public synchronized void waitForIdle() {
+		while (count > 0) try {
+			wait();
+		} catch (InterruptedException e) {
+			// Ignore.
+		}
+	}
+
+	public synchronized boolean isIdle() {
+		return count == 0;
+	}
 }

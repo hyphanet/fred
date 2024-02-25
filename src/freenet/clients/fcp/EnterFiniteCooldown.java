@@ -8,7 +8,7 @@ import freenet.support.SimpleFieldSet;
  * @author toad
  */
 public class EnterFiniteCooldown extends FCPMessage {
-	
+
 	final String identifier;
 	final boolean global;
 	final long wakeupTime;
@@ -18,7 +18,7 @@ public class EnterFiniteCooldown extends FCPMessage {
 		this.global = global;
 		this.wakeupTime = wakeupTime;
 	}
-	
+
 	@Override
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet(false);
@@ -35,8 +35,7 @@ public class EnterFiniteCooldown extends FCPMessage {
 
 	@Override
 	public void run(FCPConnectionHandler handler, Node node)
-			throws MessageInvalidException {
+		throws MessageInvalidException {
 		// Not supported
 	}
-
 }

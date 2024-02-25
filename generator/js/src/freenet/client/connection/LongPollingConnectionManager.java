@@ -4,7 +4,6 @@ import com.google.gwt.http.client.Request;
 import com.google.gwt.http.client.RequestCallback;
 import com.google.gwt.http.client.Response;
 import com.google.gwt.user.client.Timer;
-
 import freenet.client.FreenetJs;
 import freenet.client.UpdaterConstants;
 import freenet.client.tools.FreenetRequest;
@@ -15,16 +14,16 @@ import freenet.client.update.IUpdateManager;
 public class LongPollingConnectionManager implements IConnectionManager {
 
 	/** The UpdateManager that gets notified when data is received */
-	private IUpdateManager	updateManager;
+	private IUpdateManager updateManager;
 
 	/** The number of failed requests after the last successful one */
-	private int				numOfFailedRequests	= 0;
+	private int numOfFailedRequests = 0;
 
 	/** The last sent request */
-	private Request			sentRequest			= null;
+	private Request sentRequest = null;
 
 	/** Is running? */
-	private boolean			running				= false;
+	private boolean running = false;
 
 	public LongPollingConnectionManager(IUpdateManager updateManager) {
 		this.updateManager = updateManager;
@@ -42,7 +41,9 @@ public class LongPollingConnectionManager implements IConnectionManager {
 	@Override
 	public void openConnection() {
 		if (updateManager == null) {
-			throw new RuntimeException("You must set the UpdateManager before opening the connection!");
+			throw new RuntimeException(
+				"You must set the UpdateManager before opening the connection!"
+			);
 		}
 		running = true;
 		sendRequest();
@@ -56,7 +57,13 @@ public class LongPollingConnectionManager implements IConnectionManager {
 				// When run, send a request
 				sendRequest();
 			}
-		}.schedule(Math.max(Math.min((int) Math.pow(2, (numOfFailedRequests++)), 10000),50));// Waits more if requests failing, but a max at 10sec
+		}
+			.schedule(
+				Math.max(
+					Math.min((int) Math.pow(2, (numOfFailedRequests++)), 10000),
+					50
+				)
+			); // Waits more if requests failing, but a max at 10sec
 		FreenetJs.log("Next request scheduled");
 	}
 
@@ -64,32 +71,57 @@ public class LongPollingConnectionManager implements IConnectionManager {
 	private void sendRequest() {
 		// Only send if running
 		if (running == true) {
-			sentRequest = FreenetRequest.sendRequest(UpdaterConstants.notificationPath, new QueryParameter("requestId", FreenetJs.requestId), new RequestCallback() {
-				@Override
-				public void onResponseReceived(Request request, Response response) {
-					FreenetJs.log("AJAX response:success:" + (response.getText().startsWith(UpdaterConstants.SUCCESS) ? "true" : "false"));
-					if (response.getText().startsWith(UpdaterConstants.SUCCESS)) {
-						// If success, then notify the UpdateManager
-						numOfFailedRequests = 0;
-						updateManager.updated(response.getText().substring("SUCCESS:".length()));
+			sentRequest = FreenetRequest.sendRequest(
+				UpdaterConstants.notificationPath,
+				new QueryParameter("requestId", FreenetJs.requestId),
+				new RequestCallback() {
+					@Override
+					public void onResponseReceived(
+						Request request,
+						Response response
+					) {
+						FreenetJs.log(
+							"AJAX response:success:" +
+							(response
+										.getText()
+										.startsWith(UpdaterConstants.SUCCESS)
+									? "true"
+									: "false")
+						);
+						if (
+							response
+								.getText()
+								.startsWith(UpdaterConstants.SUCCESS)
+						) {
+							// If success, then notify the UpdateManager
+							numOfFailedRequests = 0;
+							updateManager.updated(
+								response
+									.getText()
+									.substring("SUCCESS:".length())
+							);
+						}
+						if (
+							response
+								.getText()
+								.startsWith(UpdaterConstants.FAILURE)
+						) {
+							// If failure, then there are no pushed elements on the page, so the stopping is expected
+							FreenetJs.isPushingCancelledExpected = true;
+							FreenetJs.stop();
+						}
+						// Schedules the next request
+						scheduleNextRequest();
 					}
-					if (response.getText().startsWith(UpdaterConstants.FAILURE)) {
-						// If failure, then there are no pushed elements on the page, so the stopping is expected
-						FreenetJs.isPushingCancelledExpected = true;
-						FreenetJs.stop();
-					}
-					// Schedules the next request
-					scheduleNextRequest();
-				}
 
-				@Override
-				public void onError(Request request, Throwable exception) {
-					// If errorous, then try again
-					FreenetJs.log("AJAX response:ERROR");
-					scheduleNextRequest();
+					@Override
+					public void onError(Request request, Throwable exception) {
+						// If errorous, then try again
+						FreenetJs.log("AJAX response:ERROR");
+						scheduleNextRequest();
+					}
 				}
-			});
+			);
 		}
 	}
-
 }

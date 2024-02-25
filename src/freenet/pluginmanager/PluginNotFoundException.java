@@ -4,6 +4,7 @@
 package freenet.pluginmanager;
 
 public class PluginNotFoundException extends Exception {
+
 	private static final long serialVersionUID = -1;
 
 	public PluginNotFoundException() {
@@ -21,5 +22,4 @@ public class PluginNotFoundException extends Exception {
 	public PluginNotFoundException(Throwable arg0) {
 		super(arg0);
 	}
-
 }

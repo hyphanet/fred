@@ -33,6 +33,10 @@ THE POSSIBILITY OF SUCH DAMAGE.
  */
 package freenet.crypt;
 
+import freenet.node.Node;
+import freenet.node.NodeInitException;
+import freenet.support.Logger;
+import freenet.support.io.Closer;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.SoftReference;
@@ -41,21 +45,17 @@ import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
-
 import org.tanukisoftware.wrapper.WrapperManager;
-
-import freenet.node.Node;
-import freenet.node.NodeInitException;
-import freenet.support.Logger;
-import freenet.support.io.Closer;
 
 /**
  * @author  Jeroen C. van Gelderen (gelderen@cryptix.org)
  */
 public class SHA256 {
+
 	/** Size (in bytes) of this hash */
 	private static final int HASH_SIZE = 32;
-	private static final Queue<SoftReference<MessageDigest>> digests = new ConcurrentLinkedQueue<>();
+	private static final Queue<SoftReference<MessageDigest>> digests =
+		new ConcurrentLinkedQueue<>();
 
 	/**
 	 * It won't reset the Message Digest for you!
@@ -64,11 +64,12 @@ public class SHA256 {
 	 * @return
 	 * @throws IOException
 	 */
-	public static void hash(InputStream is, MessageDigest md) throws IOException {
+	public static void hash(InputStream is, MessageDigest md)
+		throws IOException {
 		try {
 			byte[] buf = new byte[4096];
 			int readBytes = is.read(buf);
-			while(readBytes > -1) {
+			while (readBytes > -1) {
 				md.update(buf, 0, readBytes);
 				readBytes = is.read(buf);
 			}
@@ -94,10 +95,15 @@ public class SHA256 {
 				}
 			}
 			return MessageDigest.getInstance("SHA-256", mdProvider);
-		} catch(NoSuchAlgorithmException e2) {
+		} catch (NoSuchAlgorithmException e2) {
 			//TODO: maybe we should point to a HOWTO for freejvms
-			Logger.error(Node.class, "Check your JVM settings especially the JCE!" + e2);
-			System.err.println("Check your JVM settings especially the JCE!" + e2);
+			Logger.error(
+				Node.class,
+				"Check your JVM settings especially the JCE!" + e2
+			);
+			System.err.println(
+				"Check your JVM settings especially the JCE!" + e2
+			);
 			e2.printStackTrace();
 		}
 		WrapperManager.stop(NodeInitException.EXIT_CRAPPY_JVM);
@@ -109,11 +115,13 @@ public class SHA256 {
 	 * Must be SHA-256 !
 	 */
 	public static void returnMessageDigest(MessageDigest md256) {
-		if(md256 == null)
-			return;
+		if (md256 == null) return;
 		String algo = md256.getAlgorithm();
-		if(!(algo.equals("SHA-256") || algo.equals("SHA256")))
-			throw new IllegalArgumentException("Should be SHA-256 but is " + algo);
+		if (
+			!(algo.equals("SHA-256") || algo.equals("SHA256"))
+		) throw new IllegalArgumentException(
+			"Should be SHA-256 but is " + algo
+		);
 		md256.reset();
 		digests.add(new SoftReference<>(md256));
 	}

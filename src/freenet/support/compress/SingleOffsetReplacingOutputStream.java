@@ -18,7 +18,11 @@ public class SingleOffsetReplacingOutputStream extends FilterOutputStream {
 	private final int replacementValue;
 	private int currentOffset = 0;
 
-	public SingleOffsetReplacingOutputStream(OutputStream outputStream, int replacementOffset, int replacementValue) {
+	public SingleOffsetReplacingOutputStream(
+		OutputStream outputStream,
+		int replacementOffset,
+		int replacementValue
+	) {
 		super(outputStream);
 		this.replacementOffset = replacementOffset;
 		this.replacementValue = replacementValue;
@@ -35,11 +39,16 @@ public class SingleOffsetReplacingOutputStream extends FilterOutputStream {
 	}
 
 	@Override
-	public void write(byte[] buffer, int offset, int length) throws IOException {
+	public void write(byte[] buffer, int offset, int length)
+		throws IOException {
 		if (offsetToReplaceIsInBufferBeingWritten(length)) {
 			out.write(buffer, offset, replacementOffset - currentOffset);
 			out.write(replacementValue);
-			out.write(buffer, offset + (replacementOffset - currentOffset) + 1, length - (replacementOffset - currentOffset) - 1);
+			out.write(
+				buffer,
+				offset + (replacementOffset - currentOffset) + 1,
+				length - (replacementOffset - currentOffset) - 1
+			);
 		} else {
 			out.write(buffer, offset, length);
 		}
@@ -47,7 +56,9 @@ public class SingleOffsetReplacingOutputStream extends FilterOutputStream {
 	}
 
 	private boolean offsetToReplaceIsInBufferBeingWritten(int length) {
-		return (currentOffset <= replacementOffset) && ((currentOffset + length) > replacementOffset);
+		return (
+			(currentOffset <= replacementOffset) &&
+			((currentOffset + length) > replacementOffset)
+		);
 	}
-
 }

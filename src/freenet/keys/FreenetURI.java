@@ -3,6 +3,19 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.keys;
 
+import freenet.client.InsertException;
+import freenet.client.InsertException.InsertExceptionMode;
+import freenet.support.Base64;
+import freenet.support.Fields;
+import freenet.support.HexUtil;
+import freenet.support.IllegalBase64Exception;
+import freenet.support.LogThresholdCallback;
+import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
+import freenet.support.URLDecoder;
+import freenet.support.URLEncodedFormatException;
+import freenet.support.URLEncoder;
+import freenet.support.io.FileUtil;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -20,20 +33,6 @@ import java.util.Random;
 import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import freenet.client.InsertException;
-import freenet.client.InsertException.InsertExceptionMode;
-import freenet.support.Base64;
-import freenet.support.Fields;
-import freenet.support.HexUtil;
-import freenet.support.IllegalBase64Exception;
-import freenet.support.LogThresholdCallback;
-import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
-import freenet.support.URLDecoder;
-import freenet.support.URLEncodedFormatException;
-import freenet.support.URLEncoder;
-import freenet.support.io.FileUtil;
 
 /**
  * Note that the metadata pairs below are not presently supported. They are supported
@@ -79,30 +78,34 @@ import freenet.support.io.FileUtil;
  * </p>
  * REDFLAG: Old code has a FieldSet, and the ability to put arbitrary metadata
  * in through name/value pairs. Do we want this?
- * 
- * WARNING: Changing non-transient members on classes that are Serializable can result in 
+ *
+ * WARNING: Changing non-transient members on classes that are Serializable can result in
  * restarting downloads or losing uploads.
  */
-public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializable {
+public class FreenetURI
+	implements Cloneable, Comparable<FreenetURI>, Serializable {
 
-    /**
-     * For Serializable.
-     */
-    private static transient final long serialVersionUID = 1L;
-    
-    private static volatile boolean logMINOR;
+	/**
+	 * For Serializable.
+	 */
+	private static final transient long serialVersionUID = 1L;
+
+	private static volatile boolean logMINOR;
 	private static volatile boolean logDEBUG;
+
 	static {
-		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
-			@Override
-			public void shouldUpdate() {
-				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-				logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
+		Logger.registerLogThresholdCallback(
+			new LogThresholdCallback() {
+				@Override
+				public void shouldUpdate() {
+					logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+					logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
+				}
 			}
-		});
+		);
 	}
 
-	private final String keyType,  docName;
+	private final String keyType, docName;
 	/** The meta-strings, in the order they are given. Typically we will
 	 * construct the base key from the key type, routing key, extra, and
 	 * document name (SSK@blah,blah,blah/filename, CHK@blah,blah,blah,
@@ -115,32 +118,29 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 	/* for SSKs, routingKey is actually the pkHash. the actual routing key is
 	 * calculated in NodeSSK and is a function of pkHash and the docName
 	 */
-	private final byte[] routingKey,  cryptoKey,  extra;
+	private final byte[] routingKey, cryptoKey, extra;
 	private final long suggestedEdition; // for USKs
 	private boolean hasHashCode;
 	private int hashCode;
-//	private final int uniqueHashCode;
-	static final String[] VALID_KEY_TYPES =
-		new String[]{"CHK", "SSK", "KSK", "USK"};
+	//	private final int uniqueHashCode;
+	static final String[] VALID_KEY_TYPES = new String[] {
+		"CHK",
+		"SSK",
+		"KSK",
+		"USK",
+	};
 
 	@Override
 	public synchronized int hashCode() {
-		if(hasHashCode)
-			return hashCode;
+		if (hasHashCode) return hashCode;
 		int x = keyType.hashCode();
-		if(docName != null)
-			x ^= docName.hashCode();
-		if(metaStr != null)
-			for(int i = 0; i < metaStr.length; i++)
-				x ^= metaStr[i].hashCode();
-		if(routingKey != null)
-			x ^= Fields.hashCode(routingKey);
-		if(cryptoKey != null)
-			x ^= Fields.hashCode(cryptoKey);
-		if(extra != null)
-			x ^= Fields.hashCode(extra);
-		if(keyType.equals("USK"))
-			x ^= suggestedEdition;
+		if (docName != null) x ^= docName.hashCode();
+		if (metaStr != null) for (int i = 0; i < metaStr.length; i++) x ^=
+		metaStr[i].hashCode();
+		if (routingKey != null) x ^= Fields.hashCode(routingKey);
+		if (cryptoKey != null) x ^= Fields.hashCode(cryptoKey);
+		if (extra != null) x ^= Fields.hashCode(extra);
+		if (keyType.equals("USK")) x ^= suggestedEdition;
 		hashCode = x;
 		hasHashCode = true;
 		return x;
@@ -148,36 +148,33 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 
 	@Override
 	public boolean equals(Object o) {
-		if(o == this) return true;
-		if(!(o instanceof FreenetURI))
-			return false;
+		if (o == this) return true;
+		if (!(o instanceof FreenetURI)) return false;
 		else {
 			FreenetURI f = (FreenetURI) o;
-			if(!keyType.equals(f.keyType))
-				return false;
-			if(keyType.equals("USK"))
-				if(!(suggestedEdition == f.suggestedEdition))
-					return false;
-			if((docName == null) ^ (f.docName == null))
-				return false;
-			if((metaStr == null || metaStr.length == 0) ^ (f.metaStr == null || f.metaStr.length == 0))
-				return false;
-			if((routingKey == null) ^ (f.routingKey == null))
-				return false;
-			if((cryptoKey == null) ^ (f.cryptoKey == null))
-				return false;
-			if((extra == null) ^ (f.extra == null))
-				return false;
-			if((docName != null) && !docName.equals(f.docName))
-				return false;
-			if((metaStr != null) && !Arrays.equals(metaStr, f.metaStr))
-				return false;
-			if((routingKey != null) && !Arrays.equals(routingKey, f.routingKey))
-				return false;
-			if((cryptoKey != null) && !Arrays.equals(cryptoKey, f.cryptoKey))
-				return false;
-			if((extra != null) && !Arrays.equals(extra, f.extra))
-				return false;
+			if (!keyType.equals(f.keyType)) return false;
+			if (keyType.equals("USK")) if (
+				!(suggestedEdition == f.suggestedEdition)
+			) return false;
+			if ((docName == null) ^ (f.docName == null)) return false;
+			if (
+				(metaStr == null || metaStr.length == 0) ^
+				(f.metaStr == null || f.metaStr.length == 0)
+			) return false;
+			if ((routingKey == null) ^ (f.routingKey == null)) return false;
+			if ((cryptoKey == null) ^ (f.cryptoKey == null)) return false;
+			if ((extra == null) ^ (f.extra == null)) return false;
+			if ((docName != null) && !docName.equals(f.docName)) return false;
+			if (
+				(metaStr != null) && !Arrays.equals(metaStr, f.metaStr)
+			) return false;
+			if (
+				(routingKey != null) && !Arrays.equals(routingKey, f.routingKey)
+			) return false;
+			if (
+				(cryptoKey != null) && !Arrays.equals(cryptoKey, f.cryptoKey)
+			) return false;
+			if ((extra != null) && !Arrays.equals(extra, f.extra)) return false;
 			return true;
 		}
 	}
@@ -189,8 +186,10 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 	 * same crypto key and routing key.
 	 */
 	public boolean equalsKeypair(FreenetURI u2) {
-		if((routingKey != null) && (cryptoKey != null))
-			return Arrays.equals(routingKey, u2.routingKey) && Arrays.equals(cryptoKey, u2.cryptoKey);
+		if ((routingKey != null) && (cryptoKey != null)) return (
+			Arrays.equals(routingKey, u2.routingKey) &&
+			Arrays.equals(cryptoKey, u2.cryptoKey)
+		);
 
 		return false;
 	}
@@ -201,55 +200,62 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 	}
 
 	public FreenetURI(FreenetURI uri) {
-//		this.uniqueHashCode = super.hashCode();
-		if(uri.keyType == null) throw new NullPointerException();
+		//		this.uniqueHashCode = super.hashCode();
+		if (uri.keyType == null) throw new NullPointerException();
 		keyType = uri.keyType;
 		docName = uri.docName;
-		if(uri.metaStr != null) {
+		if (uri.metaStr != null) {
 			metaStr = uri.metaStr.clone();
 		} else metaStr = null;
-		if(uri.routingKey != null) {
+		if (uri.routingKey != null) {
 			routingKey = uri.routingKey.clone();
-		} else
-			routingKey = null;
-		if(uri.cryptoKey != null) {
+		} else routingKey = null;
+		if (uri.cryptoKey != null) {
 			cryptoKey = uri.cryptoKey.clone();
-		} else
-			cryptoKey = null;
-		if(uri.extra != null) {
+		} else cryptoKey = null;
+		if (uri.extra != null) {
 			extra = uri.extra.clone();
-		} else
-			extra = null;
+		} else extra = null;
 		this.suggestedEdition = uri.suggestedEdition;
-		if(logDEBUG) Logger.debug(this, "Copied: "+toString()+" from "+uri.toString(), new Exception("debug"));
+		if (logDEBUG) Logger.debug(
+			this,
+			"Copied: " + toString() + " from " + uri.toString(),
+			new Exception("debug")
+		);
 	}
-	
+
 	boolean noCacheURI = false;
-	
+
 	/** Optimize for memory. */
 	public FreenetURI intern() {
 		boolean changedAnything = false;
 		byte[] x = extra;
-		if(keyType.equals("CHK"))
-			x = ClientCHK.internExtra(x);
-		else
-			x = ClientSSK.internExtra(x);
-		if(x != extra) changedAnything = true;
+		if (keyType.equals("CHK")) x = ClientCHK.internExtra(x);
+		else x = ClientSSK.internExtra(x);
+		if (x != extra) changedAnything = true;
 		String[] newMetaStr = null;
-		if(metaStr != null) {
+		if (metaStr != null) {
 			newMetaStr = new String[metaStr.length];
-			for(int i=0;i<metaStr.length;i++) {
+			for (int i = 0; i < metaStr.length; i++) {
 				newMetaStr[i] = metaStr[i].intern();
-				if(metaStr[i] != newMetaStr[i]) changedAnything = true;
+				if (metaStr[i] != newMetaStr[i]) changedAnything = true;
 			}
 		}
 		String dn = docName == null ? null : docName.intern();
-		if(dn != docName) changedAnything = true;
-		if(!changedAnything) {
+		if (dn != docName) changedAnything = true;
+		if (!changedAnything) {
 			noCacheURI = true;
 			return this;
 		}
-		FreenetURI u = new FreenetURI(keyType, dn, newMetaStr, routingKey, cryptoKey, extra, suggestedEdition);
+		FreenetURI u = new FreenetURI(
+			keyType,
+			dn,
+			newMetaStr,
+			routingKey,
+			cryptoKey,
+			extra,
+			suggestedEdition
+		);
 		u.noCacheURI = true;
 		return u;
 	}
@@ -257,13 +263,23 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 	public FreenetURI(String keyType, String docName) {
 		this(keyType, docName, (String[]) null, null, null, null);
 	}
-	public static final FreenetURI EMPTY_CHK_URI = new FreenetURI("CHK", null, null, null, null, null);
+
+	public static final FreenetURI EMPTY_CHK_URI = new FreenetURI(
+		"CHK",
+		null,
+		null,
+		null,
+		null,
+		null
+	);
 
 	public FreenetURI(
 		String keyType,
 		String docName,
 		byte[] routingKey,
-		byte[] cryptoKey, byte[] extra2) {
+		byte[] cryptoKey,
+		byte[] extra2
+	) {
 		this(keyType, docName, (String[]) null, routingKey, cryptoKey, extra2);
 	}
 
@@ -272,14 +288,16 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 		String docName,
 		String metaStr,
 		byte[] routingKey,
-		byte[] cryptoKey) {
+		byte[] cryptoKey
+	) {
 		this(
 			keyType,
 			docName,
-			(metaStr == null ? (String[]) null : new String[]{metaStr}),
+			(metaStr == null ? (String[]) null : new String[] { metaStr }),
 			routingKey,
 			cryptoKey,
-			null);
+			null
+		);
 	}
 
 	public FreenetURI(
@@ -287,20 +305,34 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 		String docName,
 		String[] metaStr,
 		byte[] routingKey,
-		byte[] cryptoKey, byte[] extra2) {
-//		this.uniqueHashCode = super.hashCode();
+		byte[] cryptoKey,
+		byte[] extra2
+	) {
+		//		this.uniqueHashCode = super.hashCode();
 		this.keyType = keyType.trim().toUpperCase().intern();
 		this.docName = docName;
 		this.metaStr = metaStr;
 		this.routingKey = routingKey;
-		if(routingKey != null && keyType.equals("CHK") && routingKey.length != 32)
-			throw new IllegalArgumentException("Bad URI: Routing key should be 32 bytes");
+		if (
+			routingKey != null &&
+			keyType.equals("CHK") &&
+			routingKey.length != 32
+		) throw new IllegalArgumentException(
+			"Bad URI: Routing key should be 32 bytes"
+		);
 		this.cryptoKey = cryptoKey;
-		if(cryptoKey != null && cryptoKey.length != 32)
-			throw new IllegalArgumentException("Bad URI: Crypto key should be 32 bytes");
+		if (
+			cryptoKey != null && cryptoKey.length != 32
+		) throw new IllegalArgumentException(
+			"Bad URI: Crypto key should be 32 bytes"
+		);
 		this.extra = extra2;
 		this.suggestedEdition = -1;
-		if (logDEBUG) Logger.minor(this, "Created from components: "+toString(), new Exception("debug"));
+		if (logDEBUG) Logger.minor(
+			this,
+			"Created from components: " + toString(),
+			new Exception("debug")
+		);
 	}
 
 	public FreenetURI(
@@ -308,69 +340,84 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 		String docName,
 		String[] metaStr,
 		byte[] routingKey,
-		byte[] cryptoKey, byte[] extra2,
-		long suggestedEdition) {
-//		this.uniqueHashCode = super.hashCode();
+		byte[] cryptoKey,
+		byte[] extra2,
+		long suggestedEdition
+	) {
+		//		this.uniqueHashCode = super.hashCode();
 		this.keyType = keyType.trim().toUpperCase().intern();
 		this.docName = docName;
 		this.metaStr = metaStr;
 		this.routingKey = routingKey;
-		if(routingKey != null && keyType.equals("CHK") && routingKey.length != 32)
-			throw new IllegalArgumentException("Bad URI: Routing key should be 32 bytes");
+		if (
+			routingKey != null &&
+			keyType.equals("CHK") &&
+			routingKey.length != 32
+		) throw new IllegalArgumentException(
+			"Bad URI: Routing key should be 32 bytes"
+		);
 		this.cryptoKey = cryptoKey;
-		if(cryptoKey != null && cryptoKey.length != 32)
-			throw new IllegalArgumentException("Bad URI: Crypto key should be 32 bytes");
+		if (
+			cryptoKey != null && cryptoKey.length != 32
+		) throw new IllegalArgumentException(
+			"Bad URI: Crypto key should be 32 bytes"
+		);
 		this.extra = extra2;
 		this.suggestedEdition = suggestedEdition;
-		if (logDEBUG) Logger.minor(this, "Created from components (B): "+toString(), new Exception("debug"));
+		if (logDEBUG) Logger.minor(
+			this,
+			"Created from components (B): " + toString(),
+			new Exception("debug")
+		);
 	}
 
 	// Strip http(s):// and (web+|ext+)freenet: prefix
-	protected final static Pattern URI_PREFIX = Pattern.compile("^(https?://[^/]+/+)?(((ext|web)\\+)?(freenet|hyphanet|hypha):)?");
+	protected static final Pattern URI_PREFIX = Pattern.compile(
+		"^(https?://[^/]+/+)?(((ext|web)\\+)?(freenet|hyphanet|hypha):)?"
+	);
 
 	public FreenetURI(String URI) throws MalformedURLException {
 		this(URI, false);
 	}
-	
+
 	/**
 	 * Create a FreenetURI from its string form. May or may not have a
 	 * freenet: prefix.
 	 * @throws MalformedURLException If the string could not be parsed.
 	 */
 	public FreenetURI(String URI, boolean noTrim) throws MalformedURLException {
-//		this.uniqueHashCode = super.hashCode();
-		if(URI == null)
-			throw new MalformedURLException("No URI specified");
+		//		this.uniqueHashCode = super.hashCode();
+		if (URI == null) throw new MalformedURLException("No URI specified");
 
-		if(!noTrim)
-			URI = URI.trim();
-		
+		if (!noTrim) URI = URI.trim();
+
 		// Strip ?max-size, ?type etc.
 		// Un-encoded ?'s are illegal.
 		int x = URI.indexOf('?');
-		if(x > -1)
-			URI = URI.substring(0, x);
-			
-		if(URI.indexOf('@') < 0 || URI.indexOf('/') < 0)
-			// Encoded URL?
-			try {
-				URI = URLDecoder.decode(URI, false);
-			} catch(URLEncodedFormatException e) {
-				throw new MalformedURLException("Invalid URI: no @ or /, or @ or / is escaped but there are invalid escapes");
-			}
+		if (x > -1) URI = URI.substring(0, x);
+
+		if (URI.indexOf('@') < 0 || URI.indexOf('/') < 0) // Encoded URL?
+		try {
+			URI = URLDecoder.decode(URI, false);
+		} catch (URLEncodedFormatException e) {
+			throw new MalformedURLException(
+				"Invalid URI: no @ or /, or @ or / is escaped but there are invalid escapes"
+			);
+		}
 
 		URI = URI_PREFIX.matcher(URI).replaceFirst("");
 
 		// decode keyType
 		int atchar = URI.indexOf('@');
-		if(atchar == -1)
-			throw new MalformedURLException("There is no @ in that URI! (" + URI + ')');
+		if (atchar == -1) throw new MalformedURLException(
+			"There is no @ in that URI! (" + URI + ')'
+		);
 
 		String _keyType = URI.substring(0, atchar).toUpperCase();
 		URI = URI.substring(atchar + 1);
 
 		boolean validKeyType = false;
-		for(int i = 0; i < VALID_KEY_TYPES.length; i++) {
+		for (int i = 0; i < VALID_KEY_TYPES.length; i++) {
 			if (_keyType.equals(VALID_KEY_TYPES[i])) {
 				validKeyType = true;
 				_keyType = VALID_KEY_TYPES[i];
@@ -378,8 +425,9 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 			}
 		}
 		keyType = _keyType;
-		if(!validKeyType)
-			throw new MalformedURLException("Invalid key type: " + keyType);
+		if (!validKeyType) throw new MalformedURLException(
+			"Invalid key type: " + keyType
+		);
 
 		boolean isSSK = "SSK".equals(keyType);
 		boolean isUSK = "USK".equals(keyType);
@@ -393,12 +441,16 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 		while ((slash2 = URI.lastIndexOf('/')) != -1) {
 			String s;
 			try {
-				s = URLDecoder.decode(URI.substring(slash2 + 1 /* "/".length() */), true);
-			} catch(URLEncodedFormatException e) {
-				throw (MalformedURLException)new MalformedURLException(e.toString()).initCause(e);
+				s = URLDecoder.decode(
+					URI.substring(slash2 + 1/* "/".length() */),
+					true
+				);
+			} catch (URLEncodedFormatException e) {
+				throw (MalformedURLException) new MalformedURLException(
+					e.toString()
+				).initCause(e);
 			}
-			if(s != null)
-				sv.add(s);
+			if (s != null) sv.add(s);
 			URI = URI.substring(0, slash2);
 		}
 
@@ -406,66 +458,70 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 		// this makes for more efficient handling
 
 		// SSK@ = create a random SSK
-		if(sv.isEmpty() && (isUSK || isKSK))
-			throw new MalformedURLException("No docname for " + keyType);
-		
-		if((isSSK || isUSK || isKSK) && !sv.isEmpty()) {
+		if (sv.isEmpty() && (isUSK || isKSK)) throw new MalformedURLException(
+			"No docname for " + keyType
+		);
 
+		if ((isSSK || isUSK || isKSK) && !sv.isEmpty()) {
 			docName = sv.remove(sv.size() - 1);
-			if(isUSK) {
-				if(sv.isEmpty())
-					throw new MalformedURLException("No suggested edition number for USK");
+			if (isUSK) {
+				if (sv.isEmpty()) throw new MalformedURLException(
+					"No suggested edition number for USK"
+				);
 				try {
 					suggestedEdition = Long.parseLong(sv.remove(sv.size() - 1));
-				} catch(NumberFormatException e) {
-					throw (MalformedURLException)new MalformedURLException("Invalid suggested edition: " + e).initCause(e);
+				} catch (NumberFormatException e) {
+					throw (MalformedURLException) new MalformedURLException(
+						"Invalid suggested edition: " + e
+					).initCause(e);
 				}
-			} else
-				suggestedEdition = -1;
+			} else suggestedEdition = -1;
 		} else {
 			// docName not necessary, nor is it supported, for CHKs.
 			docName = null;
 			suggestedEdition = -1;
 		}
 
-		if(!sv.isEmpty()) {
+		if (!sv.isEmpty()) {
 			metaStr = new String[sv.size()];
-			for(int i = 0; i < metaStr.length; i++) {
+			for (int i = 0; i < metaStr.length; i++) {
 				metaStr[i] = sv.get(metaStr.length - 1 - i).intern();
-				if(metaStr[i] == null)
-					throw new NullPointerException();
+				if (metaStr[i] == null) throw new NullPointerException();
 			}
-		} else
-			metaStr = null;
+		} else metaStr = null;
 
-		if(isKSK) {
+		if (isKSK) {
 			routingKey = extra = cryptoKey = null;
 			return;
 		}
 
 		// strip 'file extensions' from CHKs
 		// added by aum (david@rebirthing.co.nz)
-		if("CHK".equals(keyType)) {
+		if ("CHK".equals(keyType)) {
 			int idx = URI.lastIndexOf('.');
-			if(idx != -1)
-				URI = URI.substring(0, idx);
+			if (idx != -1) URI = URI.substring(0, idx);
 		}
 
 		// URI now contains: routingKey[,cryptoKey][,metaInfo]
 		StringTokenizer st = new StringTokenizer(URI, ",");
 		try {
-			if(st.hasMoreTokens()) {
+			if (st.hasMoreTokens()) {
 				routingKey = Base64.decode(st.nextToken());
-				if(routingKey.length != 32 && keyType.equals("CHK"))
-					throw new MalformedURLException("Bad URI: Routing key should be 32 bytes long");
+				if (
+					routingKey.length != 32 && keyType.equals("CHK")
+				) throw new MalformedURLException(
+					"Bad URI: Routing key should be 32 bytes long"
+				);
 			} else {
 				if (isUSK || (isSSK && docName != null)) {
-					throw new MalformedURLException("Bad URI: Routing key missing");
+					throw new MalformedURLException(
+						"Bad URI: Routing key missing"
+					);
 				}
 				routingKey = cryptoKey = extra = null;
 				return;
 			}
-			if(!st.hasMoreTokens()) {
+			if (!st.hasMoreTokens()) {
 				cryptoKey = extra = null;
 				return;
 			}
@@ -473,45 +529,62 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 			// Can be cryptokey or name-value pair.
 			String t = st.nextToken();
 			cryptoKey = Base64.decode(t);
-			if(cryptoKey.length != 32)
-				throw new MalformedURLException("Bad URI: Routing key should be 32 bytes long");
-			if(!st.hasMoreTokens()) {
+			if (cryptoKey.length != 32) throw new MalformedURLException(
+				"Bad URI: Routing key should be 32 bytes long"
+			);
+			if (!st.hasMoreTokens()) {
 				extra = null;
 				return;
 			}
 			extra = Base64.decode(st.nextToken());
-
-		} catch(IllegalBase64Exception e) {
+		} catch (IllegalBase64Exception e) {
 			throw new MalformedURLException("Invalid Base64 quantity: " + e);
 		}
-		if (logDEBUG) Logger.debug(this, "Created from parse: "+toString()+" from "+URI, new Exception("debug"));
+		if (logDEBUG) Logger.debug(
+			this,
+			"Created from parse: " + toString() + " from " + URI,
+			new Exception("debug")
+		);
 	}
 
 	/** USK constructor from components. */
-	public FreenetURI(byte[] pubKeyHash, byte[] cryptoKey, byte[] extra, String siteName, long suggestedEdition2) {
-//		this.uniqueHashCode = super.hashCode();
+	public FreenetURI(
+		byte[] pubKeyHash,
+		byte[] cryptoKey,
+		byte[] extra,
+		String siteName,
+		long suggestedEdition2
+	) {
+		//		this.uniqueHashCode = super.hashCode();
 		this.keyType = "USK";
 		this.routingKey = pubKeyHash;
 		// Don't check routingKey as it could be an insertable USK
 		this.cryptoKey = cryptoKey;
-		if(cryptoKey != null && cryptoKey.length != 32)
-			throw new IllegalArgumentException("Bad URI: Crypto key should be 32 bytes");
+		if (
+			cryptoKey != null && cryptoKey.length != 32
+		) throw new IllegalArgumentException(
+			"Bad URI: Crypto key should be 32 bytes"
+		);
 		this.extra = extra;
 		this.docName = siteName;
 		this.suggestedEdition = suggestedEdition2;
 		metaStr = null;
-		if (logDEBUG) Logger.minor(this, "Created from components (USK): "+toString(), new Exception("debug"));
+		if (logDEBUG) Logger.minor(
+			this,
+			"Created from components (USK): " + toString(),
+			new Exception("debug")
+		);
 	}
-	
+
 	protected FreenetURI() {
-	    // For serialization only!
-	    this.metaStr = null;
-	    this.keyType = null;
-	    this.routingKey = null;
-	    this.cryptoKey = null;
-	    this.extra = null;
-	    this.docName = null;
-	    this.suggestedEdition = 0;
+		// For serialization only!
+		this.metaStr = null;
+		this.keyType = null;
+		this.routingKey = null;
+		this.cryptoKey = null;
+		this.extra = null;
+		this.docName = null;
+		this.suggestedEdition = 0;
 	}
 
 	/** Dump the individual components of the key to System.out. */
@@ -525,12 +598,11 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 		System.out.println("Crypto key : " + k);
 		System.out.println("Extra      : " + e);
 		System.out.println(
-			"Doc name   : " + (docName == null ? "none" : docName));
+			"Doc name   : " + (docName == null ? "none" : docName)
+		);
 		System.out.print("Meta strings: ");
-		if(metaStr == null)
-			System.out.println("none");
-		else
-			System.out.println(Arrays.asList(metaStr).toString());
+		if (metaStr == null) System.out.println("none");
+		else System.out.println(Arrays.asList(metaStr).toString());
 	}
 
 	public String getGuessableKey() {
@@ -558,7 +630,9 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 	 * string, if there is one, is from the last / to the end of the uri
 	 * i.e. usually the filename. */
 	public String lastMetaString() {
-		return ((metaStr == null) || (metaStr.length == 0)) ? null : metaStr[metaStr.length - 1];
+		return ((metaStr == null) || (metaStr.length == 0))
+			? null
+			: metaStr[metaStr.length - 1];
 	}
 
 	/** Get all the meta strings. Meta strings are directory (manifest)
@@ -632,7 +706,7 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 		if (metaStr != null) {
 			final int metaStrLength = metaStr.length;
 			if (metaStrLength > 1) {
-				newMetaStr = Arrays.copyOf(metaStr, metaStr.length-1);
+				newMetaStr = Arrays.copyOf(metaStr, metaStr.length - 1);
 			}
 		}
 		return setMetaString(newMetaStr);
@@ -645,7 +719,7 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 	 */
 	public FreenetURI dropLastMetaStrings(int i) {
 		String[] newMetaStr = null;
-		if((metaStr != null) && (metaStr.length > i)) {
+		if ((metaStr != null) && (metaStr.length > i)) {
 			newMetaStr = Arrays.copyOf(metaStr, metaStr.length - i);
 		}
 		return setMetaString(newMetaStr);
@@ -657,10 +731,8 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 	 */
 	public FreenetURI pushMetaString(String name) {
 		String[] newMetaStr;
-		if(name == null)
-			throw new NullPointerException();
-		if(metaStr == null)
-			newMetaStr = new String[]{name};
+		if (name == null) throw new NullPointerException();
+		if (metaStr == null) newMetaStr = new String[] { name };
 		else {
 			newMetaStr = Arrays.copyOf(metaStr, metaStr.length + 1);
 			newMetaStr[metaStr.length] = name.intern();
@@ -672,14 +744,14 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 	 * Returns a copy of this URI with these meta strings appended.
 	 */
 	public FreenetURI addMetaStrings(String[] strs) {
-		if(strs == null)
-			return this; // legal noop, since getMetaStrings can return null
-		for(int i = 0; i < strs.length; i++)
-			if(strs[i] == null)
-				throw new NullPointerException("element " + i + " of " + strs.length + " is null");
+		if (strs == null) return this; // legal noop, since getMetaStrings can return null
+		for (int i = 0; i < strs.length; i++) if (
+			strs[i] == null
+		) throw new NullPointerException(
+			"element " + i + " of " + strs.length + " is null"
+		);
 		String[] newMetaStr;
-		if(metaStr == null)
-			return setMetaString(strs);
+		if (metaStr == null) return setMetaString(strs);
 		else {
 			newMetaStr = Arrays.copyOf(metaStr, metaStr.length + strs.length);
 			System.arraycopy(strs, 0, newMetaStr, metaStr.length, strs.length);
@@ -691,7 +763,9 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 	 * Returns a copy of this URI with these meta strings appended.
 	 */
 	public FreenetURI addMetaStrings(List<String> metaStrings) {
-		return addMetaStrings(metaStrings.toArray(new String[metaStrings.size()]));
+		return addMetaStrings(
+			metaStrings.toArray(new String[metaStrings.size()])
+		);
 	}
 
 	/**
@@ -705,8 +779,8 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 			routingKey,
 			cryptoKey,
 			extra,
-			suggestedEdition);
-
+			suggestedEdition
+		);
 	}
 
 	/** Returns a copy of this URI with new meta-strings. */
@@ -718,7 +792,8 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 			routingKey,
 			cryptoKey,
 			extra,
-			suggestedEdition);
+			suggestedEdition
+		);
 	}
 
 	protected String toStringCache;
@@ -726,18 +801,20 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 	/** toString() is equivalent to toString(false, false) but is cached. */
 	@Override
 	public String toString() {
-		if (toStringCache == null)
-			toStringCache = toString(false, false)/* + "#"+super.toString()+"#"+uniqueHashCode*/;
+		if (toStringCache == null) toStringCache = toString(
+			false,
+			false
+		)/* + "#"+super.toString()+"#"+uniqueHashCode*/;
 		return toStringCache;
 	}
 
-    /**
-     * @deprecated Use {@link #toASCIIString()} instead
-     */
+	/**
+	 * @deprecated Use {@link #toASCIIString()} instead
+	 */
 	@Deprecated
-    public String toACIIString() {
-        return toASCIIString();
-    }
+	public String toACIIString() {
+		return toASCIIString();
+	}
 
 	/**
 	 * Get the FreenetURI as a pure ASCII string, any non-english
@@ -755,40 +832,39 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 	 * false, only encode dangerous characters (slashes e.g.).
 	 */
 	public String toString(boolean prefix, boolean pureAscii) {
-		if(keyType == null) {
+		if (keyType == null) {
 			// Not activated or something...
-			if(logMINOR) Logger.minor(this, "Not activated?? in toString("+prefix+","+pureAscii+")");
+			if (logMINOR) Logger.minor(
+				this,
+				"Not activated?? in toString(" + prefix + "," + pureAscii + ")"
+			);
 			return null;
 		}
 		StringBuilder b;
-		if(prefix)
-			b = new StringBuilder("freenet:");
-		else
-			b = new StringBuilder();
+		if (prefix) b = new StringBuilder("freenet:");
+		else b = new StringBuilder();
 
 		b.append(keyType).append('@');
 
-		if(!"KSK".equals(keyType)) {
-			if(routingKey != null)
-				b.append(Base64.encode(routingKey));
-			if(cryptoKey != null)
-				b.append(',').append(Base64.encode(cryptoKey));
-			if(extra != null)
-				b.append(',').append(Base64.encode(extra));
-			if(docName != null)
-				b.append('/');
+		if (!"KSK".equals(keyType)) {
+			if (routingKey != null) b.append(Base64.encode(routingKey));
+			if (cryptoKey != null) b
+				.append(',')
+				.append(Base64.encode(cryptoKey));
+			if (extra != null) b.append(',').append(Base64.encode(extra));
+			if (docName != null) b.append('/');
 		}
 
-		if(docName != null)
-			b.append(URLEncoder.encode(docName, "/", pureAscii));
-		if(keyType.equals("USK")) {
+		if (docName != null) b.append(
+			URLEncoder.encode(docName, "/", pureAscii)
+		);
+		if (keyType.equals("USK")) {
 			b.append('/');
 			b.append(suggestedEdition);
 		}
-		if(metaStr != null)
-			for(int i = 0; i < metaStr.length; i++) {
-				b.append('/').append(URLEncoder.encode(metaStr[i], "/", pureAscii));
-			}
+		if (metaStr != null) for (int i = 0; i < metaStr.length; i++) {
+			b.append('/').append(URLEncoder.encode(metaStr[i], "/", pureAscii));
+		}
 		return b.toString();
 	}
 
@@ -799,22 +875,23 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 
 		b.append(keyType).append('@');
 
-		if(!"KSK".equals(keyType)) {
+		if (!"KSK".equals(keyType)) {
 			b.append("...");
-			if(docName != null)
-				b.append('/');
+			if (docName != null) b.append('/');
 		}
 
-		if(docName != null)
-			b.append(URLEncoder.encode(docName, "/", false, " "));
-		if(keyType.equals("USK")) {
+		if (docName != null) b.append(
+			URLEncoder.encode(docName, "/", false, " ")
+		);
+		if (keyType.equals("USK")) {
 			b.append('/');
 			b.append(suggestedEdition);
 		}
-		if(metaStr != null)
-			for(int i = 0; i < metaStr.length; i++) {
-				b.append('/').append(URLEncoder.encode(metaStr[i], "/", false, " "));
-			}
+		if (metaStr != null) for (int i = 0; i < metaStr.length; i++) {
+			b
+				.append('/')
+				.append(URLEncoder.encode(metaStr[i], "/", false, " "));
+		}
 		return b.toString();
 	}
 
@@ -833,24 +910,28 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 
 	/** Get the meta strings as an ArrayList. */
 	public ArrayList<String> listMetaStrings() {
-		if(metaStr != null) {
+		if (metaStr != null) {
 			ArrayList<String> l = new ArrayList<String>(metaStr.length);
-			for(int i = 0; i < metaStr.length; i++)
-				l.add(metaStr[i]);
+			for (int i = 0; i < metaStr.length; i++) l.add(metaStr[i]);
 			return l;
 		} else return new ArrayList<String>(0);
 	}
+
 	static final byte CHK = 1;
 	static final byte SSK = 2;
 	static final byte KSK = 3;
 	static final byte USK = 4;
 
 	/** Read the binary form of a key, preceded by a short for its length. */
-	public static FreenetURI readFullBinaryKeyWithLength(DataInputStream dis) throws IOException {
+	public static FreenetURI readFullBinaryKeyWithLength(DataInputStream dis)
+		throws IOException {
 		int len = dis.readShort();
 		byte[] buf = new byte[len];
 		dis.readFully(buf);
-		if(logMINOR) Logger.minor(FreenetURI.class, "Read " + len + " bytes for key");
+		if (logMINOR) Logger.minor(
+			FreenetURI.class,
+			"Read " + len + " bytes for key"
+		);
 		return fromFullBinaryKey(buf);
 	}
 
@@ -865,21 +946,18 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 	 * stream, with no length.
 	 * @throws MalformedURLException If there was a format error in the data.
 	 * @throws IOException If a read error occurred */
-	public static FreenetURI readFullBinaryKey(DataInputStream dis) throws IOException {
+	public static FreenetURI readFullBinaryKey(DataInputStream dis)
+		throws IOException {
 		byte type = dis.readByte();
 		String keyType;
-		if(type == CHK)
-			keyType = "CHK";
-		else if(type == SSK)
-			keyType = "SSK";
-		else if(type == KSK)
-			keyType = "KSK";
-		else
-			throw new MalformedURLException("Unrecognized type " + type);
+		if (type == CHK) keyType = "CHK";
+		else if (type == SSK) keyType = "SSK";
+		else if (type == KSK) keyType = "KSK";
+		else throw new MalformedURLException("Unrecognized type " + type);
 		byte[] routingKey = null;
 		byte[] cryptoKey = null;
 		byte[] extra = null;
-		if((type == CHK) || (type == SSK)) {
+		if ((type == CHK) || (type == SSK)) {
 			// routingKey is a hash, so is exactly 32 bytes
 			routingKey = new byte[32];
 			dis.readFully(routingKey);
@@ -888,29 +966,37 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 			dis.readFully(cryptoKey);
 			// Number of bytes of extra depends on key type
 			int extraLen;
-			extraLen = (type == CHK ? ClientCHK.EXTRA_LENGTH : ClientSSK.EXTRA_LENGTH);
+			extraLen = (type == CHK
+					? ClientCHK.EXTRA_LENGTH
+					: ClientSSK.EXTRA_LENGTH);
 			extra = new byte[extraLen];
 			dis.readFully(extra);
 		}
 		String docName = null;
-		if(type != CHK)
-			docName = dis.readUTF();
+		if (type != CHK) docName = dis.readUTF();
 		int count = dis.readInt();
 		String[] metaStrings = new String[count];
-		for(int i = 0; i < metaStrings.length; i++)
-			metaStrings[i] = dis.readUTF();
-		return new FreenetURI(keyType, docName, metaStrings, routingKey, cryptoKey, extra);
+		for (int i = 0; i < metaStrings.length; i++) metaStrings[i] =
+			dis.readUTF();
+		return new FreenetURI(
+			keyType,
+			docName,
+			metaStrings,
+			routingKey,
+			cryptoKey,
+			extra
+		);
 	}
 
 	/** Write either a null or a FreenetURI. */
-	public static void writeFullBinaryKeyWithLength(FreenetURI uri, DataOutputStream dos) 
-	throws IOException {
-	    if(uri == null)
-	        dos.writeShort((short)0);
-	    else
-	        uri.writeFullBinaryKeyWithLength(dos);
+	public static void writeFullBinaryKeyWithLength(
+		FreenetURI uri,
+		DataOutputStream dos
+	) throws IOException {
+		if (uri == null) dos.writeShort((short) 0);
+		else uri.writeFullBinaryKeyWithLength(dos);
 	}
-	
+
 	/**
 	 * Write a binary representation of this URI, with a short length, so it can be passed over if necessary.
 	 * @param dos The stream to write to.
@@ -918,17 +1004,18 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 	 * problems in the key itself.
 	 * @throws IOException If an error occurred while writing the key.
 	 */
-	public void writeFullBinaryKeyWithLength(DataOutputStream dos) throws IOException {
+	public void writeFullBinaryKeyWithLength(DataOutputStream dos)
+		throws IOException {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		DataOutputStream ndos = new DataOutputStream(baos);
 		writeFullBinaryKey(ndos);
 		ndos.close();
 		byte[] data = baos.toByteArray();
-		if(data.length > Short.MAX_VALUE)
-			throw new MalformedURLException("Full key too long: " + data.length + " - " + this);
+		if (data.length > Short.MAX_VALUE) throw new MalformedURLException(
+			"Full key too long: " + data.length + " - " + this
+		);
 		dos.writeShort((short) data.length);
-		if(logMINOR)
-			Logger.minor(this, "Written " + data.length + " bytes");
+		if (logMINOR) Logger.minor(this, "Written " + data.length + " bytes");
 		dos.write(data);
 	}
 
@@ -940,104 +1027,123 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 	 * @throws IOException If an error occurred while writing the key.
 	 */
 	private void writeFullBinaryKey(DataOutputStream dos) throws IOException {
-		if(keyType.equals("CHK"))
-			dos.writeByte(CHK);
-		else if(keyType.equals("SSK"))
-			dos.writeByte(SSK);
-		else if(keyType.equals("KSK"))
-			dos.writeByte(KSK);
-		else if(keyType.equals("USK"))
-			throw new MalformedURLException("Cannot write USKs as binary keys");
-		else
-			throw new MalformedURLException("Cannot write key of type " + keyType + " - do not know how");
-		if(!keyType.equals("KSK")) {
-			if(routingKey.length != 32)
-				throw new MalformedURLException("Routing key must be of length 32");
+		if (keyType.equals("CHK")) dos.writeByte(CHK);
+		else if (keyType.equals("SSK")) dos.writeByte(SSK);
+		else if (keyType.equals("KSK")) dos.writeByte(KSK);
+		else if (keyType.equals("USK")) throw new MalformedURLException(
+			"Cannot write USKs as binary keys"
+		);
+		else throw new MalformedURLException(
+			"Cannot write key of type " + keyType + " - do not know how"
+		);
+		if (!keyType.equals("KSK")) {
+			if (routingKey.length != 32) throw new MalformedURLException(
+				"Routing key must be of length 32"
+			);
 			dos.write(routingKey);
-			if(cryptoKey.length != 32)
-				throw new MalformedURLException("Crypto key must be of length 32");
+			if (cryptoKey.length != 32) throw new MalformedURLException(
+				"Crypto key must be of length 32"
+			);
 			dos.write(cryptoKey);
-			if(keyType.equals("CHK") && (extra.length != ClientCHK.EXTRA_LENGTH))
-				throw new MalformedURLException("Wrong number of extra bytes for CHK");
-			if(keyType.equals("SSK") && (extra.length != ClientSSK.EXTRA_LENGTH))
-				throw new MalformedURLException("Wrong number of extra bytes for SSK");
+			if (
+				keyType.equals("CHK") &&
+				(extra.length != ClientCHK.EXTRA_LENGTH)
+			) throw new MalformedURLException(
+				"Wrong number of extra bytes for CHK"
+			);
+			if (
+				keyType.equals("SSK") &&
+				(extra.length != ClientSSK.EXTRA_LENGTH)
+			) throw new MalformedURLException(
+				"Wrong number of extra bytes for SSK"
+			);
 			dos.write(extra);
 		}
-		if(!keyType.equals("CHK"))
-			dos.writeUTF(docName);
-		if(metaStr != null) {
+		if (!keyType.equals("CHK")) dos.writeUTF(docName);
+		if (metaStr != null) {
 			dos.writeInt(metaStr.length);
-			for(int i = 0; i < metaStr.length; i++)
-				dos.writeUTF(metaStr[i]);
-		} else
-			dos.writeInt(0);
+			for (int i = 0; i < metaStr.length; i++) dos.writeUTF(metaStr[i]);
+		} else dos.writeInt(0);
 	}
 
 	/** Get suggested edition. Only valid for USKs. */
 	public long getSuggestedEdition() {
-		if(keyType.equals("USK"))
-			return suggestedEdition;
-		else
-			throw new IllegalArgumentException("Not a USK requesting suggested edition");
+		if (keyType.equals("USK")) return suggestedEdition;
+		else throw new IllegalArgumentException(
+			"Not a USK requesting suggested edition"
+		);
 	}
 
 	/** Generate a suggested filename for the URI. This may be constructed
 	 * from more than one part of the URI e.g. SSK@blah,blah,blah/sitename/
-	 * might return sitename. The returned string will already have been 
+	 * might return sitename. The returned string will already have been
 	 * through FileUtil.sanitize(). */
 	public String getPreferredFilename() {
-		if (logMINOR)
-			Logger.minor(this, "Getting preferred filename for " + this);
+		if (logMINOR) Logger.minor(
+			this,
+			"Getting preferred filename for " + this
+		);
 		ArrayList<String> names = new ArrayList<String>();
-		if(keyType != null && (keyType.equals("KSK") || keyType.equals("SSK") || keyType.equals("USK"))) {
-			if(logMINOR)
-				Logger.minor(this, "Adding docName: " + docName);
-			if(docName != null) {
+		if (
+			keyType != null &&
+			(keyType.equals("KSK") ||
+				keyType.equals("SSK") ||
+				keyType.equals("USK"))
+		) {
+			if (logMINOR) Logger.minor(this, "Adding docName: " + docName);
+			if (docName != null) {
 				names.add(docName);
-				if(keyType.equals("USK"))
-					names.add(Long.toString(suggestedEdition));
-			} else if(!keyType.equals("SSK")) {
+				if (keyType.equals("USK")) names.add(
+					Long.toString(suggestedEdition)
+				);
+			} else if (!keyType.equals("SSK")) {
 				// "SSK@" is legal for an upload.
-				throw new IllegalStateException("No docName for key of type "+keyType);
+				throw new IllegalStateException(
+					"No docName for key of type " + keyType
+				);
 			}
 		}
-		if(metaStr != null)
-			for(String s : metaStr) {
-				if(s == null || s.isEmpty()) {
-					if(logMINOR)
-						Logger.minor(this, "metaString \"" + s + "\": was null or empty");
-					continue;
-				}
-				if(logMINOR)
-					Logger.minor(this, "Adding metaString \"" + s + "\"");
-				names.add(s);
+		if (metaStr != null) for (String s : metaStr) {
+			if (s == null || s.isEmpty()) {
+				if (logMINOR) Logger.minor(
+					this,
+					"metaString \"" + s + "\": was null or empty"
+				);
+				continue;
 			}
+			if (logMINOR) Logger.minor(this, "Adding metaString \"" + s + "\"");
+			names.add(s);
+		}
 		StringBuilder out = new StringBuilder();
-		for(int i = 0; i < names.size(); i++) {
+		for (int i = 0; i < names.size(); i++) {
 			String s = names.get(i);
-			if(logMINOR)
-				Logger.minor(this, "name " + i + " = " + s);
+			if (logMINOR) Logger.minor(this, "name " + i + " = " + s);
 			s = FileUtil.sanitize(s);
-			if(logMINOR)
-				Logger.minor(this, "Sanitized name " + i + " = " + s);
-			if(s.length() > 0) {
-				if(out.length() > 0)
-					out.append('-');
+			if (logMINOR) Logger.minor(this, "Sanitized name " + i + " = " + s);
+			if (s.length() > 0) {
+				if (out.length() > 0) out.append('-');
 				out.append(s);
 			}
 		}
-		if(logMINOR)
-			Logger.minor(this, "out = " + out.toString());
-		if(out.length() == 0) {
-			if(routingKey != null) {
-				if(logMINOR)
-					Logger.minor(this, "Returning base64 encoded routing key");
+		if (logMINOR) Logger.minor(this, "out = " + out.toString());
+		if (out.length() == 0) {
+			if (routingKey != null) {
+				if (logMINOR) Logger.minor(
+					this,
+					"Returning base64 encoded routing key"
+				);
 				return Base64.encode(routingKey);
 			}
 			// FIXME return null in this case, localise in a wrapper.
 			return "unknown";
 		}
-		assert out.toString().equals(FileUtil.sanitize(out.toString())) : ("Not sanitized? \""+out.toString()+"\" -> \""+FileUtil.sanitize(out.toString()))+"\"";
+		assert out
+			.toString()
+			.equals(FileUtil.sanitize(out.toString())) : ("Not sanitized? \"" +
+			out.toString() +
+			"\" -> \"" +
+			FileUtil.sanitize(out.toString())) +
+		"\"";
 		return out.toString();
 	}
 
@@ -1051,7 +1157,8 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 			routingKey,
 			cryptoKey,
 			extra,
-			newEdition);
+			newEdition
+		);
 	}
 
 	/** Returns a <b>new</b> FreenetURI with a new key type. Usually this
@@ -1065,7 +1172,8 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 			routingKey,
 			cryptoKey,
 			extra,
-			suggestedEdition);
+			suggestedEdition
+		);
 	}
 
 	/** Returns a <b>new</b> FreenetURI with a new routing key. KSKs do not
@@ -1078,15 +1186,18 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 			newRoutingKey,
 			cryptoKey,
 			extra,
-			suggestedEdition);
+			suggestedEdition
+		);
 	}
 
 	/** Throw an InsertException if we have any meta-strings. They are not
 	 * valid for inserts, you must insert a directory to create a directory
 	 * structure. */
 	public void checkInsertURI() throws InsertException {
-		if(metaStr != null && metaStr.length > 0)
-			throw new InsertException(InsertExceptionMode.META_STRINGS_NOT_SUPPORTED, this);
+		if (metaStr != null && metaStr.length > 0) throw new InsertException(
+			InsertExceptionMode.META_STRINGS_NOT_SUPPORTED,
+			this
+		);
 	}
 
 	/** Throw an InsertException if the argument has any meta-strings. They
@@ -1132,34 +1243,56 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 	/** Convert a USK into an SSK by appending "-" and the suggested edition
 	 * to the document name and changing the key type. */
 	public FreenetURI sskForUSK() {
-		if(!keyType.equalsIgnoreCase("USK")) throw new IllegalStateException();
+		if (!keyType.equalsIgnoreCase("USK")) throw new IllegalStateException();
 		long edition = Math.abs(suggestedEdition);
 		if (edition == Long.MIN_VALUE) edition = Long.MAX_VALUE;
-		return new FreenetURI("SSK", docName+"-"+edition, metaStr, routingKey, cryptoKey, extra, 0);
+		return new FreenetURI(
+			"SSK",
+			docName + "-" + edition,
+			metaStr,
+			routingKey,
+			cryptoKey,
+			extra,
+			0
+		);
 	}
 
 	private static final Pattern docNameWithEditionPattern;
+
 	static {
 		docNameWithEditionPattern = Pattern.compile(".*\\-([0-9]+)");
 	}
 
 	/** Could this SSK be the result of sskForUSK()? */
 	public boolean isSSKForUSK() {
-		return keyType.equalsIgnoreCase("SSK") && docName != null && docNameWithEditionPattern.matcher(docName).matches();
+		return (
+			keyType.equalsIgnoreCase("SSK") &&
+			docName != null &&
+			docNameWithEditionPattern.matcher(docName).matches()
+		);
 	}
 
 	/** Convert an SSK into a USK, if possible. */
 	public FreenetURI uskForSSK() {
-		if(!keyType.equalsIgnoreCase("SSK")) throw new IllegalStateException();
+		if (!keyType.equalsIgnoreCase("SSK")) throw new IllegalStateException();
 		Matcher matcher = docNameWithEditionPattern.matcher(docName);
-		if (!matcher.matches())
-			throw new IllegalStateException();
+		if (!matcher.matches()) throw new IllegalStateException();
 
 		int offset = matcher.start(1) - 1;
 		String siteName = docName.substring(0, offset);
-		long edition = Long.parseLong(docName.substring(offset + 1, docName.length()));
+		long edition = Long.parseLong(
+			docName.substring(offset + 1, docName.length())
+		);
 
-		return new FreenetURI("USK", siteName, metaStr, routingKey, cryptoKey, extra, edition);
+		return new FreenetURI(
+			"USK",
+			siteName,
+			metaStr,
+			routingKey,
+			cryptoKey,
+			extra,
+			edition
+		);
 	}
 
 	/**
@@ -1167,115 +1300,119 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 	 * SSK.
 	 */
 	public long getEdition() {
-		if(keyType.equalsIgnoreCase("USK"))
-			return suggestedEdition;
-		else if(keyType.equalsIgnoreCase("SSK")) {
-			if(docName == null)
-				throw new IllegalStateException();
-			
-			Matcher matcher = docNameWithEditionPattern.matcher(docName);
-			if (!matcher.matches()) /* Taken from uskForSSK, also modify there if necessary; TODO just use isSSKForUSK() here?! */
-				throw new IllegalStateException();
+		if (keyType.equalsIgnoreCase("USK")) return suggestedEdition;
+		else if (keyType.equalsIgnoreCase("SSK")) {
+			if (docName == null) throw new IllegalStateException();
 
-			return Long.parseLong(docName.substring(matcher.start(1), docName.length()));
-		} else
-			throw new IllegalStateException();
+			Matcher matcher = docNameWithEditionPattern.matcher(docName);
+			if (
+				!matcher.matches()
+			)/* Taken from uskForSSK, also modify there if necessary; TODO just use isSSKForUSK() here?! */ throw new IllegalStateException();
+
+			return Long.parseLong(
+				docName.substring(matcher.start(1), docName.length())
+			);
+		} else throw new IllegalStateException();
 	}
 
 	@Override
-	/** This looks expensive, but 99% of the time it will quit out pretty 
-	 * early on: Either a different key type or a different routing key. The 
+	/** This looks expensive, but 99% of the time it will quit out pretty
+	 * early on: Either a different key type or a different routing key. The
 	 * worst case cost is relatively bad though. Unfortunately we can't use
-	 * a HashMap if an attacker might be able to influence the keys and 
+	 * a HashMap if an attacker might be able to influence the keys and
 	 * create a hash collision DoS, so we *do* need this. */
 	public int compareTo(FreenetURI o) {
-		if(this == o) return 0;
+		if (this == o) return 0;
 		int cmp = keyType.compareTo(o.keyType);
-		if(cmp != 0) return cmp;
-		if(routingKey != null) {
+		if (cmp != 0) return cmp;
+		if (routingKey != null) {
 			// Same type will have same routingKey != null
 			cmp = Fields.compareBytes(routingKey, o.routingKey);
-			if(cmp != 0) return cmp;
+			if (cmp != 0) return cmp;
 		}
-		if(cryptoKey != null) {
+		if (cryptoKey != null) {
 			// Same type will have same cryptoKey != null
 			cmp = Fields.compareBytes(cryptoKey, o.cryptoKey);
-			if(cmp != 0) return cmp;
+			if (cmp != 0) return cmp;
 		}
-		if(docName == null && o.docName != null) return -1;
-		if(docName != null && o.docName == null) return 1;
-		if(docName != null && o.docName != null) {
+		if (docName == null && o.docName != null) return -1;
+		if (docName != null && o.docName == null) return 1;
+		if (docName != null && o.docName != null) {
 			cmp = docName.compareTo(o.docName);
-			if(cmp != 0) return cmp;
+			if (cmp != 0) return cmp;
 		}
-		if(extra != null) {
+		if (extra != null) {
 			// Same type will have same cryptoKey != null
 			cmp = Fields.compareBytes(extra, o.extra);
-			if(cmp != 0) return cmp;
+			if (cmp != 0) return cmp;
 		}
-		if(metaStr != null && o.metaStr == null) return 1;
-		if(metaStr == null && o.metaStr != null) return -1;
-		if(metaStr != null && o.metaStr != null) {
-			if(metaStr.length > o.metaStr.length) return 1;
-			if(metaStr.length < o.metaStr.length) return -1;
-			for(int i=0;i<metaStr.length;i++) {
+		if (metaStr != null && o.metaStr == null) return 1;
+		if (metaStr == null && o.metaStr != null) return -1;
+		if (metaStr != null && o.metaStr != null) {
+			if (metaStr.length > o.metaStr.length) return 1;
+			if (metaStr.length < o.metaStr.length) return -1;
+			for (int i = 0; i < metaStr.length; i++) {
 				cmp = metaStr[i].compareTo(o.metaStr[i]);
-				if(cmp != 0) return cmp;
+				if (cmp != 0) return cmp;
 			}
 		}
-		if(suggestedEdition > o.suggestedEdition) return 1;
-		if(suggestedEdition < o.suggestedEdition) return -1;
+		if (suggestedEdition > o.suggestedEdition) return 1;
+		if (suggestedEdition < o.suggestedEdition) return -1;
 		return 0;
 	}
-	
+
 	/**
 	 * If this object is a USK/SSK insert URI, this function computes the request URI which belongs to it.
 	 * If it is a CHK/KSK, the original URI is returned as CHK/KSK do not have a private insert URI, they are their own "insert URI".
-	 * 
+	 *
 	 * If you want to give people access to content at an URI, you should always publish only the request URI.
 	 * Never give away the insert URI, this allows anyone to insert under your URI!
-	 *  
+	 *
 	 * @return The request URI which belongs to this insert URI.
 	 * @throws MalformedURLException If this object is a USK/SSK request URI already. NOT thrown for CHK/KSK URIs!
 	 */
-	public FreenetURI deriveRequestURIFromInsertURI() throws MalformedURLException {
+	public FreenetURI deriveRequestURIFromInsertURI()
+		throws MalformedURLException {
 		final FreenetURI originalURI = this;
-		
-		if(originalURI.isCHK()) {
+
+		if (originalURI.isCHK()) {
 			return originalURI;
-		} else if(originalURI.isSSK() || originalURI.isUSK()) {
+		} else if (originalURI.isSSK() || originalURI.isUSK()) {
 			FreenetURI newURI = originalURI;
-			if(originalURI.isUSK())
-				newURI = newURI.sskForUSK();
+			if (originalURI.isUSK()) newURI = newURI.sskForUSK();
 			InsertableClientSSK issk = InsertableClientSSK.create(newURI);
 			newURI = issk.getURI();
-			if(originalURI.isUSK()) {
+			if (originalURI.isUSK()) {
 				newURI = newURI.uskForSSK();
-				newURI = newURI.setSuggestedEdition(originalURI.getSuggestedEdition());
+				newURI = newURI.setSuggestedEdition(
+					originalURI.getSuggestedEdition()
+				);
 			}
 			// docName will be preserved.
 			// Any meta strings *should not* be preserved.
 			return newURI;
-		} else if(originalURI.isKSK()) {
+		} else if (originalURI.isKSK()) {
 			return originalURI;
 		} else {
-			throw new IllegalArgumentException("Not implemented yet for this key type: " + getKeyType());
+			throw new IllegalArgumentException(
+				"Not implemented yet for this key type: " + getKeyType()
+			);
 		}
 	}
 
-	public static final Comparator<FreenetURI> FAST_COMPARATOR = new Comparator<FreenetURI>() {
-
+	public static final Comparator<FreenetURI> FAST_COMPARATOR = new Comparator<
+		FreenetURI
+	>() {
 		@Override
 		public int compare(FreenetURI uri0, FreenetURI uri1) {
 			// Unfortunately the hashCode's may not have been computed yet.
 			// But it's still cheaper to recompute them in the long run.
 			int hash0 = uri0.hashCode();
 			int hash1 = uri1.hashCode();
-			if(hash0 > hash1) return 1;
-			else if(hash1 > hash0) return -1;
+			if (hash0 > hash1) return 1;
+			else if (hash1 > hash0) return -1;
 			return uri0.compareTo(uri1);
 		}
-		
 	};
 
 	public static FreenetURI generateRandomCHK(Random rand) {
@@ -1283,10 +1420,13 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 		rand.nextBytes(rkey);
 		byte[] ckey = new byte[32];
 		rand.nextBytes(ckey);
-		byte[] extra = ClientCHK.getExtra(Key.ALGO_AES_CTR_256_SHA256, (short)-1, false);
+		byte[] extra = ClientCHK.getExtra(
+			Key.ALGO_AES_CTR_256_SHA256,
+			(short) -1,
+			false
+		);
 		return new FreenetURI("CHK", null, rkey, ckey, extra);
 	}
-
 	// TODO add something like the following?
 	// public boolean isUpdatable() { return isUSK() || isSSKForUSK() }
 }

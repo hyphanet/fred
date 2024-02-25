@@ -3,11 +3,10 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import freenet.client.ArchiveManager.ARCHIVE_TYPE;
 import freenet.support.api.ManifestElement;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Helper class to estaminate the container size,
@@ -18,7 +17,7 @@ public final class ContainerSizeEstimator {
 
 	public static final ARCHIVE_TYPE DEFAULT_ARCHIVE_TYPE = ARCHIVE_TYPE.TAR;
 
-	public final static class ContainerSize {
+	public static final class ContainerSize {
 
 		private long _sizeFiles;
 		private long _sizeFilesNoLimit;
@@ -33,11 +32,11 @@ public final class ContainerSizeEstimator {
 		}
 
 		public long getSizeTotal() {
-			return _sizeFiles+_sizeSubTrees;
+			return _sizeFiles + _sizeSubTrees;
 		}
 
 		public long getSizeTotalNoLimit() {
-			return _sizeFilesNoLimit+_sizeSubTreesNoLimit;
+			return _sizeFilesNoLimit + _sizeSubTreesNoLimit;
 		}
 
 		public long getSizeFiles() {
@@ -59,26 +58,43 @@ public final class ContainerSizeEstimator {
 
 	private ContainerSizeEstimator() {}
 
-	public static ContainerSize getSubTreeSize(HashMap<String, Object> metadata, long maxItemSize, long maxContainerSize, int maxDeep) {
+	public static ContainerSize getSubTreeSize(
+		HashMap<String, Object> metadata,
+		long maxItemSize,
+		long maxContainerSize,
+		int maxDeep
+	) {
 		ContainerSize result = new ContainerSize();
-		getSubTreeSize(metadata, result, maxItemSize, maxContainerSize, maxDeep);
+		getSubTreeSize(
+			metadata,
+			result,
+			maxItemSize,
+			maxContainerSize,
+			maxDeep
+		);
 		return result;
 	}
 
-	private static void getSubTreeSize(HashMap<String, Object> metadata, ContainerSize result, long maxItemSize, long maxContainerSize,int maxDeep) {
+	private static void getSubTreeSize(
+		HashMap<String, Object> metadata,
+		ContainerSize result,
+		long maxItemSize,
+		long maxContainerSize,
+		int maxDeep
+	) {
 		// files
-		for(Map.Entry<String,Object> entry:metadata.entrySet()) {
+		for (Map.Entry<String, Object> entry : metadata.entrySet()) {
 			Object o = entry.getValue();
 			if (o instanceof ManifestElement) {
-				ManifestElement me = (ManifestElement)o;
+				ManifestElement me = (ManifestElement) o;
 				long itemsize = me.getSize();
 				if (itemsize > -1) {
-					result._sizeFilesNoLimit += getContainerItemSize(me.getSize());
+					result._sizeFilesNoLimit +=
+					getContainerItemSize(me.getSize());
 					// Add some bytes for .metadata element.
 					// FIXME 128 picked out of the air! Look up the format.
 					result._sizeFilesNoLimit += 128 + me.getName().length();
-					if (itemsize > maxItemSize)
-						result._sizeFiles += 512;  // spare for redirect
+					if (itemsize > maxItemSize) result._sizeFiles += 512; // spare for redirect
 					else {
 						result._sizeFiles += getContainerItemSize(me.getSize());
 						// Add some bytes for .metadata element.
@@ -96,16 +112,23 @@ public final class ContainerSizeEstimator {
 		}
 		// sub dirs
 		if (maxDeep > 0) {
-			for(Map.Entry<String,Object> entry:metadata.entrySet()) {
+			for (Map.Entry<String, Object> entry : metadata.entrySet()) {
 				Object o = entry.getValue();
 				if (o instanceof HashMap) {
 					result._sizeSubTrees += 512;
 					@SuppressWarnings("unchecked")
 					HashMap<String, Object> hm = (HashMap<String, Object>) o;
 					ContainerSize tempResult = new ContainerSize();
-					getSubTreeSize(hm, tempResult, maxItemSize, (maxContainerSize-result._sizeSubTrees), maxDeep-1);
+					getSubTreeSize(
+						hm,
+						tempResult,
+						maxItemSize,
+						(maxContainerSize - result._sizeSubTrees),
+						maxDeep - 1
+					);
 					result._sizeSubTrees += tempResult.getSizeTotal();
-					result._sizeSubTreesNoLimit += tempResult.getSizeTotalNoLimit();
+					result._sizeSubTreesNoLimit +=
+					tempResult.getSizeTotalNoLimit();
 					if (result._sizeSubTrees > maxContainerSize) break;
 				}
 			}
@@ -116,10 +139,14 @@ public final class ContainerSizeEstimator {
 		return getContainerItemSize(DEFAULT_ARCHIVE_TYPE, size);
 	}
 
-	private static long getContainerItemSize(ARCHIVE_TYPE archiveType, long size) {
-		if (archiveType == ARCHIVE_TYPE.TAR)
-			return tarItemSize(size);
-		throw new UnsupportedOperationException("TODO, only TAR supportet atm.");
+	private static long getContainerItemSize(
+		ARCHIVE_TYPE archiveType,
+		long size
+	) {
+		if (archiveType == ARCHIVE_TYPE.TAR) return tarItemSize(size);
+		throw new UnsupportedOperationException(
+			"TODO, only TAR supportet atm."
+		);
 	}
 
 	public static long tarItemSize(long size) {

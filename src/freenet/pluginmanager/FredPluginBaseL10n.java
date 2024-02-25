@@ -15,7 +15,6 @@ import freenet.l10n.BaseL10n.LANGUAGE;
  * @author Artefact2
  */
 public interface FredPluginBaseL10n {
-
 	/**
 	 * Called when the plugin should change its language.
 	 * @param newLanguage New language to use.

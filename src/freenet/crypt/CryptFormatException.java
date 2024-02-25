@@ -14,5 +14,4 @@ public class CryptFormatException extends Exception {
 		super(e.getMessage());
 		initCause(e);
 	}
-
 }

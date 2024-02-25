@@ -4,7 +4,7 @@ package freenet.client.update;
 public interface IUpdateManager {
 	/**
 	 * A notification received that an element needs to be updated
-	 * 
+	 *
 	 * @param message
 	 *            - The message about the update
 	 */

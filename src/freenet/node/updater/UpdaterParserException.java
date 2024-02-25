@@ -10,5 +10,4 @@ public class UpdaterParserException extends Exception {
 	public UpdaterParserException(String msg) {
 		super(msg);
 	}
-
 }

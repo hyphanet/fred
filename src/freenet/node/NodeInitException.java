@@ -1,9 +1,10 @@
 /**
- * 
+ *
  */
 package freenet.node;
 
 public class NodeInitException extends Exception {
+
 	// One of the exit codes from above
 	public final int exitCode;
 	public static final int EXIT_BAD_BWLIMIT = 26;
@@ -37,12 +38,11 @@ public class NodeInitException extends Exception {
 	public static final int EXIT_CANT_WRITE_MASTER_KEYS = 30;
 	public static final int EXIT_BAD_CONFIG = 30;
 	public static final int EXIT_EXCEPTION_TO_DEBUG = 1023;
-	
-	
+
 	private static final long serialVersionUID = -1;
-	
+
 	public NodeInitException(int exitCode, String msg) {
-		super(msg+" ("+exitCode+ ')');
+		super(msg + " (" + exitCode + ')');
 		this.exitCode = exitCode;
 	}
 }

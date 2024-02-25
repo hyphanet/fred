@@ -14,9 +14,11 @@ public class RssSniffer {
 		if (tlt == -1) {
 			return false;
 		}
-		return startsWithString(prefix, "<rss", tlt) ||
-				       startsWithString(prefix, "<feed", tlt) ||
-				       startsWithString(prefix, "<rdf:RDF", tlt);
+		return (
+			startsWithString(prefix, "<rss", tlt) ||
+			startsWithString(prefix, "<feed", tlt) ||
+			startsWithString(prefix, "<rdf:RDF", tlt)
+		);
 	}
 
 	/**
@@ -51,7 +53,11 @@ public class RssSniffer {
 	 * Checks whether the given data starts with the characters in the key value, when starting at
 	 * fromIndex in the data array.
 	 */
-	private static boolean startsWithString(byte[] data, String key, int fromIndex) {
+	private static boolean startsWithString(
+		byte[] data,
+		String key,
+		int fromIndex
+	) {
 		if (data.length - fromIndex < key.length()) {
 			return false;
 		}
@@ -75,5 +81,4 @@ public class RssSniffer {
 		}
 		return -1;
 	}
-
 }

@@ -2,19 +2,18 @@ package freenet.support;
 
 import static org.junit.Assert.*;
 
+import freenet.node.PrioRunnable;
+import freenet.support.io.NativeThread;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
-
 import org.junit.Before;
 import org.junit.Test;
 
-import freenet.node.PrioRunnable;
-import freenet.support.io.NativeThread;
-
 public class PrioritizedSerialExecutorTest {
+
 	private Executor realExec;
 	private PrioritizedSerialExecutor exec;
 
@@ -22,6 +21,7 @@ public class PrioritizedSerialExecutorTest {
 	private List<String> completedJobs;
 
 	private class J implements PrioRunnable {
+
 		private int prio;
 		private String name;
 
@@ -54,16 +54,21 @@ public class PrioritizedSerialExecutorTest {
 		realExec = new PooledExecutor();
 		completedJobs = new ArrayList<String>();
 		completingJob = new SynchronousQueue<String>();
-		exec = new PrioritizedSerialExecutor(NativeThread.MAX_PRIORITY, 10, 5, true);
+		exec = new PrioritizedSerialExecutor(
+			NativeThread.MAX_PRIORITY,
+			10,
+			5,
+			true
+		);
 	}
 
-	private void Q(String j, int i, boolean waitForStart) throws InterruptedException {
+	private void Q(String j, int i, boolean waitForStart)
+		throws InterruptedException {
 		J job = new J(j, i);
 
 		synchronized (job) {
 			exec.execute(job, j);
-			if (waitForStart)
-				job.wait(5000);
+			if (waitForStart) job.wait(5000);
 		}
 	}
 
@@ -71,8 +76,7 @@ public class PrioritizedSerialExecutorTest {
 		int completed = 0;
 		while (completed < count) {
 			String s = completingJob.poll(5, TimeUnit.SECONDS);
-			if (s == null)
-				fail("Hang?");
+			if (s == null) fail("Hang?");
 
 			completed++;
 			completedJobs.add(s);
@@ -152,7 +156,15 @@ public class PrioritizedSerialExecutorTest {
 		waitFor(5); // JP, JQ, J2, JO, JR
 
 		int i = 0;
-		for (String s : new String[] { "JM", "J8", "JN", "JP", "JQ", "J2", "JO", "JR" })
-			assertEquals(s, s, completedJobs.get(i++));
+		for (String s : new String[] {
+			"JM",
+			"J8",
+			"JN",
+			"JP",
+			"JQ",
+			"J2",
+			"JO",
+			"JR",
+		}) assertEquals(s, s, completedJobs.get(i++));
 	}
 }

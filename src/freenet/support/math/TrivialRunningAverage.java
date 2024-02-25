@@ -32,33 +32,33 @@ public final class TrivialRunningAverage implements RunningAverage, Cloneable {
 		return total;
 	}
 
-        /**
-         *
-         * @return
-         */
-        @Override
-        public synchronized double currentValue() {
+	/**
+	 *
+	 * @return
+	 */
+	@Override
+	public synchronized double currentValue() {
 		return total / reports;
 	}
 
-        /**
-         *
-         * @param d
-         */
-        @Override
-        public synchronized void report(double d) {
+	/**
+	 *
+	 * @param d
+	 */
+	@Override
+	public synchronized void report(double d) {
 		total += d;
 		reports++;
 		// TODO Auto-generated method stub
 	}
 
-        /**
-         *
-         * @param d
-         */
-        @Override
-        public void report(long d) {
-		report((double)d);
+	/**
+	 *
+	 * @param d
+	 */
+	@Override
+	public void report(long d) {
+		report((double) d);
 	}
 
 	@Override

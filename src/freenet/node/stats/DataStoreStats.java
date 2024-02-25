@@ -26,9 +26,8 @@ public interface DataStoreStats {
 	double avgDist() throws StatsNotAvailableException;
 
 	double distanceStats() throws StatsNotAvailableException;
-	
-	StoreAccessStats getSessionAccessStats();
-	
-	StoreAccessStats getTotalAccessStats() throws StatsNotAvailableException;
 
+	StoreAccessStats getSessionAccessStats();
+
+	StoreAccessStats getTotalAccessStats() throws StatsNotAvailableException;
 }

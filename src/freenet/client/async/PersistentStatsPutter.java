@@ -3,22 +3,22 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
-import java.io.Serializable;
-
 import freenet.node.Node;
 import freenet.support.BandwidthStatsContainer;
 import freenet.support.UptimeContainer;
+import java.io.Serializable;
 
 /**
  * Add/alter the containers contained in the database, so that
  * the upload/download statistics persist.
- * 
+ *
  * @author Artefact2
  */
 public class PersistentStatsPutter implements Serializable {
-    private static final long serialVersionUID = 1L;
 
-    public static final int OFFSET = 60000;
+	private static final long serialVersionUID = 1L;
+
+	public static final int OFFSET = 60000;
 
 	private long latestNodeBytesOut = 0;
 	private long latestNodeBytesIn = 0;
@@ -43,16 +43,15 @@ public class PersistentStatsPutter implements Serializable {
 		this.latestBW.creationTime = System.currentTimeMillis();
 		this.latestNodeBytesOut = nodeBW[0];
 		this.latestNodeBytesIn = nodeBW[1];
-		
+
 		final long uptime = n.getUptime();
 		this.latestUptime.totalUptime += uptime - this.latestUptimeVal;
 		this.latestUptime.creationTime = System.currentTimeMillis();
 		this.latestUptimeVal = uptime;
 	}
 
-    public void addFrom(PersistentStatsPutter stored) {
-        this.latestBW.addFrom(stored.latestBW);
-        this.latestUptime.addFrom(stored.latestUptime);
-    }
-
+	public void addFrom(PersistentStatsPutter stored) {
+		this.latestBW.addFrom(stored.latestBW);
+		this.latestUptime.addFrom(stored.latestUptime);
+	}
 }

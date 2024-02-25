@@ -14,61 +14,64 @@ import java.util.HashMap;
 public class StringCounter {
 
 	private final HashMap<String, Item> map;
-	
+
 	private static class Item {
+
 		public Item(String string2) {
 			this.string = string2;
 		}
+
 		final String string;
 		int counter;
 	}
-	
+
 	public StringCounter() {
 		map = new HashMap<String, Item>();
 	}
-	
+
 	public synchronized void inc(String string) {
 		Item item = map.get(string);
-		if(item == null) {
+		if (item == null) {
 			item = new Item(string);
 			item.counter = 1;
 			map.put(string, item);
-		} else
-			item.counter++;
+		} else item.counter++;
 	}
-	
+
 	public int get(String string) {
 		Item item = map.get(string);
-		if(item == null) return 0;
+		if (item == null) return 0;
 		return item.counter;
 	}
-	
+
 	private synchronized Item[] items() {
 		return map.values().toArray(new Item[map.size()]);
 	}
-	
+
 	private synchronized Item[] sortedItems(final boolean ascending) {
 		Item[] items = items();
-		Arrays.sort(items, new Comparator<Item>() {
-			@Override
-			public int compare(Item it0, Item it1) {
-				int ret;
-				if(it0.counter > it1.counter) ret = 1;
-				else if(it0.counter < it1.counter) ret = -1;
-				else ret = it0.string.compareTo(it1.string);
-				if(!ascending) ret = -ret;
-				return ret;
+		Arrays.sort(
+			items,
+			new Comparator<Item>() {
+				@Override
+				public int compare(Item it0, Item it1) {
+					int ret;
+					if (it0.counter > it1.counter) ret = 1;
+					else if (it0.counter < it1.counter) ret = -1;
+					else ret = it0.string.compareTo(it1.string);
+					if (!ascending) ret = -ret;
+					return ret;
+				}
 			}
-		});
+		);
 		return items;
 	}
-	
+
 	public String toLongString() {
 		Item[] items = sortedItems(false);
-		if (items.length == 0)
-			return "";
+		if (items.length == 0) return "";
 		StringBuilder sb = new StringBuilder();
-		for(Item it: items) {
+		for (Item it : items) {
 			sb.append(it.string);
 			sb.append('\t');
 			sb.append(it.counter);
@@ -76,15 +79,15 @@ public class StringCounter {
 		}
 		// assert(sb.length() > 0); -- always true as (items.length != 0)
 		// remove last '\n'
-		sb.deleteCharAt(sb.length()-1);
+		sb.deleteCharAt(sb.length() - 1);
 		return sb.toString();
 	}
-	
+
 	public int toTableRows(HTMLNode table) {
 		Item[] items = sortedItems(false);
-		for(Item it: items) {
+		for (Item it : items) {
 			HTMLNode row = table.addChild("tr");
-			row.addChild("td", Integer.toString(it.counter)+"\u00a0");
+			row.addChild("td", Integer.toString(it.counter) + "\u00a0");
 			row.addChild("td", it.string);
 		}
 		return items.length;

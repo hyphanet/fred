@@ -3,13 +3,12 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import java.util.Calendar;
-import java.util.TimeZone;
-
 import freenet.support.Fields;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
+import java.util.Calendar;
+import java.util.TimeZone;
 
 /**
  * Central spot for stuff related to the versioning of the codebase.
@@ -61,20 +60,23 @@ public class Version {
 	static {
 		final Calendar _cal = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
 		// year, month - 1 (or constant), day, hour, minute, second
-		_cal.set( 2016, Calendar.JULY, 15, 0, 0, 0 );
+		_cal.set(2016, Calendar.JULY, 15, 0, 0, 0);
 		transitionTime = _cal.getTimeInMillis();
 	}
 
-        private static volatile boolean logMINOR;
-        private static volatile boolean logDEBUG;
+	private static volatile boolean logMINOR;
+	private static volatile boolean logDEBUG;
+
 	static {
-		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
-			@Override
-			public void shouldUpdate(){
-				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-                                logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
+		Logger.registerLogThresholdCallback(
+			new LogThresholdCallback() {
+				@Override
+				public void shouldUpdate() {
+					logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+					logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
+				}
 			}
-		});
+		);
 	}
 
 	/**
@@ -106,17 +108,15 @@ public class Version {
 		return transitionTime;
 	}
 
-
-
 	/**
 	 * @return The lowest build number with which the node will connect and exchange
 	 * data normally.
 	 */
 	public static int lastGoodBuild() {
-		if(System.currentTimeMillis() >= transitionTime)
-			return newLastGoodBuild;
-		else
-			return oldLastGoodBuild;
+		if (
+			System.currentTimeMillis() >= transitionTime
+		) return newLastGoodBuild;
+		else return oldLastGoodBuild;
 	}
 
 	/** The highest reported build of fred */
@@ -145,14 +145,22 @@ public class Version {
 	 * @return the node's version designators as an array
 	 */
 	public static String[] getVersion() {
-		String[] ret =
-			{ nodeName, nodeVersion, protocolVersion,  String.valueOf(buildNumber) };
+		String[] ret = {
+			nodeName,
+			nodeVersion,
+			protocolVersion,
+			String.valueOf(buildNumber),
+		};
 		return ret;
 	}
 
 	public static String[] getLastGoodVersion() {
-		String[] ret =
-			{ nodeName, nodeVersion, protocolVersion,  String.valueOf(lastGoodBuild()) };
+		String[] ret = {
+			nodeName,
+			nodeVersion,
+			protocolVersion,
+			String.valueOf(lastGoodBuild()),
+		};
 		return ret;
 	}
 
@@ -175,11 +183,11 @@ public class Version {
 	 *         protocol version string
 	 */
 	private static boolean goodProtocol(String prot) {
-		if (prot.equals(protocolVersion)
-// uncomment next line to accept stable, see also explainBadVersion() below
-//			|| prot.equals(stableProtocolVersion)
-			)
-			return true;
+		if (
+			prot.equals(protocolVersion)
+			// uncomment next line to accept stable, see also explainBadVersion() below
+			//			|| prot.equals(stableProtocolVersion)
+		) return true;
 		return false;
 	}
 
@@ -187,13 +195,15 @@ public class Version {
 	 * @return true if requests should be accepted from nodes brandishing this
 	 *         version string
 	 */
-	public static boolean checkGoodVersion(
-		String version) {
-	    if(version == null) {
-	        Logger.error(Version.class, "version == null!",
-	                new Exception("error"));
-	        return false;
-	    }
+	public static boolean checkGoodVersion(String version) {
+		if (version == null) {
+			Logger.error(
+				Version.class,
+				"version == null!",
+				new Exception("error")
+			);
+			return false;
+		}
 		String[] v = Fields.commaList(version);
 
 		if ((v.length < 3) || !goodProtocol(v[2])) {
@@ -204,44 +214,47 @@ public class Version {
 				int build = Integer.parseInt(v[3]);
 				int req = lastGoodBuild();
 				if (build < req) {
-					if(logDEBUG) Logger.debug(
+					if (logDEBUG) Logger.debug(
 						Version.class,
-						"Not accepting unstable from version: "
-							+ version
-							+ "(lastGoodBuild="
-							+ req
-							+ ')');
+						"Not accepting unstable from version: " +
+						version +
+						"(lastGoodBuild=" +
+						req +
+						')'
+					);
 					return false;
 				}
 			} catch (NumberFormatException e) {
-				if(logMINOR)
-					Logger.minor(Version.class,
-							"Not accepting (" + e + ") from " + version);
+				if (logMINOR) Logger.minor(
+					Version.class,
+					"Not accepting (" + e + ") from " + version
+				);
 				return false;
 			}
 		}
 		if (stableVersion(v)) {
 			try {
 				int build = Integer.parseInt(v[3]);
-				if(build < lastGoodStableBuild) {
-					if(logDEBUG) Logger.debug(
+				if (build < lastGoodStableBuild) {
+					if (logDEBUG) Logger.debug(
 						Version.class,
-						"Not accepting stable from version"
-							+ version
-							+ "(lastGoodStableBuild="
-							+ lastGoodStableBuild
-							+ ')');
+						"Not accepting stable from version" +
+						version +
+						"(lastGoodStableBuild=" +
+						lastGoodStableBuild +
+						')'
+					);
 					return false;
 				}
 			} catch (NumberFormatException e) {
 				Logger.minor(
 					Version.class,
-					"Not accepting (" + e + ") from " + version);
+					"Not accepting (" + e + ") from " + version
+				);
 				return false;
 			}
 		}
-		if(logDEBUG)
-			Logger.minor(Version.class, "Accepting: " + version);
+		if (logDEBUG) Logger.minor(Version.class, "Accepting: " + version);
 		return true;
 	}
 
@@ -250,17 +263,25 @@ public class Version {
 	 *         version string, given an arbitrary lastGoodVersion
 	 */
 	public static boolean checkArbitraryGoodVersion(
-		String version, String lastGoodVersion) {
-	    if(version == null) {
-	        Logger.error(Version.class, "version == null!",
-	                new Exception("error"));
-	        return false;
-	    }
-	    if(lastGoodVersion == null) {
-	        Logger.error(Version.class, "lastGoodVersion == null!",
-	                new Exception("error"));
-	        return false;
-	    }
+		String version,
+		String lastGoodVersion
+	) {
+		if (version == null) {
+			Logger.error(
+				Version.class,
+				"version == null!",
+				new Exception("error")
+			);
+			return false;
+		}
+		if (lastGoodVersion == null) {
+			Logger.error(
+				Version.class,
+				"lastGoodVersion == null!",
+				new Exception("error")
+			);
+			return false;
+		}
 		String[] v = Fields.commaList(version);
 		String[] lgv = Fields.commaList(lastGoodVersion);
 
@@ -270,49 +291,57 @@ public class Version {
 		if ((lgv == null || lgv.length < 3) || !goodProtocol(lgv[2])) {
 			return false;
 		}
-		if (sameArbitraryVersion(v,lgv)) {
+		if (sameArbitraryVersion(v, lgv)) {
 			try {
 				int build = Integer.parseInt(v[3]);
 				int min_build = Integer.parseInt(lgv[3]);
 				if (build < min_build) {
-					if(logDEBUG) Logger.debug(
+					if (logDEBUG) Logger.debug(
 						Version.class,
-						"Not accepting unstable from version: "
-							+ version
-							+ "(lastGoodVersion="
-							+ lastGoodVersion
-							+ ')');
+						"Not accepting unstable from version: " +
+						version +
+						"(lastGoodVersion=" +
+						lastGoodVersion +
+						')'
+					);
 					return false;
 				}
 			} catch (NumberFormatException e) {
-				if(logMINOR)
-					Logger.minor(Version.class,
-							"Not accepting (" + e + ") from " + version + " and/or " + lastGoodVersion);
+				if (logMINOR) Logger.minor(
+					Version.class,
+					"Not accepting (" +
+					e +
+					") from " +
+					version +
+					" and/or " +
+					lastGoodVersion
+				);
 				return false;
 			}
 		}
 		if (stableVersion(v)) {
 			try {
 				int build = Integer.parseInt(v[3]);
-				if(build < lastGoodStableBuild) {
-					if(logDEBUG) Logger.debug(
+				if (build < lastGoodStableBuild) {
+					if (logDEBUG) Logger.debug(
 						Version.class,
-						"Not accepting stable from version"
-							+ version
-							+ "(lastGoodStableBuild="
-							+ lastGoodStableBuild
-							+ ')');
+						"Not accepting stable from version" +
+						version +
+						"(lastGoodStableBuild=" +
+						lastGoodStableBuild +
+						')'
+					);
 					return false;
 				}
 			} catch (NumberFormatException e) {
 				Logger.minor(
 					Version.class,
-					"Not accepting (" + e + ") from " + version);
+					"Not accepting (" + e + ") from " + version
+				);
 				return false;
 			}
 		}
-		if(logDEBUG)
-			Logger.minor(Version.class, "Accepting: " + version);
+		if (logDEBUG) Logger.minor(Version.class, "Accepting: " + version);
 		return true;
 	}
 
@@ -323,18 +352,19 @@ public class Version {
 		String[] v = Fields.commaList(version);
 
 		if ((v.length < 3) || !goodProtocol(v[2])) {
-			return "Required protocol version is "
-						+ protocolVersion
-// uncomment next line if accepting stable, see also goodProtocol() above
-//						+ " or " + stableProtocolVersion
-						;
+			return (
+				"Required protocol version is " + protocolVersion
+			)// uncomment next line if accepting stable, see also goodProtocol() above
+			//						+ " or " + stableProtocolVersion
+			;
 		}
 		if (sameVersion(v)) {
 			try {
 				int build = Integer.parseInt(v[3]);
 				int req = lastGoodBuild();
-				if (build < req)
-					return "Build older than last good build " + req;
+				if (build < req) return (
+					"Build older than last good build " + req
+				);
 			} catch (NumberFormatException e) {
 				return "Build number not numeric.";
 			}
@@ -342,8 +372,10 @@ public class Version {
 		if (stableVersion(v)) {
 			try {
 				int build = Integer.parseInt(v[3]);
-				if (build < lastGoodStableBuild)
-					return "Build older than last good stable build " + lastGoodStableBuild;
+				if (build < lastGoodStableBuild) return (
+					"Build older than last good stable build " +
+					lastGoodStableBuild
+				);
 			} catch (NumberFormatException e) {
 				return "Build number not numeric.";
 			}
@@ -354,33 +386,48 @@ public class Version {
 	/**
 	 * @return the build number of an arbitrary version string
 	 */
-	public static int getArbitraryBuildNumber(
-		String version ) throws VersionParseException {
-	    if(version == null) {
-	        Logger.error(Version.class, "version == null!",
-	                new Exception("error"));
-	        throw new VersionParseException("version == null");
-	    }
+	public static int getArbitraryBuildNumber(String version)
+		throws VersionParseException {
+		if (version == null) {
+			Logger.error(
+				Version.class,
+				"version == null!",
+				new Exception("error")
+			);
+			throw new VersionParseException("version == null");
+		}
 		String[] v = Fields.commaList(version);
 
 		if ((v.length < 3) || !goodProtocol(v[2])) {
-			throw new VersionParseException("not long enough or bad protocol: "+version);
+			throw new VersionParseException(
+				"not long enough or bad protocol: " + version
+			);
 		}
 		try {
 			return Integer.parseInt(v[3]);
 		} catch (NumberFormatException e) {
-			throw (VersionParseException)new VersionParseException("Got NumberFormatException on "+v[3]+" : "+e+" for "+version).initCause(e);
+			throw (VersionParseException) new VersionParseException(
+				"Got NumberFormatException on " +
+				v[3] +
+				" : " +
+				e +
+				" for " +
+				version
+			).initCause(e);
 		}
 	}
 
 	public static int getArbitraryBuildNumber(
-			String version, int defaultValue ) {
+		String version,
+		int defaultValue
+	) {
 		try {
 			return getArbitraryBuildNumber(version);
 		} catch (VersionParseException e) {
 			return defaultValue;
 		}
 	}
+
 	/**
 	 * Update static variable highestSeenBuild anytime we encounter
 	 * a new node with a higher version than we've seen before
@@ -388,11 +435,9 @@ public class Version {
 	public static void seenVersion(String version) {
 		String[] v = Fields.commaList(version);
 
-		if ((v == null) || (v.length < 3))
-			return; // bad, but that will be discovered elsewhere
+		if ((v == null) || (v.length < 3)) return; // bad, but that will be discovered elsewhere
 
 		if (sameVersion(v)) {
-
 			int buildNo;
 			try {
 				buildNo = Integer.parseInt(v[3]);
@@ -403,13 +448,14 @@ public class Version {
 				if (logMINOR) {
 					Logger.minor(
 						Version.class,
-						"New highest seen build: " + buildNo);
+						"New highest seen build: " + buildNo
+					);
 				}
 				highestSeenBuild = buildNo;
 			}
 		}
 	}
-	
+
 	public static int getHighestSeenBuild() {
 		return highestSeenBuild;
 	}
@@ -419,9 +465,9 @@ public class Version {
 	 * Note that the build number may be different, and is ignored.
 	 */
 	public static boolean sameVersion(String[] v) {
-		return v[0].equals(nodeName)
-			&& v[1].equals(nodeVersion)
-			&& (v.length >= 4);
+		return (
+			v[0].equals(nodeName) && v[1].equals(nodeVersion) && (v.length >= 4)
+		);
 	}
 
 	/**
@@ -429,34 +475,39 @@ public class Version {
 	 * Note that the build number may be different, and is ignored.
 	 */
 	public static boolean sameArbitraryVersion(String[] v, String[] lgv) {
-		return v[0].equals(lgv[0])
-			&& v[1].equals(lgv[1])
-			&& (v.length >= 4)
-			&& (lgv.length >= 4);
+		return (
+			v[0].equals(lgv[0]) &&
+			v[1].equals(lgv[1]) &&
+			(v.length >= 4) &&
+			(lgv.length >= 4)
+		);
 	}
 
 	/**
 	 * @return true if the string describes a stable node version
 	 */
 	private static boolean stableVersion(String[] v) {
-		return v[0].equals(nodeName)
-			&& v[1].equals(stableNodeVersion)
-			&& (v.length >= 4);
+		return (
+			v[0].equals(nodeName) &&
+			v[1].equals(stableNodeVersion) &&
+			(v.length >= 4)
+		);
 	}
 
 	public static void main(String[] args) throws Throwable {
 		System.out.println(
-			"Freenet: "
-				+ nodeName
-				+ ' '
-                    + nodeVersion
-				+ " (protocol "
-				+ protocolVersion
-				+ ") build "
-				+ buildNumber
-				+ " (last good build: "
-				+ lastGoodBuild()
-				+ ") "
-				+ cvsRevision);
+			"Freenet: " +
+			nodeName +
+			' ' +
+			nodeVersion +
+			" (protocol " +
+			protocolVersion +
+			") build " +
+			buildNumber +
+			" (last good build: " +
+			lastGoodBuild() +
+			") " +
+			cvsRevision
+		);
 	}
 }

@@ -24,8 +24,12 @@ public class CloseConnectionDuplicateClientNameMessage extends FCPMessage {
 
 	@Override
 	public void run(FCPConnectionHandler handler, Node node)
-			throws MessageInvalidException {
-		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "CloseConnectionDuplicateClientName goes from server to client not the other way around", null, false);
+		throws MessageInvalidException {
+		throw new MessageInvalidException(
+			ProtocolErrorMessage.INVALID_MESSAGE,
+			"CloseConnectionDuplicateClientName goes from server to client not the other way around",
+			null,
+			false
+		);
 	}
-
 }

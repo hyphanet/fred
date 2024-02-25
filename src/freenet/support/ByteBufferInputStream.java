@@ -15,6 +15,7 @@ import java.nio.ByteBuffer;
  * @author sdiz
  */
 public class ByteBufferInputStream extends InputStream implements DataInput {
+
 	protected ByteBuffer buf;
 
 	public ByteBufferInputStream(byte[] array) {
@@ -24,6 +25,7 @@ public class ByteBufferInputStream extends InputStream implements DataInput {
 	public ByteBufferInputStream(byte[] array, int offset, int length) {
 		this(ByteBuffer.wrap(array, offset, length));
 	}
+
 	public ByteBufferInputStream(ByteBuffer buf) {
 		this.buf = buf;
 	}
@@ -36,8 +38,7 @@ public class ByteBufferInputStream extends InputStream implements DataInput {
 			return -1;
 		}
 	}
-	
-	
+
 	public int remaining() {
 		return buf.remaining();
 	}
@@ -47,7 +48,7 @@ public class ByteBufferInputStream extends InputStream implements DataInput {
 		try {
 			return buf.get() != 0;
 		} catch (BufferUnderflowException e) {
-			throw (EOFException)new EOFException().initCause(e);
+			throw (EOFException) new EOFException().initCause(e);
 		}
 	}
 
@@ -56,7 +57,7 @@ public class ByteBufferInputStream extends InputStream implements DataInput {
 		try {
 			return buf.get();
 		} catch (BufferUnderflowException e) {
-			throw (EOFException)new EOFException().initCause(e);
+			throw (EOFException) new EOFException().initCause(e);
 		}
 	}
 
@@ -65,7 +66,7 @@ public class ByteBufferInputStream extends InputStream implements DataInput {
 		try {
 			return buf.getChar();
 		} catch (BufferUnderflowException e) {
-			throw (EOFException)new EOFException().initCause(e);
+			throw (EOFException) new EOFException().initCause(e);
 		}
 	}
 
@@ -74,7 +75,7 @@ public class ByteBufferInputStream extends InputStream implements DataInput {
 		try {
 			return buf.getDouble();
 		} catch (BufferUnderflowException e) {
-			throw (EOFException)new EOFException().initCause(e);
+			throw (EOFException) new EOFException().initCause(e);
 		}
 	}
 
@@ -83,7 +84,7 @@ public class ByteBufferInputStream extends InputStream implements DataInput {
 		try {
 			return buf.getFloat();
 		} catch (BufferUnderflowException e) {
-			throw (EOFException)new EOFException().initCause(e);
+			throw (EOFException) new EOFException().initCause(e);
 		}
 	}
 
@@ -92,7 +93,7 @@ public class ByteBufferInputStream extends InputStream implements DataInput {
 		try {
 			buf.get(b);
 		} catch (BufferUnderflowException e) {
-			throw (EOFException)new EOFException().initCause(e);
+			throw (EOFException) new EOFException().initCause(e);
 		}
 	}
 
@@ -101,7 +102,7 @@ public class ByteBufferInputStream extends InputStream implements DataInput {
 		try {
 			buf.get(b, off, len);
 		} catch (BufferUnderflowException e) {
-			throw (EOFException)new EOFException().initCause(e);
+			throw (EOFException) new EOFException().initCause(e);
 		}
 	}
 
@@ -110,7 +111,7 @@ public class ByteBufferInputStream extends InputStream implements DataInput {
 		try {
 			return buf.getInt();
 		} catch (BufferUnderflowException e) {
-			throw (EOFException)new EOFException().initCause(e);
+			throw (EOFException) new EOFException().initCause(e);
 		}
 	}
 
@@ -119,7 +120,7 @@ public class ByteBufferInputStream extends InputStream implements DataInput {
 		try {
 			return buf.getLong();
 		} catch (BufferUnderflowException e) {
-			throw (EOFException)new EOFException().initCause(e);
+			throw (EOFException) new EOFException().initCause(e);
 		}
 	}
 
@@ -128,17 +129,16 @@ public class ByteBufferInputStream extends InputStream implements DataInput {
 		try {
 			return buf.getShort();
 		} catch (BufferUnderflowException e) {
-			throw (EOFException)new EOFException().initCause(e);
+			throw (EOFException) new EOFException().initCause(e);
 		}
 	}
-
 
 	@Override
 	public int readUnsignedByte() throws IOException {
 		try {
 			return buf.get() & 0xFF;
 		} catch (BufferUnderflowException e) {
-			throw (EOFException)new EOFException().initCause(e);
+			throw (EOFException) new EOFException().initCause(e);
 		}
 	}
 
@@ -147,7 +147,7 @@ public class ByteBufferInputStream extends InputStream implements DataInput {
 		try {
 			return buf.getShort() & 0xFFFF;
 		} catch (BufferUnderflowException e) {
-			throw (EOFException)new EOFException().initCause(e);
+			throw (EOFException) new EOFException().initCause(e);
 		}
 	}
 
@@ -162,6 +162,7 @@ public class ByteBufferInputStream extends InputStream implements DataInput {
 	public String readUTF() throws IOException {
 		return DataInputStream.readUTF(this);
 	}
+
 	/**
 	 * @deprecated {@link DataInputStream#readLine()} is deprecated, so why not?
 	 */
@@ -174,23 +175,21 @@ public class ByteBufferInputStream extends InputStream implements DataInput {
 
 	/**
 	 * Slice a piece of ByteBuffer into a new ByteBufferInputStream
-	 * 
+	 *
 	 * @param size
 	 */
 	public ByteBufferInputStream slice(int size) throws IOException {
 		try {
-			if (buf.remaining() < size)
-				throw new EOFException();
+			if (buf.remaining() < size) throw new EOFException();
 
 			ByteBuffer bf2 = buf.slice();
 			bf2.limit(size);
-			
+
 			skip(size);
-			
+
 			return new ByteBufferInputStream(bf2);
 		} catch (BufferUnderflowException e) {
-			throw (EOFException)new EOFException().initCause(e);
+			throw (EOFException) new EOFException().initCause(e);
 		}
 	}
-
 }

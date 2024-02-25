@@ -12,8 +12,12 @@ public class URIGeneratedMessage extends FCPMessage {
 	private final FreenetURI uri;
 	private final String identifier;
 	private final boolean global;
-	
-	public URIGeneratedMessage(FreenetURI uri, String identifier, boolean global) {
+
+	public URIGeneratedMessage(
+		FreenetURI uri,
+		String identifier,
+		boolean global
+	) {
 		this.uri = uri;
 		this.identifier = identifier;
 		this.global = global;
@@ -35,8 +39,12 @@ public class URIGeneratedMessage extends FCPMessage {
 
 	@Override
 	public void run(FCPConnectionHandler handler, Node node)
-			throws MessageInvalidException {
-		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "URIGenerated goes from server to client not the other way around", identifier, false);
+		throws MessageInvalidException {
+		throw new MessageInvalidException(
+			ProtocolErrorMessage.INVALID_MESSAGE,
+			"URIGenerated goes from server to client not the other way around",
+			identifier,
+			false
+		);
 	}
-
 }

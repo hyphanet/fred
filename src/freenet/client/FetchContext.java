@@ -3,14 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.EOFException;
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.HashSet;
-import java.util.Set;
-
 import freenet.client.async.BlockSet;
 import freenet.client.events.ClientEventProducer;
 import freenet.client.events.SimpleEventProducer;
@@ -19,14 +11,21 @@ import freenet.client.filter.TagReplacerCallback;
 import freenet.node.RequestScheduler;
 import freenet.support.api.BucketFactory;
 import freenet.support.io.StorageFormatException;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.EOFException;
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.HashSet;
+import java.util.Set;
 
 /** Context for a Fetcher. Contains all the settings a Fetcher needs to know
  * about. FIXME these should be final or private, with getters/setters and
  * checking for valid values e.g. maxRecursionLevel >= 1. */
 public class FetchContext implements Cloneable, Serializable {
 
-    private static final long serialVersionUID = 1L;
-    public static final int IDENTICAL_MASK = 0;
+	private static final long serialVersionUID = 1L;
+	public static final int IDENTICAL_MASK = 0;
 	public static final int SPLITFILE_DEFAULT_BLOCK_MASK = 1;
 	public static final int SPLITFILE_DEFAULT_MASK = 2;
 	public static final int SET_RETURN_ARCHIVES = 4;
@@ -123,49 +122,86 @@ public class FetchContext implements Cloneable, Serializable {
 	/** Ignore USK DATEHINTs */
 	public boolean ignoreUSKDatehints;
 
-  /** scheme, host and port: force the prefix of a URI. Example: https://localhost:1234 */
-  private final String schemeHostAndPort;
+	/** scheme, host and port: force the prefix of a URI. Example: https://localhost:1234 */
+	private final String schemeHostAndPort;
 
-  public FetchContext(long curMaxLength,
-			long curMaxTempLength, int maxMetadataSize, int maxRecursionLevel, int maxArchiveRestarts, int maxArchiveLevels,
-			boolean dontEnterImplicitArchives,
-			int maxSplitfileBlockRetries, int maxNonSplitfileRetries, int maxUSKRetries,
-			boolean allowSplitfiles, boolean followRedirects, boolean localRequestOnly,
-			boolean filterData, int maxDataBlocksPerSegment, int maxCheckBlocksPerSegment,
-			BucketFactory bucketFactory,
-			ClientEventProducer producer,
-			boolean ignoreTooManyPathComponents, boolean canWriteClientCache, String charset, String overrideMIME,
-      String schemeHostAndPort) {
-    this.blocks = null;
+	public FetchContext(
+		long curMaxLength,
+		long curMaxTempLength,
+		int maxMetadataSize,
+		int maxRecursionLevel,
+		int maxArchiveRestarts,
+		int maxArchiveLevels,
+		boolean dontEnterImplicitArchives,
+		int maxSplitfileBlockRetries,
+		int maxNonSplitfileRetries,
+		int maxUSKRetries,
+		boolean allowSplitfiles,
+		boolean followRedirects,
+		boolean localRequestOnly,
+		boolean filterData,
+		int maxDataBlocksPerSegment,
+		int maxCheckBlocksPerSegment,
+		BucketFactory bucketFactory,
+		ClientEventProducer producer,
+		boolean ignoreTooManyPathComponents,
+		boolean canWriteClientCache,
+		String charset,
+		String overrideMIME,
+		String schemeHostAndPort
+	) {
+		this.blocks = null;
 		this.maxOutputLength = curMaxLength;
-		if(maxOutputLength < 0) throw new IllegalArgumentException("Bad max output length");
+		if (maxOutputLength < 0) throw new IllegalArgumentException(
+			"Bad max output length"
+		);
 		this.maxTempLength = curMaxTempLength;
-		if(maxTempLength < 0) throw new IllegalArgumentException("Bad max temp length");
+		if (maxTempLength < 0) throw new IllegalArgumentException(
+			"Bad max temp length"
+		);
 		this.maxMetadataSize = maxMetadataSize;
-        if(maxMetadataSize < 0) throw new IllegalArgumentException("Bad max metadata size");
+		if (maxMetadataSize < 0) throw new IllegalArgumentException(
+			"Bad max metadata size"
+		);
 		this.maxRecursionLevel = maxRecursionLevel;
-		if(maxRecursionLevel < 0) throw new IllegalArgumentException("Bad max recursion level");
+		if (maxRecursionLevel < 0) throw new IllegalArgumentException(
+			"Bad max recursion level"
+		);
 		this.maxArchiveRestarts = maxArchiveRestarts;
-		if(maxArchiveRestarts < 0) throw new IllegalArgumentException("Bad max archive restarts");
+		if (maxArchiveRestarts < 0) throw new IllegalArgumentException(
+			"Bad max archive restarts"
+		);
 		this.maxArchiveLevels = maxArchiveLevels;
-		if(maxArchiveLevels < 0) throw new IllegalArgumentException("Bad max archive levels");
+		if (maxArchiveLevels < 0) throw new IllegalArgumentException(
+			"Bad max archive levels"
+		);
 		this.dontEnterImplicitArchives = dontEnterImplicitArchives;
 		this.maxSplitfileBlockRetries = maxSplitfileBlockRetries;
-		if(maxSplitfileBlockRetries < -1) throw new IllegalArgumentException("Bad max splitfile block retries");
+		if (maxSplitfileBlockRetries < -1) throw new IllegalArgumentException(
+			"Bad max splitfile block retries"
+		);
 		this.maxNonSplitfileRetries = maxNonSplitfileRetries;
-		if(maxNonSplitfileRetries < -1) throw new IllegalArgumentException("Bad non-splitfile retries");
+		if (maxNonSplitfileRetries < -1) throw new IllegalArgumentException(
+			"Bad non-splitfile retries"
+		);
 		this.maxUSKRetries = maxUSKRetries;
-		if(maxUSKRetries < -1) throw new IllegalArgumentException("Bad max USK retries");
+		if (maxUSKRetries < -1) throw new IllegalArgumentException(
+			"Bad max USK retries"
+		);
 		this.allowSplitfiles = allowSplitfiles;
 		this.followRedirects = followRedirects;
 		this.localRequestOnly = localRequestOnly;
 		this.eventProducer = producer;
 		this.maxDataBlocksPerSegment = maxDataBlocksPerSegment;
-        if(maxDataBlocksPerSegment < 0 || maxDataBlocksPerSegment > FECCodec.MAX_TOTAL_BLOCKS_PER_SEGMENT)
-            throw new IllegalArgumentException("Bad max blocks per segment");
+		if (
+			maxDataBlocksPerSegment < 0 ||
+			maxDataBlocksPerSegment > FECCodec.MAX_TOTAL_BLOCKS_PER_SEGMENT
+		) throw new IllegalArgumentException("Bad max blocks per segment");
 		this.maxCheckBlocksPerSegment = maxCheckBlocksPerSegment;
-        if(maxCheckBlocksPerSegment < 0 || maxCheckBlocksPerSegment > FECCodec.MAX_TOTAL_BLOCKS_PER_SEGMENT)
-            throw new IllegalArgumentException("Bad max blocks per segment");
+		if (
+			maxCheckBlocksPerSegment < 0 ||
+			maxCheckBlocksPerSegment > FECCodec.MAX_TOTAL_BLOCKS_PER_SEGMENT
+		) throw new IllegalArgumentException("Bad max blocks per segment");
 		this.filterData = filterData;
 		this.ignoreTooManyPathComponents = ignoreTooManyPathComponents;
 		this.canWriteClientCache = canWriteClientCache;
@@ -175,16 +211,16 @@ public class FetchContext implements Cloneable, Serializable {
 		this.cooldownTime = RequestScheduler.COOLDOWN_PERIOD;
 		this.ignoreUSKDatehints = false; // FIXME
 		hasOwnEventProducer = true;
-    this.schemeHostAndPort = schemeHostAndPort;
+		this.schemeHostAndPort = schemeHostAndPort;
 	}
 
 	/** Copy a FetchContext, creating a new EventProducer and not changing the blocks list.
-     * @param ctx The old FetchContext to copy.
-     * @param maskID Mask mode for the copy operation e.g. SPLITFILE_DEFAULT_BLOCK_MASK.
-     */
-    public FetchContext(FetchContext ctx, int maskID) {
-        this(ctx, maskID, false, null);
-    }
+	 * @param ctx The old FetchContext to copy.
+	 * @param maskID Mask mode for the copy operation e.g. SPLITFILE_DEFAULT_BLOCK_MASK.
+	 */
+	public FetchContext(FetchContext ctx, int maskID) {
+		this(ctx, maskID, false, null);
+	}
 
 	/** Copy a FetchContext.
 	 * @param ctx The old FetchContext to copy.
@@ -196,17 +232,18 @@ public class FetchContext implements Cloneable, Serializable {
 	 * serialization.
 	 * @param blocks Storing a BlockSet to the database is not supported, see comments on SimpleBlockSet.objectCanNew().
 	 */
-	public FetchContext(FetchContext ctx, int maskID, boolean keepProducer, BlockSet blocks) {
-		if(keepProducer)
-			this.eventProducer = ctx.eventProducer;
-		else
-			this.eventProducer = new SimpleEventProducer();
+	public FetchContext(
+		FetchContext ctx,
+		int maskID,
+		boolean keepProducer,
+		BlockSet blocks
+	) {
+		if (keepProducer) this.eventProducer = ctx.eventProducer;
+		else this.eventProducer = new SimpleEventProducer();
 		hasOwnEventProducer = !keepProducer;
 		this.ignoreTooManyPathComponents = ctx.ignoreTooManyPathComponents;
-		if(blocks != null)
-			this.blocks = blocks;
-		else
-			this.blocks = ctx.blocks;
+		if (blocks != null) this.blocks = blocks;
+		else this.blocks = ctx.blocks;
 
 		this.allowedMIMETypes = ctx.allowedMIMETypes;
 		this.maxUSKRetries = ctx.maxUSKRetries;
@@ -235,9 +272,9 @@ public class FetchContext implements Cloneable, Serializable {
 		this.ignoreUSKDatehints = ctx.ignoreUSKDatehints;
 		this.schemeHostAndPort = ctx.schemeHostAndPort;
 
-		if(maskID == IDENTICAL_MASK || maskID == SPLITFILE_DEFAULT_MASK) {
+		if (maskID == IDENTICAL_MASK || maskID == SPLITFILE_DEFAULT_MASK) {
 			// DEFAULT
-		} else if(maskID == SPLITFILE_DEFAULT_BLOCK_MASK) {
+		} else if (maskID == SPLITFILE_DEFAULT_BLOCK_MASK) {
 			this.maxRecursionLevel = 1;
 			this.maxArchiveRestarts = 0;
 			this.dontEnterImplicitArchives = true;
@@ -248,11 +285,10 @@ public class FetchContext implements Cloneable, Serializable {
 			this.returnZIPManifests = false;
 		} else if (maskID == SET_RETURN_ARCHIVES) {
 			this.returnZIPManifests = true;
-		}
-		else throw new IllegalArgumentException();
+		} else throw new IllegalArgumentException();
 	}
 
-    /** Make public, but just call parent for a field for field copy */
+	/** Make public, but just call parent for a field for field copy */
 	@Override
 	public FetchContext clone() {
 		try {
@@ -264,24 +300,36 @@ public class FetchContext implements Cloneable, Serializable {
 	}
 
 	public void setCooldownRetries(int cooldownRetries) {
-		if(cooldownRetries < 0)
-			throw new IllegalArgumentException("Bogus negative retries");
-		if(cooldownRetries > RequestScheduler.COOLDOWN_RETRIES)
-			throw new IllegalArgumentException("Invalid COOLDOWN_RETRIES: Must be <= "+RequestScheduler.COOLDOWN_RETRIES+" since the network will not tolerate more than that");
+		if (cooldownRetries < 0) throw new IllegalArgumentException(
+			"Bogus negative retries"
+		);
+		if (
+			cooldownRetries > RequestScheduler.COOLDOWN_RETRIES
+		) throw new IllegalArgumentException(
+			"Invalid COOLDOWN_RETRIES: Must be <= " +
+			RequestScheduler.COOLDOWN_RETRIES +
+			" since the network will not tolerate more than that"
+		);
 		this.cooldownRetries = cooldownRetries;
 	}
 
 	/** Set the cooldown time */
 	public void setCooldownTime(long cooldownTime) {
-	    setCooldownTime(cooldownTime, false);
+		setCooldownTime(cooldownTime, false);
 	}
 
 	/** Only for tests */
 	public void setCooldownTime(long cooldownTime, boolean force) {
-		if(cooldownTime < 0)
-			throw new IllegalArgumentException("Bogus negative cooldown time");
-		if(cooldownTime < RequestScheduler.COOLDOWN_PERIOD && !force)
-			throw new IllegalArgumentException("Invalid COOLDOWN_PERIOD: Must be >= "+RequestScheduler.COOLDOWN_PERIOD+" since ULPRs will ensure fast response at that level");
+		if (cooldownTime < 0) throw new IllegalArgumentException(
+			"Bogus negative cooldown time"
+		);
+		if (
+			cooldownTime < RequestScheduler.COOLDOWN_PERIOD && !force
+		) throw new IllegalArgumentException(
+			"Invalid COOLDOWN_PERIOD: Must be >= " +
+			RequestScheduler.COOLDOWN_PERIOD +
+			" since ULPRs will ensure fast response at that level"
+		);
 		this.cooldownTime = cooldownTime;
 	}
 
@@ -289,290 +337,292 @@ public class FetchContext implements Cloneable, Serializable {
 		return cooldownRetries;
 	}
 
-  public String getSchemeHostAndPort() {
-    return schemeHostAndPort;
-  }
+	public String getSchemeHostAndPort() {
+		return schemeHostAndPort;
+	}
 
 	public long getCooldownTime() {
 		return cooldownTime;
 	}
 
-    private static final long CLIENT_DETAIL_MAGIC = 0x5ae53b0ce18dd821L;
-    private static final int CLIENT_DETAIL_VERSION = 1;
+	private static final long CLIENT_DETAIL_MAGIC = 0x5ae53b0ce18dd821L;
+	private static final int CLIENT_DETAIL_VERSION = 1;
 
-    public void writeTo(DataOutputStream dos) throws IOException {
-        dos.writeLong(CLIENT_DETAIL_MAGIC);
-        dos.writeInt(CLIENT_DETAIL_VERSION);
-        dos.writeLong(maxOutputLength);
-        dos.writeLong(maxTempLength);
-        dos.writeInt(maxRecursionLevel);
-        dos.writeInt(maxArchiveRestarts);
-        dos.writeInt(maxArchiveLevels);
-        dos.writeBoolean(dontEnterImplicitArchives);
-        dos.writeInt(maxSplitfileBlockRetries);
-        dos.writeInt(maxNonSplitfileRetries);
-        dos.writeInt(maxUSKRetries);
-        dos.writeBoolean(allowSplitfiles);
-        dos.writeBoolean(followRedirects);
-        dos.writeBoolean(localRequestOnly);
-        dos.writeBoolean(ignoreStore);
-        dos.writeInt(maxMetadataSize);
-        dos.writeInt(maxDataBlocksPerSegment);
-        dos.writeInt(maxCheckBlocksPerSegment);
-        dos.writeBoolean(returnZIPManifests);
-        dos.writeBoolean(filterData);
-        dos.writeBoolean(ignoreTooManyPathComponents);
-        if(blocks != null) throw new UnsupportedOperationException("Binary blob not supported");
-        if(allowedMIMETypes != null) {
-            dos.writeInt(allowedMIMETypes.size());
-            for(String s : allowedMIMETypes)
-                dos.writeUTF(s);
-        } else {
-            dos.writeInt(0);
-        }
-        if(charset == null)
-            dos.writeUTF("");
-        else
-            dos.writeUTF(charset);
-        dos.writeBoolean(canWriteClientCache);
-        if(prefetchHook != null) throw new UnsupportedOperationException("Prefetch hook not supported");
-        if(tagReplacer != null) throw new UnsupportedOperationException("Tag replacer not supported");
-        if(overrideMIME != null)
-            dos.writeUTF(overrideMIME);
-        else
-            dos.writeUTF("");
-        dos.writeInt(cooldownRetries);
-        dos.writeLong(cooldownTime);
-        dos.writeBoolean(ignoreUSKDatehints);
-        if (schemeHostAndPort != null)
-          dos.writeUTF(schemeHostAndPort);
-        else
-          dos.writeUTF("");
-    }
+	public void writeTo(DataOutputStream dos) throws IOException {
+		dos.writeLong(CLIENT_DETAIL_MAGIC);
+		dos.writeInt(CLIENT_DETAIL_VERSION);
+		dos.writeLong(maxOutputLength);
+		dos.writeLong(maxTempLength);
+		dos.writeInt(maxRecursionLevel);
+		dos.writeInt(maxArchiveRestarts);
+		dos.writeInt(maxArchiveLevels);
+		dos.writeBoolean(dontEnterImplicitArchives);
+		dos.writeInt(maxSplitfileBlockRetries);
+		dos.writeInt(maxNonSplitfileRetries);
+		dos.writeInt(maxUSKRetries);
+		dos.writeBoolean(allowSplitfiles);
+		dos.writeBoolean(followRedirects);
+		dos.writeBoolean(localRequestOnly);
+		dos.writeBoolean(ignoreStore);
+		dos.writeInt(maxMetadataSize);
+		dos.writeInt(maxDataBlocksPerSegment);
+		dos.writeInt(maxCheckBlocksPerSegment);
+		dos.writeBoolean(returnZIPManifests);
+		dos.writeBoolean(filterData);
+		dos.writeBoolean(ignoreTooManyPathComponents);
+		if (blocks != null) throw new UnsupportedOperationException(
+			"Binary blob not supported"
+		);
+		if (allowedMIMETypes != null) {
+			dos.writeInt(allowedMIMETypes.size());
+			for (String s : allowedMIMETypes) dos.writeUTF(s);
+		} else {
+			dos.writeInt(0);
+		}
+		if (charset == null) dos.writeUTF("");
+		else dos.writeUTF(charset);
+		dos.writeBoolean(canWriteClientCache);
+		if (prefetchHook != null) throw new UnsupportedOperationException(
+			"Prefetch hook not supported"
+		);
+		if (tagReplacer != null) throw new UnsupportedOperationException(
+			"Tag replacer not supported"
+		);
+		if (overrideMIME != null) dos.writeUTF(overrideMIME);
+		else dos.writeUTF("");
+		dos.writeInt(cooldownRetries);
+		dos.writeLong(cooldownTime);
+		dos.writeBoolean(ignoreUSKDatehints);
+		if (schemeHostAndPort != null) dos.writeUTF(schemeHostAndPort);
+		else dos.writeUTF("");
+	}
 
-    /** Create from a saved form, e.g. for restarting a request from scratch. Will create its own
-     * SimpleEventProducer.
-     * @param dis
-     * @throws StorageFormatException If the data is badly formatted or cannot be read.
-     * @throws IOException If unable to read from the stream.
-     */
-    public FetchContext(DataInputStream dis) throws StorageFormatException, IOException {
-        long magic = dis.readLong();
-        if(magic != CLIENT_DETAIL_MAGIC)
-            throw new StorageFormatException("Bad magic for fetch settings (FetchContext)");
-        int version = dis.readInt();
-        if(version != CLIENT_DETAIL_VERSION)
-            throw new StorageFormatException("Bad version for fetch settings (FetchContext)");
-        maxOutputLength = dis.readLong();
-        if(maxOutputLength < 0) throw new StorageFormatException("Bad max output length");
-        maxTempLength = dis.readLong();
-        if(maxTempLength < 0) throw new StorageFormatException("Bad max temp length");
-        maxRecursionLevel = dis.readInt();
-        if(maxRecursionLevel < 0) throw new StorageFormatException("Bad max recursion level");
-        maxArchiveRestarts = dis.readInt();
-        if(maxArchiveRestarts < 0) throw new StorageFormatException("Bad max archive restarts");
-        maxArchiveLevels = dis.readInt();
-        if(maxArchiveLevels < 0) throw new StorageFormatException("Bad max archive levels");
-        dontEnterImplicitArchives = dis.readBoolean();
-        maxSplitfileBlockRetries = dis.readInt();
-        if(maxSplitfileBlockRetries < -1) throw new StorageFormatException("Bad max splitfile block retries");
-        maxNonSplitfileRetries = dis.readInt();
-        if(maxNonSplitfileRetries < -1) throw new StorageFormatException("Bad non-splitfile retries");
-        maxUSKRetries = dis.readInt();
-        if(maxUSKRetries < -1) throw new StorageFormatException("Bad max USK retries");
-        allowSplitfiles = dis.readBoolean();
-        followRedirects = dis.readBoolean();
-        localRequestOnly = dis.readBoolean();
-        ignoreStore = dis.readBoolean();
-        maxMetadataSize = dis.readInt();
-        if(maxMetadataSize < 0) throw new StorageFormatException("Bad max metadata size");
-        maxDataBlocksPerSegment = dis.readInt();
-        if(maxDataBlocksPerSegment < 0 || maxDataBlocksPerSegment > FECCodec.MAX_TOTAL_BLOCKS_PER_SEGMENT)
-            throw new StorageFormatException("Bad max blocks per segment");
-        maxCheckBlocksPerSegment = dis.readInt();
-        if(maxCheckBlocksPerSegment < 0 || maxCheckBlocksPerSegment > FECCodec.MAX_TOTAL_BLOCKS_PER_SEGMENT)
-            throw new StorageFormatException("Bad max blocks per segment");
-        returnZIPManifests = dis.readBoolean();
-        filterData = dis.readBoolean();
-        ignoreTooManyPathComponents = dis.readBoolean();
-        int x = dis.readInt();
-        if(x < 0) throw new StorageFormatException("Bad allowed MIME types length "+x);
-        if(x == 0) {
-            allowedMIMETypes = null;
-        } else {
-            allowedMIMETypes = new HashSet<String>();
-            for(int i=0;i<x;i++) {
-                allowedMIMETypes.add(dis.readUTF());
-            }
-        }
-        String s = dis.readUTF();
-        if(s.isEmpty())
-            charset = null;
-        else
-            charset = s;
-        canWriteClientCache = dis.readBoolean();
-        s = dis.readUTF();
-        if(s.isEmpty())
-            overrideMIME = null;
-        else
-            overrideMIME = s;
-        cooldownRetries = dis.readInt();
-        cooldownTime = dis.readLong();
-        ignoreUSKDatehints = dis.readBoolean();
-        try {
-          s = dis.readUTF();
-        } catch (EOFException e) {
-          // input stream reached EOF, so it must have been and old version without scehmeHostAndPort.
-          s = "";
-        }
-        if (s.isEmpty()) {
-          schemeHostAndPort = null;
-        } else {
-          schemeHostAndPort = s;
-        }
-        hasOwnEventProducer = true;
-        eventProducer = new SimpleEventProducer();
-        blocks = null;
-    }
+	/** Create from a saved form, e.g. for restarting a request from scratch. Will create its own
+	 * SimpleEventProducer.
+	 * @param dis
+	 * @throws StorageFormatException If the data is badly formatted or cannot be read.
+	 * @throws IOException If unable to read from the stream.
+	 */
+	public FetchContext(DataInputStream dis)
+		throws StorageFormatException, IOException {
+		long magic = dis.readLong();
+		if (magic != CLIENT_DETAIL_MAGIC) throw new StorageFormatException(
+			"Bad magic for fetch settings (FetchContext)"
+		);
+		int version = dis.readInt();
+		if (version != CLIENT_DETAIL_VERSION) throw new StorageFormatException(
+			"Bad version for fetch settings (FetchContext)"
+		);
+		maxOutputLength = dis.readLong();
+		if (maxOutputLength < 0) throw new StorageFormatException(
+			"Bad max output length"
+		);
+		maxTempLength = dis.readLong();
+		if (maxTempLength < 0) throw new StorageFormatException(
+			"Bad max temp length"
+		);
+		maxRecursionLevel = dis.readInt();
+		if (maxRecursionLevel < 0) throw new StorageFormatException(
+			"Bad max recursion level"
+		);
+		maxArchiveRestarts = dis.readInt();
+		if (maxArchiveRestarts < 0) throw new StorageFormatException(
+			"Bad max archive restarts"
+		);
+		maxArchiveLevels = dis.readInt();
+		if (maxArchiveLevels < 0) throw new StorageFormatException(
+			"Bad max archive levels"
+		);
+		dontEnterImplicitArchives = dis.readBoolean();
+		maxSplitfileBlockRetries = dis.readInt();
+		if (maxSplitfileBlockRetries < -1) throw new StorageFormatException(
+			"Bad max splitfile block retries"
+		);
+		maxNonSplitfileRetries = dis.readInt();
+		if (maxNonSplitfileRetries < -1) throw new StorageFormatException(
+			"Bad non-splitfile retries"
+		);
+		maxUSKRetries = dis.readInt();
+		if (maxUSKRetries < -1) throw new StorageFormatException(
+			"Bad max USK retries"
+		);
+		allowSplitfiles = dis.readBoolean();
+		followRedirects = dis.readBoolean();
+		localRequestOnly = dis.readBoolean();
+		ignoreStore = dis.readBoolean();
+		maxMetadataSize = dis.readInt();
+		if (maxMetadataSize < 0) throw new StorageFormatException(
+			"Bad max metadata size"
+		);
+		maxDataBlocksPerSegment = dis.readInt();
+		if (
+			maxDataBlocksPerSegment < 0 ||
+			maxDataBlocksPerSegment > FECCodec.MAX_TOTAL_BLOCKS_PER_SEGMENT
+		) throw new StorageFormatException("Bad max blocks per segment");
+		maxCheckBlocksPerSegment = dis.readInt();
+		if (
+			maxCheckBlocksPerSegment < 0 ||
+			maxCheckBlocksPerSegment > FECCodec.MAX_TOTAL_BLOCKS_PER_SEGMENT
+		) throw new StorageFormatException("Bad max blocks per segment");
+		returnZIPManifests = dis.readBoolean();
+		filterData = dis.readBoolean();
+		ignoreTooManyPathComponents = dis.readBoolean();
+		int x = dis.readInt();
+		if (x < 0) throw new StorageFormatException(
+			"Bad allowed MIME types length " + x
+		);
+		if (x == 0) {
+			allowedMIMETypes = null;
+		} else {
+			allowedMIMETypes = new HashSet<String>();
+			for (int i = 0; i < x; i++) {
+				allowedMIMETypes.add(dis.readUTF());
+			}
+		}
+		String s = dis.readUTF();
+		if (s.isEmpty()) charset = null;
+		else charset = s;
+		canWriteClientCache = dis.readBoolean();
+		s = dis.readUTF();
+		if (s.isEmpty()) overrideMIME = null;
+		else overrideMIME = s;
+		cooldownRetries = dis.readInt();
+		cooldownTime = dis.readLong();
+		ignoreUSKDatehints = dis.readBoolean();
+		try {
+			s = dis.readUTF();
+		} catch (EOFException e) {
+			// input stream reached EOF, so it must have been and old version without scehmeHostAndPort.
+			s = "";
+		}
+		if (s.isEmpty()) {
+			schemeHostAndPort = null;
+		} else {
+			schemeHostAndPort = s;
+		}
+		hasOwnEventProducer = true;
+		eventProducer = new SimpleEventProducer();
+		blocks = null;
+	}
 
-    @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        // eventProducer is not included, assumed to be unique.
-        result = prime * result + (allowSplitfiles ? 1231 : 1237);
-        result = prime * result + ((allowedMIMETypes == null) ? 0 : allowedMIMETypes.hashCode());
-        // Don't include blocks. It doesn't implement content-based hashCode() and equals(). FIXME
-        result = prime * result + (canWriteClientCache ? 1231 : 1237);
-        result = prime * result + ((charset == null) ? 0 : charset.hashCode());
-        result = prime * result + cooldownRetries;
-        result = prime * result + (int) (cooldownTime ^ (cooldownTime >>> 32));
-        result = prime * result + (dontEnterImplicitArchives ? 1231 : 1237);
-        result = prime * result + (filterData ? 1231 : 1237);
-        result = prime * result + (followRedirects ? 1231 : 1237);
-        result = prime * result + (hasOwnEventProducer ? 1231 : 1237);
-        result = prime * result + (ignoreStore ? 1231 : 1237);
-        result = prime * result + (ignoreTooManyPathComponents ? 1231 : 1237);
-        result = prime * result + (ignoreUSKDatehints ? 1231 : 1237);
-        result = prime * result + (localRequestOnly ? 1231 : 1237);
-        result = prime * result + maxArchiveLevels;
-        result = prime * result + maxArchiveRestarts;
-        result = prime * result + maxCheckBlocksPerSegment;
-        result = prime * result + maxDataBlocksPerSegment;
-        result = prime * result + maxMetadataSize;
-        result = prime * result + maxNonSplitfileRetries;
-        result = prime * result + (int) (maxOutputLength ^ (maxOutputLength >>> 32));
-        result = prime * result + maxRecursionLevel;
-        result = prime * result + maxSplitfileBlockRetries;
-        result = prime * result + (int) (maxTempLength ^ (maxTempLength >>> 32));
-        result = prime * result + maxUSKRetries;
-        result = prime * result + ((overrideMIME == null) ? 0 : overrideMIME.hashCode());
-        result = prime * result + ((prefetchHook == null) ? 0 : prefetchHook.hashCode());
-        result = prime * result + (returnZIPManifests ? 1231 : 1237);
-        result = prime * result + ((tagReplacer == null) ? 0 : tagReplacer.hashCode());
-        result = prime * result + ((schemeHostAndPort == null) ? 0 : schemeHostAndPort.hashCode());
-        return result;
-    }
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		// eventProducer is not included, assumed to be unique.
+		result = prime * result + (allowSplitfiles ? 1231 : 1237);
+		result = prime * result +
+		((allowedMIMETypes == null) ? 0 : allowedMIMETypes.hashCode());
+		// Don't include blocks. It doesn't implement content-based hashCode() and equals(). FIXME
+		result = prime * result + (canWriteClientCache ? 1231 : 1237);
+		result = prime * result + ((charset == null) ? 0 : charset.hashCode());
+		result = prime * result + cooldownRetries;
+		result = prime * result + (int) (cooldownTime ^ (cooldownTime >>> 32));
+		result = prime * result + (dontEnterImplicitArchives ? 1231 : 1237);
+		result = prime * result + (filterData ? 1231 : 1237);
+		result = prime * result + (followRedirects ? 1231 : 1237);
+		result = prime * result + (hasOwnEventProducer ? 1231 : 1237);
+		result = prime * result + (ignoreStore ? 1231 : 1237);
+		result = prime * result + (ignoreTooManyPathComponents ? 1231 : 1237);
+		result = prime * result + (ignoreUSKDatehints ? 1231 : 1237);
+		result = prime * result + (localRequestOnly ? 1231 : 1237);
+		result = prime * result + maxArchiveLevels;
+		result = prime * result + maxArchiveRestarts;
+		result = prime * result + maxCheckBlocksPerSegment;
+		result = prime * result + maxDataBlocksPerSegment;
+		result = prime * result + maxMetadataSize;
+		result = prime * result + maxNonSplitfileRetries;
+		result = prime * result +
+		(int) (maxOutputLength ^ (maxOutputLength >>> 32));
+		result = prime * result + maxRecursionLevel;
+		result = prime * result + maxSplitfileBlockRetries;
+		result = prime * result +
+		(int) (maxTempLength ^ (maxTempLength >>> 32));
+		result = prime * result + maxUSKRetries;
+		result = prime * result +
+		((overrideMIME == null) ? 0 : overrideMIME.hashCode());
+		result = prime * result +
+		((prefetchHook == null) ? 0 : prefetchHook.hashCode());
+		result = prime * result + (returnZIPManifests ? 1231 : 1237);
+		result = prime * result +
+		((tagReplacer == null) ? 0 : tagReplacer.hashCode());
+		result = prime * result +
+		((schemeHostAndPort == null) ? 0 : schemeHostAndPort.hashCode());
+		return result;
+	}
 
-    /** Are two InsertContext's equal? Ignores the EventProducer, compares only the actual config
-     * values. */
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
-        FetchContext other = (FetchContext) obj;
-        // eventProducer is ignored.
-        if (allowSplitfiles != other.allowSplitfiles)
-            return false;
-        if (allowedMIMETypes == null) {
-            if (other.allowedMIMETypes != null)
-                return false;
-        } else if (!allowedMIMETypes.equals(other.allowedMIMETypes))
-            return false;
-        // We *DO* compare on blocks, which means that two FetchContext's can be non-equal even
-        // though the are really the same, until blocks has a proper equals(). FIXME
-        if (blocks == null) {
-            if (other.blocks != null)
-                return false;
-        } else if (!blocks.equals(other.blocks))
-            return false;
-        if (canWriteClientCache != other.canWriteClientCache)
-            return false;
-        if (charset == null) {
-            if (other.charset != null)
-                return false;
-        } else if (!charset.equals(other.charset))
-            return false;
-        if (cooldownRetries != other.cooldownRetries)
-            return false;
-        if (cooldownTime != other.cooldownTime)
-            return false;
-        if (dontEnterImplicitArchives != other.dontEnterImplicitArchives)
-            return false;
-        if (filterData != other.filterData)
-            return false;
-        if (followRedirects != other.followRedirects)
-            return false;
-        if (hasOwnEventProducer != other.hasOwnEventProducer)
-            return false;
-        if (ignoreStore != other.ignoreStore)
-            return false;
-        if (ignoreTooManyPathComponents != other.ignoreTooManyPathComponents)
-            return false;
-        if (ignoreUSKDatehints != other.ignoreUSKDatehints)
-            return false;
-        if (localRequestOnly != other.localRequestOnly)
-            return false;
-        if (maxArchiveLevels != other.maxArchiveLevels)
-            return false;
-        if (maxArchiveRestarts != other.maxArchiveRestarts)
-            return false;
-        if (maxCheckBlocksPerSegment != other.maxCheckBlocksPerSegment)
-            return false;
-        if (maxDataBlocksPerSegment != other.maxDataBlocksPerSegment)
-            return false;
-        if (maxMetadataSize != other.maxMetadataSize)
-            return false;
-        if (maxNonSplitfileRetries != other.maxNonSplitfileRetries)
-            return false;
-        if (maxOutputLength != other.maxOutputLength)
-            return false;
-        if (maxRecursionLevel != other.maxRecursionLevel)
-            return false;
-        if (maxSplitfileBlockRetries != other.maxSplitfileBlockRetries)
-            return false;
-        if (maxTempLength != other.maxTempLength)
-            return false;
-        if (maxUSKRetries != other.maxUSKRetries)
-            return false;
-        if (overrideMIME == null) {
-            if (other.overrideMIME != null)
-                return false;
-        } else if (!overrideMIME.equals(other.overrideMIME))
-            return false;
-        if (prefetchHook == null) {
-            if (other.prefetchHook != null)
-                return false;
-        } else if (!prefetchHook.equals(other.prefetchHook))
-            return false;
-        if (returnZIPManifests != other.returnZIPManifests)
-            return false;
-        if (tagReplacer == null) {
-            if (other.tagReplacer != null)
-                return false;
-        } else if (!tagReplacer.equals(other.tagReplacer))
-            return false;
-        if (schemeHostAndPort == null) {
-            if (other.schemeHostAndPort != null)
-                return false;
-        } else if (!schemeHostAndPort.equals(other.schemeHostAndPort))
-            return false;
-        return true;
-    }
-
-
+	/** Are two InsertContext's equal? Ignores the EventProducer, compares only the actual config
+	 * values. */
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) return true;
+		if (obj == null) return false;
+		if (getClass() != obj.getClass()) return false;
+		FetchContext other = (FetchContext) obj;
+		// eventProducer is ignored.
+		if (allowSplitfiles != other.allowSplitfiles) return false;
+		if (allowedMIMETypes == null) {
+			if (other.allowedMIMETypes != null) return false;
+		} else if (
+			!allowedMIMETypes.equals(other.allowedMIMETypes)
+		) return false;
+		// We *DO* compare on blocks, which means that two FetchContext's can be non-equal even
+		// though the are really the same, until blocks has a proper equals(). FIXME
+		if (blocks == null) {
+			if (other.blocks != null) return false;
+		} else if (!blocks.equals(other.blocks)) return false;
+		if (canWriteClientCache != other.canWriteClientCache) return false;
+		if (charset == null) {
+			if (other.charset != null) return false;
+		} else if (!charset.equals(other.charset)) return false;
+		if (cooldownRetries != other.cooldownRetries) return false;
+		if (cooldownTime != other.cooldownTime) return false;
+		if (
+			dontEnterImplicitArchives != other.dontEnterImplicitArchives
+		) return false;
+		if (filterData != other.filterData) return false;
+		if (followRedirects != other.followRedirects) return false;
+		if (hasOwnEventProducer != other.hasOwnEventProducer) return false;
+		if (ignoreStore != other.ignoreStore) return false;
+		if (
+			ignoreTooManyPathComponents != other.ignoreTooManyPathComponents
+		) return false;
+		if (ignoreUSKDatehints != other.ignoreUSKDatehints) return false;
+		if (localRequestOnly != other.localRequestOnly) return false;
+		if (maxArchiveLevels != other.maxArchiveLevels) return false;
+		if (maxArchiveRestarts != other.maxArchiveRestarts) return false;
+		if (
+			maxCheckBlocksPerSegment != other.maxCheckBlocksPerSegment
+		) return false;
+		if (
+			maxDataBlocksPerSegment != other.maxDataBlocksPerSegment
+		) return false;
+		if (maxMetadataSize != other.maxMetadataSize) return false;
+		if (
+			maxNonSplitfileRetries != other.maxNonSplitfileRetries
+		) return false;
+		if (maxOutputLength != other.maxOutputLength) return false;
+		if (maxRecursionLevel != other.maxRecursionLevel) return false;
+		if (
+			maxSplitfileBlockRetries != other.maxSplitfileBlockRetries
+		) return false;
+		if (maxTempLength != other.maxTempLength) return false;
+		if (maxUSKRetries != other.maxUSKRetries) return false;
+		if (overrideMIME == null) {
+			if (other.overrideMIME != null) return false;
+		} else if (!overrideMIME.equals(other.overrideMIME)) return false;
+		if (prefetchHook == null) {
+			if (other.prefetchHook != null) return false;
+		} else if (!prefetchHook.equals(other.prefetchHook)) return false;
+		if (returnZIPManifests != other.returnZIPManifests) return false;
+		if (tagReplacer == null) {
+			if (other.tagReplacer != null) return false;
+		} else if (!tagReplacer.equals(other.tagReplacer)) return false;
+		if (schemeHostAndPort == null) {
+			if (other.schemeHostAndPort != null) return false;
+		} else if (
+			!schemeHostAndPort.equals(other.schemeHostAndPort)
+		) return false;
+		return true;
+	}
 }

@@ -4,6 +4,7 @@
 package freenet.keys;
 
 public class KeyVerifyException extends Exception {
+
 	private static final long serialVersionUID = -1;
 
 	public KeyVerifyException(String message) {
@@ -21,5 +22,4 @@ public class KeyVerifyException extends Exception {
 	public KeyVerifyException(Throwable cause) {
 		super(cause);
 	}
-
 }

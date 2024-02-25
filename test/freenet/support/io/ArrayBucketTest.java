@@ -3,11 +3,11 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.io;
 
+import freenet.support.api.Bucket;
 import java.io.IOException;
 
-import freenet.support.api.Bucket;
-
 public class ArrayBucketTest extends BucketTestBase {
+
 	public ArrayBucketFactory abf = new ArrayBucketFactory();
 
 	@Override

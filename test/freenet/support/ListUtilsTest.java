@@ -18,7 +18,6 @@ import static org.junit.Assert.*;
 
 import java.util.ArrayList;
 import java.util.Random;
-
 import org.junit.Test;
 
 /**
@@ -30,113 +29,128 @@ public class ListUtilsTest {
 	@Test
 	public void testRemoveByObject() {
 		ArrayList<Integer> list = new ArrayList<Integer>();
-		for(int i = 0; i < 10; i++)
-			list.add(Integer.valueOf(i));
+		for (int i = 0; i < 10; i++) list.add(Integer.valueOf(i));
 		// 0 1 2 3 4 5 6 7 8 9
 		assertEquals(list.size(), 10);
 		{
 			int oldSize = list.size();
 			// remove non-existing element
-			assertFalse(ListUtils.removeBySwapLast(list, Integer.valueOf(oldSize+1)));
+			assertFalse(
+				ListUtils.removeBySwapLast(list, Integer.valueOf(oldSize + 1))
+			);
 			assertEquals(list.size(), oldSize);
 		}
 		// 0 1 2 3 4 5 6 7 8 9
-		for(int i = 0; i < list.size(); i++)
-			assertEquals(list.get(i), Integer.valueOf(i));
+		for (int i = 0; i < list.size(); i++) assertEquals(
+			list.get(i),
+			Integer.valueOf(i)
+		);
 		{
 			// remove last element
 			int oldSize = list.size();
-			Integer oldTop = list.get(oldSize-1);
+			Integer oldTop = list.get(oldSize - 1);
 			assertTrue(ListUtils.removeBySwapLast(list, oldTop));
 			// 0 1 2 3 4 5 6 7 8
 			assertFalse(list.contains(oldTop));
-			assertEquals(list.size(), oldSize-1);
+			assertEquals(list.size(), oldSize - 1);
 		}
-		for(int i = 0; i < list.size(); i++)
-			assertEquals(list.get(i), Integer.valueOf(i));
+		for (int i = 0; i < list.size(); i++) assertEquals(
+			list.get(i),
+			Integer.valueOf(i)
+		);
 		{
 			// remove first element
 			int oldSize = list.size();
 			Integer oldFirst = list.get(0);
-			Integer oldTop = list.get(oldSize-1);
+			Integer oldTop = list.get(oldSize - 1);
 			assertTrue(ListUtils.removeBySwapLast(list, oldFirst));
 			// 8 1 2 3 4 5 6 7
 			assertFalse(list.contains(oldFirst));
-			assertEquals(list.size(), oldSize-1);
+			assertEquals(list.size(), oldSize - 1);
 			assertEquals(list.get(0), oldTop);
-			for(int i = 1; i < list.size(); i++)
-				assertEquals(list.get(i), Integer.valueOf(i));
+			for (int i = 1; i < list.size(); i++) assertEquals(
+				list.get(i),
+				Integer.valueOf(i)
+			);
 		}
 	}
+
 	@Test
 	public void testRemoveByIndex() {
 		ArrayList<Integer> list = new ArrayList<Integer>();
-		for(int i = 0; i < 10; i++)
-			list.add(Integer.valueOf(i));
+		for (int i = 0; i < 10; i++) list.add(Integer.valueOf(i));
 		// 0 1 2 3 4 5 6 7 8 9
 		assertEquals(list.size(), 10);
 		{
 			// remove last element
 			int oldSize = list.size();
-			Integer oldTop = list.get(oldSize-1);
-			assertEquals(ListUtils.removeBySwapLast(list, oldSize-1), oldTop);
+			Integer oldTop = list.get(oldSize - 1);
+			assertEquals(ListUtils.removeBySwapLast(list, oldSize - 1), oldTop);
 			// 0 1 2 3 4 5 6 7 8
-			assertEquals(list.size(), oldSize-1);
+			assertEquals(list.size(), oldSize - 1);
 			assertFalse(list.contains(oldTop));
 		}
-		for(int i = 0; i < list.size(); i++)
-			assertEquals(list.get(i), Integer.valueOf(i));
+		for (int i = 0; i < list.size(); i++) assertEquals(
+			list.get(i),
+			Integer.valueOf(i)
+		);
 		{
 			int oldSize = list.size();
 			Integer oldFirst = list.get(0);
-			Integer oldTop = list.get(oldSize-1);
+			Integer oldTop = list.get(oldSize - 1);
 			// remove first element
 			assertEquals(ListUtils.removeBySwapLast(list, 0), oldTop);
 			// 8 1 2 3 4 5 6 7
 			assertFalse(list.contains(oldFirst));
-			assertEquals(list.size(), oldSize-1);
+			assertEquals(list.size(), oldSize - 1);
 			assertEquals(list.get(0), oldTop);
 		}
-		for(int i = 1; i < list.size(); i++)
-			assertEquals(list.get(i), Integer.valueOf(i));
+		for (int i = 1; i < list.size(); i++) assertEquals(
+			list.get(i),
+			Integer.valueOf(i)
+		);
 	}
 
 	static class NotRandomAlwaysTop extends Random {
+
 		// Fake random, always remove highest possible value in nextInt
 		@Override
-			public int nextInt(int top) {
-				return top - 1;
-			}
+		public int nextInt(int top) {
+			return top - 1;
+		}
 	}
+
 	static class NotRandomAlwaysZero extends Random {
+
 		// Fake random, always remove lowest possible value in nextInt
 		@Override
-			public int nextInt(int top) {
-				return 0;
-			}
+		public int nextInt(int top) {
+			return 0;
+		}
 	}
+
 	@Test
 	public void testRemoveByRandom() {
 		ArrayList<Integer> list = new ArrayList<Integer>();
 		Random rand = new Random();
-		for(int i = 0; i < 10; i++)
-			list.add(Integer.valueOf(i));
+		for (int i = 0; i < 10; i++) list.add(Integer.valueOf(i));
 		ListUtils.RandomRemoveResult<Integer> res;
-		for(int i = 0; i < 10; i++) {
-			assertEquals(list.size(), 10-i);
-			Integer oldTop = list.get(list.size()-1);
+		for (int i = 0; i < 10; i++) {
+			assertEquals(list.size(), 10 - i);
+			Integer oldTop = list.get(list.size() - 1);
 			assertNotNull(oldTop);
 			res = ListUtils.removeRandomBySwapLast(rand, list);
 			assertNotNull(res);
-			assertEquals(list.size(), 10-i-1);
+			assertEquals(list.size(), 10 - i - 1);
 			assertFalse(list.contains(res.removed));
-			assertTrue(res.removed.equals(res.moved) || list.contains(res.moved));
+			assertTrue(
+				res.removed.equals(res.moved) || list.contains(res.moved)
+			);
 		}
 		assertNull(ListUtils.removeRandomBySwapLast(rand, list));
 		assertEquals(list.size(), 0);
 
-		for(int i = 0; i < 10; i++)
-			list.add(Integer.valueOf(i));
+		for (int i = 0; i < 10; i++) list.add(Integer.valueOf(i));
 		assertEquals(list.size(), 10);
 
 		rand = new NotRandomAlwaysTop();
@@ -149,15 +163,17 @@ public class ListUtilsTest {
 		// not enforced by specification)
 		{
 			int oldSize = list.size();
-			Integer oldTop = list.get(oldSize-1);
+			Integer oldTop = list.get(oldSize - 1);
 			res = ListUtils.removeRandomBySwapLast(rand, list);
-			assertEquals(list.size(), oldSize-1);
+			assertEquals(list.size(), oldSize - 1);
 			assertNotNull(res);
 			assertEquals(res.moved, oldTop);
 			assertEquals(res.moved, res.removed);
 		}
-		for(int i = 0; i < list.size(); i++)
-			assertEquals(list.get(i), Integer.valueOf(i));
+		for (int i = 0; i < list.size(); i++) assertEquals(
+			list.get(i),
+			Integer.valueOf(i)
+		);
 
 		rand = new NotRandomAlwaysZero();
 		assertEquals(rand.nextInt(1000), 0);
@@ -170,39 +186,39 @@ public class ListUtilsTest {
 		{
 			int oldSize = list.size();
 			Integer oldFirst = list.get(0);
-			Integer oldTop = list.get(oldSize-1);
+			Integer oldTop = list.get(oldSize - 1);
 			res = ListUtils.removeRandomBySwapLast(rand, list);
-			assertEquals(list.size(), oldSize-1);
+			assertEquals(list.size(), oldSize - 1);
 			assertNotNull(res);
 			assertEquals(res.removed, oldFirst);
 			assertEquals(res.moved, oldTop);
 			assertEquals(list.get(0), oldTop);
 		}
-		for(int i = 1; i < list.size(); i++)
-			assertEquals(list.get(i), Integer.valueOf(i));
+		for (int i = 1; i < list.size(); i++) assertEquals(
+			list.get(i),
+			Integer.valueOf(i)
+		);
 	}
 
 	@Test
 	public void testRemoveByRandomSimple() {
 		ArrayList<Integer> list = new ArrayList<Integer>();
 		Random rand = new Random();
-		for(int i = 0; i < 10; i++)
-			list.add(Integer.valueOf(i));
+		for (int i = 0; i < 10; i++) list.add(Integer.valueOf(i));
 		Integer res;
-		for(int i = 0; i < 10; i++) {
-			assertEquals(list.size(), 10-i);
-			Integer oldTop = list.get(list.size()-1);
+		for (int i = 0; i < 10; i++) {
+			assertEquals(list.size(), 10 - i);
+			Integer oldTop = list.get(list.size() - 1);
 			assertNotNull(oldTop);
 			res = ListUtils.removeRandomBySwapLastSimple(rand, list);
 			assertNotNull(res);
-			assertEquals(list.size(), 10-i-1);
+			assertEquals(list.size(), 10 - i - 1);
 			assertFalse(list.contains(res));
 		}
 		assertNull(ListUtils.removeRandomBySwapLastSimple(rand, list));
 		assertEquals(list.size(), 0);
 
-		for(int i = 0; i < 10; i++)
-			list.add(Integer.valueOf(i));
+		for (int i = 0; i < 10; i++) list.add(Integer.valueOf(i));
 
 		rand = new NotRandomAlwaysTop();
 		assertEquals(rand.nextInt(1000), 999);
@@ -216,14 +232,16 @@ public class ListUtilsTest {
 		// not enforced by specification)
 		{
 			int oldSize = list.size();
-			Integer oldTop = list.get(oldSize-1);
+			Integer oldTop = list.get(oldSize - 1);
 			res = ListUtils.removeRandomBySwapLastSimple(rand, list);
-			assertEquals(list.size(), oldSize-1);
+			assertEquals(list.size(), oldSize - 1);
 			assertNotNull(res);
 			assertEquals(res, oldTop);
 		}
-		for(int i = 0; i < list.size(); i++)
-			assertEquals(list.get(i), Integer.valueOf(i));
+		for (int i = 0; i < list.size(); i++) assertEquals(
+			list.get(i),
+			Integer.valueOf(i)
+		);
 
 		rand = new NotRandomAlwaysZero();
 		assertEquals(rand.nextInt(1000), 0);
@@ -236,14 +254,16 @@ public class ListUtilsTest {
 		{
 			int oldSize = list.size();
 			Integer oldFirst = list.get(0);
-			Integer oldTop = list.get(oldSize-1);
+			Integer oldTop = list.get(oldSize - 1);
 			res = ListUtils.removeRandomBySwapLastSimple(rand, list);
-			assertEquals(list.size(), oldSize-1);
+			assertEquals(list.size(), oldSize - 1);
 			assertNotNull(res);
 			assertEquals(res, oldFirst);
 			assertEquals(list.get(0), oldTop);
 		}
-		for(int i = 1; i < list.size(); i++)
-			assertEquals(list.get(i), Integer.valueOf(i));
+		for (int i = 1; i < list.size(); i++) assertEquals(
+			list.get(i),
+			Integer.valueOf(i)
+		);
 	}
 }

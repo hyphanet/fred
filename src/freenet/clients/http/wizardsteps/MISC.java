@@ -24,47 +24,107 @@ public class MISC implements Step {
 
 	@Override
 	public void getStep(HTTPRequest request, PageHelper helper) {
-		HTMLNode contentNode = helper.getPageContent(WizardL10n.l10n("stepMiscTitle"));
+		HTMLNode contentNode = helper.getPageContent(
+			WizardL10n.l10n("stepMiscTitle")
+		);
 		HTMLNode form = helper.addFormChild(contentNode, ".", "miscForm");
 
-		HTMLNode miscInfoboxContent = helper.getInfobox("infobox-normal", WizardL10n.l10n("autoUpdate"),
-		        form, null, false);
+		HTMLNode miscInfoboxContent = helper.getInfobox(
+			"infobox-normal",
+			WizardL10n.l10n("autoUpdate"),
+			form,
+			null,
+			false
+		);
 
 		miscInfoboxContent.addChild("p", WizardL10n.l10n("autoUpdateLong"));
-		miscInfoboxContent.addChild("p").addChild("input",
-            new String[] { "type", "checked", "name", "value", "id" },
-            new String[] { "radio", "on", "autodeploy", "true", "autodeployTrue" }
-            ).addChild("label",
-              new String[] { "for" },
-              new String[] { "autodeployTrue" }, WizardL10n.l10n("autoUpdateAutodeploy"));
-		miscInfoboxContent.addChild("p").addChild("input",
-            new String[] { "type", "name", "value", "id" },
-            new String[] { "radio", "autodeploy", "false", "autodeployFalse" }
-            ).addChild("label",
-              new String[] { "for" },
-              new String[] { "autodeployFalse" }, WizardL10n.l10n("autoUpdateNoAutodeploy"));
+		miscInfoboxContent
+			.addChild("p")
+			.addChild(
+				"input",
+				new String[] { "type", "checked", "name", "value", "id" },
+				new String[] {
+					"radio",
+					"on",
+					"autodeploy",
+					"true",
+					"autodeployTrue",
+				}
+			)
+			.addChild(
+				"label",
+				new String[] { "for" },
+				new String[] { "autodeployTrue" },
+				WizardL10n.l10n("autoUpdateAutodeploy")
+			);
+		miscInfoboxContent
+			.addChild("p")
+			.addChild(
+				"input",
+				new String[] { "type", "name", "value", "id" },
+				new String[] {
+					"radio",
+					"autodeploy",
+					"false",
+					"autodeployFalse",
+				}
+			)
+			.addChild(
+				"label",
+				new String[] { "for" },
+				new String[] { "autodeployFalse" },
+				WizardL10n.l10n("autoUpdateNoAutodeploy")
+			);
 
-		miscInfoboxContent = helper.getInfobox("infobox-normal", WizardL10n.l10n("plugins"),
-		        form, null, false);
+		miscInfoboxContent = helper.getInfobox(
+			"infobox-normal",
+			WizardL10n.l10n("plugins"),
+			form,
+			null,
+			false
+		);
 
 		miscInfoboxContent.addChild("p", WizardL10n.l10n("pluginsLong"));
-		miscInfoboxContent.addChild("p").addChild("input",
-            new String[] { "type", "checked", "name", "value", "id" },
-            new String[] { "checkbox", "on", "upnp", "true", "upnpTrue" }
-            ).addChild("label",
-              new String[] { "for" },
-              new String[] { "upnpTrue" }, WizardL10n.l10n("enableUPnP"));
-		miscInfoboxContent.addChild("input",
-		        new String[] { "type", "name", "value" },
-		        new String[] { "submit", "back", NodeL10n.getBase().getString("Toadlet.back")});
-		miscInfoboxContent.addChild("input",
-		        new String[] { "type", "name", "value" },
-		        new String[] { "submit", "next", NodeL10n.getBase().getString("Toadlet.next")});
+		miscInfoboxContent
+			.addChild("p")
+			.addChild(
+				"input",
+				new String[] { "type", "checked", "name", "value", "id" },
+				new String[] { "checkbox", "on", "upnp", "true", "upnpTrue" }
+			)
+			.addChild(
+				"label",
+				new String[] { "for" },
+				new String[] { "upnpTrue" },
+				WizardL10n.l10n("enableUPnP")
+			);
+		miscInfoboxContent.addChild(
+			"input",
+			new String[] { "type", "name", "value" },
+			new String[] {
+				"submit",
+				"back",
+				NodeL10n.getBase().getString("Toadlet.back"),
+			}
+		);
+		miscInfoboxContent.addChild(
+			"input",
+			new String[] { "type", "name", "value" },
+			new String[] {
+				"submit",
+				"next",
+				NodeL10n.getBase().getString("Toadlet.next"),
+			}
+		);
 	}
 
 	@Override
 	public String postStep(HTTPRequest request) {
-		setAutoUpdate(Boolean.parseBoolean(request.getPartAsStringFailsafe("autodeploy", 10)));
+		setAutoUpdate(
+			Boolean.parseBoolean(
+				request.getPartAsStringFailsafe("autodeploy", 10)
+			)
+		);
 		setUPnP(request.isPartSet("upnp"));
 		return FirstTimeWizardToadlet.WIZARD_STEP.OPENNET.name();
 	}
@@ -88,23 +148,32 @@ public class MISC implements Step {
 	 */
 	public void setUPnP(final boolean enableUPnP) {
 		//If its state would not change, don't do anything.
-		if(enableUPnP == core.node.pluginManager.isPluginLoaded("plugins.UPnP.UPnP")) {
-				return;
+		if (
+			enableUPnP ==
+			core.node.pluginManager.isPluginLoaded("plugins.UPnP.UPnP")
+		) {
+			return;
 		}
 
-		core.node.executor.execute(new Runnable() {
+		core.node.executor.execute(
+			new Runnable() {
+				private final boolean enable = enableUPnP;
 
-			private final boolean enable = enableUPnP;
-
-			@Override
-			public void run() {
-				if(enable) {
-					core.node.pluginManager.startPluginOfficial("UPnP", true);
-				} else {
-					core.node.pluginManager.killPluginByClass("plugins.UPnP.UPnP", 5000);
+				@Override
+				public void run() {
+					if (enable) {
+						core.node.pluginManager.startPluginOfficial(
+							"UPnP",
+							true
+						);
+					} else {
+						core.node.pluginManager.killPluginByClass(
+							"plugins.UPnP.UPnP",
+							5000
+						);
+					}
 				}
 			}
-
-		});
+		);
 	}
 }

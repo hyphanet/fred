@@ -1,8 +1,5 @@
 package freenet.client.messages;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.google.gwt.dom.client.Element;
 import com.google.gwt.event.dom.client.MouseDownEvent;
 import com.google.gwt.event.dom.client.MouseDownHandler;
@@ -15,17 +12,19 @@ import com.google.gwt.user.client.ui.HorizontalPanel;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.RootPanel;
 import com.google.gwt.user.client.ui.VerticalPanel;
-
 import freenet.client.FreenetJs;
 import freenet.client.UpdaterConstants;
 import freenet.client.l10n.L10n;
 import freenet.client.tools.FreenetRequest;
 import freenet.client.tools.QueryParameter;
+import java.util.ArrayList;
+import java.util.List;
 
 /** This manager singleton class manages the message panel in the page */
 public class MessageManager {
+
 	/** The singleton instance */
-	private static MessageManager	instance	= null;
+	private static MessageManager instance = null;
 
 	/** Returns the singleton instance */
 	public static MessageManager get() {
@@ -36,15 +35,17 @@ public class MessageManager {
 	}
 
 	/** The messages that are currently displayed */
-	private List<Message>	messages		= new ArrayList<Message>();
+	private List<Message> messages = new ArrayList<Message>();
 
 	/** The panel where messages are displayed */
-	private VerticalPanel	messagesPanel	= new VerticalPanel();
+	private VerticalPanel messagesPanel = new VerticalPanel();
 
 	private MessageManager() {
 		// Initializes the messages panel and places it to the page
 		messagesPanel.getElement().setId("messagesPanel");
-		messagesPanel.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_CENTER);
+		messagesPanel.setHorizontalAlignment(
+			HasHorizontalAlignment.ALIGN_CENTER
+		);
 		messagesPanel.getElement().getStyle().setProperty("position", "fixed");
 		messagesPanel.getElement().getStyle().setProperty("top", "0px");
 		messagesPanel.getElement().getStyle().setProperty("width", "100%");
@@ -56,13 +57,13 @@ public class MessageManager {
 
 	/**
 	 * Adds a message to the panel
-	 * 
+	 *
 	 * @param msg
 	 *            - The message to add
 	 */
 	public void addMessage(Message msg) {
 		//Disabled showing fproxy messages. This is TEMPORARY!
-		if(msg.getAnchor()!=null){
+		if (msg.getAnchor() != null) {
 			return;
 		}
 		messages.add(msg);
@@ -71,7 +72,7 @@ public class MessageManager {
 
 	/**
 	 * Removes a message at a given position
-	 * 
+	 *
 	 * @param position
 	 *            - The position of the message that is removed
 	 */
@@ -82,7 +83,7 @@ public class MessageManager {
 
 	/**
 	 * Removes a message
-	 * 
+	 *
 	 * @param message
 	 *            - The message that will be removed
 	 */
@@ -93,7 +94,7 @@ public class MessageManager {
 
 	/**
 	 * Gets the position of a message
-	 * 
+	 *
 	 * @param msg
 	 *            - The message which position will be returned
 	 * @return The position of the message
@@ -104,7 +105,7 @@ public class MessageManager {
 
 	/**
 	 * Replaces a message with a new one at a given position
-	 * 
+	 *
 	 * @param position
 	 *            - The position, which will be replaced
 	 * @param msg
@@ -118,7 +119,7 @@ public class MessageManager {
 
 	/**
 	 * Checks if a message is currently shown
-	 * 
+	 *
 	 * @param msg
 	 *            - The message to search for
 	 * @return Whether the message is present
@@ -132,7 +133,10 @@ public class MessageManager {
 		// Clear it first
 		messagesPanel.clear();
 		FreenetJs.log("REDRAWING MESSAGES");
-		messagesPanel.getElement().getStyle().setProperty("background", "white");
+		messagesPanel
+			.getElement()
+			.getStyle()
+			.setProperty("background", "white");
 		// Cycle through the messages
 		for (int i = 0; i < messages.size(); i++) {
 			final Message m = messages.get(i);
@@ -142,16 +146,28 @@ public class MessageManager {
 			// Sets the background color based on the priority
 			switch (m.getPriority()) {
 				case MINOR:
-					hpanel.getElement().getStyle().setProperty("background", "green");
+					hpanel
+						.getElement()
+						.getStyle()
+						.setProperty("background", "green");
 					break;
 				case WARNING:
-					hpanel.getElement().getStyle().setProperty("background", "yellow");
+					hpanel
+						.getElement()
+						.getStyle()
+						.setProperty("background", "yellow");
 					break;
 				case ERROR:
-					hpanel.getElement().getStyle().setProperty("background", "orange");
+					hpanel
+						.getElement()
+						.getStyle()
+						.setProperty("background", "orange");
 					break;
 				case CRITICAL:
-					hpanel.getElement().getStyle().setProperty("background", "red");
+					hpanel
+						.getElement()
+						.getStyle()
+						.setProperty("background", "red");
 					break;
 			}
 			// Sets some css properties
@@ -163,42 +179,69 @@ public class MessageManager {
 			// The short description label
 			Label msgLabel = new Label(m.getMsg());
 			hpanel.add(msgLabel);
-			msgLabel.getElement().getParentElement().getStyle().setProperty("border", "none");
+			msgLabel
+				.getElement()
+				.getParentElement()
+				.getStyle()
+				.setProperty("border", "none");
 			if (m.getAnchor() != null) {
-				Anchor showElement = new Anchor(L10n.get("show"), "/alerts/#" + m.getAnchor());
+				Anchor showElement = new Anchor(
+					L10n.get("show"),
+					"/alerts/#" + m.getAnchor()
+				);
 				hpanel.add(showElement);
-				showElement.getElement().getParentElement().getStyle().setProperty("border", "none");
+				showElement
+					.getElement()
+					.getParentElement()
+					.getStyle()
+					.setProperty("border", "none");
 			}
 
 			if (m.isCanDismiss()) {
 				// The hide link, it will hide the message if clicked on
 				Anchor hideElement = new Anchor(L10n.get("hide"));
-				hideElement.addMouseDownHandler(new MouseDownHandler() {
-					@Override
-					public void onMouseDown(MouseDownEvent event) {
-						// Only send a request if the message is originated from the server
-						if (m.getAnchor() != null) {
-							FreenetRequest.sendRequest(UpdaterConstants.dismissAlertPath, new QueryParameter("anchor", m.getAnchor()), new RequestCallback() {
-								@Override
-								public void onResponseReceived(Request request, Response response) {
-									// When a response is got, the server is already removed the message. We can remove it too safely
-									removeMessage(m);
-								}
+				hideElement.addMouseDownHandler(
+					new MouseDownHandler() {
+						@Override
+						public void onMouseDown(MouseDownEvent event) {
+							// Only send a request if the message is originated from the server
+							if (m.getAnchor() != null) {
+								FreenetRequest.sendRequest(
+									UpdaterConstants.dismissAlertPath,
+									new QueryParameter("anchor", m.getAnchor()),
+									new RequestCallback() {
+										@Override
+										public void onResponseReceived(
+											Request request,
+											Response response
+										) {
+											// When a response is got, the server is already removed the message. We can remove it too safely
+											removeMessage(m);
+										}
 
-								@Override
-								public void onError(Request request, Throwable exception) {
-									// Don't do anything. If the server removed the message, it will push the change, if not, the user will try again
-								}
-							});
-						} else {
-							// If it is originated from the client, then simply hide it
-							messages.remove(m);
-							redrawMessages();
+										@Override
+										public void onError(
+											Request request,
+											Throwable exception
+										) {
+											// Don't do anything. If the server removed the message, it will push the change, if not, the user will try again
+										}
+									}
+								);
+							} else {
+								// If it is originated from the client, then simply hide it
+								messages.remove(m);
+								redrawMessages();
+							}
 						}
 					}
-				});
+				);
 				hpanel.add(hideElement);
-				hideElement.getElement().getParentElement().getStyle().setProperty("border", "none");
+				hideElement
+					.getElement()
+					.getParentElement()
+					.getStyle()
+					.setProperty("border", "none");
 			}
 
 			// Adds the message to the panel
@@ -216,11 +259,32 @@ public class MessageManager {
 				}
 			}
 			// Redraw the messages from the XML
-			for (int i = 0; i < RootPanel.get("alerts").getElement().getElementsByTagName("alert").getLength(); i++) {
-				Element alert = RootPanel.get("alerts").getElement().getElementsByTagName("alert").getItem(i);
-				String anchor = alert.getElementsByTagName("anchor").getItem(0).getInnerText();
+			for (
+				int i = 0;
+				i <
+				RootPanel.get("alerts")
+					.getElement()
+					.getElementsByTagName("alert")
+					.getLength();
+				i++
+			) {
+				Element alert = RootPanel.get("alerts")
+					.getElement()
+					.getElementsByTagName("alert")
+					.getItem(i);
+				String anchor = alert
+					.getElementsByTagName("anchor")
+					.getItem(0)
+					.getInnerText();
 				Priority priority = null;
-				switch (Integer.parseInt(alert.getElementsByTagName("priority").getItem(0).getInnerText())) {
+				switch (
+					Integer.parseInt(
+						alert
+							.getElementsByTagName("priority")
+							.getItem(0)
+							.getInnerText()
+					)
+				) {
 					case 0:
 						priority = Priority.CRITICAL;
 						break;
@@ -234,10 +298,24 @@ public class MessageManager {
 						priority = Priority.MINOR;
 						break;
 				}
-				String title = alert.getElementsByTagName("alertTitle").getItem(0).getInnerText();
-				addMessage(new Message(title, priority, anchor, Boolean.parseBoolean(alert.getElementsByTagName("canDismiss").getItem(0).getInnerText())));
+				String title = alert
+					.getElementsByTagName("alertTitle")
+					.getItem(0)
+					.getInnerText();
+				addMessage(
+					new Message(
+						title,
+						priority,
+						anchor,
+						Boolean.parseBoolean(
+							alert
+								.getElementsByTagName("canDismiss")
+								.getItem(0)
+								.getInnerText()
+						)
+					)
+				);
 			}
 		}
 	}
-
 }

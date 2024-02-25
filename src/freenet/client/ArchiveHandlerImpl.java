@@ -1,18 +1,17 @@
 package freenet.client;
 
-import java.io.Serializable;
-
 import freenet.client.ArchiveManager.ARCHIVE_TYPE;
 import freenet.client.async.ClientContext;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
+import java.io.Serializable;
 
 class ArchiveHandlerImpl implements ArchiveHandler, Serializable {
 
-    private static final long serialVersionUID = 1L;
-    private static volatile boolean logMINOR;
+	private static final long serialVersionUID = 1L;
+	private static volatile boolean logMINOR;
 
 	static {
 		Logger.registerClass(ArchiveHandlerImpl.class);
@@ -23,7 +22,12 @@ class ArchiveHandlerImpl implements ArchiveHandler, Serializable {
 	ARCHIVE_TYPE archiveType;
 	COMPRESSOR_TYPE compressorType;
 
-	ArchiveHandlerImpl(FreenetURI key, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE ctype, boolean forceRefetchArchive) {
+	ArchiveHandlerImpl(
+		FreenetURI key,
+		ARCHIVE_TYPE archiveType,
+		COMPRESSOR_TYPE ctype,
+		boolean forceRefetchArchive
+	) {
 		this.key = key;
 		this.archiveType = archiveType;
 		this.compressorType = ctype;
@@ -31,19 +35,22 @@ class ArchiveHandlerImpl implements ArchiveHandler, Serializable {
 	}
 
 	@Override
-	public Bucket get(String internalName, ArchiveContext archiveContext,
-			ArchiveManager manager)
-			throws ArchiveFailureException, ArchiveRestartException,
-			MetadataParseException, FetchException {
-
-		if(forceRefetchArchive) return null;
+	public Bucket get(
+		String internalName,
+		ArchiveContext archiveContext,
+		ArchiveManager manager
+	)
+		throws ArchiveFailureException, ArchiveRestartException, MetadataParseException, FetchException {
+		if (forceRefetchArchive) return null;
 
 		Bucket data;
 
 		// Fetch from cache
-		if(logMINOR)
-			Logger.minor(this, "Checking cache: "+key+ ' ' +internalName);
-		if((data = manager.getCached(key, internalName)) != null) {
+		if (logMINOR) Logger.minor(
+			this,
+			"Checking cache: " + key + ' ' + internalName
+		);
+		if ((data = manager.getCached(key, internalName)) != null) {
 			return data;
 		}
 
@@ -51,20 +58,41 @@ class ArchiveHandlerImpl implements ArchiveHandler, Serializable {
 	}
 
 	@Override
-	public Bucket getMetadata(ArchiveContext archiveContext,
-			ArchiveManager manager) throws ArchiveFailureException,
-			ArchiveRestartException, MetadataParseException, FetchException {
+	public Bucket getMetadata(
+		ArchiveContext archiveContext,
+		ArchiveManager manager
+	)
+		throws ArchiveFailureException, ArchiveRestartException, MetadataParseException, FetchException {
 		return get(".metadata", archiveContext, manager);
 	}
 
 	@Override
-	public void extractToCache(Bucket bucket, ArchiveContext actx,
-			String element, ArchiveExtractCallback callback,
-			ArchiveManager manager, ClientContext context) throws ArchiveFailureException,
-			ArchiveRestartException {
+	public void extractToCache(
+		Bucket bucket,
+		ArchiveContext actx,
+		String element,
+		ArchiveExtractCallback callback,
+		ArchiveManager manager,
+		ClientContext context
+	) throws ArchiveFailureException, ArchiveRestartException {
 		forceRefetchArchive = false; // now we don't need to force refetch any more
-		ArchiveStoreContext ctx = manager.makeContext(key, archiveType, compressorType, false);
-		manager.extractToCache(key, archiveType, compressorType, bucket, actx, ctx, element, callback, context);
+		ArchiveStoreContext ctx = manager.makeContext(
+			key,
+			archiveType,
+			compressorType,
+			false
+		);
+		manager.extractToCache(
+			key,
+			archiveType,
+			compressorType,
+			bucket,
+			actx,
+			ctx,
+			element,
+			callback,
+			context
+		);
 	}
 
 	@Override
@@ -83,7 +111,11 @@ class ArchiveHandlerImpl implements ArchiveHandler, Serializable {
 
 	@Override
 	public ArchiveHandler cloneHandler() {
-		return new ArchiveHandlerImpl(key, archiveType, compressorType, forceRefetchArchive);
+		return new ArchiveHandlerImpl(
+			key,
+			archiveType,
+			compressorType,
+			forceRefetchArchive
+		);
 	}
-
 }

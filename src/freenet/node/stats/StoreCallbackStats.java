@@ -19,7 +19,10 @@ public class StoreCallbackStats implements DataStoreStats {
 	 * numbers. */
 	public final StoreAccessStats totalAccessStats;
 
-	public StoreCallbackStats(StoreCallback<?> delegate, StoreLocationStats nodeStats) {
+	public StoreCallbackStats(
+		StoreCallback<?> delegate,
+		StoreLocationStats nodeStats
+	) {
 		this.storeStats = delegate;
 		this.nodeStats = nodeStats;
 		this.sessionAccessStats = delegate.getSessionAccessStats();
@@ -48,7 +51,7 @@ public class StoreCallbackStats implements DataStoreStats {
 
 	@Override
 	public double utilization() {
-		return (1.0 * keys() / capacity());
+		return ((1.0 * keys()) / capacity());
 	}
 
 	@Override
@@ -70,15 +73,16 @@ public class StoreCallbackStats implements DataStoreStats {
 	public double distanceStats() throws StatsNotAvailableException {
 		return nodeStats.distanceStats();
 	}
-	
+
 	@Override
 	public StoreAccessStats getSessionAccessStats() {
 		return sessionAccessStats;
 	}
-	
+
 	@Override
-	public StoreAccessStats getTotalAccessStats() throws StatsNotAvailableException {
-		if(totalAccessStats == null) throw new StatsNotAvailableException();
+	public StoreAccessStats getTotalAccessStats()
+		throws StatsNotAvailableException {
+		if (totalAccessStats == null) throw new StatsNotAvailableException();
 		return totalAccessStats;
 	}
 }

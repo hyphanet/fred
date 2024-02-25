@@ -65,12 +65,15 @@ public interface Listener {
 
 	/**
 	 * Reject stats.
-	 * @param stats Array of 4 bytes, with the percentage rejections for (bulk only): CHK request, 
-	 * SSK request, CHK insert, SSK insert. Negative value = insufficient data. Positive value = 
-	 * percentage rejected.	
+	 * @param stats Array of 4 bytes, with the percentage rejections for (bulk only): CHK request,
+	 * SSK request, CHK insert, SSK insert. Negative value = insufficient data. Positive value =
+	 * percentage rejected.
 	 */
 	void onRejectStats(byte[] stats);
 
 	/** Capacity usage and approximate bandwidth class */
-	void onOverallBulkOutputCapacity(byte bandwidthClassForCapacityUsage, float capacityUsage);
+	void onOverallBulkOutputCapacity(
+		byte bandwidthClassForCapacityUsage,
+		float capacityUsage
+	);
 }

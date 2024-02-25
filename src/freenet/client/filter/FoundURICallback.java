@@ -3,12 +3,10 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.filter;
 
+import freenet.keys.FreenetURI;
 import java.net.URI;
 
-import freenet.keys.FreenetURI;
-
 public interface FoundURICallback {
-
 	/**
 	 * Called when a Freenet URI is found.
 	 * @param uri The URI.
@@ -38,5 +36,4 @@ public interface FoundURICallback {
 	public void onText(String text, String type, URI baseURI);
 
 	public void onFinishedPage();
-	
 }

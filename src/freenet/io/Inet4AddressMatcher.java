@@ -31,11 +31,12 @@ import java.util.StringTokenizer;
  * <li>IP address and network mask (<code>192.168.1.2/255.255.255.0</code>)</li>
  * <li>IP address and network mask bits (<code>192.168.1.2/24</code>)</li>
  * </ul>
- * 
+ *
  * @author David Roden &lt;droden@gmail.com&gt;
  * @version $Id$
  */
 public class Inet4AddressMatcher implements AddressMatcher {
+
 	/** The address of this matcher */
 	private int address;
 
@@ -45,7 +46,7 @@ public class Inet4AddressMatcher implements AddressMatcher {
 	/**
 	 * Creates a new address matcher that matches InetAddress objects to the
 	 * address specification given by <code>cidrHostname</code>.
-	 * 
+	 *
 	 * @param cidrHostname
 	 *            The address range this matcher matches
 	 */
@@ -59,8 +60,9 @@ public class Inet4AddressMatcher implements AddressMatcher {
 			String maskPart = cidrHostname.substring(slashPosition + 1);
 			if (maskPart.indexOf('.') == -1) {
 				int bits = Integer.parseInt(maskPart);
-				if (bits > 32 || bits < 0)
-					throw new IllegalArgumentException("Mask bits out of range: " + bits + " (" + maskPart + ")");
+				if (bits > 32 || bits < 0) throw new IllegalArgumentException(
+					"Mask bits out of range: " + bits + " (" + maskPart + ")"
+				);
 				networkMask = 0xffffffff << (32 - bits);
 				if (Integer.parseInt(maskPart) == 0) {
 					networkMask = 0;
@@ -75,7 +77,7 @@ public class Inet4AddressMatcher implements AddressMatcher {
 	 * Converts a dotted IP address (a.b.c.d) to a 32-bit value. The first octet
 	 * will be in bits 24 to 31, the second in bits 16 to 23, the third in bits
 	 * 8 to 15, and the fourth in bits 0 to 7.
-	 * 
+	 *
 	 * @param address
 	 *            The address to convert
 	 * @return The IP address as 32-bit value
@@ -87,13 +89,17 @@ public class Inet4AddressMatcher implements AddressMatcher {
 	 */
 	public static int convertToBytes(String address) {
 		StringTokenizer addressTokens = new StringTokenizer(address, ".");
-		int bytes = Integer.parseInt(addressTokens.nextToken()) << 24 | Integer.parseInt(addressTokens.nextToken()) << 16 | Integer.parseInt(addressTokens.nextToken()) << 8 | Integer.parseInt(addressTokens.nextToken());
+		int bytes =
+			(Integer.parseInt(addressTokens.nextToken()) << 24) |
+			(Integer.parseInt(addressTokens.nextToken()) << 16) |
+			(Integer.parseInt(addressTokens.nextToken()) << 8) |
+			Integer.parseInt(addressTokens.nextToken());
 		return bytes;
 	}
 
 	/**
 	 * Checks whether the given address matches this matcher's address.
-	 * 
+	 *
 	 * @param inetAddress
 	 *            The address to match to this matcher
 	 * @return <code>true</code> if <code>inetAddress</code> matches the
@@ -109,7 +115,7 @@ public class Inet4AddressMatcher implements AddressMatcher {
 	/**
 	 * Shortcut method for creating a new Inet4AddressMatcher and matching
 	 * <code>address</code> to it.
-	 * 
+	 *
 	 * @param cidrHostname
 	 *            The host specification to match
 	 * @param address
@@ -126,21 +132,20 @@ public class Inet4AddressMatcher implements AddressMatcher {
 
 	@Override
 	public String getHumanRepresentation() {
-		if(networkMask == -1)
-			return convertToString(address);
-		else
-			return convertToString(address)+'/'+convertToString(networkMask);
+		if (networkMask == -1) return convertToString(address);
+		else return (
+			convertToString(address) + '/' + convertToString(networkMask)
+		);
 	}
 
 	private String convertToString(int addr) {
 		StringBuilder sb = new StringBuilder();
-		for(int i=0;i<4;i++) {
+		for (int i = 0; i < 4; i++) {
 			int x = addr >>> 24;
 			addr = addr << 8;
-			if(i != 0) sb.append('.');
+			if (i != 0) sb.append('.');
 			sb.append(x);
 		}
 		return sb.toString();
 	}
-
 }

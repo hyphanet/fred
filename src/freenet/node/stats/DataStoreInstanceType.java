@@ -8,6 +8,7 @@ package freenet.node.stats;
  * Date: Apr 16, 2010
  */
 public class DataStoreInstanceType {
+
 	public final DataStoreType store;
 	public final DataStoreKeyType key;
 
@@ -38,9 +39,8 @@ public class DataStoreInstanceType {
 
 	@Override
 	public String toString() {
-		return "DataStoreInstanceType{" +
-				"store=" + store +
-				", key=" + key +
-				'}';
+		return (
+			"DataStoreInstanceType{" + "store=" + store + ", key=" + key + '}'
+		);
 	}
 }

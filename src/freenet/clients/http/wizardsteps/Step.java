@@ -1,7 +1,6 @@
 package freenet.clients.http.wizardsteps;
 
 import freenet.support.api.HTTPRequest;
-
 import java.io.IOException;
 
 /**

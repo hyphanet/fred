@@ -12,12 +12,10 @@ import java.io.IOException;
  * @author sajack
  */
 public interface CodecPacketFilter {
-
 	/**Does minimal validation of a codec packet.
 	 * @param packet A packet from the coded stream
 	 * @return Whether packet was properly validated
 	 * @throws IOException
 	 */
 	public abstract CodecPacket parse(CodecPacket packet) throws IOException;
-
 }

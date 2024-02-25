@@ -8,17 +8,32 @@ import freenet.support.HTMLNode;
 public abstract class BaseUpdateableElement extends HTMLNode {
 
 	/** The context of the request */
-	protected ToadletContext	ctx;
+	protected ToadletContext ctx;
 
 	public BaseUpdateableElement(String name, ToadletContext ctx) {
 		this(name, new String[] {}, new String[] {}, ctx);
 	}
 
-	public BaseUpdateableElement(String name, String attributeName, String attributeValue, ToadletContext ctx) {
-		this(name, new String[] { attributeName }, new String[] { attributeValue }, ctx);
+	public BaseUpdateableElement(
+		String name,
+		String attributeName,
+		String attributeValue,
+		ToadletContext ctx
+	) {
+		this(
+			name,
+			new String[] { attributeName },
+			new String[] { attributeValue },
+			ctx
+		);
 	}
 
-	public BaseUpdateableElement(String name, String[] attributeNames, String[] attributeValues, ToadletContext ctx) {
+	public BaseUpdateableElement(
+		String name,
+		String[] attributeNames,
+		String[] attributeValues,
+		ToadletContext ctx
+	) {
 		super(name, attributeNames, attributeValues);
 		this.ctx = ctx;
 	}
@@ -30,19 +45,23 @@ public abstract class BaseUpdateableElement extends HTMLNode {
 		// Updates the state, so the resulting page will have the actual state and content
 		updateState(true);
 		// Notifies the manager that the element has been rendered
-		if(pushed)
-			((SimpleToadletServer) ctx.getContainer()).pushDataManager.elementRendered(ctx.getUniqueId(), this);
+		if (
+			pushed
+		) ((SimpleToadletServer) ctx.getContainer()).pushDataManager.elementRendered(
+				ctx.getUniqueId(),
+				this
+			);
 	}
 
 	/**
 	 * Updates the state of the Node. The children should be removed and recreated.
-	 * 
+	 *
 	 * @param initial
 	 *            - If this is the first update
 	 */
 	public abstract void updateState(boolean initial);
 
-	/** Returns the id, that identifies the element. It can depend on the request, but it might not use it. 
+	/** Returns the id, that identifies the element. It can depend on the request, but it might not use it.
 	 * It should not change e.g. when we follow a redirect as it is used in internal structures to identify the element. */
 	public abstract String getUpdaterId(String requestId);
 

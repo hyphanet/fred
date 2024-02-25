@@ -3,20 +3,22 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.http;
 
-import java.io.File;
-import java.net.MalformedURLException;
-import java.util.Hashtable;
-
 import freenet.client.HighLevelSimpleClient;
 import freenet.keys.FreenetURI;
 import freenet.node.NodeClientCore;
+import java.io.File;
+import java.net.MalformedURLException;
+import java.util.Hashtable;
 
 public class LocalFileInsertToadlet extends LocalFileBrowserToadlet {
 
 	public static final String PATH = "/insert-browse/";
 	public static final String POST_TO = "/uploads/";
 
-	public LocalFileInsertToadlet (NodeClientCore core, HighLevelSimpleClient highLevelSimpleClient) {
+	public LocalFileInsertToadlet(
+		NodeClientCore core,
+		HighLevelSimpleClient highLevelSimpleClient
+	) {
 		super(core, highLevelSimpleClient);
 	}
 
@@ -40,8 +42,10 @@ public class LocalFileInsertToadlet extends LocalFileBrowserToadlet {
 		return defaultUploadDir();
 	}
 
-    @Override
-	protected Hashtable<String, String> persistenceFields (Hashtable<String, String> set) {
+	@Override
+	protected Hashtable<String, String> persistenceFields(
+		Hashtable<String, String> set
+	) {
 		Hashtable<String, String> fieldPairs = new Hashtable<String, String>();
 		FreenetURI furi = null;
 		String key = set.get("key");
@@ -58,7 +62,7 @@ public class LocalFileInsertToadlet extends LocalFileBrowserToadlet {
 			fieldPairs.put("compress", element);
 		}
 
-		element = set.get("compatibilityMode"); 
+		element = set.get("compatibilityMode");
 		if (element != null) {
 			fieldPairs.put("compatibilityMode", element);
 		}

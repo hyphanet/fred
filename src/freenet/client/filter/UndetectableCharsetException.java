@@ -6,7 +6,7 @@ import freenet.l10n.NodeL10n;
 // in some encoding, but the declaration is invalid.
 public class UndetectableCharsetException extends UnsafeContentTypeException {
 
-	final private static long serialVersionUID = -7663468693283975543L;
+	private static final long serialVersionUID = -7663468693283975543L;
 
 	final String charset;
 
@@ -30,12 +30,12 @@ public class UndetectableCharsetException extends UnsafeContentTypeException {
 	}
 
 	public String l10n(String message) {
-		return NodeL10n.getBase().getString("UndetectableCharsetException."+message);
+		return NodeL10n.getBase()
+			.getString("UndetectableCharsetException." + message);
 	}
 
 	public String l10n(String message, String key, String value) {
-		return NodeL10n.getBase().getString("UndetectableCharsetException."+message, key, value);
+		return NodeL10n.getBase()
+			.getString("UndetectableCharsetException." + message, key, value);
 	}
-
-
 }

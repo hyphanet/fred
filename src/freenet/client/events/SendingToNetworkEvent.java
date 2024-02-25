@@ -1,8 +1,8 @@
 package freenet.client.events;
 
 public class SendingToNetworkEvent implements ClientEvent {
-	
-	final static int CODE = 0x0A;
+
+	static final int CODE = 0x0A;
 
 	@Override
 	public int getCode() {
@@ -13,5 +13,4 @@ public class SendingToNetworkEvent implements ClientEvent {
 	public String getDescription() {
 		return "Sending to network";
 	}
-
 }

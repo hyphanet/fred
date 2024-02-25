@@ -13,8 +13,14 @@ public class PutSuccessfulMessage extends FCPMessage {
 	public final boolean global;
 	public final FreenetURI uri;
 	public final long startupTime, completionTime;
-	
-	public PutSuccessfulMessage(String identifier, boolean global, FreenetURI uri, long startupTime, long completionTime) {
+
+	public PutSuccessfulMessage(
+		String identifier,
+		boolean global,
+		FreenetURI uri,
+		long startupTime,
+		long completionTime
+	) {
 		this.identifier = identifier;
 		this.global = global;
 		this.uri = uri;
@@ -28,8 +34,7 @@ public class PutSuccessfulMessage extends FCPMessage {
 		fs.putSingle("Identifier", identifier);
 		fs.put("Global", global);
 		// This is useful for simple clients.
-		if(uri != null)
-			fs.putSingle("URI", uri.toString(false, false));
+		if (uri != null) fs.putSingle("URI", uri.toString(false, false));
 		fs.put("StartupTime", startupTime);
 		fs.put("CompletionTime", completionTime);
 		return fs;
@@ -42,8 +47,12 @@ public class PutSuccessfulMessage extends FCPMessage {
 
 	@Override
 	public void run(FCPConnectionHandler handler, Node node)
-			throws MessageInvalidException {
-		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "InsertSuccessful goes from server to client not the other way around", identifier, global);
+		throws MessageInvalidException {
+		throw new MessageInvalidException(
+			ProtocolErrorMessage.INVALID_MESSAGE,
+			"InsertSuccessful goes from server to client not the other way around",
+			identifier,
+			global
+		);
 	}
-
 }

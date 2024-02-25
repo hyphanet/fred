@@ -15,14 +15,14 @@ public class FetchWaiter implements ClientGetCallback {
 	private FetchException error;
 	private boolean finished;
 	private final RequestClient client;
-	
-	public FetchWaiter(RequestClient client) {
-	    this.client = client;
-    }
 
-    @Override
+	public FetchWaiter(RequestClient client) {
+		this.client = client;
+	}
+
+	@Override
 	public synchronized void onSuccess(FetchResult result, ClientGetter state) {
-		if(finished) return;
+		if (finished) return;
 		this.result = result;
 		finished = true;
 		notifyAll();
@@ -30,7 +30,7 @@ public class FetchWaiter implements ClientGetCallback {
 
 	@Override
 	public synchronized void onFailure(FetchException e, ClientGetter state) {
-		if(finished) return;
+		if (finished) return;
 		this.error = e;
 		finished = true;
 		notifyAll();
@@ -38,7 +38,7 @@ public class FetchWaiter implements ClientGetCallback {
 
 	/** Wait for the request to complete, return the results, throw if it failed. */
 	public synchronized FetchResult waitForCompletion() throws FetchException {
-		while(!finished) {
+		while (!finished) {
 			try {
 				wait();
 			} catch (InterruptedException e) {
@@ -46,18 +46,18 @@ public class FetchWaiter implements ClientGetCallback {
 			}
 		}
 
-		if(error != null) throw error;
+		if (error != null) throw error;
 		return result;
 	}
 
-    @Override
-    public void onResume(ClientContext context) {
-        throw new UnsupportedOperationException();
-        // Not persistent.
-    }
+	@Override
+	public void onResume(ClientContext context) {
+		throw new UnsupportedOperationException();
+		// Not persistent.
+	}
 
-    @Override
-    public RequestClient getRequestClient() {
-        return client;
-    }
+	@Override
+	public RequestClient getRequestClient() {
+		return client;
+	}
 }

@@ -3,20 +3,19 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.fcp;
 
-import java.io.Serializable;
-import java.net.MalformedURLException;
-
 import freenet.client.FailureCodeTracker;
 import freenet.client.InsertException;
 import freenet.client.InsertException.InsertExceptionMode;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.support.SimpleFieldSet;
+import java.io.Serializable;
+import java.net.MalformedURLException;
 
 public class PutFailedMessage extends FCPMessage implements Serializable {
 
-    private static final long serialVersionUID = 1L;
-    final InsertExceptionMode code;
+	private static final long serialVersionUID = 1L;
+	final InsertExceptionMode code;
 	final String codeDescription;
 	final String extraDescription;
 	final String shortCodeDescription;
@@ -26,7 +25,11 @@ public class PutFailedMessage extends FCPMessage implements Serializable {
 	final boolean global;
 	final boolean isFatal;
 
-	public PutFailedMessage(InsertException e, String identifier, boolean global) {
+	public PutFailedMessage(
+		InsertException e,
+		String identifier,
+		boolean global
+	) {
 		this.code = e.getMode();
 		this.codeDescription = InsertException.getMessage(code);
 		this.shortCodeDescription = InsertException.getShortMessage(code);
@@ -44,15 +47,16 @@ public class PutFailedMessage extends FCPMessage implements Serializable {
 	 * client library. FIXME.
 	 * @param useVerboseFields If true, read in verbose fields (CodeDescription
 	 * etc), if false, reconstruct them from the error code.
-	 * @throws MalformedURLException 
+	 * @throws MalformedURLException
 	 */
-	public PutFailedMessage(SimpleFieldSet fs, boolean useVerboseFields) throws MalformedURLException {
+	public PutFailedMessage(SimpleFieldSet fs, boolean useVerboseFields)
+		throws MalformedURLException {
 		identifier = fs.get("Identifier");
-		if(identifier == null) throw new NullPointerException();
+		if (identifier == null) throw new NullPointerException();
 		global = fs.getBoolean("Global", false);
 		code = InsertExceptionMode.getByCode(Integer.parseInt(fs.get("Code")));
-		
-		if(useVerboseFields) {
+
+		if (useVerboseFields) {
 			codeDescription = fs.get("CodeDescription");
 			isFatal = fs.getBoolean("Fatal", false);
 			shortCodeDescription = fs.get("ShortCodeDescription");
@@ -61,15 +65,15 @@ public class PutFailedMessage extends FCPMessage implements Serializable {
 			isFatal = InsertException.isFatal(code);
 			shortCodeDescription = InsertException.getShortMessage(code);
 		}
-		
+
 		extraDescription = fs.get("ExtraDescription");
 		String euri = fs.get("ExpectedURI");
-		if(euri != null && euri.length() > 0)
-			expectedURI = new FreenetURI(euri);
-		else
-			expectedURI = null;
+		if (euri != null && euri.length() > 0) expectedURI = new FreenetURI(
+			euri
+		);
+		else expectedURI = null;
 		SimpleFieldSet trackerSubset = fs.subset("Errors");
-		if(trackerSubset != null) {
+		if (trackerSubset != null) {
 			tracker = new FailureCodeTracker(true, trackerSubset);
 		} else {
 			tracker = null;
@@ -80,27 +84,27 @@ public class PutFailedMessage extends FCPMessage implements Serializable {
 	public SimpleFieldSet getFieldSet() {
 		return getFieldSet(true);
 	}
-	
+
 	public SimpleFieldSet getFieldSet(boolean verbose) {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
-		if(identifier == null)
-			throw new NullPointerException();
+		if (identifier == null) throw new NullPointerException();
 		fs.putSingle("Identifier", identifier);
 		fs.put("Global", global);
 		fs.put("Code", code.code);
-		if(verbose)
-			fs.putSingle("CodeDescription", codeDescription);
-		if(extraDescription != null)
-			fs.putSingle("ExtraDescription", extraDescription);
-		if(tracker != null) {
+		if (verbose) fs.putSingle("CodeDescription", codeDescription);
+		if (extraDescription != null) fs.putSingle(
+			"ExtraDescription",
+			extraDescription
+		);
+		if (tracker != null) {
 			fs.tput("Errors", tracker.toFieldSet(verbose));
 		}
-		if(verbose)
-			fs.put("Fatal", isFatal);
-		if(verbose)
-			fs.putSingle("ShortCodeDescription", shortCodeDescription);
-		if(expectedURI != null)
-			fs.putSingle("ExpectedURI", expectedURI.toString());
+		if (verbose) fs.put("Fatal", isFatal);
+		if (verbose) fs.putSingle("ShortCodeDescription", shortCodeDescription);
+		if (expectedURI != null) fs.putSingle(
+			"ExpectedURI",
+			expectedURI.toString()
+		);
 		return fs;
 	}
 
@@ -111,8 +115,13 @@ public class PutFailedMessage extends FCPMessage implements Serializable {
 
 	@Override
 	public void run(FCPConnectionHandler handler, Node node)
-			throws MessageInvalidException {
-		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "PutFailed goes from server to client not the other way around", identifier, global);
+		throws MessageInvalidException {
+		throw new MessageInvalidException(
+			ProtocolErrorMessage.INVALID_MESSAGE,
+			"PutFailed goes from server to client not the other way around",
+			identifier,
+			global
+		);
 	}
 
 	public String getShortFailedMessage() {
@@ -120,10 +129,9 @@ public class PutFailedMessage extends FCPMessage implements Serializable {
 	}
 
 	public String getLongFailedMessage() {
-		if(extraDescription != null)
-			return shortCodeDescription + ": " + extraDescription;
-		else
-			return shortCodeDescription;
+		if (extraDescription != null) return (
+			shortCodeDescription + ": " + extraDescription
+		);
+		else return shortCodeDescription;
 	}
-
 }

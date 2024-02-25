@@ -37,13 +37,18 @@ public class PersistFields {
 	 * @param preset Set manually
 	 * @param request Parsed for remaining fields. (opennet)
 	 */
-	public PersistFields(FirstTimeWizardToadlet.WIZARD_PRESET preset, HTTPRequest request) {
+	public PersistFields(
+		FirstTimeWizardToadlet.WIZARD_PRESET preset,
+		HTTPRequest request
+	) {
 		this.preset = preset;
 		this.opennet = parseOpennet(request);
 		this.singleStep = parseSingleStep(request);
 	}
 
-	private FirstTimeWizardToadlet.WIZARD_PRESET parsePreset(HTTPRequest request) {
+	private FirstTimeWizardToadlet.WIZARD_PRESET parsePreset(
+		HTTPRequest request
+	) {
 		String presetRaw;
 		FirstTimeWizardToadlet.WIZARD_PRESET preset;
 
@@ -100,7 +105,9 @@ public class PersistFields {
 	 * @return URL with persistence fields included.
 	 */
 	public String appendTo(String baseURL) {
-		StringBuilder url = new StringBuilder(baseURL).append("&opennet=").append(opennet);
+		StringBuilder url = new StringBuilder(baseURL)
+			.append("&opennet=")
+			.append(opennet);
 		if (isUsingPreset()) {
 			url.append("&preset=").append(preset);
 		}

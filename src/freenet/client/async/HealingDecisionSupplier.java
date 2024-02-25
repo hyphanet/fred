@@ -1,9 +1,8 @@
 package freenet.client.async;
 
-import java.util.function.Supplier;
-
 import freenet.node.Location;
 import freenet.node.NodeStarter;
+import java.util.function.Supplier;
 
 /**
  * Specialize Healing to the fraction of the keyspace in which we would receive the inserts
@@ -18,19 +17,25 @@ import freenet.node.NodeStarter;
  * correct node from which loop detection will stop the insert long before HTL reaches zero.
  */
 public class HealingDecisionSupplier {
+
 	private final Supplier<Double> currentNodeLocation;
 	private final Supplier<Boolean> isOpennetEnabled;
 	private final Supplier<Double> randomNumberSupplier;
 
-	public HealingDecisionSupplier(Supplier<Double> currentNodeLocation, Supplier<Boolean> isOpennetEnabled) {
-
+	public HealingDecisionSupplier(
+		Supplier<Double> currentNodeLocation,
+		Supplier<Boolean> isOpennetEnabled
+	) {
 		this.currentNodeLocation = currentNodeLocation;
 		this.isOpennetEnabled = isOpennetEnabled;
 		randomNumberSupplier = NodeStarter.getGlobalSecureRandom()::nextDouble;
 	}
 
-	HealingDecisionSupplier(Supplier<Double> currentNodeLocation, Supplier<Boolean> isOpennetEnabled, Supplier<Double> randomNumberSupplier) {
-
+	HealingDecisionSupplier(
+		Supplier<Double> currentNodeLocation,
+		Supplier<Boolean> isOpennetEnabled,
+		Supplier<Double> randomNumberSupplier
+	) {
 		this.currentNodeLocation = currentNodeLocation;
 		this.isOpennetEnabled = isOpennetEnabled;
 		this.randomNumberSupplier = randomNumberSupplier;
@@ -42,7 +47,11 @@ public class HealingDecisionSupplier {
 			return true;
 		}
 		double randomBetweenZeroAndOne = randomNumberSupplier.get();
-		return shouldHealBlock(currentNodeLocation.get(), keyLocation, randomBetweenZeroAndOne);
+		return shouldHealBlock(
+			currentNodeLocation.get(),
+			keyLocation,
+			randomBetweenZeroAndOne
+		);
 	}
 
 	/**
@@ -64,10 +73,14 @@ public class HealingDecisionSupplier {
 	 * the best next hop when seen from the originator.
 	 */
 	private static boolean shouldHealBlock(
-										   double nodeLocation,
-										   double keyLocation,
-										   double randomBetweenZeroAndOne) {
-		double distanceToNodeLocation = Location.distance(nodeLocation, keyLocation);
+		double nodeLocation,
+		double keyLocation,
+		double randomBetweenZeroAndOne
+	) {
+		double distanceToNodeLocation = Location.distance(
+			nodeLocation,
+			keyLocation
+		);
 		// If the key is inside "our" 20% of the keyspace, heal it with 50% probability.
 		if (distanceToNodeLocation < 0.1) {
 			// accept 50%, specialized to our own location (0.5 ** 4 ~ 0.0625). Accept 70% which are going
@@ -81,5 +94,4 @@ public class HealingDecisionSupplier {
 			return randomBetweenZeroAndOne > 0.9;
 		}
 	}
-
 }

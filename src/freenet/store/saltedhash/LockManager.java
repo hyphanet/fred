@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.store.saltedhash;
 
+import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -10,17 +12,15 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
-
 /**
  * Lock Manager
- * 
+ *
  * Handle locking/unlocking of individual offsets.
- * 
+ *
  * @author sdiz
  */
 public class LockManager {
+
 	private static boolean logDEBUG;
 	private volatile boolean shutdown;
 	private Lock entryLock = new ReentrantLock();
@@ -32,27 +32,27 @@ public class LockManager {
 
 	/**
 	 * Lock the entry
-	 * 
+	 *
 	 * This lock is <strong>not</strong> re-entrance. No threads except Cleaner should hold more
 	 * then one lock at a time (or deadlock may occur).
 	 */
 	Condition lockEntry(long offset) {
-		if (logDEBUG)
-			Logger.debug(this, "try locking " + offset, new Exception());
+		if (logDEBUG) Logger.debug(
+			this,
+			"try locking " + offset,
+			new Exception()
+		);
 
 		Condition condition;
 		try {
 			entryLock.lock();
 			try {
 				do {
-					if (shutdown)
-						return null;
+					if (shutdown) return null;
 
 					Condition lockCond = lockMap.get(offset);
-					if (lockCond != null)
-						lockCond.await(10, TimeUnit.SECONDS); // 10s for checking shutdown
-					else
-						break;
+					if (lockCond != null) lockCond.await(10, TimeUnit.SECONDS); // 10s for checking shutdown
+					else break;
 				} while (true);
 				condition = entryLock.newCondition();
 				lockMap.put(offset, condition);
@@ -64,8 +64,7 @@ public class LockManager {
 			return null;
 		}
 
-		if (logDEBUG)
-			Logger.debug(this, "locked " + offset, new Exception());
+		if (logDEBUG) Logger.debug(this, "locked " + offset, new Exception());
 		return condition;
 	}
 
@@ -73,8 +72,11 @@ public class LockManager {
 	 * Unlock the entry
 	 */
 	void unlockEntry(long offset, Condition condition) {
-		if (logDEBUG)
-			Logger.debug(this, "unlocking " + offset, new Exception("debug"));
+		if (logDEBUG) Logger.debug(
+			this,
+			"unlocking " + offset,
+			new Exception("debug")
+		);
 
 		entryLock.lock();
 		try {

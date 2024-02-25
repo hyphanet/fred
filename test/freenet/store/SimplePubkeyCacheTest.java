@@ -2,21 +2,19 @@ package freenet.store;
 
 import static org.junit.Assert.*;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
-
-import org.junit.Test;
-
 import freenet.crypt.DSAGroup;
 import freenet.crypt.DSAPrivateKey;
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.Global;
 import freenet.support.ByteArrayWrapper;
 import freenet.support.math.MersenneTwister;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Random;
+import org.junit.Test;
 
 public class SimplePubkeyCacheTest {
-	
+
 	@Test
 	public void testSimple() {
 		final int keys = 10;
@@ -25,8 +23,11 @@ public class SimplePubkeyCacheTest {
 		GetPubkey pubkeys = new SimpleGetPubkey(pk);
 		DSAGroup group = Global.DSAgroupBigA;
 		Random random = new MersenneTwister(1010101);
-		HashMap<ByteArrayWrapper, DSAPublicKey> map = new HashMap<ByteArrayWrapper, DSAPublicKey>();
-		for(int i=0;i<keys;i++) {
+		HashMap<ByteArrayWrapper, DSAPublicKey> map = new HashMap<
+			ByteArrayWrapper,
+			DSAPublicKey
+		>();
+		for (int i = 0; i < keys; i++) {
 			DSAPrivateKey privKey = new DSAPrivateKey(group, random);
 			DSAPublicKey key = new DSAPublicKey(group, privKey);
 			byte[] hash = key.asBytesHash();
@@ -36,11 +37,14 @@ public class SimplePubkeyCacheTest {
 			assertTrue(pubkeys.getKey(hash, false, false, null).equals(key));
 		}
 		int x = 0;
-		for(Map.Entry<ByteArrayWrapper, DSAPublicKey> entry : map.entrySet()) {
+		for (Map.Entry<ByteArrayWrapper, DSAPublicKey> entry : map.entrySet()) {
 			x++;
-			assertTrue(pubkeys.getKey(entry.getKey().get(), false, false, null).equals(entry.getValue()));
+			assertTrue(
+				pubkeys
+					.getKey(entry.getKey().get(), false, false, null)
+					.equals(entry.getValue())
+			);
 		}
-		assert(x == keys);
+		assert (x == keys);
 	}
-
 }

@@ -25,14 +25,16 @@ import freenet.support.HTMLNode;
  * has been upgraded to a new version, to avoid showing it too often.
  */
 public class DatastoreTooSmallAlert implements UserAlert {
+
 	private final NodeClientCore core;
 
 	private static String l10n(String key) {
-		return NodeL10n.getBase().getString("DataStoreTooSmallAlert."+key);
+		return NodeL10n.getBase().getString("DataStoreTooSmallAlert." + key);
 	}
 
 	private static String l10n(String key, String pattern, String value) {
-		return NodeL10n.getBase().getString("DataStoreTooSmallAlert."+key, pattern, value);
+		return NodeL10n.getBase()
+			.getString("DataStoreTooSmallAlert." + key, pattern, value);
 	}
 
 	public DatastoreTooSmallAlert(NodeClientCore core) {
@@ -61,14 +63,18 @@ public class DatastoreTooSmallAlert implements UserAlert {
 		// Datastore size as configured in wizard is the sum of these three.
 		long storeSize = config.get("node").getLong("storeSize");
 		long clientCacheSize = config.get("node").getLong("clientCacheSize");
-		long slashdotCacheSize = config.get("node").getLong("slashdotCacheSize");
+		long slashdotCacheSize = config
+			.get("node")
+			.getLong("slashdotCacheSize");
 		long totalSize = storeSize + clientCacheSize + slashdotCacheSize;
 		// And this corrective factor, since size on disk is up towards 3.6% larger.
-		totalSize = (long)((double)totalSize * 1.036);
+		totalSize = (long) ((double) totalSize * 1.036);
 		// And round it, in case manually configured and not exact multiple of GiB.
-		long currentSize = (totalSize + 512*1024*1024) / (1024*1024*1024);
+		long currentSize =
+			(totalSize + 512 * 1024 * 1024) / (1024 * 1024 * 1024);
 		// Calculate available size the same way as in wizard, recommend at least 20% of that.
-		long availableSize = DATASTORE_SIZE.maxDatastoreSize(core.node) / (1024*1024*1024);
+		long availableSize =
+			DATASTORE_SIZE.maxDatastoreSize(core.node) / (1024 * 1024 * 1024);
 		long minSize = availableSize / 5;
 		// Wizard never recommends sizes above 100 GiB, so claim a minimum of at most 50 GiB.
 		if (minSize > 50) minSize = 50;
@@ -88,26 +94,41 @@ public class DatastoreTooSmallAlert implements UserAlert {
 		// Datastore size as configured in wizard is the sum of these three.
 		long storeSize = config.get("node").getLong("storeSize");
 		long clientCacheSize = config.get("node").getLong("clientCacheSize");
-		long slashdotCacheSize = config.get("node").getLong("slashdotCacheSize");
+		long slashdotCacheSize = config
+			.get("node")
+			.getLong("slashdotCacheSize");
 		long totalSize = storeSize + clientCacheSize + slashdotCacheSize;
 		// And this corrective factor, since size on disk is up towards 3.6% larger.
-		totalSize = (long)((double)totalSize * 1.036);
+		totalSize = (long) ((double) totalSize * 1.036);
 		// And round it, in case manually configured and not exact multiple of GiB.
-		long currentSize = (totalSize + 512*1024*1024) / (1024*1024*1024);
+		long currentSize =
+			(totalSize + 512 * 1024 * 1024) / (1024 * 1024 * 1024);
 		// Calculate available size the same way as in wizard, recommend at least 20% of that.
-		long availableSize = DATASTORE_SIZE.maxDatastoreSize(core.node) / (1024*1024*1024);
+		long availableSize =
+			DATASTORE_SIZE.maxDatastoreSize(core.node) / (1024 * 1024 * 1024);
 		long minSize = availableSize / 5;
 		// Wizard never recommends sizes above 100 GiB, so claim a minimum of at most 50 GiB.
 		if (minSize > 50) minSize = 50;
 
 		HTMLNode alertNode = new HTMLNode("div");
-		alertNode.addChild("p", l10n("description", "size", Long.toString(minSize)));
+		alertNode.addChild(
+			"p",
+			l10n("description", "size", Long.toString(minSize))
+		);
 		HTMLNode sizesNode = new HTMLNode("p");
 		sizesNode.addChild("#", l10n("current", "size", currentSize + " GiB"));
 		sizesNode.addChild("br");
-		sizesNode.addChild("#", l10n("available", "size", availableSize + " GiB"));
+		sizesNode.addChild(
+			"#",
+			l10n("available", "size", availableSize + " GiB")
+		);
 		alertNode.addChild(sizesNode);
-		alertNode.addChild("a", "href", "/wizard/?step=DATASTORE_SIZE&singlestep=true")
+		alertNode
+			.addChild(
+				"a",
+				"href",
+				"/wizard/?step=DATASTORE_SIZE&singlestep=true"
+			)
 			.addChild("#", l10n("submit"));
 
 		return alertNode;
@@ -125,28 +146,33 @@ public class DatastoreTooSmallAlert implements UserAlert {
 		// Datastore size as configured in wizard is the sum of these three.
 		long storeSize = config.get("node").getLong("storeSize");
 		long clientCacheSize = config.get("node").getLong("clientCacheSize");
-		long slashdotCacheSize = config.get("node").getLong("slashdotCacheSize");
+		long slashdotCacheSize = config
+			.get("node")
+			.getLong("slashdotCacheSize");
 		long totalSize = storeSize + clientCacheSize + slashdotCacheSize;
 		// And this corrective factor, since size on disk is up towards 3.6% larger.
-		totalSize = (long)((double)totalSize * 1.036);
+		totalSize = (long) ((double) totalSize * 1.036);
 		// And round it, in case manually configured and not exact multiple of GiB.
-		long currentSize = (totalSize + 512*1024*1024) / (1024*1024*1024);
+		long currentSize =
+			(totalSize + 512 * 1024 * 1024) / (1024 * 1024 * 1024);
 		// Calculate available size the same way as in wizard, only warn if below 10% of that.
-		long availableSize = DATASTORE_SIZE.maxDatastoreSize(core.node) / (1024*1024*1024);
+		long availableSize =
+			DATASTORE_SIZE.maxDatastoreSize(core.node) / (1024 * 1024 * 1024);
 		long minSize = availableSize / 10;
 		// Wizard never recommends sizes above 100 GiB, so never warn if above 25 GiB.
 		if (minSize > 25) minSize = 25;
 
 		// Check if warning has already been dismissed on this Freenet version
 		int currentVersion = Version.buildNumber();
-		int dismissedVersion = core.node.config.get("node").getInt("datastoreTooSmallDismissed");
+		int dismissedVersion = core.node.config
+			.get("node")
+			.getInt("datastoreTooSmallDismissed");
 
 		return currentSize < minSize && currentVersion != dismissedVersion;
 	}
 
 	@Override
-	public void isValid(boolean validity) {
-	}
+	public void isValid(boolean validity) {}
 
 	@Override
 	public String dismissButtonText() {
@@ -163,9 +189,10 @@ public class DatastoreTooSmallAlert implements UserAlert {
 		String currentVersion = Integer.toString(Version.buildNumber());
 
 		try {
-			core.node.config.get("node").set("datastoreTooSmallDismissed", currentVersion);
-		} catch (ConfigException e) {
-		}
+			core.node.config
+				.get("node")
+				.set("datastoreTooSmallDismissed", currentVersion);
+		} catch (ConfigException e) {}
 	}
 
 	@Override
@@ -185,6 +212,12 @@ public class DatastoreTooSmallAlert implements UserAlert {
 
 	@Override
 	public FCPMessage getFCPMessage() {
-		return new FeedMessage(getTitle(), getShortText(), getText(), getPriorityClass(), getUpdatedTime());
+		return new FeedMessage(
+			getTitle(),
+			getShortText(),
+			getText(),
+			getPriorityClass(),
+			getUpdatedTime()
+		);
 	}
 }

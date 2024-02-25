@@ -1,5 +1,6 @@
 package freenet;
 
 public enum Type {
-	INTEGRATION,ACCEPTANCE
+	INTEGRATION,
+	ACCEPTANCE,
 }

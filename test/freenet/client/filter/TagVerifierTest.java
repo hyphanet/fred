@@ -5,22 +5,23 @@ package freenet.client.filter;
 
 import static org.junit.Assert.*;
 
+import freenet.client.filter.HTMLFilter.ParsedTag;
+import freenet.client.filter.HTMLFilter.TagVerifier;
 import java.net.URI;
 import java.util.LinkedHashMap;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import freenet.client.filter.HTMLFilter.ParsedTag;
-import freenet.client.filter.HTMLFilter.TagVerifier;
-
 public class TagVerifierTest {
+
 	private static final String BASE_URI_PROTOCOL = "http";
 	private static final String BASE_URI_CONTENT = "localhost:8888";
-	private static final String BASE_KEY = "USK@0I8gctpUE32CM0iQhXaYpCMvtPPGfT4pjXm01oid5Zc,3dAcn4fX2LyxO6uCnWFTx-2HKZ89uruurcKwLSCxbZ4,AQACAAE/Ultimate-Freenet-Index/55/";
-	private static final String ALT_BASE_URI = BASE_URI_PROTOCOL+"://"+BASE_URI_CONTENT+'/'+BASE_KEY;
-	
+	private static final String BASE_KEY =
+		"USK@0I8gctpUE32CM0iQhXaYpCMvtPPGfT4pjXm01oid5Zc,3dAcn4fX2LyxO6uCnWFTx-2HKZ89uruurcKwLSCxbZ4,AQACAAE/Ultimate-Freenet-Index/55/";
+	private static final String ALT_BASE_URI =
+		BASE_URI_PROTOCOL + "://" + BASE_URI_CONTENT + '/' + BASE_KEY;
+
 	String tagname;
 	LinkedHashMap<String, String> attributes;
 	ParsedTag htmlTag;
@@ -32,7 +33,18 @@ public class TagVerifierTest {
 	public void setUp() throws Exception {
 		filter = new HTMLFilter();
 		attributes = new LinkedHashMap<>();
-		pc = filter.new HTMLParseContext(null, null, "utf-8", new GenericReadFilterCallback(new URI(ALT_BASE_URI), null, null, null), false);
+		pc = filter.new HTMLParseContext(
+				null,
+				null,
+				"utf-8",
+				new GenericReadFilterCallback(
+					new URI(ALT_BASE_URI),
+					null,
+					null,
+					null
+				),
+				false
+			);
 	}
 
 	@After
@@ -56,9 +68,14 @@ public class TagVerifierTest {
 		attributes.put("version", "-//W3C//DTD HTML 4.01 Transitional//EN");
 
 		htmlTag = new ParsedTag(tagname, attributes);
-		final String HTML_INVALID_XMLNS = "<html version=\"-//W3C//DTD HTML 4.01 Transitional//EN\" />";
+		final String HTML_INVALID_XMLNS =
+			"<html version=\"-//W3C//DTD HTML 4.01 Transitional//EN\" />";
 
-		assertEquals("HTML tag containing an invalid xmlns", HTML_INVALID_XMLNS, verifier.sanitize(htmlTag, pc).toString());
+		assertEquals(
+			"HTML tag containing an invalid xmlns",
+			HTML_INVALID_XMLNS,
+			verifier.sanitize(htmlTag, pc).toString()
+		);
 	}
 
 	@Test
@@ -74,9 +91,14 @@ public class TagVerifierTest {
 
 		htmlTag = new ParsedTag(tagname, attributes);
 
-		final String LINK_STYLESHEET = "<link rel=\"stylesheet\" type=\"text/css\" target=\"_blank\" media=\"print, handheld\" href=\"foo.css?type=text/css&amp;maybecharset=utf-8\" />";
+		final String LINK_STYLESHEET =
+			"<link rel=\"stylesheet\" type=\"text/css\" target=\"_blank\" media=\"print, handheld\" href=\"foo.css?type=text/css&amp;maybecharset=utf-8\" />";
 
-		assertEquals("Link tag importing CSS", LINK_STYLESHEET, verifier.sanitize(htmlTag, pc).toString());
+		assertEquals(
+			"Link tag importing CSS",
+			LINK_STYLESHEET,
+			verifier.sanitize(htmlTag, pc).toString()
+		);
 	}
 
 	@Test
@@ -84,11 +106,15 @@ public class TagVerifierTest {
 		tagname = "meta";
 		verifier = HTMLFilter.allowedTagsVerifiers.get(tagname);
 
-		attributes.put("http-equiv","Content-type");
-		attributes.put("content","text/html; charset=UTF-8");
+		attributes.put("http-equiv", "Content-type");
+		attributes.put("content", "text/html; charset=UTF-8");
 		htmlTag = new ParsedTag(tagname, attributes);
 
-		assertEquals("Meta tag describing HTML content-type", htmlTag.toString(), verifier.sanitize(htmlTag, pc).toString());
+		assertEquals(
+			"Meta tag describing HTML content-type",
+			htmlTag.toString(),
+			verifier.sanitize(htmlTag, pc).toString()
+		);
 	}
 
 	@Test
@@ -96,11 +122,15 @@ public class TagVerifierTest {
 		tagname = "meta";
 		verifier = HTMLFilter.allowedTagsVerifiers.get(tagname);
 
-		attributes.put("http-equiv","Content-type");
-		attributes.put("content","application/xhtml+xml; charset=UTF-8");
+		attributes.put("http-equiv", "Content-type");
+		attributes.put("content", "application/xhtml+xml; charset=UTF-8");
 		htmlTag = new ParsedTag(tagname, attributes);
 
-		assertEquals("Meta tag describing XHTML content-type", htmlTag.toString(), verifier.sanitize(htmlTag, pc).toString());
+		assertEquals(
+			"Meta tag describing XHTML content-type",
+			htmlTag.toString(),
+			verifier.sanitize(htmlTag, pc).toString()
+		);
 	}
 
 	@Test
@@ -108,8 +138,8 @@ public class TagVerifierTest {
 		tagname = "meta";
 		verifier = HTMLFilter.allowedTagsVerifiers.get(tagname);
 
-		attributes.put("http-equiv","Content-type");
-		attributes.put("content","want/fishsticks; charset=UTF-8");
+		attributes.put("http-equiv", "Content-type");
+		attributes.put("content", "want/fishsticks; charset=UTF-8");
 		htmlTag = new ParsedTag(tagname, attributes);
 
 		assertThrows(
@@ -132,7 +162,11 @@ public class TagVerifierTest {
 
 		final String BODY_TAG = "<body bgcolor=\"pink\" />";
 
-		assertEquals("Body tag", BODY_TAG, verifier.sanitize(htmlTag, pc).toString());
+		assertEquals(
+			"Body tag",
+			BODY_TAG,
+			verifier.sanitize(htmlTag, pc).toString()
+		);
 	}
 
 	@Test
@@ -146,9 +180,14 @@ public class TagVerifierTest {
 		attributes.put("action", "/library/");
 
 		htmlTag = new ParsedTag(tagname, attributes);
-		final String FORM_TAG = "<form method=\"POST\" accept-charset=\"UTF-8\" action=\"/library/\" enctype=\"multipart/form-data\" />";
+		final String FORM_TAG =
+			"<form method=\"POST\" accept-charset=\"UTF-8\" action=\"/library/\" enctype=\"multipart/form-data\" />";
 
-		assertEquals("Form tag", FORM_TAG, verifier.sanitize(htmlTag, pc).toString());
+		assertEquals(
+			"Form tag",
+			FORM_TAG,
+			verifier.sanitize(htmlTag, pc).toString()
+		);
 	}
 
 	@Test
@@ -161,7 +200,10 @@ public class TagVerifierTest {
 
 		htmlTag = new ParsedTag(tagname, attributes);
 
-		assertNull("Form tag with an invalid method", verifier.sanitize(htmlTag, pc));
+		assertNull(
+			"Form tag with an invalid method",
+			verifier.sanitize(htmlTag, pc)
+		);
 	}
 
 	@Test
@@ -173,7 +215,11 @@ public class TagVerifierTest {
 
 		htmlTag = new ParsedTag(tagname, attributes);
 
-		assertEquals("Input tag with a valid type", htmlTag.toString(), verifier.sanitize(htmlTag, pc).toString());
+		assertEquals(
+			"Input tag with a valid type",
+			htmlTag.toString(),
+			verifier.sanitize(htmlTag, pc).toString()
+		);
 	}
 
 	@Test
@@ -185,6 +231,9 @@ public class TagVerifierTest {
 
 		htmlTag = new ParsedTag(tagname, attributes);
 
-		assertNull("Input tag with an invalid type", verifier.sanitize(htmlTag, pc));
+		assertNull(
+			"Input tag with an invalid type",
+			verifier.sanitize(htmlTag, pc)
+		);
 	}
 }

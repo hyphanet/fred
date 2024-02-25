@@ -1,12 +1,16 @@
 package freenet.node;
 
+import freenet.io.comm.Peer;
 import java.util.List;
 
-import freenet.io.comm.Peer;
-
 public interface PacketFormat {
-
-	boolean handleReceivedPacket(byte[] buf, int offset, int length, long now, Peer replyTo);
+	boolean handleReceivedPacket(
+		byte[] buf,
+		int offset,
+		int length,
+		long now,
+		Peer replyTo
+	);
 
 	/**
 	 * Maybe send something. A SINGLE PACKET. Don't send everything at once, for two reasons:
@@ -16,10 +20,10 @@ public interface PacketFormat {
 	 * <li>In the near future PacketSender will be responsible for output bandwidth throttling. So it makes sense to
 	 * send a single packet and round-robin.</li>
 	 * </ol>
-	 * @param ackOnly 
+	 * @param ackOnly
 	 */
 	boolean maybeSendPacket(long now, boolean ackOnly)
-	                throws BlockedTooLongException;
+		throws BlockedTooLongException;
 
 	/**
 	 * Called when the peer has been disconnected.
@@ -40,12 +44,12 @@ public interface PacketFormat {
 
 	/**
 	 * @return The time at which the packet format will want to send an ack, finish sending a message,
-	 * retransmit a packet, or similar. Long.MAX_VALUE if not supported or if there is nothing to ack 
-	 * and nothing in flight. 
+	 * retransmit a packet, or similar. Long.MAX_VALUE if not supported or if there is nothing to ack
+	 * and nothing in flight.
 	 * @param canSend If false, canSend() has returned false. Some transports will
 	 * want to send a packet anyway e.g. an ack, a resend in some cases. */
 	long timeNextUrgent(boolean canSend, long now);
-	
+
 	/**
 	 * @return The time at which the packet format will want to send an ack. Resends
 	 * etc don't count, only acks. The reason acks are special is they are needed
@@ -53,7 +57,7 @@ public interface PacketFormat {
 	 * thus avoid retransmission.
 	 */
 	long timeSendAcks();
-	
+
 	/** Is there enough data queued to justify sending a packet immediately? Ideally
 	 * this should take into account transport level headers. */
 	boolean fullPacketQueued(int maxPacketSize);
@@ -61,5 +65,4 @@ public interface PacketFormat {
 	void checkForLostPackets();
 
 	long timeCheckForLostPackets();
-
 }

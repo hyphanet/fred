@@ -1,11 +1,10 @@
 package freenet.clients.fcp;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-
 import freenet.node.DarknetPeerNode;
 import freenet.support.SimpleFieldSet;
 import freenet.support.io.BucketTools;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 // FIXME proper support for sending large files.
 // FIXME with confirmation on the other side like darknet transfers.
@@ -24,17 +23,29 @@ public class SendTextMessage extends SendPeerMessage {
 	}
 
 	@Override
-	protected int handleFeed(DarknetPeerNode pn) throws MessageInvalidException {
+	protected int handleFeed(DarknetPeerNode pn)
+		throws MessageInvalidException {
 		try {
-			if(dataLength() > 0) {
+			if (dataLength() > 0) {
 				byte[] text = BucketTools.toByteArray(bucket);
-				return pn.sendTextFeed(new String(text, StandardCharsets.UTF_8));
-			}
-			else {
-				throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Invalid data length", null, false);
+				return pn.sendTextFeed(
+					new String(text, StandardCharsets.UTF_8)
+				);
+			} else {
+				throw new MessageInvalidException(
+					ProtocolErrorMessage.INVALID_FIELD,
+					"Invalid data length",
+					null,
+					false
+				);
 			}
 		} catch (IOException e) {
-			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "", null, false);
+			throw new MessageInvalidException(
+				ProtocolErrorMessage.INVALID_MESSAGE,
+				"",
+				null,
+				false
+			);
 		}
 	}
 }

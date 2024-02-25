@@ -20,14 +20,15 @@ import freenet.support.compress.Compressor;
  * EndMessage
  */
 public class NodeHelloMessage extends FCPMessage {
+
 	public static final String NAME = "NodeHello";
-	
+
 	private final String id;
-		
+
 	public NodeHelloMessage(String id) {
 		this.id = id;
 	}
-	
+
 	@Override
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet sfs = new SimpleFieldSet(true);
@@ -40,9 +41,15 @@ public class NodeHelloMessage extends FCPMessage {
 		sfs.put("ExtBuild", NodeStarter.extBuildNumber);
 		sfs.putSingle("ExtRevision", NodeStarter.extRevisionNumber);
 		sfs.put("Testnet", Node.isTestnetEnabled());
-		sfs.putSingle("CompressionCodecs", Compressor.COMPRESSOR_TYPE.getHelloCompressorDescriptor());
+		sfs.putSingle(
+			"CompressionCodecs",
+			Compressor.COMPRESSOR_TYPE.getHelloCompressorDescriptor()
+		);
 		sfs.putSingle("ConnectionIdentifier", id);
-		sfs.putSingle("NodeLanguage", NodeL10n.getBase().getSelectedLanguage().toString());
+		sfs.putSingle(
+			"NodeLanguage",
+			NodeL10n.getBase().getSelectedLanguage().toString()
+		);
 		return sfs;
 	}
 
@@ -52,8 +59,13 @@ public class NodeHelloMessage extends FCPMessage {
 	}
 
 	@Override
-	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
-		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "NodeHello goes from server to client not the other way around", null, false);
+	public void run(FCPConnectionHandler handler, Node node)
+		throws MessageInvalidException {
+		throw new MessageInvalidException(
+			ProtocolErrorMessage.INVALID_MESSAGE,
+			"NodeHello goes from server to client not the other way around",
+			null,
+			false
+		);
 	}
-
 }

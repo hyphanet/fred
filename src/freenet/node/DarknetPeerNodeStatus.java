@@ -14,36 +14,37 @@ public class DarknetPeerNodeStatus extends PeerNodeStatus {
 	private final boolean disabled;
 
 	private final String privateDarknetCommentNote;
-	
+
 	private FRIEND_TRUST trustLevel;
 
 	private FRIEND_VISIBILITY ourVisibility;
 	private FRIEND_VISIBILITY theirVisibility;
 	private FRIEND_VISIBILITY overallVisibility;
-	
+
 	public DarknetPeerNodeStatus(DarknetPeerNode peerNode, boolean noHeavy) {
 		super(peerNode, noHeavy);
 		this.name = peerNode.getName();
 		this.burstOnly = peerNode.isBurstOnly();
 		this.listening = peerNode.isListenOnly();
 		this.disabled = peerNode.isDisabled();
-		this.privateDarknetCommentNote = peerNode.getPrivateDarknetCommentNote();
+		this.privateDarknetCommentNote =
+			peerNode.getPrivateDarknetCommentNote();
 		this.trustLevel = peerNode.getTrustLevel();
 		this.ourVisibility = peerNode.getOurVisibility();
 		this.theirVisibility = peerNode.getTheirVisibility();
-		if(ourVisibility.isStricterThan(theirVisibility))
-			this.overallVisibility = ourVisibility;
-		else
-			this.overallVisibility = theirVisibility;
+		if (
+			ourVisibility.isStricterThan(theirVisibility)
+		) this.overallVisibility = ourVisibility;
+		else this.overallVisibility = theirVisibility;
 	}
-	
+
 	/**
 	 * @return The peer's trust level.
 	 */
 	public FRIEND_TRUST getTrustLevel() {
 		return trustLevel;
 	}
-	
+
 	/**
 	 * @return the name
 	 */
@@ -87,13 +88,12 @@ public class DarknetPeerNodeStatus extends PeerNodeStatus {
 	public FRIEND_VISIBILITY getOurVisibility() {
 		return ourVisibility;
 	}
-	
+
 	public FRIEND_VISIBILITY getTheirVisibility() {
-		if(theirVisibility == null)
-			return FRIEND_VISIBILITY.NO;
+		if (theirVisibility == null) return FRIEND_VISIBILITY.NO;
 		return theirVisibility;
 	}
-	
+
 	public FRIEND_VISIBILITY getOverallVisibility() {
 		return overallVisibility;
 	}

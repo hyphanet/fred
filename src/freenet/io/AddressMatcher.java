@@ -27,5 +27,4 @@ public interface AddressMatcher {
 
 	/** Get the human-readable version of the Matcher */
 	public String getHumanRepresentation();
-
 }

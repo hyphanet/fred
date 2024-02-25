@@ -2,21 +2,20 @@
  * Public License, version 2 (or at your option any later version). See
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
- 
-import java.net.InetAddress;
-import java.util.Map;
 
 import freenet.clients.http.DarknetConnectionsToadlet;
 import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.Peer;
 import freenet.io.xfer.PacketThrottle;
 import freenet.node.PeerNode.IncomingLoadSummaryStats;
+import java.net.InetAddress;
+import java.util.Map;
 
 /**
  * Contains various status information for a {@link PeerNode}. Used e.g. in
  * {@link DarknetConnectionsToadlet} to reduce race-conditions while creating
  * the page.
- * 
+ *
  * @author David 'Bombe' Roden &lt;bombe@freenetproject.org&gt;
  * @version $Id$
  */
@@ -77,56 +76,56 @@ public class PeerNodeStatus {
 
 	private long peerAddedTime;
 
-	private Map<String,Long> localMessagesReceived;
+	private Map<String, Long> localMessagesReceived;
 
-	private Map<String,Long> localMessagesSent;
-	
+	private Map<String, Long> localMessagesSent;
+
 	private final int hashCode;
-	
+
 	private final double pReject;
 
 	private long totalBytesIn;
-	
+
 	private long totalBytesOut;
 
 	private long totalBytesInSinceStartup;
-		
+
 	private long totalBytesOutSinceStartup;
-	
+
 	private double percentTimeRoutableConnection;
-	
+
 	private PacketThrottle throttle;
-	
+
 	private long clockDelta;
-	
+
 	private final boolean recordStatus;
-	
+
 	private final boolean isSeedServer;
-	
+
 	private final boolean isSeedClient;
-	
+
 	private final boolean isSearchable;
-	
+
 	private final long resendBytesSent;
-	
+
 	private final int reportedUptimePercentage;
-	
+
 	private final double selectionRate;
 
 	private final long messageQueueLengthBytes;
-	
+
 	private final long messageQueueLengthTime;
 	// int's because that's what they are transferred as
-	
+
 	public final IncomingLoadSummaryStats incomingLoadStatsRealTime;
 
 	public final IncomingLoadSummaryStats incomingLoadStatsBulk;
-	
+
 	public final boolean hasFullNoderef;
 
 	PeerNodeStatus(PeerNode peerNode, boolean noHeavy) {
 		Peer p = peerNode.getPeer();
-		if(p == null) {
+		if (p == null) {
 			peerAddress = null;
 			peerAddressNumerical = null;
 			peerAddressBytes = null;
@@ -135,7 +134,7 @@ public class PeerNodeStatus {
 			FreenetInetAddress a = p.getFreenetAddress();
 			peerAddress = a.toString();
 			InetAddress i = a.getAddress(false);
-			if(i != null) {
+			if (i != null) {
 				peerAddressNumerical = i.getHostAddress();
 				peerAddressBytes = i.getAddress();
 			} else {
@@ -155,7 +154,9 @@ public class PeerNodeStatus {
 		this.routingBackoffLengthRT = peerNode.getRoutingBackoffLength(true);
 		this.routingBackoffLengthBulk = peerNode.getRoutingBackoffLength(false);
 		this.routingBackedOffUntilRT = peerNode.getRoutingBackedOffUntil(true);
-		this.routingBackedOffUntilBulk = peerNode.getRoutingBackedOffUntil(false);
+		this.routingBackedOffUntilBulk = peerNode.getRoutingBackedOffUntil(
+			false
+		);
 		this.connected = peerNode.isConnected();
 		this.routable = peerNode.isRoutable();
 		this.isFetchingARK = peerNode.isFetchingARK();
@@ -163,17 +164,22 @@ public class PeerNodeStatus {
 		this.averagePingTime = peerNode.averagePingTime();
 		this.averagePingTimeCorrected = peerNode.averagePingTimeCorrected();
 		this.publicInvalidVersion = peerNode.publicInvalidVersion();
-		this.publicReverseInvalidVersion = peerNode.publicReverseInvalidVersion();
+		this.publicReverseInvalidVersion =
+			peerNode.publicReverseInvalidVersion();
 		this.backedOffPercentRT = peerNode.backedOffPercentRT.currentValue();
-		this.backedOffPercentBulk = peerNode.backedOffPercentBulk.currentValue();
+		this.backedOffPercentBulk =
+			peerNode.backedOffPercentBulk.currentValue();
 		this.lastBackoffReasonRT = peerNode.getLastBackoffReason(true);
 		this.lastBackoffReasonBulk = peerNode.getLastBackoffReason(false);
 		this.timeLastRoutable = peerNode.timeLastRoutable();
-		this.timeLastConnectionCompleted = peerNode.timeLastConnectionCompleted();
+		this.timeLastConnectionCompleted =
+			peerNode.timeLastConnectionCompleted();
 		this.peerAddedTime = peerNode.getPeerAddedTime();
-		if(!noHeavy) {
-			this.localMessagesReceived = peerNode.getLocalNodeReceivedMessagesFromStatistic();
-			this.localMessagesSent = peerNode.getLocalNodeSentMessagesToStatistic();
+		if (!noHeavy) {
+			this.localMessagesReceived =
+				peerNode.getLocalNodeReceivedMessagesFromStatistic();
+			this.localMessagesSent =
+				peerNode.getLocalNodeSentMessagesToStatistic();
 		} else {
 			this.localMessagesReceived = null;
 			this.localMessagesSent = null;
@@ -184,7 +190,8 @@ public class PeerNodeStatus {
 		this.totalBytesOut = peerNode.getTotalOutputBytes();
 		this.totalBytesInSinceStartup = peerNode.getTotalInputSinceStartup();
 		this.totalBytesOutSinceStartup = peerNode.getTotalOutputSinceStartup();
-		this.percentTimeRoutableConnection = peerNode.getPercentTimeRoutableConnection();
+		this.percentTimeRoutableConnection =
+			peerNode.getPercentTimeRoutableConnection();
 		this.throttle = peerNode.getThrottle();
 		this.clockDelta = peerNode.getClockDelta();
 		this.recordStatus = peerNode.recordStatus();
@@ -199,11 +206,11 @@ public class PeerNodeStatus {
 		incomingLoadStatsBulk = peerNode.getIncomingLoadStats(false);
 		hasFullNoderef = peerNode.hasFullNoderef();
 	}
-	
+
 	public long getMessageQueueLengthBytes() {
 		return messageQueueLengthBytes;
 	}
-	
+
 	public long getMessageQueueLengthTime() {
 		return messageQueueLengthTime;
 	}
@@ -236,9 +243,12 @@ public class PeerNodeStatus {
 	 * @param status The status to count
 	 * @return The number of peers that have the specified status.
 	 */
-	public static int getPeerStatusCount(PeerNodeStatus[] peerNodeStatuses, int status) {
+	public static int getPeerStatusCount(
+		PeerNodeStatus[] peerNodeStatuses,
+		int status
+	) {
 		int count = 0;
-		for (PeerNodeStatus peerNodeStatus: peerNodeStatuses) {
+		for (PeerNodeStatus peerNodeStatus : peerNodeStatuses) {
 			if (peerNodeStatus.getStatusValue() == status) {
 				count++;
 			}
@@ -294,7 +304,7 @@ public class PeerNodeStatus {
 	public double getAveragePingTime() {
 		return averagePingTime;
 	}
-	
+
 	/**
 	 * @return The ping time for purposes of retransmissions.
 	 */
@@ -319,7 +329,7 @@ public class PeerNodeStatus {
 	public double[] getPeersLocation() {
 		return peersLocation;
 	}
-	
+
 	/**
 	 * @return the peerAddress, in its preferred string format.
 	 */
@@ -420,7 +430,32 @@ public class PeerNodeStatus {
 
 	@Override
 	public String toString() {
-		return statusName + ' ' + peerAddress + ':' + peerPort + ' ' + location + ' ' + version + " RT backoff: " + routingBackoffLengthRT + " (" + (Math.max(routingBackedOffUntilRT - System.currentTimeMillis(), 0)) + " ) bulk backoff: " + routingBackoffLengthBulk + " (" + (Math.max(routingBackedOffUntilBulk - System.currentTimeMillis(), 0)) + ')';
+		return (
+			statusName +
+			' ' +
+			peerAddress +
+			':' +
+			peerPort +
+			' ' +
+			location +
+			' ' +
+			version +
+			" RT backoff: " +
+			routingBackoffLengthRT +
+			" (" +
+			(Math.max(
+					routingBackedOffUntilRT - System.currentTimeMillis(),
+					0
+				)) +
+			" ) bulk backoff: " +
+			routingBackoffLengthBulk +
+			" (" +
+			(Math.max(
+					routingBackedOffUntilBulk - System.currentTimeMillis(),
+					0
+				)) +
+			')'
+		);
 	}
 
 	@Override
@@ -435,7 +470,7 @@ public class PeerNodeStatus {
 	public long getTotalInputBytes() {
 		return totalBytesIn;
 	}
-	
+
 	public long getTotalOutputBytes() {
 		return totalBytesOut;
 	}
@@ -443,11 +478,11 @@ public class PeerNodeStatus {
 	public long getTotalInputSinceStartup() {
 		return totalBytesInSinceStartup;
 	}
-	
+
 	public long getTotalOutputSinceStartup() {
 		return totalBytesOutSinceStartup;
 	}
-	
+
 	public double getPercentTimeRoutableConnection() {
 		return percentTimeRoutableConnection;
 	}
@@ -459,7 +494,7 @@ public class PeerNodeStatus {
 	public long getClockDelta() {
 		return clockDelta;
 	}
-	
+
 	public boolean recordStatus() {
 		return recordStatus;
 	}
@@ -471,15 +506,15 @@ public class PeerNodeStatus {
 	public boolean isSeedClient() {
 		return isSeedClient;
 	}
-	
+
 	public boolean isSearchable() {
 		return isSearchable;
 	}
-	
+
 	public long getResendBytesSent() {
 		return resendBytesSent;
 	}
-	
+
 	public int getReportedUptimePercentage() {
 		return reportedUptimePercentage;
 	}

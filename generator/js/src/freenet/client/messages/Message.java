@@ -4,18 +4,23 @@ package freenet.client.messages;
 public class Message {
 
 	/** The text of the message */
-	private String		msg;
+	private String msg;
 
 	/** The priority of the message */
-	private Priority	priority;
+	private Priority priority;
 
 	/** The anchor of the message, if originated from server side, or null, if client side */
-	private String		anchor;
+	private String anchor;
 
 	/** The message can be hided? */
-	private boolean		canDismiss;
+	private boolean canDismiss;
 
-	public Message(String msg, Priority priority, String anchor, boolean canDismiss) {
+	public Message(
+		String msg,
+		Priority priority,
+		String anchor,
+		boolean canDismiss
+	) {
 		super();
 		this.msg = msg;
 		this.priority = priority;
@@ -43,15 +48,24 @@ public class Message {
 	public boolean equals(Object obj) {
 		if (obj instanceof Message) {
 			Message message = (Message) obj;
-			return msg.compareTo(message.msg) == 0 && priority == message.priority && ((anchor == null && message.anchor == null) || anchor != null && message.anchor != null && anchor.compareTo(message.anchor) == 0);
+			return (
+				msg.compareTo(message.msg) == 0 &&
+				priority == message.priority &&
+				((anchor == null && message.anchor == null) ||
+					(anchor != null &&
+						message.anchor != null &&
+						anchor.compareTo(message.anchor) == 0))
+			);
 		} else {
 			return false;
 		}
 	}
-	
+
 	@Override
 	public int hashCode() {
-		return (msg.hashCode() + (anchor == null ? 0 : anchor.hashCode())) * (priority.ordinal()+1);
+		return (
+			(msg.hashCode() + (anchor == null ? 0 : anchor.hashCode())) *
+			(priority.ordinal() + 1)
+		);
 	}
-
 }

@@ -8,17 +8,18 @@ package freenet.io.comm;
  * @author amphibian
  */
 public class ReferenceSignatureVerificationException extends Exception {
-	private static final long serialVersionUID = -1;
-    public ReferenceSignatureVerificationException(Exception e) {
-        super(e);
-    }
 
-    public ReferenceSignatureVerificationException() {
-        super();
-    }
+	private static final long serialVersionUID = -1;
+
+	public ReferenceSignatureVerificationException(Exception e) {
+		super(e);
+	}
+
+	public ReferenceSignatureVerificationException() {
+		super();
+	}
 
 	public ReferenceSignatureVerificationException(String string) {
 		super(string);
 	}
-
 }

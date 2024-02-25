@@ -13,5 +13,4 @@ public class NullStringCallback extends StringCallback {
 	public void set(String val) throws InvalidConfigValueException {
 		// Ignore
 	}
-
 }

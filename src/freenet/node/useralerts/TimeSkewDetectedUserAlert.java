@@ -15,28 +15,39 @@ import freenet.support.HTMLNode;
  * @author Florent Daigni&egrave;re &lt;nextgens@freenetproject.org&gt;
  */
 public class TimeSkewDetectedUserAlert extends AbstractUserAlert {
-	
+
 	/**
-	 * 
+	 *
 	 */
 	public TimeSkewDetectedUserAlert() {
-		super(false, null, null, null, null, UserAlert.CRITICAL_ERROR, false, NodeL10n.getBase().getString("UserAlert.hide"), false, null);
+		super(
+			false,
+			null,
+			null,
+			null,
+			null,
+			UserAlert.CRITICAL_ERROR,
+			false,
+			NodeL10n.getBase().getString("UserAlert.hide"),
+			false,
+			null
+		);
 	}
-	
+
 	@Override
 	public String getTitle() {
 		return l10n("title");
 	}
-	
+
 	private String l10n(String key) {
-		return NodeL10n.getBase().getString("TimeSkewDetectedUserAlert."+key);
+		return NodeL10n.getBase().getString("TimeSkewDetectedUserAlert." + key);
 	}
 
 	@Override
 	public String getText() {
 		return l10n("text");
 	}
-	
+
 	@Override
 	public String getShortText() {
 		return l10n("shortText");
@@ -46,5 +57,4 @@ public class TimeSkewDetectedUserAlert extends AbstractUserAlert {
 	public HTMLNode getHTMLText() {
 		return new HTMLNode("div", getText());
 	}
-
 }

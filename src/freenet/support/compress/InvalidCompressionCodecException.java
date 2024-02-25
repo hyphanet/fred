@@ -14,5 +14,4 @@ public class InvalidCompressionCodecException extends Exception {
 	public InvalidCompressionCodecException(String message) {
 		super(message);
 	}
-
 }

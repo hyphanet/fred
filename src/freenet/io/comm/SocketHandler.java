@@ -9,6 +9,4 @@ package freenet.io.comm;
  * different ports, with different crypto backends etc.
  * @author toad
  */
-public interface SocketHandler {
-
-}
+public interface SocketHandler {}

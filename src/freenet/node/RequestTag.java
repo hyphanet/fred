@@ -1,30 +1,29 @@
 package freenet.node;
 
-import java.lang.ref.WeakReference;
-
 import freenet.keys.NodeCHK;
 import freenet.support.Logger;
 import freenet.support.TimeUtil;
+import java.lang.ref.WeakReference;
 
 /**
  * Tag for a request.
- * 
+ *
  * @author Matthew Toseland <toad@amphibian.dyndns.org> (0xE43DA450)
  */
 public class RequestTag extends UIDTag {
-	
-    private static volatile boolean logMINOR;
-    
-    static {
-    	Logger.registerClass(RequestTag.class);
-    }
-	
+
+	private static volatile boolean logMINOR;
+
+	static {
+		Logger.registerClass(RequestTag.class);
+	}
+
 	enum START {
 		ASYNC_GET,
 		LOCAL,
-		REMOTE
+		REMOTE,
 	}
-	
+
 	final START start;
 	final boolean isSSK;
 	private boolean servedFromDatastore;
@@ -40,7 +39,14 @@ public class RequestTag extends UIDTag {
 	/** Set if transferring */
 	private NodeCHK key;
 
-	public RequestTag(boolean isSSK, START start, PeerNode source, boolean realTimeFlag, long uid, Node node) {
+	public RequestTag(
+		boolean isSSK,
+		START start,
+		PeerNode source,
+		boolean realTimeFlag,
+		long uid,
+		Node node
+	) {
 		super(source, realTimeFlag, uid, node);
 		this.start = start;
 		this.isSSK = isSSK;
@@ -48,10 +54,12 @@ public class RequestTag extends UIDTag {
 
 	public void setRequestSenderFinished(int status) {
 		boolean noRecordUnlock;
-		synchronized(this) {
-			if(status == RequestSender.NOT_FINISHED) throw new IllegalArgumentException();
+		synchronized (this) {
+			if (
+				status == RequestSender.NOT_FINISHED
+			) throw new IllegalArgumentException();
 			requestSenderFinishedCode = status;
-			if(!mustUnlock()) return;
+			if (!mustUnlock()) return;
 			noRecordUnlock = this.noRecordUnlock;
 		}
 		innerUnlock(noRecordUnlock);
@@ -59,15 +67,18 @@ public class RequestTag extends UIDTag {
 
 	public synchronized void setSender(RequestSender rs, boolean coalesced) {
 		// If it's because of transfer coalescing, we won't get anything from the RequestSender, so we should not wait for it.
-		if(!coalesced)
-			sent = true;
+		if (!coalesced) sent = true;
 		sender = new WeakReference<RequestSender>(rs);
 	}
-	
+
 	@Override
 	protected synchronized boolean mustUnlock() {
-		if(sent && requestSenderFinishedCode == RequestSender.NOT_FINISHED) return false;
-		if(waitingForOpennet != null && waitingForOpennet.get() != null) return false;
+		if (
+			sent && requestSenderFinishedCode == RequestSender.NOT_FINISHED
+		) return false;
+		if (
+			waitingForOpennet != null && waitingForOpennet.get() != null
+		) return false;
 		return super.mustUnlock();
 	}
 
@@ -77,23 +88,26 @@ public class RequestTag extends UIDTag {
 		boolean senderFinished;
 		NodeCHK k = null;
 		RequestSender s = null;
-		synchronized(this) {
+		synchronized (this) {
 			handlerFinished = this.handlerTransferring;
 			handlerTransferring = false;
 			senderFinished = this.senderTransferring;
-			if(senderFinished) {
-				Logger.error(this, "Nobody called senderTransferEnds() for "+this, new Exception("debug"));
+			if (senderFinished) {
+				Logger.error(
+					this,
+					"Nobody called senderTransferEnds() for " + this,
+					new Exception("debug")
+				);
 				k = key;
 				s = sender.get();
 			}
 			senderTransferring = false;
 		}
 		super.innerUnlock(noRecordUnlock);
-		if(handlerFinished)
-			tracker.removeTransferringRequestHandler(uid);
-		if(senderFinished) {
-			assert(k != null);
-			assert(s != null);
+		if (handlerFinished) tracker.removeTransferringRequestHandler(uid);
+		if (senderFinished) {
+			assert (k != null);
+			assert (s != null);
 			tracker.removeTransferringSender(k, s);
 		}
 	}
@@ -102,7 +116,7 @@ public class RequestTag extends UIDTag {
 	 * Unlock the handler, and record the throwable in case of future problems.
 	 * @param t The Throwable thrown by the RequestHandler. */
 	public void handlerThrew(Throwable t) {
-		synchronized(this) {
+		synchronized (this) {
 			this.handlerThrew = t;
 		}
 		unlockHandler(); // FIXME optimise synchronization in a clean way.
@@ -121,12 +135,16 @@ public class RequestTag extends UIDTag {
 		StringBuffer sb = new StringBuffer();
 		sb.append("Still present after ").append(TimeUtil.formatTime(age()));
 		sb.append(" : ").append(uid).append(" : start=").append(start);
-		sb.append(" ssk=").append(isSSK).append(" from store=").append(servedFromDatastore);
-		if(sender == null) {
+		sb
+			.append(" ssk=")
+			.append(isSSK)
+			.append(" from store=")
+			.append(servedFromDatastore);
+		if (sender == null) {
 			sb.append(" sender hasn't been set!");
 		} else {
 			RequestSender s = sender.get();
-			if(s == null) {
+			if (s == null) {
 				sb.append(" sender=null");
 			} else {
 				sb.append(" sender=").append(s);
@@ -134,25 +152,24 @@ public class RequestTag extends UIDTag {
 				sb.append(s.getStatusString());
 			}
 		}
-		if(sent)
-			sb.append(" sent");
+		if (sent) sb.append(" sent");
 		sb.append(" finishedCode=").append(requestSenderFinishedCode);
 		sb.append(" rejected=").append(rejected);
-		if(handlerThrew != null)
-			sb.append(" thrown=").append(handlerThrew);
-		if(handlerDisconnected)
-			sb.append(" handlerDisconnected=true");
-		if(waitingForOpennet != null) {
+		if (handlerThrew != null) sb.append(" thrown=").append(handlerThrew);
+		if (handlerDisconnected) sb.append(" handlerDisconnected=true");
+		if (waitingForOpennet != null) {
 			PeerNode pn = waitingForOpennet.get();
 			sb.append(" waitingForOpennet=");
 			sb.append(pn == null ? "(null)" : pn.shortToString());
 		}
 		sb.append(" : ");
 		sb.append(super.toString());
-		if(handlerThrew != null)
-			Logger.error(this, sb.toString(), handlerThrew);
-		else
-			Logger.error(this, sb.toString());
+		if (handlerThrew != null) Logger.error(
+			this,
+			sb.toString(),
+			handlerThrew
+		);
+		else Logger.error(this, sb.toString());
 	}
 
 	public synchronized void handlerDisconnected() {
@@ -160,21 +177,27 @@ public class RequestTag extends UIDTag {
 	}
 
 	@Override
-	public synchronized int expectedTransfersIn(boolean ignoreLocalVsRemote,
-			int outwardTransfersPerInsert, boolean forAccept) {
-		if(!accepted) return 0;
+	public synchronized int expectedTransfersIn(
+		boolean ignoreLocalVsRemote,
+		int outwardTransfersPerInsert,
+		boolean forAccept
+	) {
+		if (!accepted) return 0;
 		return notRoutedOnwards ? 0 : 1;
 	}
 
 	@Override
-	public synchronized int expectedTransfersOut(boolean ignoreLocalVsRemote,
-			int outwardTransfersPerInsert, boolean forAccept) {
-		if(!accepted) return 0;
-		if(completedDownstreamTransfers) return 0;
-		if(forAccept && (sourceRestarted || unlockedHandler)) return 0;
+	public synchronized int expectedTransfersOut(
+		boolean ignoreLocalVsRemote,
+		int outwardTransfersPerInsert,
+		boolean forAccept
+	) {
+		if (!accepted) return 0;
+		if (completedDownstreamTransfers) return 0;
+		if (forAccept && (sourceRestarted || unlockedHandler)) return 0;
 		return ((!isLocal()) || ignoreLocalVsRemote) ? 1 : 0;
 	}
-	
+
 	private boolean completedDownstreamTransfers;
 
 	public synchronized void completedDownstreamTransfers() {
@@ -197,66 +220,78 @@ public class RequestTag extends UIDTag {
 	}
 
 	public synchronized void waitingForOpennet(PeerNode next) {
-		if(waitingForOpennet != null)
-			Logger.error(this, "Have already waited for opennet: "+waitingForOpennet.get()+" on "+this, new Exception("error"));
+		if (waitingForOpennet != null) Logger.error(
+			this,
+			"Have already waited for opennet: " +
+			waitingForOpennet.get() +
+			" on " +
+			this,
+			new Exception("error")
+		);
 		this.waitingForOpennet = next.myRef;
 	}
 
 	public void finishedWaitingForOpennet(PeerNode next) {
 		boolean noRecordUnlock;
-		synchronized(this) {
-			if(waitingForOpennet == null) {
-				if(logMINOR) Logger.minor(this, "Not waiting for opennet!");
+		synchronized (this) {
+			if (waitingForOpennet == null) {
+				if (logMINOR) Logger.minor(this, "Not waiting for opennet!");
 				return;
 			}
 			PeerNode got = waitingForOpennet.get();
-			if(got != next) {
-				Logger.error(this, "Finished waiting for opennet on "+next+" but was waiting for "+got);
+			if (got != next) {
+				Logger.error(
+					this,
+					"Finished waiting for opennet on " +
+					next +
+					" but was waiting for " +
+					got
+				);
 			}
 			waitingForOpennet = null;
-			if(!mustUnlock()) return;
+			if (!mustUnlock()) return;
 			noRecordUnlock = this.noRecordUnlock;
 		}
 		innerUnlock(noRecordUnlock);
 	}
-	
+
 	@Override
 	public synchronized boolean currentlyRoutingTo(PeerNode peer) {
-		if(waitingForOpennet != null && waitingForOpennet == peer.myRef)
-			return true;
+		if (
+			waitingForOpennet != null && waitingForOpennet == peer.myRef
+		) return true;
 		return super.currentlyRoutingTo(peer);
 	}
 
 	public void handlerTransferBegins() {
-		synchronized(this) {
-			if(handlerTransferring) return;
+		synchronized (this) {
+			if (handlerTransferring) return;
 			handlerTransferring = true;
 		}
 		tracker.addTransferringRequestHandler(uid);
 	}
 
 	public void senderTransferBegins(NodeCHK k, RequestSender requestSender) {
-		synchronized(this) {
-			if(senderTransferring) return;
+		synchronized (this) {
+			if (senderTransferring) return;
 			senderTransferring = true;
-			if(this.sender == null || this.sender.get() != requestSender)
-				throw new IllegalStateException("Set RequestSender first!");
+			if (
+				this.sender == null || this.sender.get() != requestSender
+			) throw new IllegalStateException("Set RequestSender first!");
 			this.key = k;
 		}
 		tracker.addTransferringSender(k, requestSender);
 	}
 
 	public void senderTransferEnds(NodeCHK key, RequestSender requestSender) {
-		synchronized(this) {
-			if(!senderTransferring)
-				// Already unlocked. This is okay.
-				return;
+		synchronized (this) {
+			if (!senderTransferring) // Already unlocked. This is okay.
+			return;
 			senderTransferring = false;
-			assert(this.sender != null && this.sender.get() == requestSender);
-			assert(this.key != null && this.key.equals(key));
+			assert (this.sender != null && this.sender.get() == requestSender);
+			assert (this.key != null && this.key.equals(key));
 			this.key = null;
 		}
 		tracker.removeTransferringSender(key, requestSender);
 	}
-	
 }

@@ -6,8 +6,6 @@ package freenet.client.async;
 import freenet.client.Metadata;
 
 public interface SnoopMetadata {
-
 	/** Spy on the metadata as a file is being fetched. Return true to cancel the request. */
 	public boolean snoopMetadata(Metadata meta, ClientContext context);
-	
 }

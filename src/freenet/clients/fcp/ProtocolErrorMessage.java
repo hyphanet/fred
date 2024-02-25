@@ -3,16 +3,15 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.fcp;
 
-import java.io.Serializable;
-
 import freenet.node.Node;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import java.io.Serializable;
 
 /**
  * ProtocolError (some problem parsing the other side's FCP messages, or other
  * problem not related to Freenet)
- * 
+ *
  * ProtocolError
  * Code=1
  * CodeDescription=ClientHello must be first message
@@ -23,8 +22,8 @@ import freenet.support.SimpleFieldSet;
  */
 public class ProtocolErrorMessage extends FCPMessage implements Serializable {
 
-    private static final long serialVersionUID = 1L;
-    static final int CLIENT_HELLO_MUST_BE_FIRST_MESSAGE = 1;
+	private static final long serialVersionUID = 1L;
+	static final int CLIENT_HELLO_MUST_BE_FIRST_MESSAGE = 1;
 	static final int NO_LATE_CLIENT_HELLOS = 2;
 	static final int MESSAGE_PARSE_ERROR = 3;
 	static final int FREENET_URI_PARSE_ERROR = 4;
@@ -42,7 +41,7 @@ public class ProtocolErrorMessage extends FCPMessage implements Serializable {
 	static final int NOT_SUPPORTED = 16;
 	static final int INTERNAL_ERROR = 17;
 	static final int SHUTTING_DOWN = 18;
-	static final int NO_SUCH_NODE_IDENTIFIER = 19;  // Unused
+	static final int NO_SUCH_NODE_IDENTIFIER = 19; // Unused
 	static final int URL_PARSE_ERROR = 20;
 	static final int REF_PARSE_ERROR = 21;
 	static final int FILE_PARSE_ERROR = 22;
@@ -62,95 +61,105 @@ public class ProtocolErrorMessage extends FCPMessage implements Serializable {
 	static final int WRONG_RETURN_TYPE = 36;
 	static final int IO_ERROR = 37;
 	static final int PLUGINS_DISABLED = 38;
-	
+
 	final int code;
 	final String extra;
 	final boolean fatal;
 	final String ident;
 	final boolean global;
-	
+
 	private String codeDescription() {
 		// FIXME l10n?
-		switch(code) {
-		case CLIENT_HELLO_MUST_BE_FIRST_MESSAGE:
-			return "ClientHello must be first message";
-		case NO_LATE_CLIENT_HELLOS:
-			return "No late ClientHello's accepted";
-		case MESSAGE_PARSE_ERROR:
-			return "Unknown message parsing error";
-		case FREENET_URI_PARSE_ERROR:
-			return "Error parsing freenet URI";
-		case MISSING_FIELD:
-			return "Missing field";
-		case ERROR_PARSING_NUMBER:
-			return "Error parsing a numeric field";
-		case INVALID_MESSAGE:
-			return "Don't know what to do with message";
-		case INVALID_FIELD:
-			return "Invalid field value";
-		case FILE_NOT_FOUND:
-			return "File not found, not a file or not readable";
-		case DISK_TARGET_EXISTS:
-			return "Disk target exists, refusing to overwrite for security reasons";
-		case COULD_NOT_CREATE_FILE:
-			return "Could not create file";
-		case COULD_NOT_WRITE_FILE:
-			return "Could not write file";
-		case COULD_NOT_RENAME_FILE:
-			return "Could not rename file";
-		case NO_SUCH_IDENTIFIER:
-			return "No such identifier";
-		case NOT_SUPPORTED:
-			return "Not supported";
-		case INTERNAL_ERROR:
-			return "Internal error";
-		case SHUTTING_DOWN:
-			return "Shutting down";
-		case NO_SUCH_NODE_IDENTIFIER:  // Unused
-			return "No such nodeIdentifier";
-		case URL_PARSE_ERROR:
-			return "Error parsing URL";
-		case REF_PARSE_ERROR:
-			return "Reference could not be parsed";
-		case FILE_PARSE_ERROR:
-			return "File could not be read";
-		case NOT_A_FILE_ERROR:
-			return "Filepath is not a file";
-		case ACCESS_DENIED:
-			return "Access denied";
-		case DIRECT_DISK_ACCESS_DENIED:
-			return "Direct Disk Access operation denied: did you send a FileHash field ? Did you use TestDDA?";
-		case COULD_NOT_READ_FILE:
-			return "Could not read file";
-		case REF_SIGNATURE_INVALID:
-			return "Reference signature failed to verify";
-		case CANNOT_PEER_WITH_SELF:
-			return "Node cannot peer with itself";
-		case DUPLICATE_PEER_REF:
-			return "Node already has a peer with that ref";
-		case OPENNET_DISABLED:
-			return "Opennet is currently disabled in the node's configuration";
-		case DARKNET_ONLY:
-			return "Operation only available on a darknet peer";
-		case NO_SUCH_PLUGIN:
-			return "No such plugin";
-		case TOO_MANY_FILES_IN_INSERT:
-			return "Too many files in a single folder on a freesite insert";
-		case BAD_MIME_TYPE:
-			return "Bad MIME type";
-		case WRONG_RETURN_TYPE:
-		    return "Not supported for that return type";
-		case IO_ERROR:
-		    return "Disk I/O error";
-		case PERSISTENCE_DISABLED:
-		    return "Persistence disabled (e.g. encrypted queue waiting for password?)";
-		default:
-			Logger.error(this, "Unknown error code: "+code, new Exception("debug"));
-		return "(Unknown)";
+		switch (code) {
+			case CLIENT_HELLO_MUST_BE_FIRST_MESSAGE:
+				return "ClientHello must be first message";
+			case NO_LATE_CLIENT_HELLOS:
+				return "No late ClientHello's accepted";
+			case MESSAGE_PARSE_ERROR:
+				return "Unknown message parsing error";
+			case FREENET_URI_PARSE_ERROR:
+				return "Error parsing freenet URI";
+			case MISSING_FIELD:
+				return "Missing field";
+			case ERROR_PARSING_NUMBER:
+				return "Error parsing a numeric field";
+			case INVALID_MESSAGE:
+				return "Don't know what to do with message";
+			case INVALID_FIELD:
+				return "Invalid field value";
+			case FILE_NOT_FOUND:
+				return "File not found, not a file or not readable";
+			case DISK_TARGET_EXISTS:
+				return "Disk target exists, refusing to overwrite for security reasons";
+			case COULD_NOT_CREATE_FILE:
+				return "Could not create file";
+			case COULD_NOT_WRITE_FILE:
+				return "Could not write file";
+			case COULD_NOT_RENAME_FILE:
+				return "Could not rename file";
+			case NO_SUCH_IDENTIFIER:
+				return "No such identifier";
+			case NOT_SUPPORTED:
+				return "Not supported";
+			case INTERNAL_ERROR:
+				return "Internal error";
+			case SHUTTING_DOWN:
+				return "Shutting down";
+			case NO_SUCH_NODE_IDENTIFIER: // Unused
+				return "No such nodeIdentifier";
+			case URL_PARSE_ERROR:
+				return "Error parsing URL";
+			case REF_PARSE_ERROR:
+				return "Reference could not be parsed";
+			case FILE_PARSE_ERROR:
+				return "File could not be read";
+			case NOT_A_FILE_ERROR:
+				return "Filepath is not a file";
+			case ACCESS_DENIED:
+				return "Access denied";
+			case DIRECT_DISK_ACCESS_DENIED:
+				return "Direct Disk Access operation denied: did you send a FileHash field ? Did you use TestDDA?";
+			case COULD_NOT_READ_FILE:
+				return "Could not read file";
+			case REF_SIGNATURE_INVALID:
+				return "Reference signature failed to verify";
+			case CANNOT_PEER_WITH_SELF:
+				return "Node cannot peer with itself";
+			case DUPLICATE_PEER_REF:
+				return "Node already has a peer with that ref";
+			case OPENNET_DISABLED:
+				return "Opennet is currently disabled in the node's configuration";
+			case DARKNET_ONLY:
+				return "Operation only available on a darknet peer";
+			case NO_SUCH_PLUGIN:
+				return "No such plugin";
+			case TOO_MANY_FILES_IN_INSERT:
+				return "Too many files in a single folder on a freesite insert";
+			case BAD_MIME_TYPE:
+				return "Bad MIME type";
+			case WRONG_RETURN_TYPE:
+				return "Not supported for that return type";
+			case IO_ERROR:
+				return "Disk I/O error";
+			case PERSISTENCE_DISABLED:
+				return "Persistence disabled (e.g. encrypted queue waiting for password?)";
+			default:
+				Logger.error(
+					this,
+					"Unknown error code: " + code,
+					new Exception("debug")
+				);
+				return "(Unknown)";
 		}
 	}
 
-	public ProtocolErrorMessage(int code, boolean fatal, String extra, String ident, boolean global) {
+	public ProtocolErrorMessage(
+		int code,
+		boolean fatal,
+		String extra,
+		String ident,
+		boolean global
+	) {
 		this.code = code;
 		this.extra = extra;
 		this.fatal = fatal;
@@ -165,25 +174,23 @@ public class ProtocolErrorMessage extends FCPMessage implements Serializable {
 		fatal = fs.getBoolean("Fatal", false);
 		global = fs.getBoolean("Global", false);
 	}
-	
+
 	protected ProtocolErrorMessage() {
-	    // For serialization.
-	    code = 0;
-	    extra = null;
-	    fatal = false;
-	    ident = null;
-	    global = false;
+		// For serialization.
+		code = 0;
+		extra = null;
+		fatal = false;
+		ident = null;
+		global = false;
 	}
 
 	@Override
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet sfs = new SimpleFieldSet(true);
-		if(ident != null)
-			sfs.putSingle("Identifier", ident);
+		if (ident != null) sfs.putSingle("Identifier", ident);
 		sfs.put("Code", code);
 		sfs.putSingle("CodeDescription", codeDescription());
-		if(extra != null)
-			sfs.putSingle("ExtraDescription", extra);
+		if (extra != null) sfs.putSingle("ExtraDescription", extra);
 		sfs.put("Fatal", fatal);
 		sfs.put("Global", global);
 		return sfs;
@@ -201,7 +208,18 @@ public class ProtocolErrorMessage extends FCPMessage implements Serializable {
 
 	@Override
 	public String toString() {
-		return super.toString()+":"+code+":"+extra+":"+fatal+":"+ident+":"+global;
+		return (
+			super.toString() +
+			":" +
+			code +
+			":" +
+			extra +
+			":" +
+			fatal +
+			":" +
+			ident +
+			":" +
+			global
+		);
 	}
-
 }

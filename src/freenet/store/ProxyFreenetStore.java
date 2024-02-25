@@ -1,19 +1,19 @@
 package freenet.store;
 
-import java.io.IOException;
-
 import freenet.node.stats.StoreAccessStats;
 import freenet.node.useralerts.UserAlertManager;
 import freenet.support.Ticker;
+import java.io.IOException;
 
-public class ProxyFreenetStore<T extends StorableBlock> implements FreenetStore<T> {
-	
+public class ProxyFreenetStore<T extends StorableBlock>
+	implements FreenetStore<T> {
+
 	protected final FreenetStore<T> backDatastore;
 
 	public ProxyFreenetStore(FreenetStore<T> backDatastore) {
 		this.backDatastore = backDatastore;
 	}
-	
+
 	@Override
 	public long getBloomFalsePositive() {
 		return backDatastore.getBloomFalsePositive();
@@ -41,7 +41,7 @@ public class ProxyFreenetStore<T extends StorableBlock> implements FreenetStore<
 
 	@Override
 	public void setMaxKeys(long maxStoreKeys, boolean shrinkNow)
-			throws IOException {
+		throws IOException {
 		backDatastore.setMaxKeys(maxStoreKeys, shrinkNow);
 	}
 
@@ -64,22 +64,41 @@ public class ProxyFreenetStore<T extends StorableBlock> implements FreenetStore<
 	public void setUserAlertManager(UserAlertManager userAlertManager) {
 		this.backDatastore.setUserAlertManager(userAlertManager);
 	}
-	
+
 	@Override
 	public FreenetStore<T> getUnderlyingStore() {
 		return this.backDatastore;
 	}
 
 	@Override
-	public T fetch(byte[] routingKey, byte[] fullKey, boolean dontPromote,
-			boolean canReadClientCache, boolean canReadSlashdotCache,
-			boolean ignoreOldBlocks, BlockMetadata meta) throws IOException {
-		return backDatastore.fetch(routingKey, fullKey, dontPromote, canReadClientCache, canReadSlashdotCache, ignoreOldBlocks, meta);
+	public T fetch(
+		byte[] routingKey,
+		byte[] fullKey,
+		boolean dontPromote,
+		boolean canReadClientCache,
+		boolean canReadSlashdotCache,
+		boolean ignoreOldBlocks,
+		BlockMetadata meta
+	) throws IOException {
+		return backDatastore.fetch(
+			routingKey,
+			fullKey,
+			dontPromote,
+			canReadClientCache,
+			canReadSlashdotCache,
+			ignoreOldBlocks,
+			meta
+		);
 	}
 
 	@Override
-	public void put(T block, byte[] data, byte[] header, boolean overwrite,
-			boolean oldBlock) throws IOException, KeyCollisionException {
+	public void put(
+		T block,
+		byte[] data,
+		byte[] header,
+		boolean overwrite,
+		boolean oldBlock
+	) throws IOException, KeyCollisionException {
 		backDatastore.put(block, data, header, overwrite, oldBlock);
 	}
 
@@ -97,5 +116,4 @@ public class ProxyFreenetStore<T extends StorableBlock> implements FreenetStore<
 	public void close() {
 		backDatastore.close();
 	}
-
 }

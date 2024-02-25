@@ -4,6 +4,7 @@
 package freenet.keys;
 
 public class KeyEncodeException extends Exception {
+
 	private static final long serialVersionUID = -1;
 
 	public KeyEncodeException(String string) {
@@ -21,5 +22,4 @@ public class KeyEncodeException extends Exception {
 	public KeyEncodeException(Throwable cause) {
 		super(cause);
 	}
-
 }

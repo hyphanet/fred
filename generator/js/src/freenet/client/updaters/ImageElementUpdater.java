@@ -4,12 +4,11 @@ import com.google.gwt.dom.client.Document;
 import com.google.gwt.dom.client.Element;
 import com.google.gwt.dom.client.NodeList;
 import com.google.gwt.user.client.ui.RootPanel;
-
+import freenet.client.FreenetJs;
 import freenet.client.l10n.L10n;
 import freenet.client.messages.Message;
 import freenet.client.messages.MessageManager;
 import freenet.client.messages.Priority;
-import freenet.client.FreenetJs;
 
 /** An Updater that replaces the element and refreshes the image loading's overall progress message */
 public class ImageElementUpdater extends ReplacerUpdater {
@@ -26,24 +25,28 @@ public class ImageElementUpdater extends ReplacerUpdater {
 	}
 
 	/** The last message, that is currently showed */
-	private Message	lastMessage	= makeProgressMsg(0, 0);
+	private Message lastMessage = makeProgressMsg(0, 0);
 
 	/** The last result of progress counting */
-	private int[]	lastCounted;
+	private int[] lastCounted;
 
 	@Override
 	public void updated(String elementId, String content) {
 		// Saves the progress of the old image element
 		int[] previousFetched = new int[2];
 		if (MessageManager.get().isMessagePresent(lastMessage)) {
-			previousFetched = getProgressForElement(RootPanel.get(elementId).getElement());
+			previousFetched = getProgressForElement(
+				RootPanel.get(elementId).getElement()
+			);
 		}
 		// Replace the content
 		super.updated(elementId, content);
 		// If message is shown
 		if (MessageManager.get().isMessagePresent(lastMessage)) {
 			// Gets the progress
-			int[] counted = getProgressForElement(RootPanel.get(elementId).getElement());
+			int[] counted = getProgressForElement(
+				RootPanel.get(elementId).getElement()
+			);
 			int[] nowCounted = new int[2];
 			nowCounted[0] = lastCounted[0] - previousFetched[0] + counted[0];
 			nowCounted[1] = lastCounted[1] - previousFetched[1] + counted[1];
@@ -53,12 +56,17 @@ public class ImageElementUpdater extends ReplacerUpdater {
 			if (nowCounted[1] != 0) {
 				Message newMsg = makeProgressMsg(nowCounted[0], nowCounted[1]);
 				if (lastMessage != null) {
-					MessageManager.get().replaceMessageAtPosition(MessageManager.get().getMessagePosition(lastMessage), newMsg);
+					MessageManager.get()
+						.replaceMessageAtPosition(
+							MessageManager.get()
+								.getMessagePosition(lastMessage),
+							newMsg
+						);
 				} else {
 					MessageManager.get().addMessage(newMsg);
 				}
 				lastMessage = newMsg;
-			}else if(lastMessage!=null){
+			} else if (lastMessage != null) {
 				MessageManager.get().removeMessage(lastMessage);
 			}
 		}
@@ -66,7 +74,7 @@ public class ImageElementUpdater extends ReplacerUpdater {
 
 	/**
 	 * Creates the progress message for the given progress
-	 * 
+	 *
 	 * @param fetched
 	 *            - The number of the fetched blocks
 	 * @param total
@@ -74,12 +82,17 @@ public class ImageElementUpdater extends ReplacerUpdater {
 	 * @return The message to be shown in the messages panel
 	 */
 	private Message makeProgressMsg(int fetched, int total) {
-		return new Message(L10n.get("imageprogress") + fetched + "/" + total, Priority.MINOR, null,true);
+		return new Message(
+			L10n.get("imageprogress") + fetched + "/" + total,
+			Priority.MINOR,
+			null,
+			true
+		);
 	}
 
 	/**
 	 * Returns the progress for a given element
-	 * 
+	 *
 	 * @param image
 	 *            - The image element
 	 * @return [0]:the number of fetched blocks [1]:the total number of blocks
@@ -96,13 +109,25 @@ public class ImageElementUpdater extends ReplacerUpdater {
 				try {
 					fetched = Integer.parseInt(input.getAttribute("value"));
 				} catch (NumberFormatException e) {
-					FreenetJs.log("fetchedBlocks value \""+input.getAttribute("value")+"\" is invalid: "+e);
+					FreenetJs.log(
+						"fetchedBlocks value \"" +
+						input.getAttribute("value") +
+						"\" is invalid: " +
+						e
+					);
 				}
-			} else if (input.getAttribute("name").compareTo("requiredBlocks") == 0) {
+			} else if (
+				input.getAttribute("name").compareTo("requiredBlocks") == 0
+			) {
 				try {
 					total = Integer.parseInt(input.getAttribute("value"));
 				} catch (NumberFormatException e) {
-					FreenetJs.log("requiredBlocks value \""+input.getAttribute("value")+"\" is invalid: "+e);
+					FreenetJs.log(
+						"requiredBlocks value \"" +
+						input.getAttribute("value") +
+						"\" is invalid: " +
+						e
+					);
 				}
 			}
 		}
@@ -111,14 +136,15 @@ public class ImageElementUpdater extends ReplacerUpdater {
 
 	/**
 	 * Returns the overall progress for all images in the page
-	 * 
+	 *
 	 * @return [0]:the number of fetched blocks [1]:the total number of blocks
 	 */
 	private int[] countImageProgress() {
 		int fetched = 0;
 		int total = 0;
 		// Cycle through all 'span' elements
-		NodeList<Element> elements = Document.get().getElementsByTagName("span");
+		NodeList<Element> elements = Document.get()
+			.getElementsByTagName("span");
 		for (int i = 0; i < elements.getLength(); i++) {
 			Element e = elements.getItem(i);
 			// Checks if it is an ImageElement

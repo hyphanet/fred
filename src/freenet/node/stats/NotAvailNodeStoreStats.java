@@ -9,6 +9,7 @@ package freenet.node.stats;
  * @author nikotyan
  */
 public class NotAvailNodeStoreStats implements StoreLocationStats {
+
 	@Override
 	public double avgLocation() throws StatsNotAvailableException {
 		throw new StatsNotAvailableException();

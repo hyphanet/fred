@@ -8,15 +8,16 @@ import freenet.l10n.NodeL10n;
 import freenet.support.HTMLEncoder;
 
 public class UnknownContentTypeException extends UnsafeContentTypeException {
+
 	private static final long serialVersionUID = -1;
 	final String type;
 	final String encodedType;
-	
+
 	public UnknownContentTypeException(String typeName) {
 		this.type = typeName;
 		encodedType = HTMLEncoder.encode(type);
 	}
-	
+
 	public String getType() {
 		return type;
 	}
@@ -30,14 +31,15 @@ public class UnknownContentTypeException extends UnsafeContentTypeException {
 	public String getRawTitle() {
 		return l10n("title", "type", type);
 	}
-	
+
 	@Override
 	public String getMessage() {
 		return l10n("explanation", "type", type);
 	}
 
 	private static String l10n(String key, String pattern, String value) {
-		return NodeL10n.getBase().getString("UnknownContentTypeException."+key, pattern, value);
+		return NodeL10n.getBase()
+			.getString("UnknownContentTypeException." + key, pattern, value);
 	}
 
 	@Override

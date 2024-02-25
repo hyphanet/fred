@@ -1,12 +1,11 @@
 package freenet.node;
 
+import freenet.support.Logger;
 import java.util.Arrays;
 import java.util.Set;
 
-import freenet.support.Logger;
-
 public class PeerLocation {
-	
+
 	/** Current location in the keyspace, or -1 if it is unknown */
 	private double currentLocation;
 	/** Current sorted array of locations of our peer's peers. Must not be modified,
@@ -19,17 +18,20 @@ public class PeerLocation {
 		currentLocation = Location.getLocation(locationString);
 		locSetTime = System.currentTimeMillis();
 	}
-	
+
 	public synchronized String toString() {
 		return Double.toString(currentLocation);
 	}
 
 	/** Should only be called in the constructor */
 	public void setPeerLocations(String[] peerLocationsString) {
-		if(peerLocationsString != null) {
+		if (peerLocationsString != null) {
 			double[] peerLocations = new double[peerLocationsString.length];
-			for(int i = 0; i < peerLocationsString.length; i++)
-				peerLocations[i] = Location.getLocation(peerLocationsString[i]);
+			for (
+				int i = 0;
+				i < peerLocationsString.length;
+				i++
+			) peerLocations[i] = Location.getLocation(peerLocationsString[i]);
 			updateLocation(currentLocation, peerLocations);
 		}
 	}
@@ -61,7 +63,11 @@ public class PeerLocation {
 
 	boolean updateLocation(double newLoc, double[] newLocs) {
 		if (!Location.isValid(newLoc)) {
-			Logger.error(this, "Invalid location update for " + this+ " ("+newLoc+')', new Exception("error"));
+			Logger.error(
+				this,
+				"Invalid location update for " + this + " (" + newLoc + ')',
+				new Exception("error")
+			);
 			// Ignore it
 			return false;
 		}
@@ -70,26 +76,39 @@ public class PeerLocation {
 		for (int i = 0; i < newLocs.length; i++) {
 			final double loc = newLocs[i];
 			if (!Location.isValid(loc)) {
-				Logger.error(this, "Invalid location update for " + this + " (" + loc + ")", new Exception("error"));
+				Logger.error(
+					this,
+					"Invalid location update for " + this + " (" + loc + ")",
+					new Exception("error")
+				);
 				// Ignore it
 				return false;
 			}
 			newPeersLocation[i] = loc;
 		}
-		
+
 		Arrays.sort(newPeersLocation);
 		boolean anythingChanged = false;
 
 		synchronized (this) {
-			if (!Location.equals(currentLocation, newLoc) || currentPeersLocation == null) {
+			if (
+				!Location.equals(currentLocation, newLoc) ||
+				currentPeersLocation == null
+			) {
 				anythingChanged = true;
 			}
 			if (!anythingChanged) {
-				anythingChanged = currentPeersLocation.length != newPeersLocation.length;
+				anythingChanged = currentPeersLocation.length !=
+				newPeersLocation.length;
 			}
 			if (!anythingChanged) {
 				for (int i = 0; i < currentPeersLocation.length; i++) {
-					if (!Location.equals(currentPeersLocation[i], newPeersLocation[i])) {
+					if (
+						!Location.equals(
+							currentPeersLocation[i],
+							newPeersLocation[i]
+						)
+					) {
 						anythingChanged = true;
 						break;
 					}
@@ -104,7 +123,7 @@ public class PeerLocation {
 
 	synchronized double setLocation(double newLoc) {
 		double oldLoc = currentLocation;
-		if(!Location.equals(newLoc, currentLocation)) {
+		if (!Location.equals(newLoc, currentLocation)) {
 			currentLocation = newLoc;
 			locSetTime = System.currentTimeMillis();
 		}
@@ -139,7 +158,7 @@ public class PeerLocation {
 	 * This is a binary search of logarithmic complexity.
 	 */
 	static int findClosestLocation(final double[] locs, final double l) {
-		assert(locs.length > 0);
+		assert (locs.length > 0);
 		if (locs.length == 1) {
 			return 0;
 		}
@@ -155,7 +174,10 @@ public class PeerLocation {
 			left = firstGreater - 1;
 			right = firstGreater;
 		}
-		if (Location.distance(l, locs[left]) <= Location.distance(l, locs[right])) {
+		if (
+			Location.distance(l, locs[left]) <=
+			Location.distance(l, locs[right])
+		) {
 			return left;
 		}
 		return right;

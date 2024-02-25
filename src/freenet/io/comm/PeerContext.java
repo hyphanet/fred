@@ -3,11 +3,10 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.io.comm;
 
-import java.lang.ref.WeakReference;
-
 import freenet.io.xfer.PacketThrottle;
 import freenet.node.MessageItem;
 import freenet.node.OutgoingPacketMangler;
+import java.lang.ref.WeakReference;
 
 /**
  * @author amphibian
@@ -31,9 +30,13 @@ public interface PeerContext {
 	/** Peer version, if this is supported, else -1 */
 	int getVersionNumber();
 
-	/** Send a message to the node 
+	/** Send a message to the node
 	 * @return */
-	public MessageItem sendAsync(Message msg, AsyncMessageCallback cb, ByteCounter ctr) throws NotConnectedException;
+	public MessageItem sendAsync(
+		Message msg,
+		AsyncMessageCallback cb,
+		ByteCounter ctr
+	) throws NotConnectedException;
 
 	/** Get the current boot ID. This is a random number that changes every time the node starts up. */
 	public long getBootID();

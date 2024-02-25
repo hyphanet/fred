@@ -13,5 +13,4 @@ public class PubkeyVerifyException extends KeyVerifyException {
 	public PubkeyVerifyException(String msg) {
 		super(msg);
 	}
-
 }

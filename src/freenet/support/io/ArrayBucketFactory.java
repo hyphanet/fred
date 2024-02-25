@@ -3,11 +3,10 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.io;
 
-import java.io.IOException;
-
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.api.RandomAccessBucket;
+import java.io.IOException;
 
 public class ArrayBucketFactory implements BucketFactory {
 
@@ -19,5 +18,4 @@ public class ArrayBucketFactory implements BucketFactory {
 	public void freeBucket(Bucket b) throws IOException {
 		b.free();
 	}
-
 }

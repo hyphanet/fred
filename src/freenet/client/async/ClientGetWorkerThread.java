@@ -4,22 +4,14 @@
 
 package freenet.client.async;
 
-import java.io.BufferedInputStream;
-import java.io.EOFException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.URI;
-import java.net.URISyntaxException;
-
 import freenet.client.ClientMetadata;
 import freenet.client.FetchException;
 import freenet.client.FetchException.FetchExceptionMode;
 import freenet.client.filter.ContentFilter;
+import freenet.client.filter.ContentFilter.FilterStatus;
 import freenet.client.filter.FoundURICallback;
 import freenet.client.filter.LinkFilterExceptionProvider;
 import freenet.client.filter.TagReplacerCallback;
-import freenet.client.filter.ContentFilter.FilterStatus;
 import freenet.client.filter.UnsafeContentTypeException;
 import freenet.crypt.HashResult;
 import freenet.crypt.MultiHashInputStream;
@@ -28,6 +20,13 @@ import freenet.support.Logger;
 import freenet.support.compress.CompressionOutputSizeException;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
+import java.io.BufferedInputStream;
+import java.io.EOFException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 /**A thread which does postprocessing of decompressed data, in particular,
  * writing it to its final destination. This thread also handles hashing and
@@ -36,18 +35,18 @@ import freenet.support.io.FileUtil;
 public class ClientGetWorkerThread extends Thread {
 
 	private InputStream input;
-	final private String schemeHostAndPort;
-	final private URI uri;
-	final private HashResult[] hashes;
-	final private boolean filterData;
-	final private String charset;
-	final private FoundURICallback prefetchHook;
-	final private TagReplacerCallback tagReplacer;
+	private final String schemeHostAndPort;
+	private final URI uri;
+	private final HashResult[] hashes;
+	private final boolean filterData;
+	private final String charset;
+	private final FoundURICallback prefetchHook;
+	private final TagReplacerCallback tagReplacer;
 
 	/** Link filter exception provider. */
 	private final LinkFilterExceptionProvider linkFilterExceptionProvider;
 
-	final private String mimeType;
+	private final String mimeType;
 	private OutputStream output;
 	private boolean finished = false;
 	private Throwable error = null;
@@ -60,6 +59,7 @@ public class ClientGetWorkerThread extends Thread {
 	}
 
 	private static int counter;
+
 	private static synchronized int counter() {
 		return counter++;
 	}
@@ -68,16 +68,34 @@ public class ClientGetWorkerThread extends Thread {
 	 * compatibility for plugins.
 	 */
 	@Deprecated // use @GetClientWorkerThread with schemeHostAndPort instead, pass null if needed.
-	public ClientGetWorkerThread(InputStream input, OutputStream output, FreenetURI uri,
-			String mimeType, HashResult[] hashes, boolean filterData, String charset,
-			FoundURICallback prefetchHook, TagReplacerCallback tagReplacer,
-			LinkFilterExceptionProvider linkFilterExceptionProvider) throws URISyntaxException {
-			this(input, output, uri,
-			mimeType, null, hashes, filterData, charset,
-			prefetchHook, tagReplacer, linkFilterExceptionProvider);
-		}
+	public ClientGetWorkerThread(
+		InputStream input,
+		OutputStream output,
+		FreenetURI uri,
+		String mimeType,
+		HashResult[] hashes,
+		boolean filterData,
+		String charset,
+		FoundURICallback prefetchHook,
+		TagReplacerCallback tagReplacer,
+		LinkFilterExceptionProvider linkFilterExceptionProvider
+	) throws URISyntaxException {
+		this(
+			input,
+			output,
+			uri,
+			mimeType,
+			null,
+			hashes,
+			filterData,
+			charset,
+			prefetchHook,
+			tagReplacer,
+			linkFilterExceptionProvider
+		);
+	}
 
-	 /**
+	/**
 	 * @param input The stream to read the data from
 	 * @param output The final destination to which the data will be written
 	 * @param uri The URI of the fetched data. Needed for the ContentFilter. Optional.
@@ -92,14 +110,26 @@ public class ClientGetWorkerThread extends Thread {
 	 * @param linkFilterExceptionProvider Provider for link filter exceptions
 	 * @throws URISyntaxException
 	 */
-	public ClientGetWorkerThread(InputStream input, OutputStream output, FreenetURI uri,
-			String mimeType, String schemeHostAndPort, HashResult[] hashes, boolean filterData, String charset,
-			FoundURICallback prefetchHook, TagReplacerCallback tagReplacer, LinkFilterExceptionProvider linkFilterExceptionProvider) throws URISyntaxException {
-		super("ClientGetWorkerThread-"+counter());
+	public ClientGetWorkerThread(
+		InputStream input,
+		OutputStream output,
+		FreenetURI uri,
+		String mimeType,
+		String schemeHostAndPort,
+		HashResult[] hashes,
+		boolean filterData,
+		String charset,
+		FoundURICallback prefetchHook,
+		TagReplacerCallback tagReplacer,
+		LinkFilterExceptionProvider linkFilterExceptionProvider
+	) throws URISyntaxException {
+		super("ClientGetWorkerThread-" + counter());
 		this.input = input;
-		if(uri != null) this.uri = uri.toURI("/");
+		if (uri != null) this.uri = uri.toURI("/");
 		else this.uri = null;
-		if(mimeType != null && mimeType.compareTo("application/xhtml+xml") == 0) mimeType = "text/html";
+		if (
+			mimeType != null && mimeType.compareTo("application/xhtml+xml") == 0
+		) mimeType = "text/html";
 		this.mimeType = mimeType;
 		this.schemeHostAndPort = schemeHostAndPort;
 		this.hashes = hashes;
@@ -109,66 +139,136 @@ public class ClientGetWorkerThread extends Thread {
 		this.prefetchHook = prefetchHook;
 		this.tagReplacer = tagReplacer;
 		this.linkFilterExceptionProvider = linkFilterExceptionProvider;
-		if(logMINOR) Logger.minor(this, "Created worker thread for "+uri+" mime type "+mimeType+" filter data = "+filterData+" charset "+charset);
+		if (logMINOR) Logger.minor(
+			this,
+			"Created worker thread for " +
+			uri +
+			" mime type " +
+			mimeType +
+			" filter data = " +
+			filterData +
+			" charset " +
+			charset
+		);
 	}
 
 	@Override
 	public void run() {
-		if(logMINOR) Logger.minor(this, "Starting worker thread for "+uri+" mime type "+mimeType+" filter data = "+filterData+" charset "+charset);
+		if (logMINOR) Logger.minor(
+			this,
+			"Starting worker thread for " +
+			uri +
+			" mime type " +
+			mimeType +
+			" filter data = " +
+			filterData +
+			" charset " +
+			charset
+		);
 		try {
 			//Validate the hash of the now decompressed data
 			input = new BufferedInputStream(input);
 			MultiHashInputStream hashStream = null;
-			if(hashes != null) {
-				hashStream = new MultiHashInputStream(input, HashResult.makeBitmask(hashes));
+			if (hashes != null) {
+				hashStream = new MultiHashInputStream(
+					input,
+					HashResult.makeBitmask(hashes)
+				);
 				input = hashStream;
 			}
 			//Filter the data, if we are supposed to
-			if(filterData){
-				if(logMINOR) Logger.minor(this, "Running content filter... Prefetch hook: "+prefetchHook+" tagReplacer: "+tagReplacer);
-				if(mimeType == null || uri == null || input == null || output == null) throw new IOException("Insufficient arguements to worker thread");
+			if (filterData) {
+				if (logMINOR) Logger.minor(
+					this,
+					"Running content filter... Prefetch hook: " +
+					prefetchHook +
+					" tagReplacer: " +
+					tagReplacer
+				);
+				if (
+					mimeType == null ||
+					uri == null ||
+					input == null ||
+					output == null
+				) throw new IOException(
+					"Insufficient arguements to worker thread"
+				);
 				// Send XHTML as HTML because we can't use web-pushing on XHTML.
-				FilterStatus filterStatus = ContentFilter.filter(input, output, mimeType, uri,
-						schemeHostAndPort, prefetchHook, tagReplacer, charset, linkFilterExceptionProvider);
+				FilterStatus filterStatus = ContentFilter.filter(
+					input,
+					output,
+					mimeType,
+					uri,
+					schemeHostAndPort,
+					prefetchHook,
+					tagReplacer,
+					charset,
+					linkFilterExceptionProvider
+				);
 
-				String detectedMIMEType = filterStatus.mimeType.concat(filterStatus.charset == null ? "" : "; charset="+filterStatus.charset);
-				synchronized(this) {
+				String detectedMIMEType = filterStatus.mimeType.concat(
+					filterStatus.charset == null
+						? ""
+						: "; charset=" + filterStatus.charset
+				);
+				synchronized (this) {
 					clientMetadata = new ClientMetadata(detectedMIMEType);
 				}
-			}
-			else {
-				if(logMINOR) Logger.minor(this, "Ignoring content filter. The final result has not been written. Writing now.");
+			} else {
+				if (logMINOR) Logger.minor(
+					this,
+					"Ignoring content filter. The final result has not been written. Writing now."
+				);
 				FileUtil.copy(input, output, -1);
 			}
 			// Dump the rest.
 			try {
-				while(true) {
-				    // FileInputStream.skip() doesn't do what we want. Use read().
-				    // Note this is only necessary because we might have an AEADInputStream?
-				    // FIXME get rid - they should check the end anyway?
-				    byte[] buf = new byte[4096];
-				    int r = input.read(buf);
-				    if(r < 0) break;
+				while (true) {
+					// FileInputStream.skip() doesn't do what we want. Use read().
+					// Note this is only necessary because we might have an AEADInputStream?
+					// FIXME get rid - they should check the end anyway?
+					byte[] buf = new byte[4096];
+					int r = input.read(buf);
+					if (r < 0) break;
 				}
 			} catch (EOFException e) {
 				// Okay.
 			}
 			input.close();
 			output.close();
-			if(hashes != null) {
+			if (hashes != null) {
 				HashResult[] results = hashStream.getResults();
-				if(!HashResult.strictEquals(results, hashes)) {
-					Logger.error(this, "Hashes failed verification (length read is "+hashStream.getReadBytes()+") "+" for "+uri);
-					throw new FetchException(FetchExceptionMode.CONTENT_HASH_FAILED);
+				if (!HashResult.strictEquals(results, hashes)) {
+					Logger.error(
+						this,
+						"Hashes failed verification (length read is " +
+						hashStream.getReadBytes() +
+						") " +
+						" for " +
+						uri
+					);
+					throw new FetchException(
+						FetchExceptionMode.CONTENT_HASH_FAILED
+					);
 				}
 			}
 
 			onFinish();
-		} catch(Throwable t) {
-			if(!(t instanceof FetchException || t instanceof UnsafeContentTypeException || t instanceof CompressionOutputSizeException))
-				Logger.error(this, "Exception caught while processing fetch: "+t,t);
-			else if(logMINOR)
-				Logger.minor(this, "Exception caught while processing fetch: "+t,t);
+		} catch (Throwable t) {
+			if (
+				!(t instanceof FetchException ||
+					t instanceof UnsafeContentTypeException ||
+					t instanceof CompressionOutputSizeException)
+			) Logger.error(
+				this,
+				"Exception caught while processing fetch: " + t,
+				t
+			);
+			else if (logMINOR) Logger.minor(
+				this,
+				"Exception caught while processing fetch: " + t,
+				t
+			);
 			setError(t);
 		} finally {
 			Closer.close(input);
@@ -185,14 +285,15 @@ public class ClientGetWorkerThread extends Thread {
 
 	/** Stores the exception and awakens blocked threads. */
 	public synchronized void setError(Throwable t) {
-		if(error != null) return;
+		if (error != null) return;
 		error = t;
 		onFinish();
 	}
 
 	public synchronized void getError() throws Throwable {
-		if(error != null) throw error;
+		if (error != null) throw error;
 	}
+
 	/** Marks that all work has finished, and wakes blocked threads.*/
 	public synchronized void onFinish() {
 		finished = true;
@@ -203,10 +304,10 @@ public class ClientGetWorkerThread extends Thread {
 	 * also passes an exception which occurred back to the parent thread.
 	 * @throws Throwable Any errors that arose during execution*/
 	public synchronized void waitFinished() throws Throwable {
-		while(!finished) {
+		while (!finished) {
 			try {
 				wait();
-			} catch(InterruptedException e) {
+			} catch (InterruptedException e) {
 				//Do nothing
 			}
 		}

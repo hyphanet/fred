@@ -1,18 +1,17 @@
 package freenet.node;
 
-import java.lang.ref.WeakReference;
-import java.util.ArrayList;
-import java.util.Random;
-
 import freenet.io.comm.AsyncMessageCallback;
 import freenet.io.comm.ByteCounter;
 import freenet.io.comm.Message;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.Peer;
+import freenet.io.comm.Peer.LocalAddressException;
 import freenet.io.comm.PeerContext;
 import freenet.io.comm.SocketHandler;
-import freenet.io.comm.Peer.LocalAddressException;
 import freenet.io.xfer.PacketThrottle;
+import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.Random;
 
 /** Tests can override this to record specific events e.g. rekey */
 public class NullBasePeerNode implements BasePeerNode {
@@ -43,8 +42,11 @@ public class NullBasePeerNode implements BasePeerNode {
 	}
 
 	@Override
-	public MessageItem sendAsync(Message msg, AsyncMessageCallback cb,
-			ByteCounter ctr) throws NotConnectedException {
+	public MessageItem sendAsync(
+		Message msg,
+		AsyncMessageCallback cb,
+		ByteCounter ctr
+	) throws NotConnectedException {
 		throw new UnsupportedOperationException();
 	}
 
@@ -87,7 +89,7 @@ public class NullBasePeerNode implements BasePeerNode {
 	public boolean unqueueMessage(MessageItem item) {
 		throw new UnsupportedOperationException();
 	}
-	
+
 	SessionKey currentKey;
 	SessionKey previousKey;
 	SessionKey unverifiedKey;
@@ -114,8 +116,9 @@ public class NullBasePeerNode implements BasePeerNode {
 
 	@Override
 	public void verified(SessionKey s) {
-	    if (decryptedMessages == null)
-	        throw new UnsupportedOperationException(); // Not expecting messages.
+		if (
+			decryptedMessages == null
+		) throw new UnsupportedOperationException(); // Not expecting messages.
 	}
 
 	@Override
@@ -140,13 +143,19 @@ public class NullBasePeerNode implements BasePeerNode {
 
 	protected ArrayList<byte[]> decryptedMessages;
 
-	protected void processDecryptedMessage(byte[] data, int offset, int length,
-			int overhead) {
-	    if (decryptedMessages == null) {
-	        throw new UnsupportedOperationException();
-	    } else {
-	        decryptedMessages.add(java.util.Arrays.copyOfRange(data, offset, offset+length));
-	    }
+	protected void processDecryptedMessage(
+		byte[] data,
+		int offset,
+		int length,
+		int overhead
+	) {
+		if (decryptedMessages == null) {
+			throw new UnsupportedOperationException();
+		} else {
+			decryptedMessages.add(
+				java.util.Arrays.copyOfRange(data, offset, offset + length)
+			);
+		}
 	}
 
 	@Override
@@ -185,7 +194,7 @@ public class NullBasePeerNode implements BasePeerNode {
 
 	@Override
 	public void sendEncryptedPacket(byte[] data) throws LocalAddressException {
-	    sentEncryptedPacket = data;
+		sentEncryptedPacket = data;
 	}
 
 	@Override
@@ -224,7 +233,11 @@ public class NullBasePeerNode implements BasePeerNode {
 	}
 
 	@Override
-	public MessageItem makeLoadStats(boolean realtime, boolean highPriority, boolean lossy) {
+	public MessageItem makeLoadStats(
+		boolean realtime,
+		boolean highPriority,
+		boolean lossy
+	) {
 		// Don't send load stats.
 		return null;
 	}
@@ -247,18 +260,25 @@ public class NullBasePeerNode implements BasePeerNode {
 	@Override
 	public DecodingMessageGroup startProcessingDecryptedMessages(int count) {
 		return new DecodingMessageGroup() {
-
 			@Override
-			public void processDecryptedMessage(byte[] data, int offset,
-					int length, int overhead) {
-				NullBasePeerNode.this.processDecryptedMessage(data, offset, length, overhead);
+			public void processDecryptedMessage(
+				byte[] data,
+				int offset,
+				int length,
+				int overhead
+			) {
+				NullBasePeerNode.this.processDecryptedMessage(
+						data,
+						offset,
+						length,
+						overhead
+					);
 			}
 
 			@Override
 			public void complete() {
 				// Do nothing.
 			}
-			
 		};
 	}
 

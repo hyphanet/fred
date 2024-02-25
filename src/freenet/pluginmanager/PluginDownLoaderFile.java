@@ -3,12 +3,11 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.pluginmanager;
 
+import freenet.pluginmanager.PluginManager.PluginProgress;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-
-import freenet.pluginmanager.PluginManager.PluginProgress;
 
 public class PluginDownLoaderFile extends PluginDownLoader<File> {
 
@@ -25,8 +24,7 @@ public class PluginDownLoaderFile extends PluginDownLoader<File> {
 	@Override
 	String getPluginName(String source) throws PluginNotFoundException {
 		int slashIndex = source.lastIndexOf('/');
-		if(slashIndex == -1)
-			slashIndex = source.lastIndexOf('\\');
+		if (slashIndex == -1) slashIndex = source.lastIndexOf('\\');
 		return source.substring(slashIndex + 1);
 	}
 
@@ -44,5 +42,4 @@ public class PluginDownLoaderFile extends PluginDownLoader<File> {
 	public boolean isCachingProhibited() {
 		return true;
 	}
-
 }

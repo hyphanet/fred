@@ -10,7 +10,7 @@ import freenet.crypt.BlockCipher;
  * @author Matthew Toseland <toad@amphibian.dyndns.org> (0xE43DA450)
  */
 public class SessionKey {
-	
+
 	/** Parent PeerNode */
 	public final PeerNode pn;
 	/** Cipher to encrypt outgoing packets with */
@@ -26,14 +26,23 @@ public class SessionKey {
 	public final BlockCipher ivCipher;
 	public final byte[] ivNonce;
 	public final byte[] hmacKey;
-	
+
 	final long trackerID;
-	
+
 	public final NewPacketFormatKeyContext packetContext;
 
-	SessionKey(PeerNode parent, BlockCipher outgoingCipher, byte[] outgoingKey,
-	                BlockCipher incommingCipher, byte[] incommingKey, BlockCipher ivCipher,
-			byte[] ivNonce, byte[] hmacKey, NewPacketFormatKeyContext context, long trackerID) {
+	SessionKey(
+		PeerNode parent,
+		BlockCipher outgoingCipher,
+		byte[] outgoingKey,
+		BlockCipher incommingCipher,
+		byte[] incommingKey,
+		BlockCipher ivCipher,
+		byte[] ivNonce,
+		byte[] hmacKey,
+		NewPacketFormatKeyContext context,
+		long trackerID
+	) {
 		this.pn = parent;
 		this.outgoingCipher = outgoingCipher;
 		this.outgoingKey = outgoingKey;
@@ -45,7 +54,7 @@ public class SessionKey {
 		this.packetContext = context;
 		this.trackerID = trackerID;
 	}
-	
+
 	public void disconnected() {
 		packetContext.disconnected();
 	}

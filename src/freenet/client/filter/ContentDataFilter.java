@@ -13,7 +13,6 @@ import java.util.Map;
  * Data filter for a specific MIME type.
  */
 public interface ContentDataFilter {
-
 	/** Filter data for reading. Objective is to ensure the data is safe if
 	 * rendered by e.g. a web browser, and to guarantee that it is of the
 	 * correct type. Filters should usually be implemented as "white list",
@@ -37,17 +36,25 @@ public interface ContentDataFilter {
 	 * caught and converted to a DataFilterException.
 	 */
 	void readFilter(
-			InputStream input, OutputStream output, String charset, Map<String, String> otherParams,
-			String schemeHostAndPort, FilterCallback cb) throws DataFilterException, IOException;
+		InputStream input,
+		OutputStream output,
+		String charset,
+		Map<String, String> otherParams,
+		String schemeHostAndPort,
+		FilterCallback cb
+	) throws DataFilterException, IOException;
 
 	/**
 	 * Compatibility for readFilter without schemeHostAndPort. Please use readFilter with schemeHostAndPort.
 	 */
 	@Deprecated
 	default void readFilter(
-			InputStream input, OutputStream output, String charset, Map<String, String> otherParams,
-			FilterCallback cb) throws DataFilterException, IOException {
+		InputStream input,
+		OutputStream output,
+		String charset,
+		Map<String, String> otherParams,
+		FilterCallback cb
+	) throws DataFilterException, IOException {
 		readFilter(input, output, charset, otherParams, null, cb);
 	}
-
 }

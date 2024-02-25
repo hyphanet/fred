@@ -3,7 +3,6 @@ package freenet.node.probe;
 import static org.junit.Assert.*;
 
 import java.util.HashSet;
-
 import org.junit.Test;
 
 /**
@@ -22,10 +21,24 @@ public class ErrorTest {
 					assertEquals(error.code, code);
 				} catch (IllegalArgumentException e) {
 					//Should not throw - was determined to be valid.
-					assertTrue("valueOf() threw when given valid code " + code + ". (" + t.name() + ")", false);
+					assertTrue(
+						"valueOf() threw when given valid code " +
+						code +
+						". (" +
+						t.name() +
+						")",
+						false
+					);
 				}
 			} else {
-				assertTrue("isValid() returned false for valid code " + code +". (" + t.name() + ")", false);
+				assertTrue(
+					"isValid() returned false for valid code " +
+					code +
+					". (" +
+					t.name() +
+					")",
+					false
+				);
 			}
 		}
 	}
@@ -41,10 +54,12 @@ public class ErrorTest {
 			if (validCodes.contains(code)) continue;
 
 			if (Error.isValid(code)) {
-				assertTrue("isValid() returned true for invalid code " + code + ".", false);
+				assertTrue(
+					"isValid() returned true for invalid code " + code + ".",
+					false
+				);
 			}
 			if (code == Byte.MAX_VALUE) return;
 		}
 	}
-
 }

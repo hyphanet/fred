@@ -8,6 +8,4 @@ package freenet.io.xfer;
  * @author toad
  */
 @SuppressWarnings("serial")
-public class WaitedTooLongException extends Exception {
-
-}
+public class WaitedTooLongException extends Exception {}

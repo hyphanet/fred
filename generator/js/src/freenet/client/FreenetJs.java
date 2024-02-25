@@ -5,7 +5,6 @@ import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.Window.ClosingEvent;
 import com.google.gwt.user.client.Window.ClosingHandler;
 import com.google.gwt.user.client.ui.RootPanel;
-
 import freenet.client.connection.IConnectionManager;
 import freenet.client.connection.KeepaliveManager;
 import freenet.client.connection.SharedConnectionManager;
@@ -21,35 +20,42 @@ import freenet.client.update.DefaultUpdateManager;
 public class FreenetJs implements EntryPoint {
 
 	/** Debug mode. If true, the client will log. Should be false at production */
-	public static boolean				isDebug						= true;
+	public static boolean isDebug = true;
 
 	/** The requestId. It is used to identify this instance to the server */
-	public static String				requestId;
+	public static String requestId;
 
 	/** The manager */
-	private static IConnectionManager	cm;
+	private static IConnectionManager cm;
 
 	/** The keepalive manager */
-	private static IConnectionManager	keepaliveManager;
+	private static IConnectionManager keepaliveManager;
 
 	/** If true, then pushing cancel is expected, so it won't show a message for it. */
-	public static boolean				isPushingCancelledExpected	= false;
+	public static boolean isPushingCancelledExpected = false;
 
 	public void onModuleLoad() {
 		// If the user closes the window, it sends a leaving message
-		Window.addWindowClosingHandler(new ClosingHandler() {
-			@Override
-			public void onWindowClosing(ClosingEvent event) {
-				isPushingCancelledExpected = true;
-				FreenetRequest.sendRequest(UpdaterConstants.leavingPath, new QueryParameter("requestId", requestId));
-				cm.closeConnection();
+		Window.addWindowClosingHandler(
+			new ClosingHandler() {
+				@Override
+				public void onWindowClosing(ClosingEvent event) {
+					isPushingCancelledExpected = true;
+					FreenetRequest.sendRequest(
+						UpdaterConstants.leavingPath,
+						new QueryParameter("requestId", requestId)
+					);
+					cm.closeConnection();
+				}
 			}
-		});
+		);
 		// Exports some method for external use
 		// It is not needed, but may come handy in the future
 		exportStaticMethod();
 
-		requestId = RootPanel.get("requestId").getElement().getAttribute("value");
+		requestId = RootPanel.get("requestId")
+			.getElement()
+			.getAttribute("value");
 		cm = new SharedConnectionManager(new DefaultUpdateManager());
 		keepaliveManager = new KeepaliveManager();
 		cm.openConnection();
@@ -60,16 +66,26 @@ public class FreenetJs implements EntryPoint {
 	}
 
 	static long logCounter;
-	
+
 	/** Log a message */
 	public static final void log(String msg) {
 		try {
 			// Only log id debug is enabled
 			if (isDebug) {
 				// Write the log back to the server
-				 try{ FreenetRequest.sendRequest(UpdaterConstants.logWritebackPath, new QueryParameter("msg",requestId+":"+(logCounter++)+":"+urlEncode(msg))); }catch(Exception e){
-				 
-				 }
+				try {
+					FreenetRequest.sendRequest(
+						UpdaterConstants.logWritebackPath,
+						new QueryParameter(
+							"msg",
+							requestId +
+							":" +
+							(logCounter++) +
+							":" +
+							urlEncode(msg)
+						)
+					);
+				} catch (Exception e) {}
 				// Write the log to the console
 				nativeLog(msg);
 				// Write the log to the page
@@ -85,34 +101,34 @@ public class FreenetJs implements EntryPoint {
 	}
 
 	/** Base 64 causes some bizarre data corruption, probably because / and + are not allowed in URLs.
-	  * Java's URLEncoder isn't available, and Freenet's URLEncoder doesn't compile: getBytes() doesn't work.
-	  * So hack together a pathetic feature incomplete encoder that doesn't use getBytes(). 
-	  * REDFLAG: THIS IS NOT REMOTELY SAFE!!!! */
+	 * Java's URLEncoder isn't available, and Freenet's URLEncoder doesn't compile: getBytes() doesn't work.
+	 * So hack together a pathetic feature incomplete encoder that doesn't use getBytes().
+	 * REDFLAG: THIS IS NOT REMOTELY SAFE!!!! */
 	private static String urlEncode(String s) {
 		StringBuffer sb = new StringBuffer(s.length());
-		for(int i=0;i<s.length();i++) {
+		for (int i = 0; i < s.length(); i++) {
 			char c = s.charAt(i);
-			if(c == '%') {
+			if (c == '%') {
 				sb.append("%25");
-			} else if(c == '?') {
+			} else if (c == '?') {
 				sb.append("%3f");
-			} else if(c == '&') {
+			} else if (c == '&') {
 				sb.append("%26");
-			} else if(c == '#') {
+			} else if (c == '#') {
 				sb.append("%23");
-			} else if(c == '/') {
+			} else if (c == '/') {
 				sb.append("%2f");
-			} else if(c == '=') {
+			} else if (c == '=') {
 				sb.append("%3d");
-			} else if(c == ':') {
+			} else if (c == ':') {
 				sb.append("%3a");
-			} else if(c == ';') {
+			} else if (c == ';') {
 				sb.append("%3b");
 			} else sb.append(c);
 		}
 		return sb.toString();
 	}
-	
+
 	/** Exported method to let external sources turn on logging */
 	public static final void enableDebug() {
 		isDebug = true;
@@ -136,5 +152,4 @@ public class FreenetJs implements EntryPoint {
 		cm.closeConnection();
 		keepaliveManager.closeConnection();
 	}
-
 }

@@ -1,13 +1,13 @@
 package freenet.client.events;
 
 public class ExpectedFileSizeEvent implements ClientEvent {
-	
+
 	public final long expectedSize;
-	
+
 	public ExpectedFileSizeEvent(long size) {
 		expectedSize = size;
 	}
-	
+
 	static final int CODE = 0x0C;
 
 	@Override
@@ -17,7 +17,6 @@ public class ExpectedFileSizeEvent implements ClientEvent {
 
 	@Override
 	public String getDescription() {
-		return "Expected file size: "+expectedSize;
+		return "Expected file size: " + expectedSize;
 	}
-
 }

@@ -12,6 +12,7 @@ import org.junit.Test;
  * ones are changed as expected.
  */
 public class FilterCSSIdentifierTest {
+
 	@Test
 	public void testKnownValid() {
 		String identifiers[] = { "sample_key-1", "-_", "-k_d", "_testing-key" };

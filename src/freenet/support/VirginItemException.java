@@ -6,8 +6,10 @@ package freenet.support;
  * @author tavin
  */
 public class VirginItemException extends RuntimeException {
+
 	private static final long serialVersionUID = -1;
-    VirginItemException(DoublyLinkedList.Item<?> item) {
-        super(item.toString());
-    }
+
+	VirginItemException(DoublyLinkedList.Item<?> item) {
+		super(item.toString());
+	}
 }

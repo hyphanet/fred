@@ -22,21 +22,30 @@ public class WELCOME implements Step {
 	public WELCOME(Config config) {
 		this.config = config;
 	}
+
 	/**
 	 * Renders the first page of the wizard into the given content node.
 	 * @param request used to check whether the user is using a browser with incognito mode.
 	 */
 	@Override
 	public void getStep(HTTPRequest request, PageHelper helper) {
-		HTMLNode contentNode = helper.getPageContent(WizardL10n.l10n("homepageTitle"));
+		HTMLNode contentNode = helper.getPageContent(
+			WizardL10n.l10n("homepageTitle")
+		);
 		boolean incognito = request.isParameterSet("incognito");
 
-		boolean fProxyJavascriptEnabled = config.get("fproxy").getBoolean("javascriptEnabled");
+		boolean fProxyJavascriptEnabled = config
+			.get("fproxy")
+			.getBoolean("javascriptEnabled");
 		if (fProxyJavascriptEnabled) {
-			contentNode.addChild("script", "type", "text/javascript")
-					.addChild(
-							"%",
-							"window.location.replace(\"" + FirstTimeWizardNewToadlet.TOADLET_URL + " \");");
+			contentNode
+				.addChild("script", "type", "text/javascript")
+				.addChild(
+					"%",
+					"window.location.replace(\"" +
+					FirstTimeWizardNewToadlet.TOADLET_URL +
+					" \");"
+				);
 		}
 
 		HTMLNode optionsTable = contentNode.addChild("table");
@@ -52,11 +61,21 @@ public class WELCOME implements Step {
 		//Detailed wizard option
 		addSecurityTableCell(tableHeader, tableRow, "None", helper, incognito);
 
-		HTMLNode languageForm = helper.addFormChild(contentNode, ".", "languageForm");
+		HTMLNode languageForm = helper.addFormChild(
+			contentNode,
+			".",
+			"languageForm"
+		);
 		//Add option dropdown for languages
 		Option<?> language = config.get("node").getOption("l10n");
-		EnumerableOptionCallback l10nCallback = (EnumerableOptionCallback)language.getCallback();
-		HTMLNode dropDown = ConfigToadlet.addComboBox(language.getValueDisplayString(), l10nCallback, language.getName(), false);
+		EnumerableOptionCallback l10nCallback =
+			(EnumerableOptionCallback) language.getCallback();
+		HTMLNode dropDown = ConfigToadlet.addComboBox(
+			language.getValueDisplayString(),
+			l10nCallback,
+			language.getName(),
+			false
+		);
 		//Submit automatically upon selection if Javascript.
 		dropDown.addAttribute("onchange", "this.form.submit()");
 		languageForm.addChild(dropDown);
@@ -72,7 +91,10 @@ public class WELCOME implements Step {
 		try {
 			config.get("node").set("l10n", desiredLanguage);
 		} catch (freenet.config.InvalidConfigValueException e) {
-			Logger.error(this, "Failed to set language to " + desiredLanguage + ". " + e);
+			Logger.error(
+				this,
+				"Failed to set language to " + desiredLanguage + ". " + e
+			);
 		} catch (freenet.config.NodeNeedRestartException e) {
 			//Changing language doesn't require a restart, at least as of version 1385.
 			//Doing so would be really annoying as the node would have to start up again
@@ -89,17 +111,44 @@ public class WELCOME implements Step {
 	 * @param helper used to add a form
 	 * @param incognito whether incognito mode is enabled
 	 */
-	private void addSecurityTableCell(HTMLNode header, HTMLNode row, String preset, PageHelper helper, boolean incognito) {
-		header.addChild("th", "width", "33%", WizardL10n.l10n("presetTitle"+preset));
+	private void addSecurityTableCell(
+		HTMLNode header,
+		HTMLNode row,
+		String preset,
+		PageHelper helper,
+		boolean incognito
+	) {
+		header.addChild(
+			"th",
+			"width",
+			"33%",
+			WizardL10n.l10n("presetTitle" + preset)
+		);
 		HTMLNode tableCell = row.addChild("td");
 		tableCell.addChild("p", WizardL10n.l10n("preset" + preset));
-		HTMLNode centerForm = tableCell.addChild("div", "style", "text-align:center;");
-		HTMLNode secForm = helper.addFormChild(centerForm, ".", "SecForm"+preset);
-		secForm.addChild("input",
-		        new String[]{"type", "name", "value", },
-		        new String[]{"hidden", "incognito", String.valueOf(incognito), });
-		secForm.addChild("input",
-		        new String[]{"type", "name", "value"},
-		        new String[]{"submit", "preset" + preset, WizardL10n.l10n("presetChoose" + preset)});
+		HTMLNode centerForm = tableCell.addChild(
+			"div",
+			"style",
+			"text-align:center;"
+		);
+		HTMLNode secForm = helper.addFormChild(
+			centerForm,
+			".",
+			"SecForm" + preset
+		);
+		secForm.addChild(
+			"input",
+			new String[] { "type", "name", "value" },
+			new String[] { "hidden", "incognito", String.valueOf(incognito) }
+		);
+		secForm.addChild(
+			"input",
+			new String[] { "type", "name", "value" },
+			new String[] {
+				"submit",
+				"preset" + preset,
+				WizardL10n.l10n("presetChoose" + preset),
+			}
+		);
 	}
 }

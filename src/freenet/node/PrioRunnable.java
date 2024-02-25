@@ -8,7 +8,5 @@ package freenet.node;
  * @author toad
  */
 public interface PrioRunnable extends Runnable {
-
 	public int getPriority();
-	
 }

@@ -1,7 +1,5 @@
 package freenet.node.useralerts;
 
-import java.lang.ref.WeakReference;
-
 import freenet.clients.fcp.FCPMessage;
 import freenet.clients.fcp.URIFeedMessage;
 import freenet.keys.FreenetURI;
@@ -9,8 +7,10 @@ import freenet.l10n.NodeL10n;
 import freenet.node.DarknetPeerNode;
 import freenet.node.PeerNode;
 import freenet.support.HTMLNode;
+import java.lang.ref.WeakReference;
 
 public class DownloadFeedUserAlert extends AbstractUserAlert {
+
 	private final WeakReference<PeerNode> peerRef;
 	private final FreenetURI uri;
 	private final int fileNumber;
@@ -20,9 +20,27 @@ public class DownloadFeedUserAlert extends AbstractUserAlert {
 	private final long received;
 	private String sourceNodeName;
 
-	public DownloadFeedUserAlert(DarknetPeerNode sourcePeerNode, 
-			String description, int fileNumber, FreenetURI uri, long composed, long sent, long received) {
-		super(true, null, null, null, null, UserAlert.MINOR, true, null, true, null);
+	public DownloadFeedUserAlert(
+		DarknetPeerNode sourcePeerNode,
+		String description,
+		int fileNumber,
+		FreenetURI uri,
+		long composed,
+		long sent,
+		long received
+	) {
+		super(
+			true,
+			null,
+			null,
+			null,
+			null,
+			UserAlert.MINOR,
+			true,
+			null,
+			true,
+			null
+		);
 		this.description = description;
 		this.uri = uri;
 		this.fileNumber = fileNumber;
@@ -42,8 +60,10 @@ public class DownloadFeedUserAlert extends AbstractUserAlert {
 	public String getText() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(l10n("fileURI")).append(" ").append(uri).append("\n");
-		if(description != null && description.length() != 0)
-			sb.append(l10n("fileDescription")).append(" ").append(description);
+		if (description != null && description.length() != 0) sb
+			.append(l10n("fileDescription"))
+			.append(" ")
+			.append(description);
 		return sb.toString();
 	}
 
@@ -55,7 +75,9 @@ public class DownloadFeedUserAlert extends AbstractUserAlert {
 	@Override
 	public HTMLNode getHTMLText() {
 		HTMLNode alertNode = new HTMLNode("div");
-		alertNode.addChild("a", "href", "/" + uri).addChild("#", uri.toShortString());
+		alertNode
+			.addChild("a", "href", "/" + uri)
+			.addChild("#", uri.toShortString());
 		if (description != null && description.length() != 0) {
 			String[] lines = description.split("\n");
 			alertNode.addChild("br");
@@ -64,8 +86,7 @@ public class DownloadFeedUserAlert extends AbstractUserAlert {
 			alertNode.addChild("br");
 			for (int i = 0; i < lines.length; i++) {
 				alertNode.addChild("#", lines[i]);
-				if (i != lines.length - 1)
-					alertNode.addChild("br");
+				if (i != lines.length - 1) alertNode.addChild("br");
 			}
 		}
 		return alertNode;
@@ -81,27 +102,37 @@ public class DownloadFeedUserAlert extends AbstractUserAlert {
 	}
 
 	private String l10n(String key, String pattern, String value) {
-		return NodeL10n.getBase().getString("DownloadFeedUserAlert." + key, pattern, value);
+		return NodeL10n.getBase()
+			.getString("DownloadFeedUserAlert." + key, pattern, value);
 	}
 
 	@Override
 	public void onDismiss() {
 		DarknetPeerNode pn = (DarknetPeerNode) peerRef.get();
-		if(pn != null)
-			pn.deleteExtraPeerDataFile(fileNumber);
+		if (pn != null) pn.deleteExtraPeerDataFile(fileNumber);
 	}
 
 	@Override
 	public FCPMessage getFCPMessage() {
-		return new URIFeedMessage(getTitle(), getShortText(), getText(), getPriorityClass(), getUpdatedTime(),
-				sourceNodeName, composed, sent, received, uri, description);
+		return new URIFeedMessage(
+			getTitle(),
+			getShortText(),
+			getText(),
+			getPriorityClass(),
+			getUpdatedTime(),
+			sourceNodeName,
+			composed,
+			sent,
+			received,
+			uri,
+			description
+		);
 	}
 
 	@Override
 	public boolean isValid() {
 		DarknetPeerNode pn = (DarknetPeerNode) peerRef.get();
-		if(pn != null)
-			sourceNodeName = pn.getName();
+		if (pn != null) sourceNodeName = pn.getName();
 		return true;
 	}
 }

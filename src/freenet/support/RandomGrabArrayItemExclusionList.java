@@ -6,10 +6,12 @@ package freenet.support;
 import freenet.client.async.ClientContext;
 
 public interface RandomGrabArrayItemExclusionList {
-	
 	/**
 	 * Whether this item can be returned right now.
 	 */
-	public long exclude(RandomGrabArrayItem item, ClientContext context, long now);
-
+	public long exclude(
+		RandomGrabArrayItem item,
+		ClientContext context,
+		long now
+	);
 }

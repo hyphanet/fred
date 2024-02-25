@@ -8,6 +8,7 @@ import freenet.support.Base64;
 import freenet.support.SimpleFieldSet;
 
 public class PeerNote extends FCPMessage {
+
 	static final String name = "PeerNote";
 
 	final String noteText;
@@ -15,7 +16,12 @@ public class PeerNote extends FCPMessage {
 	final String nodeIdentifier;
 	final String identifier;
 
-	public PeerNote(String nodeIdentifier, String noteText, int peerNoteType, String identifier) {
+	public PeerNote(
+		String nodeIdentifier,
+		String noteText,
+		int peerNoteType,
+		String identifier
+	) {
 		this.nodeIdentifier = nodeIdentifier;
 		this.noteText = noteText;
 		this.peerNoteType = peerNoteType;
@@ -28,8 +34,7 @@ public class PeerNote extends FCPMessage {
 		fs.putSingle("NodeIdentifier", nodeIdentifier);
 		fs.put("PeerNoteType", peerNoteType);
 		fs.putSingle("NoteText", Base64.encodeUTF8(noteText, true));
-		if(identifier != null)
-			fs.putSingle("Identifier", identifier);
+		if (identifier != null) fs.putSingle("Identifier", identifier);
 		return fs;
 	}
 
@@ -40,8 +45,12 @@ public class PeerNote extends FCPMessage {
 
 	@Override
 	public void run(FCPConnectionHandler handler, Node node)
-			throws MessageInvalidException {
-		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "PeerNote goes from server to client not the other way around", identifier, false);
+		throws MessageInvalidException {
+		throw new MessageInvalidException(
+			ProtocolErrorMessage.INVALID_MESSAGE,
+			"PeerNote goes from server to client not the other way around",
+			identifier,
+			false
+		);
 	}
-
 }

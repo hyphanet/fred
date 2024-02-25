@@ -2,11 +2,11 @@ package freenet.clients.http;
 
 import freenet.support.HTMLNode;
 
-/** Represents a box (or a page, see PageNode). This is a bit of HTML for a box. We return the 
- * "outer", which is the HTML for the whole box, so you can render it to HTML, or add it to 
+/** Represents a box (or a page, see PageNode). This is a bit of HTML for a box. We return the
+ * "outer", which is the HTML for the whole box, so you can render it to HTML, or add it to
  * another HTMLNode, and we return the "content", which is the inside of the box, where you
  * can add content.
- * @author toad 
+ * @author toad
  */
 public class InfoboxNode {
 
@@ -20,5 +20,4 @@ public class InfoboxNode {
 		this.outer = box;
 		this.content = content;
 	}
-
 }

@@ -9,11 +9,9 @@ package freenet.crypt;
  * @author oskar
  */
 public interface CryptoElement {
+	//public void write(OutputStream o) throws IOException;
 
-    //public void write(OutputStream o) throws IOException;
-
-    //public String writeAsField();
+	//public String writeAsField();
 
 	public String toLongString();
-
 }

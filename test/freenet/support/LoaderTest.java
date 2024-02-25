@@ -19,12 +19,11 @@ package freenet.support;
 import static org.junit.Assert.*;
 
 import java.lang.reflect.InvocationTargetException;
-
 import org.junit.Test;
 
 /**
  * Test case for {@link freenet.support.Loader} class.
- * 
+ *
  * @author stuart martin &lt;wavey@freenetproject.org&gt;
  */
 public class LoaderTest {
@@ -32,7 +31,7 @@ public class LoaderTest {
 	@Test
 	public void testLoader() {
 		Object o = null;
-		
+
 		try {
 			o = Loader.getInstance("java.lang.String");
 		} catch (InvocationTargetException e) {
@@ -46,7 +45,7 @@ public class LoaderTest {
 		} catch (ClassNotFoundException e) {
 			fail("unexpected exception" + e.getMessage());
 		}
-		
+
 		assertTrue(o instanceof java.lang.String);
 	}
 }

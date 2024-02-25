@@ -17,12 +17,11 @@
 
 package freenet.support;
 
+import freenet.client.DefaultMIMETypes;
 import java.net.MalformedURLException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-
-import freenet.client.DefaultMIMETypes;
 
 /**
  * A media type denotes the content type of a document. A media consists of a
@@ -48,7 +47,10 @@ public class MediaType {
 	private final String subtype;
 
 	/** The parameters. */
-	private final LinkedHashMap<String, String> parameters = new LinkedHashMap<String, String>();
+	private final LinkedHashMap<String, String> parameters = new LinkedHashMap<
+		String,
+		String
+	>();
 
 	/**
 	 * Creates a new media type by parsing the given string.
@@ -62,12 +64,14 @@ public class MediaType {
 	 *             contain a slash, or a parameter does not contain an equals
 	 *             sign
 	 */
-	public MediaType(String mediaType) throws NullPointerException, MalformedURLException {
+	public MediaType(String mediaType)
+		throws NullPointerException, MalformedURLException {
 		if (mediaType == null) {
 			throw new NullPointerException("contentType must not be null");
 		}
-		  if(!DefaultMIMETypes.isPlausibleMIMEType(mediaType))
-		    throw new MalformedURLException("Doesn't look like a MIME type");
+		if (
+			!DefaultMIMETypes.isPlausibleMIMEType(mediaType)
+		) throw new MalformedURLException("Doesn't look like a MIME type");
 		int slash = mediaType.indexOf('/');
 		if (slash == -1) {
 			throw new MalformedURLException("mediaType does not contain ‘/’!");
@@ -83,12 +87,15 @@ public class MediaType {
 		for (String parameter : parameters) {
 			int equals = parameter.indexOf('=');
 			if (equals == -1) {
-				throw new MalformedURLException(String.format("Illegal parameter: “%s”", parameter));
+				throw new MalformedURLException(
+					String.format("Illegal parameter: “%s”", parameter)
+				);
 			}
 			String name = parameter.substring(0, equals).trim().toLowerCase();
 			String value = parameter.substring(equals + 1).trim();
-			if(value.startsWith("\"") && value.endsWith("\""))
-			    value = value.substring(1, value.length()-1).trim();
+			if (value.startsWith("\"") && value.endsWith("\"")) value = value
+				.substring(1, value.length() - 1)
+				.trim();
 			this.parameters.put(name, value);
 		}
 	}
@@ -107,9 +114,12 @@ public class MediaType {
 	 *             if an invalid number of parameters is given (i.e. the number
 	 *             of parameters is odd)
 	 */
-	public MediaType(String type, String subtype, String... parameters) throws IllegalArgumentException {
+	public MediaType(String type, String subtype, String... parameters)
+		throws IllegalArgumentException {
 		if ((parameters.length & 1) != 0) {
-			throw new IllegalArgumentException("Invalid number of parameters given!");
+			throw new IllegalArgumentException(
+				"Invalid number of parameters given!"
+			);
 		}
 		this.type = type;
 		this.subtype = subtype;
@@ -128,7 +138,11 @@ public class MediaType {
 	 * @param parameters
 	 *            The parameters of the media type
 	 */
-	public MediaType(String type, String subtype, Map<String, String> parameters) {
+	public MediaType(
+		String type,
+		String subtype,
+		Map<String, String> parameters
+	) {
 		this.type = type;
 		this.subtype = subtype;
 		this.parameters.putAll(parameters);
@@ -205,10 +219,8 @@ public class MediaType {
 	 */
 	public MediaType setParameter(String name, String value) {
 		MediaType newMediaType = new MediaType(type, subtype, parameters);
-		if(value == null)
-			newMediaType.parameters.remove(name.toLowerCase());
-		else
-			newMediaType.parameters.put(name.toLowerCase(), value);
+		if (value == null) newMediaType.parameters.remove(name.toLowerCase());
+		else newMediaType.parameters.put(name.toLowerCase(), value);
 		return newMediaType;
 	}
 
@@ -245,14 +257,19 @@ public class MediaType {
 			if (parameter.getValue() == null) {
 				continue;
 			}
-			mediaType.append("; ").append(parameter.getKey()).append("=\"").append(parameter.getValue()).append("\"");
+			mediaType
+				.append("; ")
+				.append(parameter.getKey())
+				.append("=\"")
+				.append(parameter.getValue())
+				.append("\"");
 		}
 		return mediaType.toString();
 	}
 
 	public static String getCharsetRobust(String expectedMimeType) {
 		try {
-			if(expectedMimeType == null) return null;
+			if (expectedMimeType == null) return null;
 			MediaType type = new MediaType(expectedMimeType);
 			return type.getParameter("charset");
 		} catch (MalformedURLException e) {
@@ -262,22 +279,21 @@ public class MediaType {
 			return null;
 		}
 	}
-	
+
 	public static String getCharsetRobustOrUTF(String expectedMimeType) {
 		String charset = getCharsetRobust(expectedMimeType);
-		if(charset == null) return "UTF-8";
+		if (charset == null) return "UTF-8";
 		return charset;
 	}
 
-    public LinkedHashMap<String, String> getParameters() {
-        LinkedHashMap<String, String> map = new LinkedHashMap<String, String>();
-        map.putAll(parameters);
-        return map;
-    }
+	public LinkedHashMap<String, String> getParameters() {
+		LinkedHashMap<String, String> map = new LinkedHashMap<String, String>();
+		map.putAll(parameters);
+		return map;
+	}
 
-    /** Get the base type without any parameters */
-    public String getPlainType() {
-        return type + '/' + subtype;
-    }
-
+	/** Get the base type without any parameters */
+	public String getPlainType() {
+		return type + '/' + subtype;
+	}
 }

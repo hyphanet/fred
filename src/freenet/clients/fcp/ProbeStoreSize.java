@@ -4,6 +4,7 @@ package freenet.clients.fcp;
  * FCP message sent from the node to the client which includes store size returned by the endpoint.
  */
 public class ProbeStoreSize extends FCPResponse {
+
 	/**
 	 * @param fcpIdentifier FCP-level identifier for pairing requests and responses
 	 * @param storeSize reported endpoint store size in GiB multiplied by Gaussian noise.

@@ -5,6 +5,7 @@ package freenet.clients.fcp;
  * request type. This is opposed to just forwarding it again or letting it time out, which would bias the endpoints
  */
 public class ProbeRefused extends FCPResponse {
+
 	public ProbeRefused(String fcpIdentifier) {
 		super(fcpIdentifier);
 	}

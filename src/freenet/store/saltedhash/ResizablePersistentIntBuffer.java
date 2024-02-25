@@ -1,5 +1,8 @@
 package freenet.store.saltedhash;
 
+import freenet.support.Fields;
+import freenet.support.Logger;
+import freenet.support.Ticker;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -9,21 +12,17 @@ import java.util.Arrays;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import freenet.support.Fields;
-import freenet.support.Logger;
-import freenet.support.Ticker;
-
 /** A large resizable block of int's, which is persisted to disk with a specific policy,
  * which is either to write it on shutdown, immediately, or every X millis.
- * 
+ *
  * It would be better to do this with ByteBuffer's and an IntBuffer view, unfortunately
- * it is not possible to subclass ByteBuffer's! Also, ideally we'd memory map, but there 
+ * it is not possible to subclass ByteBuffer's! Also, ideally we'd memory map, but there
  * is no way to unmap, and it is likely there will never be, so resizing would be very
  * messy and expensive.
  * @author toad
  */
 public class ResizablePersistentIntBuffer {
-	
+
 	private final File filename;
 	private final RandomAccessFile raf;
 	private final FileChannel channel;
@@ -46,24 +45,24 @@ public class ResizablePersistentIntBuffer {
 	private boolean dirty;
 	/** Is the writer job scheduled? Protected by (this). */
 	private boolean scheduled;
-	/** Is the writer job running? So we can wait for it to complete on shutdown e.g. 
+	/** Is the writer job running? So we can wait for it to complete on shutdown e.g.
 	 * Protected by (this). */
 	private boolean writing;
 	private boolean closed;
-	
+
 	public static synchronized void setPersistenceTime(int val) {
 		globalPersistenceTime = val;
 	}
-	
+
 	public static synchronized int getPersistenceTime() {
 		return globalPersistenceTime;
 	}
-	
+
 	/** Create the buffer. Open the file, creating if necessary, read in the data, and set
 	 * its size.
 	 * @param f The filename.
 	 * @param size The expected size in ints (i.e. multiply by four to get bytes).
-	 * @throws IOException 
+	 * @throws IOException
 	 */
 	public ResizablePersistentIntBuffer(File f, int size) throws IOException {
 		this.filename = f;
@@ -72,28 +71,25 @@ public class ResizablePersistentIntBuffer {
 		this.lock = new ReentrantReadWriteLock();
 		this.size = size;
 		buffer = new int[size];
-		long expectedLength = ((long)size)*4;
+		long expectedLength = ((long) size) * 4;
 		long realLength = raf.length();
-		if(realLength > expectedLength)
-			raf.setLength(expectedLength);
-		readBuffer((int)Math.min(size, realLength/4));
-		if(realLength < expectedLength)
-			raf.setLength(expectedLength);
+		if (realLength > expectedLength) raf.setLength(expectedLength);
+		readBuffer((int) Math.min(size, realLength / 4));
+		if (realLength < expectedLength) raf.setLength(expectedLength);
 		channel = raf.getChannel();
 	}
-	
-	/** Should be called during startup to fill in an appropriate default value e.g. if the store 
+
+	/** Should be called during startup to fill in an appropriate default value e.g. if the store
 	 * is completely new. */
 	public void fill(int value) {
-		for(int i=0;i<buffer.length;i++)
-			buffer[i] = value;
+		for (int i = 0; i < buffer.length; i++) buffer[i] = value;
 	}
 
 	private void readBuffer(int size) throws IOException {
 		raf.seek(0);
 		byte[] buf = new byte[32768];
 		int read = 0;
-		while(read < size) {
+		while (read < size) {
 			int toRead = Math.min(buf.length, (size - read) * 4);
 			raf.readFully(buf, 0, toRead);
 			int[] data = Fields.bytesToInts(buf, 0, toRead);
@@ -101,13 +97,19 @@ public class ResizablePersistentIntBuffer {
 			read += data.length;
 		}
 	}
-	
+
 	public void start(Ticker ticker) {
-		synchronized(this) {
+		synchronized (this) {
 			this.ticker = ticker;
-			if(dirty) {
+			if (dirty) {
 				int persistenceTime = getPersistenceTime();
-				Logger.normal(this, "Scheduling write of slot cache "+this+" in "+persistenceTime);
+				Logger.normal(
+					this,
+					"Scheduling write of slot cache " +
+					this +
+					" in " +
+					persistenceTime
+				);
 				ticker.queueTimedJob(writer, persistenceTime);
 				scheduled = true;
 			}
@@ -116,41 +118,56 @@ public class ResizablePersistentIntBuffer {
 
 	public int get(int offset) {
 		lock.readLock().lock();
-		if(closed) throw new IllegalStateException("Already shut down");
+		if (closed) throw new IllegalStateException("Already shut down");
 		try {
 			return buffer[offset];
 		} finally {
 			lock.readLock().unlock();
 		}
 	}
-	
+
 	public void put(int offset, int value) throws IOException {
 		put(offset, value, false);
 	}
 
 	public void put(int offset, int value, boolean noWrite) throws IOException {
 		lock.readLock().lock(); // Only resize needs write lock because it creates a new buffer.
-		if(closed) throw new IllegalStateException("Already shut down");
+		if (closed) throw new IllegalStateException("Already shut down");
 		try {
 			int persistenceTime = getPersistenceTime();
 			buffer[offset] = value;
-			if(persistenceTime == -1 && !noWrite) {
-				channel.write(ByteBuffer.wrap(Fields.intToBytes(value)), ((long)offset)*4);
-			} else if(persistenceTime > 0) {
-				synchronized(this) {
+			if (persistenceTime == -1 && !noWrite) {
+				channel.write(
+					ByteBuffer.wrap(Fields.intToBytes(value)),
+					((long) offset) * 4
+				);
+			} else if (persistenceTime > 0) {
+				synchronized (this) {
 					dirty = true;
-					if(ticker != null) {
-						if(!scheduled) {
-							Logger.normal(this, "Scheduling write of slot cache "+this+" in "+persistenceTime);
+					if (ticker != null) {
+						if (!scheduled) {
+							Logger.normal(
+								this,
+								"Scheduling write of slot cache " +
+								this +
+								" in " +
+								persistenceTime
+							);
 							ticker.queueTimedJob(writer, persistenceTime);
 							scheduled = true;
 						}
 					} else {
-						Logger.normal(this, "Will scheduling write of slot cache after startup: "+this+" in "+persistenceTime);
+						Logger.normal(
+							this,
+							"Will scheduling write of slot cache after startup: " +
+							this +
+							" in " +
+							persistenceTime
+						);
 					}
 				}
 			} else {
-				synchronized(this) {
+				synchronized (this) {
 					dirty = true;
 				}
 			}
@@ -158,15 +175,17 @@ public class ResizablePersistentIntBuffer {
 			lock.readLock().unlock();
 		}
 	}
-	
-	private Runnable writer = new Runnable() {
 
+	private Runnable writer = new Runnable() {
 		public void run() {
-			Logger.normal(this, "Writing slot cache "+ResizablePersistentIntBuffer.this);
+			Logger.normal(
+				this,
+				"Writing slot cache " + ResizablePersistentIntBuffer.this
+			);
 			lock.readLock().lock(); // Protect buffer.
 			try {
-				synchronized(ResizablePersistentIntBuffer.this) {
-					if(writing || !dirty || closed) {
+				synchronized (ResizablePersistentIntBuffer.this) {
+					if (writing || !dirty || closed) {
 						scheduled = false;
 						return;
 					}
@@ -177,70 +196,90 @@ public class ResizablePersistentIntBuffer {
 				try {
 					writeBuffer();
 				} catch (IOException e) {
-					Logger.error(this, "Write failed during shutdown: "+e+" on "+filename, e);
+					Logger.error(
+						this,
+						"Write failed during shutdown: " +
+						e +
+						" on " +
+						filename,
+						e
+					);
 				}
 			} finally {
-				synchronized(ResizablePersistentIntBuffer.this) {
+				synchronized (ResizablePersistentIntBuffer.this) {
 					writing = false;
 					ResizablePersistentIntBuffer.this.notifyAll();
 				}
 				lock.readLock().unlock();
 			}
-			Logger.normal(this, "Written slot cache "+ResizablePersistentIntBuffer.this);
+			Logger.normal(
+				this,
+				"Written slot cache " + ResizablePersistentIntBuffer.this
+			);
 		}
-		
 	};
-	
+
 	public void shutdown() {
 		lock.writeLock().lock();
 		try {
-			synchronized(this) {
-				if(closed) return;
+			synchronized (this) {
+				if (closed) return;
 				closed = true;
-				if(writing) {
+				if (writing) {
 					// Wait for write to finish.
-					while(writing) {
+					while (writing) {
 						try {
 							wait();
 						} catch (InterruptedException e) {
 							// Ignore.
 						}
 					}
-					if(!dirty) return;
+					if (!dirty) return;
 				}
 				writing = true;
 			}
 			try {
-				Logger.normal(this, "Writing slot cache on shutdown: "+this);
+				Logger.normal(this, "Writing slot cache on shutdown: " + this);
 				writeBuffer();
 			} catch (IOException e) {
-				Logger.error(this, "Write failed during shutdown: "+e+" on "+filename, e);
+				Logger.error(
+					this,
+					"Write failed during shutdown: " + e + " on " + filename,
+					e
+				);
 			}
-			synchronized(this) {
+			synchronized (this) {
 				writing = false;
 			}
 			try {
 				raf.close();
 			} catch (IOException e) {
-				Logger.error(this, "Close failed during shutdown: "+e+" on "+filename, e);
+				Logger.error(
+					this,
+					"Close failed during shutdown: " + e + " on " + filename,
+					e
+				);
 			}
 		} finally {
 			lock.writeLock().unlock();
 		}
-		
 	}
-	
+
 	public void abort() {
 		lock.writeLock().lock();
 		try {
-			synchronized(this) {
-				if(closed) return;
+			synchronized (this) {
+				if (closed) return;
 				closed = true;
 			}
 			try {
 				raf.close();
 			} catch (IOException e) {
-				Logger.error(this, "Close failed during shutdown: "+e+" on "+filename, e);
+				Logger.error(
+					this,
+					"Close failed during shutdown: " + e + " on " + filename,
+					e
+				);
 			}
 		} finally {
 			lock.writeLock().unlock();
@@ -251,26 +290,36 @@ public class ResizablePersistentIntBuffer {
 		// FIXME do we need to do partial writes?
 		raf.seek(0);
 		int written = 0;
-		while(written < size) {
+		while (written < size) {
 			int toWrite = Math.min(32768, size - written);
 			byte[] buf = Fields.intsToBytes(buffer, written, toWrite);
 			raf.write(buf);
 			written += toWrite;
 		}
 	}
-	
+
 	public void resize(int size) {
 		lock.writeLock().lock();
 		try {
-			if(this.size == size) return;
-			Logger.normal(this, "Resizing cache from "+this.size+" slots to "+size);
+			if (this.size == size) return;
+			Logger.normal(
+				this,
+				"Resizing cache from " + this.size + " slots to " + size
+			);
 			this.size = size;
 			buffer = Arrays.copyOf(buffer, size);
 			try {
 				raf.setLength(size * 4);
 				writeBuffer();
 			} catch (IOException e) {
-				Logger.error(this, "Failed to change size or write during resize on "+filename+" : "+e, e);
+				Logger.error(
+					this,
+					"Failed to change size or write during resize on " +
+					filename +
+					" : " +
+					e,
+					e
+				);
 			}
 		} finally {
 			lock.writeLock().unlock();
@@ -278,32 +327,36 @@ public class ResizablePersistentIntBuffer {
 	}
 
 	public void forceWrite() {
-		Logger.normal(this, "Force write slot cache: "+this);
+		Logger.normal(this, "Force write slot cache: " + this);
 		lock.readLock().lock();
 		try {
-			synchronized(this) {
-				if(closed) return;
+			synchronized (this) {
+				if (closed) return;
 				dirty = false;
-				if(writing) {
+				if (writing) {
 					// Wait for write to finish.
-					while(writing) {
+					while (writing) {
 						try {
 							wait();
 						} catch (InterruptedException e) {
 							// Ignore.
 						}
 					}
-					if(!dirty) return;
+					if (!dirty) return;
 				}
 				writing = true;
 			}
 			try {
 				writeBuffer();
 			} catch (IOException e) {
-				Logger.error(this, "Write failed during shutdown: "+e+" on "+filename, e);
+				Logger.error(
+					this,
+					"Write failed during shutdown: " + e + " on " + filename,
+					e
+				);
 			}
 		} finally {
-			synchronized(this) {
+			synchronized (this) {
 				writing = false;
 			}
 			lock.readLock().unlock();
@@ -313,19 +366,19 @@ public class ResizablePersistentIntBuffer {
 	public boolean isNew() {
 		return isNew;
 	}
-	
+
 	public String toString() {
 		return filename.getPath();
 	}
 
 	// Testing only! Hence no lock.
 	public void replaceAllEntries(int key, int value) {
-		for(int i=0;i<buffer.length;i++)
-			if(buffer[i] == key) buffer[i] = value;
+		for (int i = 0; i < buffer.length; i++) if (
+			buffer[i] == key
+		) buffer[i] = value;
 	}
-	
+
 	public int size() {
 		return size;
 	}
-	
 }

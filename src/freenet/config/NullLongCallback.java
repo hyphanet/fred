@@ -13,5 +13,4 @@ public class NullLongCallback extends LongCallback {
 	public void set(Long val) throws InvalidConfigValueException {
 		// Ignore
 	}
-
 }

@@ -7,6 +7,4 @@ package freenet.node;
  * @author toad
  */
 @SuppressWarnings("serial")
-public class SyncSendWaitedTooLongException extends Exception {
-
-}
+public class SyncSendWaitedTooLongException extends Exception {}

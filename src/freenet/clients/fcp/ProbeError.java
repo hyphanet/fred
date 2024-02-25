@@ -7,6 +7,7 @@ import freenet.node.probe.Error;
  * These are propagated so that resources can be freed on error more quickly than they would with just a timeout.
  */
 public class ProbeError extends FCPResponse {
+
 	/**
 	 * An error was received.
 	 *
@@ -18,7 +19,12 @@ public class ProbeError extends FCPResponse {
 	 * @see freenet.node.probe.Listener#onError(freenet.node.probe.Error, Byte, boolean)
 	 * @see freenet.node.probe.Error
 	 */
-	public ProbeError(String fcpIdentifier, Error error, Byte code, boolean local) {
+	public ProbeError(
+		String fcpIdentifier,
+		Error error,
+		Byte code,
+		boolean local
+	) {
 		super(fcpIdentifier);
 		fs.putOverwrite(TYPE, error.name());
 		if (code != null) fs.put(CODE, code);

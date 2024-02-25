@@ -6,7 +6,7 @@ import freenet.client.filter.HTMLFilter.ParsedTag;
 public interface TagReplacerCallback {
 	/**
 	 * Processes a tag, and return a replacement
-	 * 
+	 *
 	 * @param pt
 	 *            - The tag that is processed
 	 * @param uriProcessor

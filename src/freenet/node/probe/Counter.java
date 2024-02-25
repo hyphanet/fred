@@ -1,6 +1,7 @@
 package freenet.node.probe;
 
 class Counter {
+
 	/**
 	 * Maximum number of accepted probes in the past minute.
 	 */
@@ -20,7 +21,9 @@ class Counter {
 			 * only happen after it has been confirmed to be below the limit. If this happens, it
 			 * indicates a concurrency problem or logic error.
 			 */
-			throw new IllegalStateException("Number of accepted probes exceeds the maximum: " + c);
+			throw new IllegalStateException(
+				"Number of accepted probes exceeds the maximum: " + c
+			);
 		}
 	}
 
@@ -33,7 +36,9 @@ class Counter {
 			 * removed to avoid memory leaks. If this happens, it indicates a concurrency problem or
 			 * logic error.
 			 */
-			throw new IllegalStateException("Number of accepted probes is negative: " + c);
+			throw new IllegalStateException(
+				"Number of accepted probes is negative: " + c
+			);
 		}
 	}
 

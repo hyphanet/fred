@@ -4,7 +4,6 @@
 package freenet.node;
 
 public interface AnyInsertSender {
-
 	public abstract int getStatus();
 
 	public abstract short getHTL();
@@ -17,5 +16,4 @@ public interface AnyInsertSender {
 	public abstract boolean sentRequest();
 
 	public abstract long getUID();
-
 }

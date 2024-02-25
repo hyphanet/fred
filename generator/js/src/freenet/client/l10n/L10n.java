@@ -6,21 +6,20 @@ import com.google.gwt.i18n.client.Dictionary;
 public class L10n {
 
 	/** It fills a dictionary */
-	private static Dictionary	dict	= Dictionary.getDictionary("l10n");
+	private static Dictionary dict = Dictionary.getDictionary("l10n");
 
 	/**
 	 * Returns the localized value for a key
-	 * 
+	 *
 	 * @param key
 	 *            - The localization key
 	 * @return The localized value
 	 */
 	public static String get(String key) {
-		try{
+		try {
 			return dict.get(key);
-		}catch(Exception mre){
-			return "#"+key+"#";
+		} catch (Exception mre) {
+			return "#" + key + "#";
 		}
 	}
-
 }

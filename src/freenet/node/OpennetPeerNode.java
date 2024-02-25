@@ -1,5 +1,8 @@
 package freenet.node;
 
+import static java.util.concurrent.TimeUnit.HOURS;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.node.OpennetManager.ConnectionType;
@@ -9,24 +12,27 @@ import freenet.node.updater.UpdateOverMandatoryManager;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 
-import static java.util.concurrent.TimeUnit.HOURS;
-import static java.util.concurrent.TimeUnit.SECONDS;
-
 public class OpennetPeerNode extends PeerNode {
 
 	final OpennetManager opennet;
 	private long timeLastSuccess;
 	// Not persisted across restart, since after restart grace periods don't apply anyway (except disconnection, which is really separate anyway).
 	private ConnectionType opennetNodeAddedReason;
-	
-	public OpennetPeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, OpennetManager opennet, boolean fromLocal) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException, PeerTooOldException {
-		super(fs, node2, crypto, fromLocal);
 
+	public OpennetPeerNode(
+		SimpleFieldSet fs,
+		Node node2,
+		NodeCrypto crypto,
+		OpennetManager opennet,
+		boolean fromLocal
+	)
+		throws FSParseException, PeerParseException, ReferenceSignatureVerificationException, PeerTooOldException {
+		super(fs, node2, crypto, fromLocal);
 		if (fromLocal) {
 			SimpleFieldSet metadata = fs.subset("metadata");
 			timeLastSuccess = metadata.getLong("timeLastSuccess", 0);
 		}
-		
+
 		this.opennet = opennet;
 	}
 
@@ -37,7 +43,7 @@ public class OpennetPeerNode extends PeerNode {
 
 	@Override
 	public boolean isRoutingCompatible() {
-		if(!node.isOpennetEnabled()) return false;
+		if (!node.isOpennetEnabled()) return false;
 		return super.isRoutingCompatible();
 	}
 
@@ -60,57 +66,66 @@ public class OpennetPeerNode extends PeerNode {
 		DROPPABLE,
 		TOO_NEW_PEER,
 		TOO_LOW_UPTIME,
-		RECONNECT_GRACE_PERIOD
+		RECONNECT_GRACE_PERIOD,
 	}
-	
+
 	public boolean isDroppable(boolean ignoreDisconnect) {
-		return isDroppableWithReason(ignoreDisconnect) == NOT_DROP_REASON.DROPPABLE;
+		return (
+			isDroppableWithReason(ignoreDisconnect) == NOT_DROP_REASON.DROPPABLE
+		);
 	}
-		
-	/** Is the peer droppable? 
-	 * SIDE EFFECT: If we are now outside the grace period, we reset peerAddedTime and opennetPeerAddedReason. 
-	 * Note that the caller must check separately whether the node is TOO OLD and connected. */ 
+
+	/** Is the peer droppable?
+	 * SIDE EFFECT: If we are now outside the grace period, we reset peerAddedTime and opennetPeerAddedReason.
+	 * Note that the caller must check separately whether the node is TOO OLD and connected. */
 	public NOT_DROP_REASON isDroppableWithReason(boolean ignoreDisconnect) {
 		long now = System.currentTimeMillis();
 		int status = getPeerNodeStatus();
 		long age = now - getPeerAddedTime();
-		if(age < OpennetManager.DROP_MIN_AGE) {
-			if(status == PeerManager.PEER_NODE_STATUS_NEVER_CONNECTED) {
+		if (age < OpennetManager.DROP_MIN_AGE) {
+			if (status == PeerManager.PEER_NODE_STATUS_NEVER_CONNECTED) {
 				// New peer, never connected.
 				// Allow it 1 minute to connect.
-				if(age < OpennetManager.DROP_MIN_AGE_DISCONNECTED)
-					return NOT_DROP_REASON.TOO_NEW_PEER;
-			} else if(status != PeerManager.PEER_NODE_STATUS_DISCONNECTED) {
+				if (
+					age < OpennetManager.DROP_MIN_AGE_DISCONNECTED
+				) return NOT_DROP_REASON.TOO_NEW_PEER;
+			} else if (status != PeerManager.PEER_NODE_STATUS_DISCONNECTED) {
 				// Based on the time added, *not* the last connected time.
 				// This prevents various dubious ways of staying connected while not delivering anything useful.
 				return NOT_DROP_REASON.TOO_NEW_PEER; // New node
 			}
 		} else {
-			synchronized(this) {
+			synchronized (this) {
 				peerAddedTime = 0;
 				opennetNodeAddedReason = null;
 			}
 		}
-		if(now - node.usm.getStartedTime() < OpennetManager.DROP_STARTUP_DELAY)
-			return NOT_DROP_REASON.TOO_LOW_UPTIME; // Give them time to connect after we startup
-		if(!ignoreDisconnect) {
-		synchronized(this) {
-			// This only applies after it has connected, and only if !ignoreDisconnect.
-			// Hence only DISCONNECTED and not NEVER CONNECTED.
-			if((status == PeerManager.PEER_NODE_STATUS_DISCONNECTED) && (!super.neverConnected()) && 
-					now - timeLastDisconnect < OpennetManager.DROP_DISCONNECT_DELAY &&
-					now - timePrevDisconnect > OpennetManager.DROP_DISCONNECT_DELAY_COOLDOWN) {
-				// Grace period for node restarting
-				return NOT_DROP_REASON.RECONNECT_GRACE_PERIOD;
+		if (
+			now - node.usm.getStartedTime() < OpennetManager.DROP_STARTUP_DELAY
+		) return NOT_DROP_REASON.TOO_LOW_UPTIME; // Give them time to connect after we startup
+		if (!ignoreDisconnect) {
+			synchronized (this) {
+				// This only applies after it has connected, and only if !ignoreDisconnect.
+				// Hence only DISCONNECTED and not NEVER CONNECTED.
+				if (
+					(status == PeerManager.PEER_NODE_STATUS_DISCONNECTED) &&
+					(!super.neverConnected()) &&
+					now - timeLastDisconnect <
+						OpennetManager.DROP_DISCONNECT_DELAY &&
+					now - timePrevDisconnect >
+						OpennetManager.DROP_DISCONNECT_DELAY_COOLDOWN
+				) {
+					// Grace period for node restarting
+					return NOT_DROP_REASON.RECONNECT_GRACE_PERIOD;
+				}
 			}
-		}
 		}
 		return NOT_DROP_REASON.DROPPABLE;
 	}
-	
+
 	@Override
 	public void onSuccess(boolean insert, boolean ssk) {
-		if(insert || ssk) return;
+		if (insert || ssk) return;
 		timeLastSuccess = System.currentTimeMillis();
 		opennet.onSuccess(this);
 	}
@@ -120,7 +135,7 @@ public class OpennetPeerNode extends PeerNode {
 		opennet.onRemove(this);
 		super.onRemove();
 	}
-	
+
 	@Override
 	public synchronized SimpleFieldSet exportMetadataFieldSet(long now) {
 		SimpleFieldSet fs = super.exportMetadataFieldSet(now);
@@ -131,12 +146,12 @@ public class OpennetPeerNode extends PeerNode {
 	public final long timeLastSuccess() {
 		return timeLastSuccess;
 	}
-	
+
 	/**
 	 * Is the SimpleFieldSet a valid noderef?
 	 */
 	public static boolean validateRef(SimpleFieldSet ref) {
-		if(!ref.getBoolean("opennet", false)) return false;
+		if (!ref.getBoolean("opennet", false)) return false;
 		return true;
 	}
 
@@ -149,45 +164,46 @@ public class OpennetPeerNode extends PeerNode {
 	public boolean recordStatus() {
 		return true;
 	}
- 
+
 	@Override
 	public boolean equals(Object o) {
-		if(o == this) return true;
+		if (o == this) return true;
 		// Only equal to seednode of its own type.
-		if(o instanceof OpennetPeerNode) {
+		if (o instanceof OpennetPeerNode) {
 			return super.equals(o);
 		} else return false;
 	}
-	
+
 	@Override
 	public final boolean shouldDisconnectAndRemoveNow() {
 		// Allow announced peers 15 minutes to download the auto-update.
-		if(isConnected() && isUnroutableOlderVersion()) {
-			return shouldDisconnectTooOld(); 
+		if (isConnected() && isUnroutableOlderVersion()) {
+			return shouldDisconnectTooOld();
 		}
 		return false;
 	}
 
 	/** If a node is TOO OLD, we should keep it connected for a brief period for it to
-	 * allow it to issue a UOM request, we should keep it connected while the UOM transfer 
+	 * allow it to issue a UOM request, we should keep it connected while the UOM transfer
 	 * is in progress, but otherwise we should disconnect. */
 	private boolean shouldDisconnectTooOld() {
-		long uptime = System.currentTimeMillis() - timeLastConnectionCompleted();
-		if(uptime < SECONDS.toMillis(30))
-			// Allow 30 seconds to send the UOM request.
-			return false;
+		long uptime =
+			System.currentTimeMillis() - timeLastConnectionCompleted();
+		if (
+			uptime < SECONDS.toMillis(30)
+		) // Allow 30 seconds to send the UOM request.
+		return false;
 		// FIXME remove, paranoia
-		if(uptime < HOURS.toMillis(1))
-			return false;
+		if (uptime < HOURS.toMillis(1)) return false;
 		NodeUpdateManager updater = node.nodeUpdater;
-		if(updater == null) return true; // Not going to UOM.
+		if (updater == null) return true; // Not going to UOM.
 		UpdateOverMandatoryManager uom = updater.uom;
-		if(uom == null) return true; // Not going to UOM
-		if(uptime > HOURS.toMillis(2)) {
+		if (uom == null) return true; // Not going to UOM
+		if (uptime > HOURS.toMillis(2)) {
 			// UOM transfers can take ages, but there has to be some limit...
 			return true;
 		}
-		if(timeSinceSentUOM() < SECONDS.toMillis(60)) {
+		if (timeSinceSentUOM() < SECONDS.toMillis(60)) {
 			// Let it finish.
 			// 60 seconds extra to ensure it has time to parse the jar and start fetching dependencies.
 			return false;
@@ -198,53 +214,60 @@ public class OpennetPeerNode extends PeerNode {
 	@Override
 	protected void onConnect() {
 		super.onConnect();
-		opennet.crypto.socket.getAddressTracker().setPresumedGuiltyAt(System.currentTimeMillis() + HOURS.toMillis(1));
+		opennet.crypto.socket
+			.getAddressTracker()
+			.setPresumedGuiltyAt(
+				System.currentTimeMillis() + HOURS.toMillis(1)
+			);
 	}
-	
+
 	private boolean wasDropped;
 
 	synchronized void setWasDropped() {
 		wasDropped = true;
 	}
-	
+
 	synchronized boolean wasDropped() {
 		return wasDropped;
 	}
-	
+
 	synchronized boolean grabWasDropped() {
 		boolean ret = wasDropped;
 		wasDropped = false;
 		return ret;
 	}
-	
+
 	@Override
 	public synchronized void setAddedReason(ConnectionType connectionType) {
 		opennetNodeAddedReason = connectionType;
 	}
-	
+
 	@Override
 	public synchronized ConnectionType getAddedReason() {
 		return opennetNodeAddedReason;
 	}
 
 	@Override
-	/** Opennet nodes need to know when a peer node was added. 
+	/** Opennet nodes need to know when a peer node was added.
 	 * We do NOT clear it on connect, because we use it for determining whether we are in the initial grace period.
 	 * However we will reset it after the grace period expires, in isDroppableWithReason(). */
 	protected void maybeClearPeerAddedTimeOnConnect() {
 		// Guarantee that it gets cleared.
-		node.getTicker().queueTimedJob(new FastRunnable() {
-
-			@Override
-			public void run() {
-				isDroppableWithReason(false);
-			}
-			
-		}, OpennetManager.DROP_MIN_AGE+1);
+		node
+			.getTicker()
+			.queueTimedJob(
+				new FastRunnable() {
+					@Override
+					public void run() {
+						isDroppableWithReason(false);
+					}
+				},
+				OpennetManager.DROP_MIN_AGE + 1
+			);
 	}
 
 	@Override
-	/* Opennet peers do not export the peer added time. It is only relevant for the grace period anyway. */ 
+	/* Opennet peers do not export the peer added time. It is only relevant for the grace period anyway. */
 	protected boolean shouldExportPeerAddedTime() {
 		return false;
 	}
@@ -256,12 +279,15 @@ public class OpennetPeerNode extends PeerNode {
 
 	@Override
 	public void fatalTimeout() {
-		if(node.isStopping()) return;
-		Logger.error(this, "Disconnecting "+this+" because of fatal timeout");
+		if (node.isStopping()) return;
+		Logger.error(
+			this,
+			"Disconnecting " + this + " because of fatal timeout"
+		);
 		// Disconnect.
 		forceDisconnect();
 	}
-	
+
 	@Override
 	public boolean shallWeRouteAccordingToOurPeersLocation(int htl) {
 		return node.shallWeRouteAccordingToOurPeersLocation(htl);
@@ -271,32 +297,36 @@ public class OpennetPeerNode extends PeerNode {
 	boolean dontKeepFullFieldSet() {
 		return true;
 	}
-	
-    public LinkLengthClass linkLengthClass() {
-        if(!Location.isValid(getLocation())) {
-            Logger.error(this, "No location on "+this, new Exception("debug"));
-            return LinkLengthClass.SHORT; // FIXME add unknown to enum? Would need more complex error handling...
-        }
-        // FIXME OPTIMISE This should not change since we don't swap on opennet.
-        if(Location.distance(this, opennet.node.getLocation()) > OpennetManager.LONG_DISTANCE)
-            return LinkLengthClass.LONG;
-        else
-            return LinkLengthClass.SHORT;
-    }
 
-    @Override
-    public boolean isOpennetForNoderef() {
-        return true;
-    }
+	public LinkLengthClass linkLengthClass() {
+		if (!Location.isValid(getLocation())) {
+			Logger.error(
+				this,
+				"No location on " + this,
+				new Exception("debug")
+			);
+			return LinkLengthClass.SHORT; // FIXME add unknown to enum? Would need more complex error handling...
+		}
+		// FIXME OPTIMISE This should not change since we don't swap on opennet.
+		if (
+			Location.distance(this, opennet.node.getLocation()) >
+			OpennetManager.LONG_DISTANCE
+		) return LinkLengthClass.LONG;
+		else return LinkLengthClass.SHORT;
+	}
 
-    @Override
-    public boolean canAcceptAnnouncements() {
-        return true;
-    }
+	@Override
+	public boolean isOpennetForNoderef() {
+		return true;
+	}
 
-    @Override
-    protected void writePeers() {
-        node.peers.writePeers(true);
-    }
+	@Override
+	public boolean canAcceptAnnouncements() {
+		return true;
+	}
 
+	@Override
+	protected void writePeers() {
+		node.peers.writePeers(true);
+	}
 }

@@ -8,10 +8,14 @@ import static org.junit.Assert.*;
 import org.junit.Test;
 
 public class PeerMessageQueueTest {
+
 	@Test
 	public void testUrgentTimeEmpty() {
 		PeerMessageQueue pmq = new PeerMessageQueue();
-		assertEquals(Long.MAX_VALUE, pmq.getNextUrgentTime(Long.MAX_VALUE, System.currentTimeMillis()));
+		assertEquals(
+			Long.MAX_VALUE,
+			pmq.getNextUrgentTime(Long.MAX_VALUE, System.currentTimeMillis())
+		);
 	}
 
 	@Test
@@ -20,15 +24,33 @@ public class PeerMessageQueueTest {
 
 		//Constructor might take some time, so grab a range
 		long start = System.currentTimeMillis();
-		MessageItem item = new MessageItem(new byte[1024], null, false, null, (short) 0, false, false);
+		MessageItem item = new MessageItem(
+			new byte[1024],
+			null,
+			false,
+			null,
+			(short) 0,
+			false,
+			false
+		);
 		long end = System.currentTimeMillis();
 
 		pmq.queueAndEstimateSize(item, 1024);
 
 		//The timeout for item should be within (start + 100) and (end + 100)
-		long urgentTime = pmq.getNextUrgentTime(Long.MAX_VALUE, System.currentTimeMillis());
-		if(!((urgentTime >= (start + 100)) && (urgentTime <= (end + 100)))) {
-			fail("Timeout not in expected range. Expected: " + (start + 100) + "->" + (end + 100) + ", actual: " + urgentTime);
+		long urgentTime = pmq.getNextUrgentTime(
+			Long.MAX_VALUE,
+			System.currentTimeMillis()
+		);
+		if (!((urgentTime >= (start + 100)) && (urgentTime <= (end + 100)))) {
+			fail(
+				"Timeout not in expected range. Expected: " +
+				(start + 100) +
+				"->" +
+				(end + 100) +
+				", actual: " +
+				urgentTime
+			);
 		}
 	}
 
@@ -41,17 +63,31 @@ public class PeerMessageQueueTest {
 
 		//Constructor might take some time, so grab a range
 		long start = System.currentTimeMillis();
-		MessageItem itemUrgent = new MessageItem(new byte[1024], null, false, null, (short) 0, false, false);
+		MessageItem itemUrgent = new MessageItem(
+			new byte[1024],
+			null,
+			false,
+			null,
+			(short) 0,
+			false,
+			false
+		);
 		long end = System.currentTimeMillis();
 
 		//Sleep for a little while to get a later timeout
 		try {
 			Thread.sleep(1);
-		} catch (InterruptedException e) {
+		} catch (InterruptedException e) {}
 
-		}
-
-		MessageItem itemNonUrgent = new MessageItem(new byte[1024], null, false, null, (short) 0, false, false);
+		MessageItem itemNonUrgent = new MessageItem(
+			new byte[1024],
+			null,
+			false,
+			null,
+			(short) 0,
+			false,
+			false
+		);
 
 		//Queue the least urgent item first to get the wrong order
 		pmq.queueAndEstimateSize(itemNonUrgent, 1024);
@@ -59,9 +95,19 @@ public class PeerMessageQueueTest {
 
 		//getNextUrgentTime() should return the timeout of itemUrgent, which is within (start + 100)
 		//and (end + 100)
-		long urgentTime = pmq.getNextUrgentTime(Long.MAX_VALUE, System.currentTimeMillis());
-		if(!((urgentTime >= (start + 100)) && (urgentTime <= (end + 100)))) {
-			fail("Timeout not in expected range. Expected: " + (start + 100) + "->" + (end + 100) + ", actual: " + urgentTime);
+		long urgentTime = pmq.getNextUrgentTime(
+			Long.MAX_VALUE,
+			System.currentTimeMillis()
+		);
+		if (!((urgentTime >= (start + 100)) && (urgentTime <= (end + 100)))) {
+			fail(
+				"Timeout not in expected range. Expected: " +
+				(start + 100) +
+				"->" +
+				(end + 100) +
+				", actual: " +
+				urgentTime
+			);
 		}
 	}
 
@@ -69,16 +115,30 @@ public class PeerMessageQueueTest {
 	public void testGrabQueuedMessageItem() {
 		PeerMessageQueue pmq = new PeerMessageQueue();
 
-		MessageItem itemUrgent = new MessageItem(new byte[1024], null, false, null, (short) 0, false, false);
+		MessageItem itemUrgent = new MessageItem(
+			new byte[1024],
+			null,
+			false,
+			null,
+			(short) 0,
+			false,
+			false
+		);
 
 		//Sleep for a little while to get a later timeout
 		try {
 			Thread.sleep(1);
-		} catch (InterruptedException e) {
+		} catch (InterruptedException e) {}
 
-		}
-
-		MessageItem itemNonUrgent = new MessageItem(new byte[1024], null, false, null, (short) 0, false, false);
+		MessageItem itemNonUrgent = new MessageItem(
+			new byte[1024],
+			null,
+			false,
+			null,
+			(short) 0,
+			false,
+			false
+		);
 
 		//Queue the least urgent item first to get the wrong order
 		pmq.queueAndEstimateSize(itemNonUrgent, 1024);

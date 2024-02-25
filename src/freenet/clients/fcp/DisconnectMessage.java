@@ -55,8 +55,8 @@ public class DisconnectMessage extends FCPMessage {
 	 *      freenet.node.Node)
 	 */
 	@Override
-	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
+	public void run(FCPConnectionHandler handler, Node node)
+		throws MessageInvalidException {
 		handler.close();
 	}
-
 }

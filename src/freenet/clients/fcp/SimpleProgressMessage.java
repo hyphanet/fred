@@ -3,29 +3,32 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.fcp;
 
-import java.util.Date;
-
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.node.Node;
 import freenet.support.SimpleFieldSet;
+import java.util.Date;
 
 public class SimpleProgressMessage extends FCPMessage {
 
-    private final String ident;
+	private final String ident;
 	private final boolean global;
 	private final SplitfileProgressEvent event;
-	
-	public SimpleProgressMessage(String identifier, boolean global, SplitfileProgressEvent event) {
+
+	public SimpleProgressMessage(
+		String identifier,
+		boolean global,
+		SplitfileProgressEvent event
+	) {
 		this.ident = identifier;
 		this.event = event;
 		this.global = global;
 	}
-	
+
 	protected SimpleProgressMessage() {
-	    // For serialization.
-	    ident = null;
-	    global = false;
-	    event = null;
+		// For serialization.
+		ident = null;
+		global = false;
+		event = null;
 	}
 
 	@Override
@@ -41,11 +44,16 @@ public class SimpleProgressMessage extends FCPMessage {
 		 * Please re-enable it once the underlying issue is fixed:
 		 * https://bugs.freenetproject.org/view.php?id=6526 */
 		// fs.put("LastFailure", event.latestFailure != null ? event.latestFailure.getTime() : 0);
-		fs.put("Succeeded",event.succeedBlocks);
-		fs.put("LastProgress", event.latestSuccess != null ? event.latestSuccess.getTime() : 0);
+		fs.put("Succeeded", event.succeedBlocks);
+		fs.put(
+			"LastProgress",
+			event.latestSuccess != null ? event.latestSuccess.getTime() : 0
+		);
 		fs.put("FinalizedTotal", event.finalizedTotal);
-		if(event.minSuccessFetchBlocks != 0)
-			fs.put("MinSuccessFetchBlocks", event.minSuccessFetchBlocks);
+		if (event.minSuccessFetchBlocks != 0) fs.put(
+			"MinSuccessFetchBlocks",
+			event.minSuccessFetchBlocks
+		);
 		fs.putSingle("Identifier", ident);
 		fs.put("Global", global);
 		return fs;
@@ -57,42 +65,52 @@ public class SimpleProgressMessage extends FCPMessage {
 	}
 
 	@Override
-	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
-		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "SimpleProgress goes from server to client not the other way around", ident, global);
+	public void run(FCPConnectionHandler handler, Node node)
+		throws MessageInvalidException {
+		throw new MessageInvalidException(
+			ProtocolErrorMessage.INVALID_MESSAGE,
+			"SimpleProgress goes from server to client not the other way around",
+			ident,
+			global
+		);
 	}
 
 	public double getFraction() {
 		return (double) event.succeedBlocks / (double) event.totalBlocks;
 	}
-	
+
 	public double getMinBlocks() {
 		return event.minSuccessfulBlocks;
 	}
-	
-	public double getTotalBlocks(){
+
+	public double getTotalBlocks() {
 		return event.totalBlocks;
 	}
-	
-	public double getFetchedBlocks(){
+
+	public double getFetchedBlocks() {
 		return event.succeedBlocks;
 	}
-	
+
 	public Date getLatestSuccess() {
 		// clone() because Date is mutable
-		return event.latestSuccess != null ? (Date)event.latestSuccess.clone() : null;
+		return event.latestSuccess != null
+			? (Date) event.latestSuccess.clone()
+			: null;
 	}
-	
-	public double getFailedBlocks(){
+
+	public double getFailedBlocks() {
 		return event.failedBlocks;
 	}
-	
-	public double getFatalyFailedBlocks(){
+
+	public double getFatalyFailedBlocks() {
 		return event.fatallyFailedBlocks;
 	}
-	
+
 	public Date getLatestFailure() {
 		// clone() because Date is mutable
-		return event.latestFailure != null ? (Date)event.latestFailure.clone() : null;
+		return event.latestFailure != null
+			? (Date) event.latestFailure.clone()
+			: null;
 	}
 
 	public boolean isTotalFinalized() {
@@ -102,5 +120,4 @@ public class SimpleProgressMessage extends FCPMessage {
 	SplitfileProgressEvent getEvent() {
 		return event;
 	}
-
 }

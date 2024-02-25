@@ -13,19 +13,30 @@ public class ConnectionsListUpdater extends ReplacerUpdater {
 		// Replaces the content
 		super.updated(elementId, content);
 		// Finds the hidden input and sets the title to it's value
-		NodeList<Element> inputs = RootPanel.get(elementId).getElement().getElementsByTagName("input");
+		NodeList<Element> inputs = RootPanel.get(elementId)
+			.getElement()
+			.getElementsByTagName("input");
 		for (int i = 0; i < inputs.getLength(); i++) {
 			Element e = inputs.getItem(i);
 			if (e.getAttribute("name").compareTo("pageTitle") == 0) {
 				Window.setTitle(e.getAttribute("value"));
-				RootPanel htmlTitlePanel=RootPanel.get("topbar");
-				if(htmlTitlePanel!=null){
-					if(htmlTitlePanel.getElement().getElementsByTagName("h1").getLength()==1){
-						htmlTitlePanel.getElement().getElementsByTagName("h1").getItem(0).setInnerHTML(e.getAttribute("value"));
+				RootPanel htmlTitlePanel = RootPanel.get("topbar");
+				if (htmlTitlePanel != null) {
+					if (
+						htmlTitlePanel
+							.getElement()
+							.getElementsByTagName("h1")
+							.getLength() ==
+						1
+					) {
+						htmlTitlePanel
+							.getElement()
+							.getElementsByTagName("h1")
+							.getItem(0)
+							.setInnerHTML(e.getAttribute("value"));
 					}
 				}
 			}
 		}
 	}
-
 }

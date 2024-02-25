@@ -2,15 +2,15 @@ package freenet.support;
 
 import static org.junit.Assert.*;
 
+import freenet.support.DoublyLinkedListImpl.Item;
 import java.util.Enumeration;
 import java.util.NoSuchElementException;
-
 import org.junit.Test;
 
-import freenet.support.DoublyLinkedListImpl.Item;
-
 public class DoublyLinkedListImplTest {
+
 	private static class T extends Item<T> {
+
 		int value;
 		boolean isClone;
 
@@ -27,10 +27,8 @@ public class DoublyLinkedListImplTest {
 
 		@Override
 		public String toString() {
-			if (isClone)
-				return "[" + value + "]";
-			else
-				return "(" + value + ")";
+			if (isClone) return "[" + value + "]";
+			else return "(" + value + ")";
 		}
 
 		void assertV(int v) {
@@ -39,10 +37,8 @@ public class DoublyLinkedListImplTest {
 
 		@Override
 		public boolean equals(Object o) {
-			if (o == null)
-				return false;
-			if (o.getClass() != this.getClass())
-				return false;
+			if (o == null) return false;
+			if (o.getClass() != this.getClass()) return false;
 			T t = (T) o;
 			return t.value == value && t.isClone == isClone;
 		}
@@ -301,8 +297,7 @@ public class DoublyLinkedListImplTest {
 		try {
 			e.nextElement();
 			fail("NoSuchElementException");
-		} catch (NoSuchElementException nsee) {
-		}
+		} catch (NoSuchElementException nsee) {}
 	}
 
 	@Test
@@ -373,39 +368,33 @@ public class DoublyLinkedListImplTest {
 			// already exist
 			list2.insertNext(l2, l2);
 			fail("PromiscuousItemException");
-		} catch (PromiscuousItemException pie) {
-		}
+		} catch (PromiscuousItemException pie) {}
 		try {
 			// already exist
 			list2.insertNext(l2, l2);
 			fail("PromiscuousItemException");
-		} catch (PromiscuousItemException pie) {
-		}
+		} catch (PromiscuousItemException pie) {}
 		try {
 			// bad position
 			list2.insertPrev(array[3], new T(8888));
 			fail("PromiscuousItemException");
-		} catch (PromiscuousItemException pie) {
-		}
+		} catch (PromiscuousItemException pie) {}
 		try {
 			// bad position
 			list2.insertNext(array[3], new T(8888));
 			fail("PromiscuousItemException");
-		} catch (PromiscuousItemException pie) {
-		}
+		} catch (PromiscuousItemException pie) {}
 
 		try {
 			// item in other list
 			list2.insertPrev(l2, array[3]);
 			fail("PromiscuousItemException");
-		} catch (PromiscuousItemException pie) {
-		}
+		} catch (PromiscuousItemException pie) {}
 		try {
 			// item in other list
 			list2.insertNext(l2, array[3]);
 			fail("PromiscuousItemException");
-		} catch (PromiscuousItemException pie) {
-		}
+		} catch (PromiscuousItemException pie) {}
 
 		T l3 = new T(9999);
 		list2.push(l3);
@@ -414,15 +403,13 @@ public class DoublyLinkedListImplTest {
 			l3.setPrev(null); // corrupt it
 			list2.insertPrev(l3, new T(8888));
 			fail("VirginItemException");
-		} catch (VirginItemException vie) {
-		}
+		} catch (VirginItemException vie) {}
 		try {
 			// VirginItemException
 			l2.setNext(null); // corrupt it
 			list2.insertNext(l2, new T(8888));
 			fail("VirginItemException");
-		} catch (VirginItemException vie) {
-		}
+		} catch (VirginItemException vie) {}
 
 		list.shift().assertV(100);
 		list.shift().assertV(0);
@@ -433,6 +420,5 @@ public class DoublyLinkedListImplTest {
 		list.shift().assertV(4);
 		list.shift().assertV(105);
 		list.shift().assertV(104);
-
 	}
 }

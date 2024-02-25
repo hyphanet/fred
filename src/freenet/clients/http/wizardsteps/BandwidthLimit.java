@@ -17,7 +17,9 @@ public class BandwidthLimit {
 	 * Bandwidth used if both the upload and download limit are at the minimum. In GB. Assumes 24/7 uptime.
 	 * 49.4384765625 GiB
 	 */
-	public static final Double minMonthlyLimit = 2 * Node.getMinimumBandwidth() * secondsPerMonth / DatastoreUtil.oneGiB;
+	public static final Double minMonthlyLimit =
+		(2 * Node.getMinimumBandwidth() * secondsPerMonth) /
+		DatastoreUtil.oneGiB;
 
 	/**
 	 * Download limit in bytes.
@@ -28,12 +30,17 @@ public class BandwidthLimit {
 	 * Upload limit in bytes.
 	 */
 	public final long upBytes;
-	
+
 	public final String descriptionKey;
-	
+
 	public final boolean maybeDefault;
 
-	public BandwidthLimit(long downBytes, long upBytes, String descriptionKey, boolean maybeDefault) {
+	public BandwidthLimit(
+		long downBytes,
+		long upBytes,
+		String descriptionKey,
+		boolean maybeDefault
+	) {
 		this.downBytes = downBytes;
 		this.upBytes = upBytes;
 		this.descriptionKey = descriptionKey;
@@ -61,7 +68,8 @@ public class BandwidthLimit {
 		double bwinc = bytesPerSecond - 2 * minBytesPerSecond; // min for up and min for down
 		double asymptoticDlFraction = 4. / 5.;
 		double dllimit = minBytesPerSecond + (bwinc * asymptoticDlFraction);
-		double ullimit = minBytesPerSecond + (bwinc * (1 - asymptoticDlFraction));
+		double ullimit =
+			minBytesPerSecond + (bwinc * (1 - asymptoticDlFraction));
 		downBytes = (long) Math.ceil(dllimit);
 		upBytes = (long) Math.ceil(ullimit);
 		descriptionKey = "Monthly bandwidth limit";

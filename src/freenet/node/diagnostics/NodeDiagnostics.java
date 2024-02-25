@@ -6,5 +6,5 @@ package freenet.node.diagnostics;
 import freenet.node.diagnostics.threads.*;
 
 public interface NodeDiagnostics {
-    ThreadDiagnostics getThreadDiagnostics();
+	ThreadDiagnostics getThreadDiagnostics();
 }

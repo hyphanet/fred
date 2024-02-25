@@ -13,5 +13,4 @@ public class NullBooleanCallback extends BooleanCallback {
 	public void set(Boolean val) throws InvalidConfigValueException {
 		// Ignore
 	}
-
 }

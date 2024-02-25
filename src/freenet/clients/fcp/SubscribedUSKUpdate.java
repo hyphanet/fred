@@ -14,10 +14,16 @@ public class SubscribedUSKUpdate extends FCPMessage {
 	final USK key;
 	final boolean newKnownGood;
 	final boolean newSlotToo;
-	
+
 	static final String name = "SubscribedUSKUpdate";
-	
-	public SubscribedUSKUpdate(String identifier, long l, USK key, boolean newKnownGood, boolean newSlotToo) {
+
+	public SubscribedUSKUpdate(
+		String identifier,
+		long l,
+		USK key,
+		boolean newKnownGood,
+		boolean newSlotToo
+	) {
 		this.identifier = identifier;
 		this.edition = l;
 		this.key = key;
@@ -43,8 +49,12 @@ public class SubscribedUSKUpdate extends FCPMessage {
 
 	@Override
 	public void run(FCPConnectionHandler handler, Node node)
-			throws MessageInvalidException {
-		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "SubscribedUSKUpdate goes from server to client not the other way around", identifier, false);
+		throws MessageInvalidException {
+		throw new MessageInvalidException(
+			ProtocolErrorMessage.INVALID_MESSAGE,
+			"SubscribedUSKUpdate goes from server to client not the other way around",
+			identifier,
+			false
+		);
 	}
-
 }

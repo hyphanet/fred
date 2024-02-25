@@ -7,24 +7,38 @@ import static org.junit.Assert.*;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
-
 import org.junit.Test;
 
 public class OggPageTest {
+
 	@Test
 	public void testStripNonsenseInterruption() throws IOException {
 		ByteArrayOutputStream actualDataStream = new ByteArrayOutputStream();
 		ByteArrayOutputStream expectedDataStream = new ByteArrayOutputStream();
-		try (DataInputStream input = resourceToDataInputStream("./ogg/nonsensical_interruption_filtered.ogg")) {
+		try (
+			DataInputStream input = resourceToDataInputStream(
+				"./ogg/nonsensical_interruption_filtered.ogg"
+			)
+		) {
 			readPages(expectedDataStream, input);
 		}
-		try (DataInputStream input = resourceToDataInputStream("./ogg/nonsensical_interruption.ogg")) {
+		try (
+			DataInputStream input = resourceToDataInputStream(
+				"./ogg/nonsensical_interruption.ogg"
+			)
+		) {
 			readPages(actualDataStream, input);
 		}
-		assertArrayEquals(expectedDataStream.toByteArray(), actualDataStream.toByteArray());
+		assertArrayEquals(
+			expectedDataStream.toByteArray(),
+			actualDataStream.toByteArray()
+		);
 	}
 
-	private static void readPages(ByteArrayOutputStream output, DataInputStream input) throws IOException {
+	private static void readPages(
+		ByteArrayOutputStream output,
+		DataInputStream input
+	) throws IOException {
 		OggPage page = OggPage.readPage(input);
 		if (page.headerValid()) {
 			output.write(page.toArray());

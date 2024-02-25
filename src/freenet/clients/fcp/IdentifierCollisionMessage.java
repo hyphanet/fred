@@ -10,7 +10,7 @@ public class IdentifierCollisionMessage extends FCPMessage {
 
 	final String identifier;
 	final boolean global;
-	
+
 	public IdentifierCollisionMessage(String id, boolean global) {
 		this.identifier = id;
 		this.global = global;
@@ -31,8 +31,12 @@ public class IdentifierCollisionMessage extends FCPMessage {
 
 	@Override
 	public void run(FCPConnectionHandler handler, Node node)
-			throws MessageInvalidException {
-		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "IdentifierCollision goes from server to client not the other way around", identifier, global);
+		throws MessageInvalidException {
+		throw new MessageInvalidException(
+			ProtocolErrorMessage.INVALID_MESSAGE,
+			"IdentifierCollision goes from server to client not the other way around",
+			identifier,
+			global
+		);
 	}
-
 }

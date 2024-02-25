@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.crypt;
 
+import freenet.support.HexUtil;
+import freenet.support.Logger;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -12,53 +14,62 @@ import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-import freenet.support.HexUtil;
-import freenet.support.Logger;
-
 public abstract class CryptoKey implements CryptoElement, Serializable {
 
-    private static final long serialVersionUID = 1L;
-    protected static final MessageDigest shactx;
+	private static final long serialVersionUID = 1L;
+	protected static final MessageDigest shactx;
+
 	static {
 		try {
-			shactx = MessageDigest.getInstance("SHA1", Util.mdProviders.get("SHA1"));
-		} catch(NoSuchAlgorithmException e) {
+			shactx = MessageDigest.getInstance(
+				"SHA1",
+				Util.mdProviders.get("SHA1")
+			);
+		} catch (NoSuchAlgorithmException e) {
 			// impossible
 			throw new Error(e);
 		}
 	}
 
-	CryptoKey() {
-	}
+	CryptoKey() {}
 
-	public static CryptoKey read(InputStream i) throws IOException, CryptFormatException {
+	public static CryptoKey read(InputStream i)
+		throws IOException, CryptFormatException {
 		DataInputStream dis = new DataInputStream(i);
 		String type = dis.readUTF();
 		try {
 			Class<?> keyClass = Class.forName(type);
-			Method m =
-				keyClass.getMethod("read", new Class<?>[] { InputStream.class });
+			Method m = keyClass.getMethod(
+				"read",
+				new Class<?>[] { InputStream.class }
+			);
 			return (CryptoKey) m.invoke(null, dis);
 		} catch (Exception e) {
 			e.printStackTrace();
-			if (e instanceof CryptFormatException)
-				throw (CryptFormatException) e;
-			if (e instanceof IOException)
-				throw (IOException) e;
-			Logger.error(CryptoKey.class, "Unknown exception while reading CryptoKey", e);
+			if (
+				e instanceof CryptFormatException
+			) throw (CryptFormatException) e;
+			if (e instanceof IOException) throw (IOException) e;
+			Logger.error(
+				CryptoKey.class,
+				"Unknown exception while reading CryptoKey",
+				e
+			);
 			return null;
 		}
 	}
 
-//	public abstract void write(OutputStream o) throws IOException;
+	//	public abstract void write(OutputStream o) throws IOException;
 
 	public abstract String keyType();
+
 	public abstract byte[] fingerprint();
+
 	public abstract byte[] asBytes();
 
 	protected byte[] fingerprint(BigInteger[] quantities) {
 		synchronized (shactx) {
-			for (BigInteger quantity: quantities) {
+			for (BigInteger quantity : quantities) {
 				byte[] mpi = Util.MPIbytes(quantity);
 				shactx.update(mpi, 0, mpi.length);
 			}
@@ -80,10 +91,10 @@ public abstract class CryptoKey implements CryptoElement, Serializable {
 		return b.toString();
 	}
 
-//	protected void write(OutputStream o, String clazz) throws IOException {
-//		UTF8.writeWithLength(o, clazz);
-//	}
-//
+	//	protected void write(OutputStream o, String clazz) throws IOException {
+	//		UTF8.writeWithLength(o, clazz);
+	//	}
+	//
 	public String fingerprintToString() {
 		String fphex = HexUtil.bytesToHex(fingerprint());
 		StringBuilder b = new StringBuilder(40 + 10);
@@ -116,5 +127,4 @@ public abstract class CryptoKey implements CryptoElement, Serializable {
 			System.err.println("-+ " + kp.verboseToString());
 		}
 	}
-
 }

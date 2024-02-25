@@ -3,8 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
-import java.util.List;
-
 import freenet.client.ClientMetadata;
 import freenet.client.FetchException;
 import freenet.client.InsertContext.CompatibilityMode;
@@ -14,15 +12,17 @@ import freenet.keys.USK;
 import freenet.node.RequestClient;
 import freenet.support.compress.Compressor;
 import freenet.support.io.ResumeFailedException;
+import java.util.List;
 
 /**
  * Wrapper for a backgrounded USKFetcher.
  */
 public class USKFetcherWrapper extends BaseClientGetter {
+
 	private static final long serialVersionUID = -6416069493740293035L;
 
 	final USK usk;
-	
+
 	public USKFetcherWrapper(USK usk, short prio, final RequestClient client) {
 		super(prio, client);
 		this.usk = usk;
@@ -44,28 +44,45 @@ public class USKFetcherWrapper extends BaseClientGetter {
 	}
 
 	@Override
-	public void onSuccess(StreamGenerator streamGenerator, ClientMetadata clientMetadata, List<? extends Compressor> decompressors, ClientGetState state, ClientContext context) {
+	public void onSuccess(
+		StreamGenerator streamGenerator,
+		ClientMetadata clientMetadata,
+		List<? extends Compressor> decompressors,
+		ClientGetState state,
+		ClientContext context
+	) {
 		// Ignore; we don't do anything with it because we are running in the background.
 	}
 
 	@Override
-	public void onFailure(FetchException e, ClientGetState state, ClientContext context) {
+	public void onFailure(
+		FetchException e,
+		ClientGetState state,
+		ClientContext context
+	) {
 		// Ignore
 	}
 
 	@Override
-	public void onBlockSetFinished(ClientGetState state, ClientContext context) {
+	public void onBlockSetFinished(
+		ClientGetState state,
+		ClientContext context
+	) {
 		// Ignore
 	}
 
 	@Override
-	public void onTransition(ClientGetState oldState, ClientGetState newState, ClientContext context) {
+	public void onTransition(
+		ClientGetState oldState,
+		ClientGetState newState,
+		ClientContext context
+	) {
 		// Ignore
 	}
 
 	@Override
 	public String toString() {
-		return super.toString()+ ':' +usk;
+		return super.toString() + ':' + usk;
 	}
 
 	@Override
@@ -94,12 +111,26 @@ public class USKFetcherWrapper extends BaseClientGetter {
 	}
 
 	@Override
-	public void onExpectedTopSize(long size, long compressed, int blocksReq, int blocksTotal, ClientContext context) {
+	public void onExpectedTopSize(
+		long size,
+		long compressed,
+		int blocksReq,
+		int blocksTotal,
+		ClientContext context
+	) {
 		// Ignore
 	}
 
 	@Override
-	public void onSplitfileCompatibilityMode(CompatibilityMode min, CompatibilityMode max, byte[] splitfileKey, boolean compressed, boolean bottomLayer, boolean definitiveAnyway, ClientContext context) {
+	public void onSplitfileCompatibilityMode(
+		CompatibilityMode min,
+		CompatibilityMode max,
+		byte[] splitfileKey,
+		boolean compressed,
+		boolean bottomLayer,
+		boolean definitiveAnyway,
+		ClientContext context
+	) {
 		// Ignore
 	}
 
@@ -108,13 +139,14 @@ public class USKFetcherWrapper extends BaseClientGetter {
 		// Ignore
 	}
 
-    @Override
-    public void innerOnResume(ClientContext context) throws ResumeFailedException {
-        super.innerOnResume(context);
-    }
+	@Override
+	public void innerOnResume(ClientContext context)
+		throws ResumeFailedException {
+		super.innerOnResume(context);
+	}
 
-    @Override
-    protected ClientBaseCallback getCallback() {
-        return null;
-    }
+	@Override
+	protected ClientBaseCallback getCallback() {
+		return null;
+	}
 }

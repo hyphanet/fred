@@ -3,12 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.store.saltedhash;
 
-import java.security.MessageDigest;
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Random;
-
 import freenet.crypt.BlockCipher;
 import freenet.crypt.PCFBMode;
 import freenet.crypt.SHA256;
@@ -17,15 +11,21 @@ import freenet.crypt.ciphers.Rijndael;
 import freenet.node.MasterKeys;
 import freenet.support.ByteArrayWrapper;
 import freenet.support.Logger;
+import java.security.MessageDigest;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Random;
 
 /**
  * Cipher Manager
- * 
+ *
  * Manage all kind of digestion and encryption in store
- * 
+ *
  * @author sdiz
  */
 public class CipherManager {
+
 	/**
 	 * The actual salt. 16 bytes.
 	 */
@@ -44,7 +44,7 @@ public class CipherManager {
 
 	/**
 	 * Get salt
-	 * 
+	 *
 	 * @return salt
 	 */
 	byte[] getDiskSalt() {
@@ -55,16 +55,19 @@ public class CipherManager {
 	 * Cache for digested keys
 	 */
 	@SuppressWarnings("serial")
-	private Map<ByteArrayWrapper, byte[]> digestRoutingKeyCache = new LinkedHashMap<ByteArrayWrapper, byte[]>() {
-		@Override
-		protected boolean removeEldestEntry(Map.Entry<ByteArrayWrapper, byte[]> eldest) {
-			return size() > 128;
-		}
-	};
+	private Map<ByteArrayWrapper, byte[]> digestRoutingKeyCache =
+		new LinkedHashMap<ByteArrayWrapper, byte[]>() {
+			@Override
+			protected boolean removeEldestEntry(
+				Map.Entry<ByteArrayWrapper, byte[]> eldest
+			) {
+				return size() > 128;
+			}
+		};
 
 	/**
 	 * Get digested routing key
-	 * 
+	 *
 	 * @param plainKey
 	 * @return
 	 */
@@ -72,8 +75,7 @@ public class CipherManager {
 		ByteArrayWrapper key = new ByteArrayWrapper(plainKey);
 		synchronized (digestRoutingKeyCache) {
 			byte[] dk = digestRoutingKeyCache.get(key);
-			if (dk != null)
-				return dk;
+			if (dk != null) return dk;
 		}
 
 		MessageDigest digest = SHA256.getMessageDigest();
@@ -98,13 +100,15 @@ public class CipherManager {
 	 * Encrypt this entry
 	 */
 	void encrypt(SaltedHashFreenetStore<?>.Entry entry, Random random) {
-		if (entry.isEncrypted)
-			return;
+		if (entry.isEncrypted) return;
 
 		entry.dataEncryptIV = new byte[16];
 		random.nextBytes(entry.dataEncryptIV);
 
-		PCFBMode cipher = makeCipher(entry.dataEncryptIV, entry.plainRoutingKey);
+		PCFBMode cipher = makeCipher(
+			entry.dataEncryptIV,
+			entry.plainRoutingKey
+		);
 		cipher.blockEncipher(entry.header, 0, entry.header.length);
 		cipher.blockEncipher(entry.data, 0, entry.data.length);
 
@@ -114,7 +118,7 @@ public class CipherManager {
 
 	/**
 	 * Verify and decrypt this entry
-	 * 
+	 *
 	 * @param routingKey
 	 * @return <code>true</code> if the <code>routeKey</code> match and the entry is decrypted.
 	 */
@@ -124,10 +128,8 @@ public class CipherManager {
 
 		if (!entry.isEncrypted) {
 			// Already decrypted
-			if (Arrays.equals(entry.plainRoutingKey, routingKey))
-				return true;
-			else
-				return false;
+			if (Arrays.equals(entry.plainRoutingKey, routingKey)) return true;
+			else return false;
 		}
 
 		if (entry.plainRoutingKey != null) {
@@ -137,13 +139,20 @@ public class CipherManager {
 			}
 		} else {
 			// we do not know the plain key, let's check the digest
-			if (!Arrays.equals(entry.digestedRoutingKey, getDigestedKey(routingKey)))
-				return false;
+			if (
+				!Arrays.equals(
+					entry.digestedRoutingKey,
+					getDigestedKey(routingKey)
+				)
+			) return false;
 		}
 
 		entry.plainRoutingKey = routingKey;
 
-		PCFBMode cipher = makeCipher(entry.dataEncryptIV, entry.plainRoutingKey);
+		PCFBMode cipher = makeCipher(
+			entry.dataEncryptIV,
+			entry.plainRoutingKey
+		);
 		cipher.blockDecipher(entry.header, 0, entry.header.length);
 		cipher.blockDecipher(entry.data, 0, entry.data.length);
 

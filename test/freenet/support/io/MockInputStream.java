@@ -7,8 +7,7 @@ import java.io.InputStream;
 
 public class MockInputStream extends InputStream {
 
-	public MockInputStream() {
-	}
+	public MockInputStream() {}
 
 	@Override
 	public int read() {

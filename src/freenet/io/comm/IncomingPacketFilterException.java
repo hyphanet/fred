@@ -6,6 +6,7 @@ package freenet.io.comm;
 import freenet.support.LightweightException;
 
 public class IncomingPacketFilterException extends LightweightException {
+
 	private static final long serialVersionUID = -1;
 
 	public IncomingPacketFilterException(String string) {
@@ -15,5 +16,4 @@ public class IncomingPacketFilterException extends LightweightException {
 	public IncomingPacketFilterException() {
 		super();
 	}
-
 }

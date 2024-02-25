@@ -1,12 +1,11 @@
 package freenet.clients.http.wizardsteps;
 
-import java.util.List;
-import java.util.ArrayList;
-
 import freenet.clients.http.FirstTimeWizardToadlet;
 import freenet.l10n.NodeL10n;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * This step gives the user information about browser usage.
@@ -34,10 +33,10 @@ public class BROWSER_WARNING implements Step {
 		boolean isFirefox = false;
 		boolean isOldFirefox = false;
 		boolean showTabWarning = false;
-		if(ua != null) {
+		if (ua != null) {
 			isFirefox = ua.contains("Firefox/");
 			//Firefox 3.6 can destroy tabs, see https://bugs.freenetproject.org/view.php?id=5209
-			if(ua.contains("Firefox/3.6") && incognito) {
+			if (ua.contains("Firefox/3.6") && incognito) {
 				showTabWarning = true;
 			} else if (isFirefox) {
 				//Versions of Firefox other than 3.6 do not behave properly when going into
@@ -45,84 +44,139 @@ public class BROWSER_WARNING implements Step {
 				//being in privacy mode.
 				incognito = false;
 			}
-			if(ua.contains("Firefox/0.") ||
-			   ua.contains("Firefox/1.") ||
-			   ua.contains("Firefox/2.") ||
-			   ua.contains("Firefox/3.")) {
+			if (
+				ua.contains("Firefox/0.") ||
+				ua.contains("Firefox/1.") ||
+				ua.contains("Firefox/2.") ||
+				ua.contains("Firefox/3.")
+			) {
 				isOldFirefox = true;
 			}
 		}
 		boolean isRelativelySafe = isFirefox && !isOldFirefox;
 
-		HTMLNode contentNode = helper.getPageContent(WizardL10n.l10n("browserWarningPageTitle"));
+		HTMLNode contentNode = helper.getPageContent(
+			WizardL10n.l10n("browserWarningPageTitle")
+		);
 
 		String infoBoxHeader = infoBoxHeaderText(incognito, isRelativelySafe);
-		HTMLNode infoboxContent = helper.getInfobox("infobox-normal", infoBoxHeader, contentNode, null, false);
+		HTMLNode infoboxContent = helper.getInfobox(
+			"infobox-normal",
+			infoBoxHeader,
+			contentNode,
+			null,
+			false
+		);
 
 		List<String> oldBrowserWarnings = oldBrowserWarnings(
-				incognito,
-				isOldFirefox,
-				showTabWarning);
-		if(!oldBrowserWarnings.isEmpty()) {
+			incognito,
+			isOldFirefox,
+			showTabWarning
+		);
+		if (!oldBrowserWarnings.isEmpty()) {
 			HTMLNode p = infoboxContent.addChild("p");
 			p.addChild("#", oldBrowserWarnings.remove(0));
 			oldBrowserWarnings.forEach(s -> p.addChild("#", " " + s));
 		}
 
-		if(isRelativelySafe) {
-			infoboxContent.addChild("p", incognito ?
-			        WizardL10n.l10n("browserWarningIncognitoMaybeSafe") :
-			        WizardL10n.l10n("browserWarningMaybeSafe"));
+		if (isRelativelySafe) {
+			infoboxContent.addChild(
+				"p",
+				incognito
+					? WizardL10n.l10n("browserWarningIncognitoMaybeSafe")
+					: WizardL10n.l10n("browserWarningMaybeSafe")
+			);
 		} else {
-			NodeL10n.getBase().addL10nSubstitution(infoboxContent, incognito ?
-			        "FirstTimeWizardToadlet.browserWarningIncognito" :
-			        "FirstTimeWizardToadlet.browserWarning",
-			        new String[] { "bold" },
-			        new HTMLNode[] { HTMLNode.STRONG });
+			NodeL10n.getBase()
+				.addL10nSubstitution(
+					infoboxContent,
+					incognito
+						? "FirstTimeWizardToadlet.browserWarningIncognito"
+						: "FirstTimeWizardToadlet.browserWarning",
+					new String[] { "bold" },
+					new HTMLNode[] { HTMLNode.STRONG }
+				);
 		}
 
-		if(incognito) {
-			infoboxContent.addChild("p", WizardL10n.l10n("browserWarningIncognitoSuggestion"));
+		if (incognito) {
+			infoboxContent.addChild(
+				"p",
+				WizardL10n.l10n("browserWarningIncognitoSuggestion")
+			);
 		} else {
-			infoboxContent.addChild("p", WizardL10n.l10n("browserWarningSuggestion"));
+			infoboxContent.addChild(
+				"p",
+				WizardL10n.l10n("browserWarningSuggestion")
+			);
 		}
 		infoboxContent.addChild("p", WizardL10n.l10n("browserImeWarning"));
-        // voice recognition also used for surveillance
-		infoboxContent.addChild("p", WizardL10n.l10n("browserVoiceRecognitionWarning"));
+		// voice recognition also used for surveillance
+		infoboxContent.addChild(
+			"p",
+			WizardL10n.l10n("browserVoiceRecognitionWarning")
+		);
 
-		HTMLNode form = helper.addFormChild(infoboxContent.addChild("p"), ".", "continueForm");
-		form.addChild("input",
-		        new String[] { "type", "name", "value" },
-		        new String[] { "submit", "back", NodeL10n.getBase().getString("Toadlet.back")});
-		form.addChild("input",
-		        new String[] { "type", "name", "value" },
-		        new String[] { "submit", "next", NodeL10n.getBase().getString("Toadlet.next")});
+		HTMLNode form = helper.addFormChild(
+			infoboxContent.addChild("p"),
+			".",
+			"continueForm"
+		);
+		form.addChild(
+			"input",
+			new String[] { "type", "name", "value" },
+			new String[] {
+				"submit",
+				"back",
+				NodeL10n.getBase().getString("Toadlet.back"),
+			}
+		);
+		form.addChild(
+			"input",
+			new String[] { "type", "name", "value" },
+			new String[] {
+				"submit",
+				"next",
+				NodeL10n.getBase().getString("Toadlet.next"),
+			}
+		);
 	}
 
 	public List<String> oldBrowserWarnings(
-			boolean incognito,
-			boolean isOldFirefox,
-			boolean showTabWarning) {
+		boolean incognito,
+		boolean isOldFirefox,
+		boolean showTabWarning
+	) {
 		ArrayList<String> oldBrowserWarnings = new ArrayList<>();
-		if(isOldFirefox) {
+		if (isOldFirefox) {
 			oldBrowserWarnings.add(WizardL10n.l10n("browserWarningOldFirefox"));
 			if (showTabWarning) {
-				oldBrowserWarnings.add(WizardL10n.l10n("browserWarningFirefoxMightHaveClobberedTabs"));
-			} else if(!incognito) {
-				oldBrowserWarnings.add(WizardL10n.l10n("browserWarningOldFirefoxNewerHasPrivacyMode"));
+				oldBrowserWarnings.add(
+					WizardL10n.l10n(
+						"browserWarningFirefoxMightHaveClobberedTabs"
+					)
+				);
+			} else if (!incognito) {
+				oldBrowserWarnings.add(
+					WizardL10n.l10n(
+						"browserWarningOldFirefoxNewerHasPrivacyMode"
+					)
+				);
 			}
 		}
 		return oldBrowserWarnings;
 	}
 
-	public String infoBoxHeaderText(boolean incognito, boolean isRelativelySafe) {
-		if(incognito) {
+	public String infoBoxHeaderText(
+		boolean incognito,
+		boolean isRelativelySafe
+	) {
+		if (incognito) {
 			return WizardL10n.l10n("browserWarningIncognitoShort");
 		}
-        if (isRelativelySafe) {
+		if (isRelativelySafe) {
 			return WizardL10n.l10n("browserWarningShortRelativelySafe");
 		}
-        return WizardL10n.l10n("browserWarningShort");
+		return WizardL10n.l10n("browserWarningShort");
 	}
 
 	/**

@@ -9,6 +9,7 @@ import freenet.support.LightweightException;
  * If thrown, something wrong with http range
  */
 public class HTTPRangeException extends LightweightException {
+
 	private static final long serialVersionUID = -1;
 
 	public HTTPRangeException(Throwable cause) {

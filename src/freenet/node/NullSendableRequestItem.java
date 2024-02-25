@@ -1,8 +1,10 @@
 package freenet.node;
 
-public class NullSendableRequestItem implements SendableRequestItem, SendableRequestItemKey {
+public class NullSendableRequestItem
+	implements SendableRequestItem, SendableRequestItemKey {
 
-	public static final NullSendableRequestItem nullItem = new NullSendableRequestItem();
+	public static final NullSendableRequestItem nullItem =
+		new NullSendableRequestItem();
 
 	@Override
 	public void dump() {
@@ -13,5 +15,4 @@ public class NullSendableRequestItem implements SendableRequestItem, SendableReq
 	public SendableRequestItemKey getKey() {
 		return this;
 	}
-
 }

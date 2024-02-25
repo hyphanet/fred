@@ -1,25 +1,24 @@
 package freenet.clients.fcp;
 
-import java.util.Date;
-
 import freenet.client.async.ClientRequester;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.clients.fcp.ClientRequest.Persistence;
 import freenet.keys.FreenetURI;
 import freenet.l10n.NodeL10n;
+import java.util.Date;
 
 /** The status of a request. Cached copy i.e. can be accessed outside the database thread
  * even for a persistent request.
- * 
+ *
  * Methods that change the status should be package-local, and called either
- * within freenet.clients.fcp, or via RequestStatusCache. Hence we should be 
+ * within freenet.clients.fcp, or via RequestStatusCache. Hence we should be
  * able to lock the RequestStatusCache and be confident that nothing is going
  * to change under us.
- * 
- * @author toad 
+ *
+ * @author toad
  */
 public abstract class RequestStatus implements Cloneable {
-	
+
 	private final String identifier;
 	private boolean hasStarted;
 	private boolean hasFinished;
@@ -36,7 +35,7 @@ public abstract class RequestStatus implements Cloneable {
 	private Date latestFailure;
 	private boolean isTotalFinalized;
 	private final Persistence persistence;
-	
+
 	/** The download or upload has finished.
 	 * @param success Did it succeed? */
 	synchronized void setFinished(boolean success) {
@@ -46,7 +45,7 @@ public abstract class RequestStatus implements Cloneable {
 		this.hasStarted = true;
 		this.isTotalFinalized = true;
 	}
-	
+
 	synchronized void restart(boolean started) {
 		// See ClientRequester.getLatestSuccess() for why this defaults to current time.
 		this.latestSuccess = new Date();
@@ -55,12 +54,25 @@ public abstract class RequestStatus implements Cloneable {
 		this.hasStarted = started;
 		this.isTotalFinalized = false;
 	}
-	
+
 	/** Constructor for creating a status from a request that has already started, e.g. on
 	 * startup. We will also create status when a request is created. */
-	RequestStatus(String identifier, Persistence persistence, boolean started, boolean finished, 
-			boolean success, int total, int min, int fetched, Date latestSuccess, int fatal,
-			int failed, Date latestFailure, boolean totalFinalized, short prio) {
+	RequestStatus(
+		String identifier,
+		Persistence persistence,
+		boolean started,
+		boolean finished,
+		boolean success,
+		int total,
+		int min,
+		int fetched,
+		Date latestSuccess,
+		int fatal,
+		int failed,
+		Date latestFailure,
+		boolean totalFinalized,
+		short prio
+	) {
 		this.identifier = identifier;
 		this.hasStarted = started;
 		this.hasFinished = finished;
@@ -70,17 +82,19 @@ public abstract class RequestStatus implements Cloneable {
 		this.minBlocks = min;
 		this.fetchedBlocks = fetched;
 		// clone() because Date is mutable
-		this.latestSuccess
-			= latestSuccess != null ? (Date)latestSuccess.clone() : null;
+		this.latestSuccess = latestSuccess != null
+			? (Date) latestSuccess.clone()
+			: null;
 		this.fatallyFailedBlocks = fatal;
 		this.failedBlocks = failed;
 		// clone() because Date is mutable
-		this.latestFailure
-			= latestFailure != null ? (Date)latestFailure.clone() : null;
+		this.latestFailure = latestFailure != null
+			? (Date) latestFailure.clone()
+			: null;
 		this.isTotalFinalized = totalFinalized;
 		this.persistence = persistence;
 	}
-	
+
 	public boolean hasSucceeded() {
 		return hasSucceeded;
 	}
@@ -121,12 +135,12 @@ public abstract class RequestStatus implements Cloneable {
 
 	public Date getLastSuccess() {
 		// clone() because Date is mutable.
-		return latestSuccess != null ? (Date)latestSuccess.clone() : null;
+		return latestSuccess != null ? (Date) latestSuccess.clone() : null;
 	}
-	
+
 	public Date getLastFailure() {
 		// clone() because Date is mutable.
-		return latestFailure != null ? (Date)latestFailure.clone() : null;
+		return latestFailure != null ? (Date) latestFailure.clone() : null;
 	}
 
 	/** Get the original URI for a fetch or the final URI for an insert. */
@@ -160,14 +174,19 @@ public abstract class RequestStatus implements Cloneable {
 		this.failedBlocks = event.failedBlocks;
 		this.fatallyFailedBlocks = event.fatallyFailedBlocks;
 		// clone() because Date is mutable
-		this.latestFailure = event.latestFailure != null ? (Date)event.latestFailure.clone() : null;
+		this.latestFailure = event.latestFailure != null
+			? (Date) event.latestFailure.clone()
+			: null;
 		this.fetchedBlocks = event.succeedBlocks;
 		// clone() because Date is mutable
-		this.latestSuccess = event.latestSuccess != null ? (Date)event.latestSuccess.clone() : null;
+		this.latestSuccess = event.latestSuccess != null
+			? (Date) event.latestSuccess.clone()
+			: null;
 		this.isTotalFinalized = event.finalizedTotal;
 		this.minBlocks = event.minSuccessfulBlocks;
 		this.totalBlocks = event.totalBlocks;
 	}
+
 	public synchronized void setPriority(short newPriority) {
 		this.priority = newPriority;
 	}
@@ -176,7 +195,7 @@ public abstract class RequestStatus implements Cloneable {
 		this.hasStarted = started;
 	}
 
-	/** Get the preferred filename, from the URI, the filename, etc. 
+	/** Get the preferred filename, from the URI, the filename, etc.
 	 * @return A filename or null if not enough information to give one. */
 	public abstract String getPreferredFilename();
 
@@ -186,10 +205,9 @@ public abstract class RequestStatus implements Cloneable {
 	 */
 	public String getPreferredFilenameSafe() {
 		String ret = getPreferredFilename();
-		if(ret == null)
-			return NodeL10n.getBase().getString("RequestStatus.unknownFilename");
-		else
-			return ret;
+		if (ret == null) return NodeL10n.getBase()
+			.getString("RequestStatus.unknownFilename");
+		else return ret;
 	}
 
 	public RequestStatus clone() {
@@ -199,5 +217,4 @@ public abstract class RequestStatus implements Cloneable {
 			throw new Error(e);
 		}
 	}
-
 }

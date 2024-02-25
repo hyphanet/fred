@@ -1,18 +1,17 @@
 /* -*- Mode: java; c-basic-indent: 4; tab-width: 4 -*- */
 package freenet.crypt;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.math.BigInteger;
-import java.util.Arrays;
-
 import freenet.node.FSParseException;
 import freenet.store.StorableBlock;
 import freenet.support.Base64;
 import freenet.support.HexUtil;
 import freenet.support.IllegalBase64Exception;
 import freenet.support.SimpleFieldSet;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.math.BigInteger;
+import java.util.Arrays;
 
 public class DSAPublicKey extends CryptoKey implements StorableBlock {
 
@@ -23,26 +22,28 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 	/** Null means use Global.DSAgroupBigA. This makes persistence simpler. */
 	private final DSAGroup group;
 	private byte[] fingerprint = null;
-	
+
 	public DSAPublicKey(DSAGroup g, BigInteger y) {
-		if(y.signum() != 1)
-			throw new IllegalArgumentException();
+		if (y.signum() != 1) throw new IllegalArgumentException();
 		this.y = y;
-		if(g == Global.DSAgroupBigA) g = null;
+		if (g == Global.DSAgroupBigA) g = null;
 		this.group = g;
-		if(y.compareTo(getGroup().getP()) > 0)
-			throw new IllegalArgumentException("y must be < p but y=" + y + " p=" + g.getP());
+		if (
+			y.compareTo(getGroup().getP()) > 0
+		) throw new IllegalArgumentException(
+			"y must be < p but y=" + y + " p=" + g.getP()
+		);
 	}
 
 	/**
 	 * Use this constructor if you have a Hex:ed version of y already
 	 * available, will save some conversions and string allocations.
 	 */
-	public DSAPublicKey(DSAGroup g, String yAsHexString) throws NumberFormatException {
+	public DSAPublicKey(DSAGroup g, String yAsHexString)
+		throws NumberFormatException {
 		this.y = new BigInteger(yAsHexString, 16);
-		if(y.signum() != 1)
-			throw new IllegalArgumentException();
-		if(g == Global.DSAgroupBigA) g = null;
+		if (y.signum() != 1) throw new IllegalArgumentException();
+		if (g == Global.DSAgroupBigA) g = null;
 		this.group = g;
 	}
 
@@ -50,16 +51,21 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 		this(g, g.getG().modPow(p.getX(), g.getP()));
 	}
 
-	public DSAPublicKey(InputStream is) throws IOException, CryptFormatException {
+	public DSAPublicKey(InputStream is)
+		throws IOException, CryptFormatException {
 		DSAGroup g = (DSAGroup) DSAGroup.read(is);
-		if(g == Global.DSAgroupBigA) g = null;
+		if (g == Global.DSAgroupBigA) g = null;
 		group = g;
 		y = Util.readMPI(is);
-		if(y.compareTo(getGroup().getP()) > 0)
-			throw new IllegalArgumentException("y must be < p but y=" + y + " p=" + getGroup().getP());
+		if (
+			y.compareTo(getGroup().getP()) > 0
+		) throw new IllegalArgumentException(
+			"y must be < p but y=" + y + " p=" + getGroup().getP()
+		);
 	}
 
-	public DSAPublicKey(byte[] pubkeyBytes) throws IOException, CryptFormatException {
+	public DSAPublicKey(byte[] pubkeyBytes)
+		throws IOException, CryptFormatException {
 		this(new ByteArrayInputStream(pubkeyBytes));
 	}
 
@@ -67,22 +73,23 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 		fingerprint = null; // regen when needed
 		this.y = new BigInteger(1, key.y.toByteArray());
 		DSAGroup g = key.group;
-		if(g != null) g = g.cloneKey();
+		if (g != null) g = g.cloneKey();
 		this.group = g;
 	}
 
-	public static DSAPublicKey create(byte[] pubkeyAsBytes) throws CryptFormatException {
+	public static DSAPublicKey create(byte[] pubkeyAsBytes)
+		throws CryptFormatException {
 		try {
 			return new DSAPublicKey(new ByteArrayInputStream(pubkeyAsBytes));
-		} catch(IOException e) {
+		} catch (IOException e) {
 			throw new CryptFormatException(e);
 		}
 	}
-	
+
 	protected DSAPublicKey() {
-	    // For serialization.
-	    y = null;
-	    group = null;
+		// For serialization.
+		y = null;
+		group = null;
 	}
 
 	public BigInteger getY() {
@@ -108,11 +115,12 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 
 	// Nope, this is fine
 	public final DSAGroup getGroup() {
-		if(group == null) return Global.DSAgroupBigA;
+		if (group == null) return Global.DSAgroupBigA;
 		else return group;
 	}
 
-	public static CryptoKey read(InputStream i) throws IOException, CryptFormatException {
+	public static CryptoKey read(InputStream i)
+		throws IOException, CryptFormatException {
 		return new DSAPublicKey(i);
 	}
 
@@ -142,25 +150,30 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 
 	public byte[] asPaddedBytes() {
 		byte[] asBytes = asBytes();
-		if(asBytes.length == PADDED_SIZE)
-			return asBytes;
-		if(asBytes.length > PADDED_SIZE)
-			throw new Error("Cannot fit key in " + PADDED_SIZE + " - real size is " + asBytes.length);
+		if (asBytes.length == PADDED_SIZE) return asBytes;
+		if (asBytes.length > PADDED_SIZE) throw new Error(
+			"Cannot fit key in " +
+			PADDED_SIZE +
+			" - real size is " +
+			asBytes.length
+		);
 		return Arrays.copyOf(asBytes, PADDED_SIZE);
 	}
 
 	@Override
 	public byte[] fingerprint() {
-		synchronized(this) {
-			if(fingerprint == null)
-				fingerprint = fingerprint(new BigInteger[]{y});
+		synchronized (this) {
+			if (fingerprint == null) fingerprint = fingerprint(
+				new BigInteger[] { y }
+			);
 			return fingerprint;
 		}
 	}
 
 	public boolean equals(DSAPublicKey o) {
-		if(this == o) // Not necessary, but a very cheap optimization
-			return true;
+		if (
+			this == o
+		) return true; // Not necessary, but a very cheap optimization
 		return y.equals(o.y) && getGroup().equals(o.getGroup());
 	}
 
@@ -171,18 +184,20 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 
 	@Override
 	public boolean equals(Object o) {
-		if(this == o) // Not necessary, but a very cheap optimization
-			return true;
-		else if((o == null) || (o.getClass() != this.getClass()))
-			return false;
-		return y.equals(((DSAPublicKey) o).y) && getGroup().equals(((DSAPublicKey) o).getGroup());
+		if (
+			this == o
+		) return true; // Not necessary, but a very cheap optimization
+		else if ((o == null) || (o.getClass() != this.getClass())) return false;
+		return (
+			y.equals(((DSAPublicKey) o).y) &&
+			getGroup().equals(((DSAPublicKey) o).getGroup())
+		);
 	}
 
 	public int compareTo(Object other) {
-		if(other instanceof DSAPublicKey)
-			return getY().compareTo(((DSAPublicKey) other).getY());
-		else
-			return -1;
+		if (other instanceof DSAPublicKey) return getY()
+			.compareTo(((DSAPublicKey) other).getY());
+		else return -1;
 	}
 
 	public SimpleFieldSet asFieldSet() {
@@ -191,7 +206,8 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 		return fs;
 	}
 
-	public static DSAPublicKey create(SimpleFieldSet set, DSAGroup group) throws FSParseException {
+	public static DSAPublicKey create(SimpleFieldSet set, DSAGroup group)
+		throws FSParseException {
 		BigInteger x;
 		try {
 			x = new BigInteger(1, Base64.decode(set.get("y")));
@@ -218,5 +234,4 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 	public DSAPublicKey cloneKey() {
 		return new DSAPublicKey(this);
 	}
-
 }

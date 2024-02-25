@@ -19,11 +19,9 @@ public class WatchFeedsMessage extends FCPMessage {
 
 	@Override
 	public void run(FCPConnectionHandler handler, Node node)
-			throws MessageInvalidException {
-		if(enabled)
-			node.clientCore.alerts.watch(handler);
-		else
-			node.clientCore.alerts.unwatch(handler);
+		throws MessageInvalidException {
+		if (enabled) node.clientCore.alerts.watch(handler);
+		else node.clientCore.alerts.unwatch(handler);
 	}
 
 	@Override
@@ -32,5 +30,4 @@ public class WatchFeedsMessage extends FCPMessage {
 		fs.put("Enabled", enabled);
 		return fs;
 	}
-
 }

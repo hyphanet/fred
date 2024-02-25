@@ -1,6 +1,7 @@
 import java.util.Random;
 
 class ProbeTester {
+
 	public static void main(String[] args) {
 		int seed = 0;
 		int nProbes = 120;
@@ -23,9 +24,8 @@ class ProbeTester {
 			}
 		}
 
-
 		Random rand = new MersenneTwister(seed);
-		int sleepInterval = 30000;	//msecs
+		int sleepInterval = 30000; //msecs
 		double[] probeLocs = new double[nProbes];
 
 		for (int i = 0; i < nProbes; i++) {
@@ -43,7 +43,7 @@ class ProbeTester {
 		}
 
 		try {
-			Thread.sleep(4*sleepInterval);
+			Thread.sleep(4 * sleepInterval);
 		} catch (InterruptedException e) {
 			//do nothing
 		}
@@ -51,7 +51,6 @@ class ProbeTester {
 		System.out.println("quit");
 		try {
 			Thread.sleep(10);
-		} catch (InterruptedException e) {
-		}
+		} catch (InterruptedException e) {}
 	}
 }

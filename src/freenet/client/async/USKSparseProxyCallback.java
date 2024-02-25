@@ -19,8 +19,9 @@ public class USKSparseProxyCallback implements USKProgressCallback {
 	private byte[] lastData;
 	private boolean lastWasKnownGoodToo;
 	private boolean roundFinished;
-	
-    private static volatile boolean logMINOR;
+
+	private static volatile boolean logMINOR;
+
 	static {
 		Logger.registerClass(USKSparseProxyCallback.class);
 	}
@@ -30,19 +31,34 @@ public class USKSparseProxyCallback implements USKProgressCallback {
 		lastEdition = -1; // So we see the first one even if it's 0
 		lastSent = -1;
 		this.key = key;
-		if(logMINOR) Logger.minor(this, "Creating sparse proxy callback "+this+" for "+cb+" for "+key);
+		if (logMINOR) Logger.minor(
+			this,
+			"Creating sparse proxy callback " +
+			this +
+			" for " +
+			cb +
+			" for " +
+			key
+		);
 	}
 
 	@Override
-	public void onFoundEdition(long l, USK key, 
-			ClientContext context, boolean metadata, short codec, byte[] data,
-			boolean newKnownGood, boolean newSlotToo) {
-		synchronized(this) {
-			if(l < lastEdition) {
-				if(!roundFinished) return;
-				if(!newKnownGood) return;
-			} else if(l == lastEdition) {
-				if(newKnownGood) lastWasKnownGoodToo = true;
+	public void onFoundEdition(
+		long l,
+		USK key,
+		ClientContext context,
+		boolean metadata,
+		short codec,
+		byte[] data,
+		boolean newKnownGood,
+		boolean newSlotToo
+	) {
+		synchronized (this) {
+			if (l < lastEdition) {
+				if (!roundFinished) return;
+				if (!newKnownGood) return;
+			} else if (l == lastEdition) {
+				if (newKnownGood) lastWasKnownGoodToo = true;
 			} else {
 				lastEdition = l;
 				lastMetadata = metadata;
@@ -50,9 +66,18 @@ public class USKSparseProxyCallback implements USKProgressCallback {
 				lastData = data;
 				lastWasKnownGoodToo = newKnownGood;
 			}
-			if(!roundFinished) return;
+			if (!roundFinished) return;
 		}
-		target.onFoundEdition(l, key, context, metadata, codec, data, newKnownGood, newSlotToo);
+		target.onFoundEdition(
+			l,
+			key,
+			context,
+			metadata,
+			codec,
+			data,
+			newKnownGood,
+			newSlotToo
+		);
 	}
 
 	@Override
@@ -74,33 +99,43 @@ public class USKSparseProxyCallback implements USKProgressCallback {
 	public void onRoundFinished(ClientContext context) {
 		innerRoundFinished(context, true);
 	}
-	
-	private void innerRoundFinished(ClientContext context, boolean finishedRound) {
+
+	private void innerRoundFinished(
+		ClientContext context,
+		boolean finishedRound
+	) {
 		long ed;
 		boolean meta;
 		short codec;
 		byte[] data;
 		boolean wasKnownGood;
-		synchronized(this) {
-			if(finishedRound)
-				roundFinished = true;
-			if(lastSent == lastEdition) return;
+		synchronized (this) {
+			if (finishedRound) roundFinished = true;
+			if (lastSent == lastEdition) return;
 			lastSent = ed = lastEdition;
 			meta = lastMetadata;
 			codec = lastCodec;
 			data = lastData;
 			wasKnownGood = lastWasKnownGoodToo;
 		}
-		if(ed == -1) {
+		if (ed == -1) {
 			ed = context.uskManager.lookupLatestSlot(key);
-			if(ed == -1) return;
+			if (ed == -1) return;
 			meta = false;
 			codec = -1;
 			data = null;
 			wasKnownGood = false;
 		}
-		if(ed == -1) return;
-		target.onFoundEdition(ed, key, context, meta, codec, data, wasKnownGood, wasKnownGood);
+		if (ed == -1) return;
+		target.onFoundEdition(
+			ed,
+			key,
+			context,
+			meta,
+			codec,
+			data,
+			wasKnownGood,
+			wasKnownGood
+		);
 	}
-
 }

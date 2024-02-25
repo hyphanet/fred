@@ -13,9 +13,13 @@ public abstract class Asserts {
 
 	public static void assertArrayEquals(byte[] expecteds, byte[] actuals) {
 		if (!Arrays.equals(expecteds, actuals)) {
-			fail("expected:<" + Arrays.toString(expecteds) +
-			  "> but was:<" + Arrays.toString(actuals) + ">");
+			fail(
+				"expected:<" +
+				Arrays.toString(expecteds) +
+				"> but was:<" +
+				Arrays.toString(actuals) +
+				">"
+			);
 		}
 	}
-
 }

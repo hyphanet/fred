@@ -9,5 +9,4 @@ public class DumperSnoopMetadata implements SnoopMetadata {
 		System.err.print(meta.dump());
 		return false;
 	}
-
 }

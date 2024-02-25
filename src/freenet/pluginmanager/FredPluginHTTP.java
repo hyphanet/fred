@@ -5,12 +5,12 @@ package freenet.pluginmanager;
 
 import freenet.support.api.HTTPRequest;
 
-/** Standard HTTP interface for plugins. Not very flexible. Use Toadlet's 
+/** Standard HTTP interface for plugins. Not very flexible. Use Toadlet's
  * if you want to integrate with the main menu or want more flexibility.
- * 
+ *
  * IMPORTANT NOTE TO IMPLEMENTORS:
  * We strongly recommend you implement FredPluginThreadless as well, because
- * if you do not we will have to register the plugin *before* calling 
+ * if you do not we will have to register the plugin *before* calling
  * runPlugin(). This means it won't be registered and you will probably get
  * NPEs!
  */
@@ -26,5 +26,7 @@ public interface FredPluginHTTP {
 	 * error.
 	 */
 	public String handleHTTPGet(HTTPRequest request) throws PluginHTTPException;
-	public String handleHTTPPost(HTTPRequest request) throws PluginHTTPException;
+
+	public String handleHTTPPost(HTTPRequest request)
+		throws PluginHTTPException;
 }

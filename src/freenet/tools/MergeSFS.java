@@ -1,5 +1,6 @@
 package freenet.tools;
 
+import freenet.support.SimpleFieldSet;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -9,20 +10,24 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 
-import freenet.support.SimpleFieldSet;
-
 public class MergeSFS {
 
 	/**
 	 * @param args
-	 * @throws IOException 
+	 * @throws IOException
 	 */
 	public static void main(String[] args) throws IOException {
 		if (args.length < 2 || args.length > 3) {
-			System.out.println("Merges changes made in a SFS override file to a SFS source file.");
+			System.out.println(
+				"Merges changes made in a SFS override file to a SFS source file."
+			);
 			System.out.println("Usage: source-file override-file [--stdout]");
-			System.out.println("    By default the merged file is written to source-file.");
-			System.out.println("    --stdout writes to standard output instead.");
+			System.out.println(
+				"    By default the merged file is written to source-file."
+			);
+			System.out.println(
+				"    --stdout writes to standard output instead."
+			);
 			return;
 		}
 		File f1 = new File(args[0]);
@@ -38,9 +43,10 @@ public class MergeSFS {
 		} else {
 			os = new FileOutputStream(f1);
 		}
-		Writer w = new BufferedWriter(new OutputStreamWriter(os, StandardCharsets.UTF_8));
+		Writer w = new BufferedWriter(
+			new OutputStreamWriter(os, StandardCharsets.UTF_8)
+		);
 		fs1.writeToOrdered(w);
 		w.flush();
 	}
-
 }

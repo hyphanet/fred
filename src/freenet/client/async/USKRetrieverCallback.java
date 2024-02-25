@@ -11,7 +11,6 @@ import freenet.node.RequestStarter;
  * Interface implemented by USKRetriever clients.
  */
 public interface USKRetrieverCallback {
-	
 	/**
 	 * Called when a new edition is found and downloaded.
 	 * @param edition The USK edition number.
@@ -30,5 +29,4 @@ public interface USKRetrieverCallback {
 	 *  You have to return one of the constants from {@link RequestStarter}.
 	 */
 	short getPollingPriorityProgress();
-
 }

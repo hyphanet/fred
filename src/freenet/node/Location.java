@@ -34,7 +34,7 @@ public class Location {
 			return LOCATION_INVALID;
 		}
 	}
-	
+
 	/**
 	 * Distance between a peer and a location.
 	 * @param p   a peer with a valid location
@@ -53,16 +53,21 @@ public class Location {
 	 */
 	public static double distance(double a, double b) {
 		if (!isValid(a) || !isValid(b)) {
-			String errMsg = "Invalid Location ! a = " + a + " b = " + b + " Please report this bug!";
+			String errMsg =
+				"Invalid Location ! a = " +
+				a +
+				" b = " +
+				b +
+				" Please report this bug!";
 			Logger.error(Location.class, errMsg, new Exception("error"));
 			throw new IllegalArgumentException(errMsg);
 		}
-		return simpleDistance(a, b);	
+		return simpleDistance(a, b);
 	}
 
 	/**
 	 * Distance between two potentially invalid locations.
- 	 * @param a a valid location
+	 * @param a a valid location
 	 * @param b a valid location
 	 * @return the absolute distance between the locations in the circular location space.
 	 * Invalid locations are considered to be at 2.0, and the result is returned accordingly.
@@ -110,7 +115,7 @@ public class Location {
 		}
 		return change;
 	}
-	
+
 	/**
 	 * Normalize a location to within the valid range.
 	 * Given an arbitrary double (not bound to [0.0, 1.0)) return the normalized double [0.0, 1.0) which would result in simple
@@ -125,7 +130,7 @@ public class Location {
 			return 1.0 + normal;
 		}
 		return normal;
-	}	
+	}
 
 	/**
 	 * Tests for equality of two locations.
@@ -148,4 +153,3 @@ public class Location {
 		return loc >= 0.0 && loc <= 1.0;
 	}
 }
-

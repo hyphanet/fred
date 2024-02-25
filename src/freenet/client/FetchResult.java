@@ -3,10 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client;
 
-import java.io.IOException;
-
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
+import java.io.IOException;
 
 /**
  * Class to contain the result of a key fetch.
@@ -17,10 +16,10 @@ public class FetchResult {
 	final ClientMetadata metadata;
 	/** The data. */
 	final Bucket data;
-	
+
 	public FetchResult(ClientMetadata dm, Bucket fetched) {
-		if(dm == null) throw new IllegalArgumentException();
-		assert(fetched != null);
+		if (dm == null) throw new IllegalArgumentException();
+		assert (fetched != null);
 		metadata = dm;
 		data = fetched;
 	}
@@ -34,7 +33,7 @@ public class FetchResult {
 		this.metadata = fr.metadata;
 	}
 
-	/** Get the MIME type of the fetched data. 
+	/** Get the MIME type of the fetched data.
 	 * If unknown, returns application/octet-stream. */
 	public String getMimeType() {
 		return metadata.getMIMEType();
@@ -49,7 +48,7 @@ public class FetchResult {
 	public long size() {
 		return data.size();
 	}
-	
+
 	/** Get the result as a simple byte array, even if we don't have it
 	 * as one. @throws OutOfMemoryError !!
 	 * @throws IOException If it was not possible to read the data.
@@ -57,10 +56,10 @@ public class FetchResult {
 	public byte[] asByteArray() throws IOException {
 		return BucketTools.toByteArray(data);
 	}
-	
+
 	/**
 	 * Get the result as a Bucket.
-	 * 
+	 *
 	 * You have to call Closer.close(bucket) to free() the obtained Bucket to prevent resource leakage!
 	 */
 	public Bucket asBucket() {

@@ -14,8 +14,14 @@ public class DataFoundMessage extends FCPMessage {
 	final String mimeType;
 	final long dataLength;
 	final long startupTime, completionTime;
-	
-	public DataFoundMessage(FetchResult fr, String identifier, boolean global, long startupTime, long completionTime) {
+
+	public DataFoundMessage(
+		FetchResult fr,
+		String identifier,
+		boolean global,
+		long startupTime,
+		long completionTime
+	) {
 		this.identifier = identifier;
 		this.global = global;
 		this.mimeType = fr.getMimeType();
@@ -24,7 +30,14 @@ public class DataFoundMessage extends FCPMessage {
 		this.completionTime = completionTime;
 	}
 
-	public DataFoundMessage(long foundDataLength, String foundDataMimeType, String identifier, boolean global, long startupTime, long completionTime) {
+	public DataFoundMessage(
+		long foundDataLength,
+		String foundDataMimeType,
+		String identifier,
+		boolean global,
+		long startupTime,
+		long completionTime
+	) {
 		this.mimeType = foundDataMimeType;
 		this.identifier = identifier;
 		this.global = global;
@@ -51,8 +64,13 @@ public class DataFoundMessage extends FCPMessage {
 	}
 
 	@Override
-	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
-		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "DataFound goes from server to client not the other way around", identifier, global);
+	public void run(FCPConnectionHandler handler, Node node)
+		throws MessageInvalidException {
+		throw new MessageInvalidException(
+			ProtocolErrorMessage.INVALID_MESSAGE,
+			"DataFound goes from server to client not the other way around",
+			identifier,
+			global
+		);
 	}
-
 }

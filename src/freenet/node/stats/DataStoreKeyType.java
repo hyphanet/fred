@@ -9,5 +9,7 @@ package freenet.node.stats;
  * @author nikotyan
  */
 public enum DataStoreKeyType {
-	CHK, SSK, PUB_KEY
+	CHK,
+	SSK,
+	PUB_KEY,
 }

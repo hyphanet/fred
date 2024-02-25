@@ -15,38 +15,39 @@ package freenet.support;
  * @author bertm
  */
 public class LightweightException extends Exception {
-    private static final long serialVersionUID = -1;
 
-    public LightweightException() {
-        super();
-    }
+	private static final long serialVersionUID = -1;
 
-    public LightweightException(String message) {
-        super(message);
-    }
+	public LightweightException() {
+		super();
+	}
 
-    public LightweightException(Throwable cause) {
-        super(cause);
-    }
+	public LightweightException(String message) {
+		super(message);
+	}
 
-    public LightweightException(String message, Throwable cause) {
-        super(message, cause);
-    }
+	public LightweightException(Throwable cause) {
+		super(cause);
+	}
 
-    /**
-     * Allows subclasses to override the default lack of a stack trace for debugging purposes.
-     * The default implementation in {@link LightweightException} always returns {@code false}.
-     * @return {@code true} if a stack trace should be provided, {@code false} for lightweight.
-     */
-    protected boolean shouldFillInStackTrace() {
-        return false;
-    }
+	public LightweightException(String message, Throwable cause) {
+		super(message, cause);
+	}
 
-    @Override
-    public final Throwable fillInStackTrace() {
-        if (shouldFillInStackTrace()) {
-            return super.fillInStackTrace();
-        }
-        return null;
-    }
+	/**
+	 * Allows subclasses to override the default lack of a stack trace for debugging purposes.
+	 * The default implementation in {@link LightweightException} always returns {@code false}.
+	 * @return {@code true} if a stack trace should be provided, {@code false} for lightweight.
+	 */
+	protected boolean shouldFillInStackTrace() {
+		return false;
+	}
+
+	@Override
+	public final Throwable fillInStackTrace() {
+		if (shouldFillInStackTrace()) {
+			return super.fillInStackTrace();
+		}
+		return null;
+	}
 }

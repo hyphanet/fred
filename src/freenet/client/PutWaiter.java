@@ -20,21 +20,24 @@ public class PutWaiter implements ClientPutCallback {
 	private InsertException error;
 	final RequestClient client;
 
-        private static volatile boolean logMINOR;
+	private static volatile boolean logMINOR;
+
 	static {
-		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
-			@Override
-			public void shouldUpdate(){
-				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+		Logger.registerLogThresholdCallback(
+			new LogThresholdCallback() {
+				@Override
+				public void shouldUpdate() {
+					logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+				}
 			}
-		});
+		);
 	}
 
 	public PutWaiter(RequestClient client) {
-	    this.client = client;
-    }
+		this.client = client;
+	}
 
-    @Override
+	@Override
 	public synchronized void onSuccess(BaseClientPutter state) {
 		succeeded = true;
 		finished = true;
@@ -42,38 +45,50 @@ public class PutWaiter implements ClientPutCallback {
 	}
 
 	@Override
-	public synchronized void onFailure(InsertException e, BaseClientPutter state) {
+	public synchronized void onFailure(
+		InsertException e,
+		BaseClientPutter state
+	) {
 		error = e;
 		finished = true;
 		notifyAll();
 	}
 
 	@Override
-	public synchronized void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {
-		if(logMINOR)
-			Logger.minor(this, "URI: "+uri);
-		if(this.uri == null)
-			this.uri = uri;
-		if(uri.equals(this.uri)) return;
-		Logger.error(this, "URI already set: "+this.uri+" but new URI: "+uri, new Exception("error"));
+	public synchronized void onGeneratedURI(
+		FreenetURI uri,
+		BaseClientPutter state
+	) {
+		if (logMINOR) Logger.minor(this, "URI: " + uri);
+		if (this.uri == null) this.uri = uri;
+		if (uri.equals(this.uri)) return;
+		Logger.error(
+			this,
+			"URI already set: " + this.uri + " but new URI: " + uri,
+			new Exception("error")
+		);
 	}
 
 	/** Waits for the insert to finish, returns the URI generated, throws if it failed. */
 	public synchronized FreenetURI waitForCompletion() throws InsertException {
-		while(!finished) {
+		while (!finished) {
 			try {
 				wait();
 			} catch (InterruptedException e) {
 				// Ignore
 			}
 		}
-		if(error != null) {
+		if (error != null) {
 			error.uri = uri;
 			throw error;
 		}
-		if(succeeded) return uri;
+		if (succeeded) return uri;
 		Logger.error(this, "Did not succeed but no error");
-		throw new InsertException(InsertExceptionMode.INTERNAL_ERROR, "Did not succeed but no error", uri);
+		throw new InsertException(
+			InsertExceptionMode.INTERNAL_ERROR,
+			"Did not succeed but no error",
+			uri
+		);
 	}
 
 	@Override
@@ -83,18 +98,21 @@ public class PutWaiter implements ClientPutCallback {
 
 	@Override
 	public void onGeneratedMetadata(Bucket metadata, BaseClientPutter state) {
-		Logger.error(this, "onGeneratedMetadata() on PutWaiter from "+state, new Exception("error"));
+		Logger.error(
+			this,
+			"onGeneratedMetadata() on PutWaiter from " + state,
+			new Exception("error")
+		);
 		metadata.free();
 	}
 
-    @Override
-    public void onResume(ClientContext context) {
-        throw new UnsupportedOperationException(); // Not persistent.
-    }
+	@Override
+	public void onResume(ClientContext context) {
+		throw new UnsupportedOperationException(); // Not persistent.
+	}
 
-    @Override
-    public RequestClient getRequestClient() {
-        return client;
-    }
-
+	@Override
+	public RequestClient getRequestClient() {
+		return client;
+	}
 }

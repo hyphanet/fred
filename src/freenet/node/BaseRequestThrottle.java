@@ -7,7 +7,6 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 
 public interface BaseRequestThrottle {
-
 	public static final long DEFAULT_DELAY = MILLISECONDS.toMillis(200);
 	static final long MAX_DELAY = MINUTES.toMillis(5);
 	static final long MIN_DELAY = MILLISECONDS.toMillis(20);
@@ -16,5 +15,4 @@ public interface BaseRequestThrottle {
 	 * Get the current inter-request delay.
 	 */
 	public abstract long getDelay();
-
 }

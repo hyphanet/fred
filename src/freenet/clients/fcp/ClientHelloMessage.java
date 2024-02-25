@@ -14,17 +14,26 @@ import freenet.support.SimpleFieldSet;
  */
 public class ClientHelloMessage extends FCPMessage {
 
-	public final static String NAME = "ClientHello";
+	public static final String NAME = "ClientHello";
 	String clientName;
 	String clientExpectedVersion;
-	
-	public ClientHelloMessage(SimpleFieldSet fs) throws MessageInvalidException {
+
+	public ClientHelloMessage(SimpleFieldSet fs)
+		throws MessageInvalidException {
 		clientName = fs.get("Name");
 		clientExpectedVersion = fs.get("ExpectedVersion");
-		if(clientName == null)
-			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "ClientHello must contain a Name field", null, false);
-		if(clientExpectedVersion == null)
-			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "ClientHello must contain a ExpectedVersion field", null, false);
+		if (clientName == null) throw new MessageInvalidException(
+			ProtocolErrorMessage.MISSING_FIELD,
+			"ClientHello must contain a Name field",
+			null,
+			false
+		);
+		if (clientExpectedVersion == null) throw new MessageInvalidException(
+			ProtocolErrorMessage.MISSING_FIELD,
+			"ClientHello must contain a ExpectedVersion field",
+			null,
+			false
+		);
 		// FIXME check the expected version
 	}
 
@@ -48,5 +57,4 @@ public class ClientHelloMessage extends FCPMessage {
 		handler.send(msg);
 		handler.setClientName(clientName);
 	}
-
 }

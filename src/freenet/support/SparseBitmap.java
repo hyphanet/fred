@@ -8,6 +8,7 @@ import java.util.NavigableSet;
 import java.util.TreeSet;
 
 public class SparseBitmap implements Iterable<int[]> {
+
 	// Ranges ordered by start time. Invariant: ranges do not overlap and do not touch.
 	private final TreeSet<Range> ranges;
 
@@ -18,7 +19,7 @@ public class SparseBitmap implements Iterable<int[]> {
 	public SparseBitmap(SparseBitmap original) {
 		ranges = new TreeSet<Range>(new RangeComparator());
 
-		for(int[] range : original) {
+		for (int[] range : original) {
 			add(range[0], range[1]);
 		}
 	}
@@ -27,8 +28,10 @@ public class SparseBitmap implements Iterable<int[]> {
 	 * Marks the slots between start and end (inclusive) as present.
 	 */
 	public void add(int start, int end) {
-		if(start > end) {
-			throw new IllegalArgumentException("Tried adding bad range. Start: " + start + ", end: " + end);
+		if (start > end) {
+			throw new IllegalArgumentException(
+				"Tried adding bad range. Start: " + start + ", end: " + end
+			);
 		}
 		NavigableSet<Range> toReplace = overlaps(start, end, true);
 		if (!toReplace.isEmpty()) {
@@ -53,8 +56,10 @@ public class SparseBitmap implements Iterable<int[]> {
 	 * Checks whether all slots between start and end (inclusive) are present.
 	 */
 	public boolean contains(int start, int end) {
-		if(start > end) {
-			throw new IllegalArgumentException("Tried checking bad range. Start: " + start + ", end: " + end);
+		if (start > end) {
+			throw new IllegalArgumentException(
+				"Tried checking bad range. Start: " + start + ", end: " + end
+			);
 		}
 
 		// Find the latest range starting before (or at) start, if any exists.
@@ -67,8 +72,10 @@ public class SparseBitmap implements Iterable<int[]> {
 	 * Marks all slots between start and end (inclusive) as not present.
 	 */
 	public void remove(int start, int end) {
-		if(start > end) {
-			throw new IllegalArgumentException("Removing bad range. Start: " + start + ", end: " + end);
+		if (start > end) {
+			throw new IllegalArgumentException(
+				"Removing bad range. Start: " + start + ", end: " + end
+			);
 		}
 
 		List<Range> toAdd = new ArrayList<Range>();
@@ -111,19 +118,25 @@ public class SparseBitmap implements Iterable<int[]> {
 	@Override
 	public String toString() {
 		StringBuffer s = new StringBuffer();
-		for(int[] range : this) {
-			if(s.length() != 0) s.append(", ");
+		for (int[] range : this) {
+			if (s.length() != 0) s.append(", ");
 			s.append(range[0] + "->" + range[1]);
 		}
 		return s.toString();
 	}
 
 	/** Finds all ranges that overlap or touch the given range. */
-	private NavigableSet<Range> overlaps(int start, int end, boolean includeTouching) {
+	private NavigableSet<Range> overlaps(
+		int start,
+		int end,
+		boolean includeTouching
+	) {
 		// Establish bounds on start times to select ranges that would overlap or touch
 		Range startRange = new Range(start, 0);
 		Range lower = ranges.lower(startRange);
-		if (lower != null && lower.end >= (includeTouching ? start - 1 : start)) {
+		if (
+			lower != null && lower.end >= (includeTouching ? start - 1 : start)
+		) {
 			// This range would overlap (or touch, if those are to be included)
 			startRange = new Range(lower.start, 0);
 		}
@@ -133,6 +146,7 @@ public class SparseBitmap implements Iterable<int[]> {
 	}
 
 	private static class SparseBitmapIterator implements Iterator<int[]> {
+
 		Iterator<Range> it;
 
 		public SparseBitmapIterator(SparseBitmap map) {
@@ -147,7 +161,7 @@ public class SparseBitmap implements Iterable<int[]> {
 		@Override
 		public int[] next() {
 			Range r = it.next();
-			return new int[] {r.start, r.end};
+			return new int[] { r.start, r.end };
 		}
 
 		@Override
@@ -157,8 +171,9 @@ public class SparseBitmap implements Iterable<int[]> {
 	}
 
 	private static class Range {
+
 		final int start; // inclusive
-		final int end;   // inclusive
+		final int end; // inclusive
 
 		public Range(int start, int end) {
 			this.start = start;
@@ -167,11 +182,12 @@ public class SparseBitmap implements Iterable<int[]> {
 
 		@Override
 		public String toString() {
-			return "Range:"+start+"->"+end;
+			return "Range:" + start + "->" + end;
 		}
 	}
 
 	private static class RangeComparator implements Comparator<Range> {
+
 		@Override
 		public int compare(Range r1, Range r2) {
 			return r1.start - r2.start;

@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.filter;
 
+import freenet.clients.http.ExternalLinkToadlet;
+import freenet.l10n.NodeL10n;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -11,9 +13,6 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Map;
-
-import freenet.clients.http.ExternalLinkToadlet;
-import freenet.l10n.NodeL10n;
 
 /**
  * Content filter for M3Us
@@ -43,156 +42,186 @@ import freenet.l10n.NodeL10n;
  */
 public class M3UFilter implements ContentDataFilter {
 
-    static final byte[] CHAR_COMMENT_START =
-        { (byte)'#' };
-    static final byte[] CHAR_NEWLINE =
-        { (byte)'\n' };
-    static final byte[] CHAR_CARRIAGE_RETURN =
-        { (byte)'\r' };
-    static final int MAX_URI_LENGTH = 16384;
-    static final String badUriReplacement = "#bad-uri-removed";
-    private final long MAX_LENGTH_NO_PROGRESS = (200L*1024*1024 * 11) / 10; // 200MiB: playlists are a different usecase, and we want to allow transparent pass-through for most files accessed via a playlist, likely through an external palyer. See FProxyToadlet.MAX_LENGTH_NO_PROGRESS for the default. This value must be synchronized with the test data!
-    // TODO: Add parsing of ext-comments to allow for gapless playback.
-    // static final int COMMENT_EXT_SIZE = 4;
-    // static final byte[] COMMENT_EXT_START =
-    //  { (byte)'#', (byte)'E', (byte)'X', (byte)'T' };
-    // static final int EXT_HEADER_SIZE = 7;
-    // static final byte[] EXT_HEADER =
-    // { (byte)'#', (byte)'E', (byte)'X', (byte)'T', (byte)'M', (byte)'3', (byte)'U' };
+	static final byte[] CHAR_COMMENT_START = { (byte) '#' };
+	static final byte[] CHAR_NEWLINE = { (byte) '\n' };
+	static final byte[] CHAR_CARRIAGE_RETURN = { (byte) '\r' };
+	static final int MAX_URI_LENGTH = 16384;
+	static final String badUriReplacement = "#bad-uri-removed";
+	private final long MAX_LENGTH_NO_PROGRESS = (200L * 1024 * 1024 * 11) / 10; // 200MiB: playlists are a different usecase, and we want to allow transparent pass-through for most files accessed via a playlist, likely through an external palyer. See FProxyToadlet.MAX_LENGTH_NO_PROGRESS for the default. This value must be synchronized with the test data!
 
-    @Override
-    public void readFilter(
-        InputStream input, OutputStream output, String charset, Map<String, String> otherParams,
-        String schemeHostAndPort, FilterCallback cb) throws DataFilterException, IOException {
-        // TODO: Check the header whether this is an ext m3u.
-        // TODO: Check the EXTINF headers instead of killing comments.
-        // Check whether the line is a comment
-        boolean isComment = false;
-        int readcount;
-        byte[] nextbyte = new byte[1];
-        byte[] fileUri;
-        int fileIndex;
-        DataInputStream dis = new DataInputStream(input);
-        DataOutputStream dos = new DataOutputStream(output);
-        readcount = dis.read(nextbyte);
-        // read each line manually
-        while (readcount != -1) {
-            if (isCommentStart(nextbyte)) {
-                isComment = true;
-            } else {
-                isComment = false;
-            }
-            // skip empty lines
-            if (isNewline(nextbyte)) {
-                readcount = dis.read(nextbyte);
-                continue;
-            }
-            // read one line as a fileUri
-            fileIndex = 0;
-            fileUri = new byte[MAX_URI_LENGTH];
-            while (readcount != -1) {
-                if (!isComment &&
-                    // do not include carriage return in filenames
-                    !isCarriageReturn(nextbyte) &&
-                    // enforce maximum path length to avoid OOM attacks
-                    fileIndex <= MAX_URI_LENGTH) {
-                    // store the read byte
-                    fileUri[fileIndex] = nextbyte[0];
-                    fileIndex += readcount;
-                }
-                readcount = dis.read(nextbyte);
-                if (isNewline(nextbyte) || readcount == -1) {
-                    if (!isComment) {
-                        // remove too long paths
-                        if (fileIndex <= MAX_URI_LENGTH) {
-                            boolean lineIsEmpty = fileIndex == 0;
-                            if (!lineIsEmpty) {
-                                String uriold = new String(fileUri, 0, fileIndex, StandardCharsets.UTF_8);
-                                // System.out.println(uriold);
-                                // clean up the URL: allow sub-m3us and mp3/ogg/flac (what we can filter)
-                                String filtered;
-                                try {
-                                    String subMimetype = ContentFilter.mimeTypeForSrc(uriold);
-                                    // add prefix for the host name
-                                    // for absolute path names,
-                                    // because otherwise external
-                                    // clients could be tricked into
-                                    // accessing local files (and some
-                                    // just don't work, especially not
-                                    // with downloaded files). This
-                                    // can however make downloaded
-                                    // files leak information about
-                                    // the local setup (host and
-                                    // port).
+	// TODO: Add parsing of ext-comments to allow for gapless playback.
+	// static final int COMMENT_EXT_SIZE = 4;
+	// static final byte[] COMMENT_EXT_START =
+	//  { (byte)'#', (byte)'E', (byte)'X', (byte)'T' };
+	// static final int EXT_HEADER_SIZE = 7;
+	// static final byte[] EXT_HEADER =
+	// { (byte)'#', (byte)'E', (byte)'X', (byte)'T', (byte)'M', (byte)'3', (byte)'U' };
 
-                                    // mirroring tools like `wget -mk`
-                                    // strip the absolute path again,
-                                    // so mirroring should not be
-                                    // impaired.
-                                    filtered = cb.processURI(uriold, subMimetype, schemeHostAndPort, true);
-                                    // allow transparent pass through
-                                    // for all but the largest files,
-                                    // but not for external
-                                    // links. This check is safe,
-                                    // since false positives will just
-                                    // lead to a file to not be played
-                                    // (players will get progress-bar
-                                    // HTML content instead).
-                                    if (!filtered.contains(ExternalLinkToadlet.PATH)
-                                        && !filtered.contains(ExternalLinkToadlet.magicHTTPEscapeString)) {
-                                        if (filtered.contains("?")) {
-                                            filtered += "&";
-                                        } else {
-                                            filtered += "?";
-                                        }
-                                        filtered += "max-size=" + MAX_LENGTH_NO_PROGRESS;
-                                    }
+	@Override
+	public void readFilter(
+		InputStream input,
+		OutputStream output,
+		String charset,
+		Map<String, String> otherParams,
+		String schemeHostAndPort,
+		FilterCallback cb
+	) throws DataFilterException, IOException {
+		// TODO: Check the header whether this is an ext m3u.
+		// TODO: Check the EXTINF headers instead of killing comments.
+		// Check whether the line is a comment
+		boolean isComment = false;
+		int readcount;
+		byte[] nextbyte = new byte[1];
+		byte[] fileUri;
+		int fileIndex;
+		DataInputStream dis = new DataInputStream(input);
+		DataOutputStream dos = new DataOutputStream(output);
+		readcount = dis.read(nextbyte);
+		// read each line manually
+		while (readcount != -1) {
+			if (isCommentStart(nextbyte)) {
+				isComment = true;
+			} else {
+				isComment = false;
+			}
+			// skip empty lines
+			if (isNewline(nextbyte)) {
+				readcount = dis.read(nextbyte);
+				continue;
+			}
+			// read one line as a fileUri
+			fileIndex = 0;
+			fileUri = new byte[MAX_URI_LENGTH];
+			while (readcount != -1) {
+				if (
+					!isComment &&
+					// do not include carriage return in filenames
+					!isCarriageReturn(nextbyte) &&
+					// enforce maximum path length to avoid OOM attacks
+						fileIndex <=
+						MAX_URI_LENGTH
+				) {
+					// store the read byte
+					fileUri[fileIndex] = nextbyte[0];
+					fileIndex += readcount;
+				}
+				readcount = dis.read(nextbyte);
+				if (isNewline(nextbyte) || readcount == -1) {
+					if (!isComment) {
+						// remove too long paths
+						if (fileIndex <= MAX_URI_LENGTH) {
+							boolean lineIsEmpty = fileIndex == 0;
+							if (!lineIsEmpty) {
+								String uriold = new String(
+									fileUri,
+									0,
+									fileIndex,
+									StandardCharsets.UTF_8
+								);
+								// System.out.println(uriold);
+								// clean up the URL: allow sub-m3us and mp3/ogg/flac (what we can filter)
+								String filtered;
+								try {
+									String subMimetype =
+										ContentFilter.mimeTypeForSrc(uriold);
+									// add prefix for the host name
+									// for absolute path names,
+									// because otherwise external
+									// clients could be tricked into
+									// accessing local files (and some
+									// just don't work, especially not
+									// with downloaded files). This
+									// can however make downloaded
+									// files leak information about
+									// the local setup (host and
+									// port).
 
-                                } catch (CommentException e) {
-                                    filtered = badUriReplacement;
-                                } catch (Exception e) {
-                                    filtered = badUriReplacement;
-                                }
-                                if (filtered == null) {
-                                    filtered = badUriReplacement;
-                                }
-                                try {
-                                    dos.write(filtered.getBytes(StandardCharsets.UTF_8));
-                                } catch (Exception e) {
-                                    dos.write(badUriReplacement.getBytes(StandardCharsets.UTF_8));
-                                }
-                            }
-                            // write the newline if we're not at EOF
-                            if (readcount != -1){
-                                dos.write(nextbyte);
-                            }
-                        }
-                    }
-                    // skip the newline
-                    readcount = dis.read(nextbyte);
-                    break; // skip to next line
-                }
-            }
-        }
-        dos.flush();
-        dos.close();
-        output.flush();
-    }
+									// mirroring tools like `wget -mk`
+									// strip the absolute path again,
+									// so mirroring should not be
+									// impaired.
+									filtered = cb.processURI(
+										uriold,
+										subMimetype,
+										schemeHostAndPort,
+										true
+									);
+									// allow transparent pass through
+									// for all but the largest files,
+									// but not for external
+									// links. This check is safe,
+									// since false positives will just
+									// lead to a file to not be played
+									// (players will get progress-bar
+									// HTML content instead).
+									if (
+										!filtered.contains(
+											ExternalLinkToadlet.PATH
+										) &&
+										!filtered.contains(
+											ExternalLinkToadlet.magicHTTPEscapeString
+										)
+									) {
+										if (filtered.contains("?")) {
+											filtered += "&";
+										} else {
+											filtered += "?";
+										}
+										filtered +=
+										"max-size=" + MAX_LENGTH_NO_PROGRESS;
+									}
+								} catch (CommentException e) {
+									filtered = badUriReplacement;
+								} catch (Exception e) {
+									filtered = badUriReplacement;
+								}
+								if (filtered == null) {
+									filtered = badUriReplacement;
+								}
+								try {
+									dos.write(
+										filtered.getBytes(
+											StandardCharsets.UTF_8
+										)
+									);
+								} catch (Exception e) {
+									dos.write(
+										badUriReplacement.getBytes(
+											StandardCharsets.UTF_8
+										)
+									);
+								}
+							}
+							// write the newline if we're not at EOF
+							if (readcount != -1) {
+								dos.write(nextbyte);
+							}
+						}
+					}
+					// skip the newline
+					readcount = dis.read(nextbyte);
+					break; // skip to next line
+				}
+			}
+		}
+		dos.flush();
+		dos.close();
+		output.flush();
+	}
 
-    private static boolean isCommentStart(byte[] nextbyte) {
-        return Arrays.equals(nextbyte, CHAR_COMMENT_START);
-    }
+	private static boolean isCommentStart(byte[] nextbyte) {
+		return Arrays.equals(nextbyte, CHAR_COMMENT_START);
+	}
 
-    private static boolean isNewline(byte[] nextbyte) {
-        return Arrays.equals(nextbyte, CHAR_NEWLINE);
-    }
+	private static boolean isNewline(byte[] nextbyte) {
+		return Arrays.equals(nextbyte, CHAR_NEWLINE);
+	}
 
-    private static boolean isCarriageReturn(byte[] nextbyte) {
-        return Arrays.equals(nextbyte, CHAR_CARRIAGE_RETURN);
-    }
+	private static boolean isCarriageReturn(byte[] nextbyte) {
+		return Arrays.equals(nextbyte, CHAR_CARRIAGE_RETURN);
+	}
 
-    private static String l10n(String key) {
-        return NodeL10n.getBase().getString("M3UFilter."+key);
-    }
-
+	private static String l10n(String key) {
+		return NodeL10n.getBase().getString("M3UFilter." + key);
+	}
 }

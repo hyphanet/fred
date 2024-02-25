@@ -5,6 +5,7 @@ import static org.junit.Assert.*;
 import org.junit.Test;
 
 public class TimeSortedHashtableTest {
+
 	@Test
 	public void testAddRemove() {
 		TimeSortedHashtable<String> tsh = new TimeSortedHashtable<String>();
@@ -12,7 +13,7 @@ public class TimeSortedHashtableTest {
 		assertFalse(tsh.containsValue("KEY1"));
 		assertEquals(0, tsh.countValuesAfter(0));
 		assertEquals(0, tsh.size());
-		
+
 		tsh.push("KEY1", 100);
 		assertEquals(1, tsh.countValuesAfter(0));
 		assertEquals(1, tsh.size());
@@ -46,7 +47,7 @@ public class TimeSortedHashtableTest {
 		assertTrue(tsh.containsValue("KEY1"));
 		assertTrue(tsh.containsValue("KEY2"));
 		assertTrue(tsh.containsValue("KEY3"));
-		
+
 		assertTrue(tsh.removeValue("KEY1"));
 		assertEquals(2, tsh.countValuesAfter(0));
 		assertEquals(2, tsh.size());
@@ -55,7 +56,7 @@ public class TimeSortedHashtableTest {
 		assertFalse(tsh.containsValue("KEY1"));
 		assertTrue(tsh.containsValue("KEY2"));
 		assertTrue(tsh.containsValue("KEY3"));
-		
+
 		tsh.removeBefore(105);
 		assertEquals(1, tsh.countValuesAfter(0));
 		assertEquals(1, tsh.size());
@@ -69,13 +70,12 @@ public class TimeSortedHashtableTest {
 	@Test
 	public void testAddRemoveTS() {
 		TimeSortedHashtable<String> tsh = new TimeSortedHashtable<String>();
-		
-		tsh.push("KEY1", 100);  // 100=KEY1
-		tsh.push("KEY2", 100);  // 100=KEY1, 100=KEY2
-		tsh.push("KEY3", 300);  // 100=KEY1, 100=KEY2, 300=KEY3
-		tsh.push("KEY1", 200);  // 100=KEY2, 200=KEY1, 300=KEY3
-		tsh.removeBefore(105);  // 200=KEY1, 300=KEY3
-		
+
+		tsh.push("KEY1", 100); // 100=KEY1
+		tsh.push("KEY2", 100); // 100=KEY1, 100=KEY2
+		tsh.push("KEY3", 300); // 100=KEY1, 100=KEY2, 300=KEY3
+		tsh.push("KEY1", 200); // 100=KEY2, 200=KEY1, 300=KEY3
+		tsh.removeBefore(105); // 200=KEY1, 300=KEY3
 
 		assertEquals(2, tsh.size());
 		assertEquals(2, tsh.countValuesAfter(0));
@@ -99,7 +99,7 @@ public class TimeSortedHashtableTest {
 		tsh.push("KEY2", 100); // 100=KEY1, 100=KEY2
 		tsh.push("KEY3", 300); // 100=KEY1, 100=KEY2, 300=KEY3
 		tsh.removeBefore(100);
-		
+
 		assertEquals(1, tsh.size());
 	}
 

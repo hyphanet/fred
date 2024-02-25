@@ -26,7 +26,6 @@ import java.net.URI;
  * @author <a href="mailto:bombe@pterodactylus.net">David ‘Bombe’ Roden</a>
  */
 public interface LinkFilterExceptedToadlet {
-
 	/**
 	 * Returns whether the given should be excepted from being filtered.
 	 *
@@ -36,5 +35,4 @@ public interface LinkFilterExceptedToadlet {
 	 *         it should be filtered
 	 */
 	public boolean isLinkExcepted(URI link);
-
 }

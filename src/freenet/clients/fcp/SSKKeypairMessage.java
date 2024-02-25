@@ -12,8 +12,12 @@ public class SSKKeypairMessage extends FCPMessage {
 	private final FreenetURI insertURI;
 	private final FreenetURI requestURI;
 	private final String identifier;
-	
-	public SSKKeypairMessage(FreenetURI insertURI, FreenetURI requestURI, String identifier) {
+
+	public SSKKeypairMessage(
+		FreenetURI insertURI,
+		FreenetURI requestURI,
+		String identifier
+	) {
 		this.insertURI = insertURI;
 		this.requestURI = requestURI;
 		this.identifier = identifier;
@@ -24,8 +28,9 @@ public class SSKKeypairMessage extends FCPMessage {
 		SimpleFieldSet sfs = new SimpleFieldSet(true);
 		sfs.putSingle("InsertURI", insertURI.toString());
 		sfs.putSingle("RequestURI", requestURI.toString());
-		if(identifier != null) // is optional on these two only
-			sfs.putSingle("Identifier", identifier);
+		if (
+			identifier != null
+		) sfs.putSingle("Identifier", identifier); // is optional on these two only
 		return sfs;
 	}
 
@@ -35,8 +40,13 @@ public class SSKKeypairMessage extends FCPMessage {
 	}
 
 	@Override
-	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
-		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "SSKKeypair goes from server to client not the other way around", identifier, false);
+	public void run(FCPConnectionHandler handler, Node node)
+		throws MessageInvalidException {
+		throw new MessageInvalidException(
+			ProtocolErrorMessage.INVALID_MESSAGE,
+			"SSKKeypair goes from server to client not the other way around",
+			identifier,
+			false
+		);
 	}
-
 }

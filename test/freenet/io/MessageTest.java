@@ -5,9 +5,7 @@ import static org.junit.Assert.*;
 import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageType;
-
 import java.util.Arrays;
-
 import org.junit.Test;
 
 /**
@@ -25,17 +23,22 @@ public class MessageTest {
 	private static final String DOUBLE_ARRAY = "double[]";
 	private static final String FLOAT_ARRAY = "float[]";
 
-	private static final MessageType test = new MessageType("test", DMT.PRIORITY_LOW) {{
-		addField(BOOLEAN, Boolean.class);
-		addField(BYTE, Byte.class);
-		addField(SHORT, Short.class);
-		addField(INT, Integer.class);
-		addField(LONG, Long.class);
-		addField(DOUBLE, Double.class);
-		addField(FLOAT, Float.class);
-		addField(DOUBLE_ARRAY, double[].class);
-		addField(FLOAT_ARRAY, float[].class);
-	}};
+	private static final MessageType test = new MessageType(
+		"test",
+		DMT.PRIORITY_LOW
+	) {
+		{
+			addField(BOOLEAN, Boolean.class);
+			addField(BYTE, Byte.class);
+			addField(SHORT, Short.class);
+			addField(INT, Integer.class);
+			addField(LONG, Long.class);
+			addField(DOUBLE, Double.class);
+			addField(FLOAT, Float.class);
+			addField(DOUBLE_ARRAY, double[].class);
+			addField(FLOAT_ARRAY, float[].class);
+		}
+	};
 
 	/**
 	 * Test that different types can be set and retrieved to and from a Message.
@@ -46,8 +49,8 @@ public class MessageTest {
 
 		//Values used for testing.
 		final boolean booleanVal = true;
-		final byte byteVal = (byte)123;
-		final short shortVal = (short)456;
+		final byte byteVal = (byte) 123;
+		final short shortVal = (short) 456;
 		final int intVal = 78912;
 		final long longVal = 3456789123L;
 		final double doubleVal = Math.PI;
@@ -74,7 +77,11 @@ public class MessageTest {
 		assertEquals(longVal, msg.getLong(LONG));
 		assertEquals(doubleVal, msg.getDouble(DOUBLE), 0);
 		assertEquals(floatVal, msg.getFloat(FLOAT), 0);
-		assertTrue(Arrays.equals(doubleArrayVal, msg.getDoubleArray(DOUBLE_ARRAY)));
-		assertTrue(Arrays.equals(floatArrayVal, msg.getFloatArray(FLOAT_ARRAY)));
+		assertTrue(
+			Arrays.equals(doubleArrayVal, msg.getDoubleArray(DOUBLE_ARRAY))
+		);
+		assertTrue(
+			Arrays.equals(floatArrayVal, msg.getFloatArray(FLOAT_ARRAY))
+		);
 	}
 }

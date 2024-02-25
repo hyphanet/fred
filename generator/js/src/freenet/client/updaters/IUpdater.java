@@ -4,7 +4,7 @@ package freenet.client.updaters;
 public interface IUpdater {
 	/**
 	 * Updates a given element with the given content
-	 * 
+	 *
 	 * @param elementId
 	 *            - The element that needs to be updated
 	 * @param content

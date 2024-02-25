@@ -23,8 +23,8 @@ import java.lang.annotation.Target;
  * @author saces
  *
  */
-@Target( METHOD )
-@Retention( RUNTIME )
+@Target(METHOD)
+@Retention(RUNTIME)
 @Documented
 public @interface AllowData {
 	boolean value() default false;

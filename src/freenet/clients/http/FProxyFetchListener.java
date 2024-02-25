@@ -4,5 +4,4 @@ package freenet.clients.http;
 public interface FProxyFetchListener {
 	/** Will be called when the fetch's status is changed */
 	public void onEvent();
-
 }
