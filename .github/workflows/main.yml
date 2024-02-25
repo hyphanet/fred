@@ -2,9 +2,7 @@ name: Java Code Style Format
 
 on:
   pull_request:
-    branches:
-      - next  # Update with your main branch name or the branch you want to target
-
+  
 jobs:
   format:
     runs-on: ubuntu-latest
