@@ -1,0 +1,38 @@
+name: Java Code Style Format
+
+on:
+  pull_request:
+  
+jobs:
+  format:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.head_ref }}
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'  # Update with your desired Java version
+          distribution: 'temurin'
+    
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'  # Update with Node.js 20 or the desired version
+
+      - name: Install Prettier Java Format
+        run: npm install --save-dev --save-exact prettier@v3.2.5 prettier-plugin-java@v2.6.0
+    
+      - name: Run Prettier Plugin Java
+        run: npx prettier --write **/*.java
+        
+      - name: Commit changes
+        uses: stefanzweifel/git-auto-commit-action@v5.0.0
+        with:
+          commit_message: Apply formatting changes
+          branch: ${{ github.head_ref }}
