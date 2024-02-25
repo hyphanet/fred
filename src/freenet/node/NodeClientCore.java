@@ -170,6 +170,12 @@ public class NodeClientCore implements Persistable {
 	@Deprecated
 	/* It’s not the field that is deprecated but directly accessing it is. */
 	public final FilenameGenerator persistentFilenameGenerator;
+
+	/**
+	 * @deprecated Use {@link #getTempBucketFactory()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but directly accessing it is. */
 	public final TempBucketFactory tempBucketFactory;
 	public final PersistentTempBucketFactory persistentTempBucketFactory;
 	private final DiskSpaceCheckingRandomAccessBufferFactory persistentDiskChecker;
@@ -2185,6 +2191,10 @@ public class NodeClientCore implements Persistable {
 
     public FilenameGenerator getPersistentFilenameGenerator() {
         return persistentFilenameGenerator;
+    }
+
+    public TempBucketFactory getTempBucketFactory() {
+        return tempBucketFactory;
     }
 
 }

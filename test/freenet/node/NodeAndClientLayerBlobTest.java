@@ -73,7 +73,7 @@ public class NodeAndClientLayerBlobTest extends NodeAndClientLayerTestBase {
         assertTrue(BucketTools.equalBuckets(result.asBucket(), block.getData()));
         // Now fetch the blob...
         fw = new FetchWaiter(rc);
-        Bucket blobBucket = node.clientCore.tempBucketFactory.makeBucket(FILE_SIZE*3);
+        Bucket blobBucket = node.clientCore.getTempBucketFactory().makeBucket(FILE_SIZE*3);
         BinaryBlobWriter bbw = new BinaryBlobWriter(blobBucket);
         ClientGetter getter = new ClientGetter(fw, uri, ctx, (short) 0, null, bbw, false, null, null);
         getter.start(node.clientCore.clientContext);

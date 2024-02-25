@@ -158,7 +158,7 @@ public class FCPConnectionHandler implements Closeable {
 		this.sock = s;
 		this.server = server;
 		isClosed = false;
-		this.bf = server.getCore().tempBucketFactory;
+		this.bf = server.getCore().getTempBucketFactory();
 		requestsByIdentifier = new HashMap<String, ClientRequest>();
 		uskSubscriptions = new HashMap<String, SubscribeUSK>();
 		this.inputHandler = new FCPConnectionInputHandler(this);

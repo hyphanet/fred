@@ -1185,7 +1185,7 @@ public class FCPServer implements Runnable, DownloadCache {
 		Bucket newData = null;
 		try {
 			if(preferred != null) newData = preferred;
-			else newData = core.tempBucketFactory.makeBucket(origData.size());
+			else newData = core.getTempBucketFactory().makeBucket(origData.size());
 			BucketTools.copy(origData, newData);
 			if(origData.size() != newData.size()) {
 				Logger.normal(this, "Maybe it disappeared under us?");
@@ -1218,7 +1218,7 @@ public class FCPServer implements Runnable, DownloadCache {
 					if(preferred != null)
 						newData = preferred;
 					else
-						newData = core.tempBucketFactory.makeBucket(origData.size());
+						newData = core.getTempBucketFactory().makeBucket(origData.size());
 					BucketTools.copy(origData, newData);
 				} catch (IOException e) {
 					Logger.error(this, "Unable to copy data: "+e, e);

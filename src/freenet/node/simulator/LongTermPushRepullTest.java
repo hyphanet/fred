@@ -182,7 +182,7 @@ public class LongTermPushRepullTest extends LongTermTest {
 	}
 
 	private static RandomAccessBucket randomData(Node node) throws IOException {
-	    RandomAccessBucket data = node.clientCore.tempBucketFactory.makeBucket(TEST_SIZE);
+	    RandomAccessBucket data = node.clientCore.getTempBucketFactory().makeBucket(TEST_SIZE);
 		OutputStream os = data.getOutputStream();
 		try {
 		byte[] buf = new byte[4096];

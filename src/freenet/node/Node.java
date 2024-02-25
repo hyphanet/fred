@@ -2459,12 +2459,12 @@ public class Node implements TimeSkewDetectorCallback {
 		maxSlashdotCacheKeys = (int) Math.min(maxSlashdotCacheSize / sizePerKey, Integer.MAX_VALUE);
 
 		chkSlashdotcache = new CHKStore();
-		chkSlashdotcacheStore = new SlashdotStore<CHKBlock>(chkSlashdotcache, maxSlashdotCacheKeys, slashdotCacheLifetime, PURGE_INTERVAL, ticker, this.clientCore.tempBucketFactory);
+		chkSlashdotcacheStore = new SlashdotStore<CHKBlock>(chkSlashdotcache, maxSlashdotCacheKeys, slashdotCacheLifetime, PURGE_INTERVAL, ticker, this.clientCore.getTempBucketFactory());
 		pubKeySlashdotcache = new PubkeyStore();
-		pubKeySlashdotcacheStore = new SlashdotStore<DSAPublicKey>(pubKeySlashdotcache, maxSlashdotCacheKeys, slashdotCacheLifetime, PURGE_INTERVAL, ticker, this.clientCore.tempBucketFactory);
+		pubKeySlashdotcacheStore = new SlashdotStore<DSAPublicKey>(pubKeySlashdotcache, maxSlashdotCacheKeys, slashdotCacheLifetime, PURGE_INTERVAL, ticker, this.clientCore.getTempBucketFactory());
 		getPubKey.setLocalSlashdotcache(pubKeySlashdotcache);
 		sskSlashdotcache = new SSKStore(getPubKey);
-		sskSlashdotcacheStore = new SlashdotStore<SSKBlock>(sskSlashdotcache, maxSlashdotCacheKeys, slashdotCacheLifetime, PURGE_INTERVAL, ticker, this.clientCore.tempBucketFactory);
+		sskSlashdotcacheStore = new SlashdotStore<SSKBlock>(sskSlashdotcache, maxSlashdotCacheKeys, slashdotCacheLifetime, PURGE_INTERVAL, ticker, this.clientCore.getTempBucketFactory());
 
 		// MAXIMUM seclevel = no slashdot cache.
 

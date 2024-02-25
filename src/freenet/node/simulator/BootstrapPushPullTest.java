@@ -72,7 +72,7 @@ public class BootstrapPushPullTest {
 			System.exit(EXIT_FAILED_TARGET);
 		}
         System.err.println("Creating test data: "+TEST_SIZE+" bytes.");
-        RandomAccessBucket data = node.clientCore.tempBucketFactory.makeBucket(TEST_SIZE);
+        RandomAccessBucket data = node.clientCore.getTempBucketFactory().makeBucket(TEST_SIZE);
         OutputStream os = data.getOutputStream();
 		try {
         byte[] buf = new byte[4096];
