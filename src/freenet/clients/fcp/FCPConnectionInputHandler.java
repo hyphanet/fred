@@ -96,7 +96,7 @@ public class FCPConnectionInputHandler implements Runnable {
 			try {
 				if(logDEBUG)
 					Logger.debug(this, "Incoming FCP message:\n"+messageType+'\n'+fs.toString());
-				msg = FCPMessage.create(messageType, fs, handler.bf, handler.getServer().getCore().persistentTempBucketFactory);
+				msg = FCPMessage.create(messageType, fs, handler.bf, handler.getServer().getCore().getPersistentTempBucketFactory());
 				if(msg == null) continue;
 			} catch (MessageInvalidException e) {
 				if(firstMessage) {

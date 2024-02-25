@@ -97,14 +97,14 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		this.core = node;
 		this.priorityClass = priorityClass;
 		bucketFactory = bf;
-		this.persistentFileTracker = node.persistentTempBucketFactory;
+		this.persistentFileTracker = node.getPersistentTempBucketFactory();
 		random = r;
 		this.eventProducer = new SimpleEventProducer();
 		eventProducer.addEventListener(new EventLogger(LogLevel.MINOR, false));
 		curMaxLength = Long.MAX_VALUE;
 		curMaxTempLength = Long.MAX_VALUE;
 		curMaxMetadataLength = 1024 * 1024;
-		this.persistentBucketFactory = node.persistentTempBucketFactory;
+		this.persistentBucketFactory = node.getPersistentTempBucketFactory();
 		this.realTimeFlag = realTimeFlag;
 	}
 

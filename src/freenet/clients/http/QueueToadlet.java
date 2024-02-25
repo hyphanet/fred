@@ -591,7 +591,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				else
 					fnam = null;
 				/* copy bucket data */
-				final RandomAccessBucket copiedBucket = core.persistentTempBucketFactory.makeBucket(file.getData().size());
+				final RandomAccessBucket copiedBucket = core.getPersistentTempBucketFactory().makeBucket(file.getData().size());
 				BucketTools.copy(file.getData(), copiedBucket);
 				final CountDownLatch done = new CountDownLatch(1);
 				try {
