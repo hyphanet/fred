@@ -421,7 +421,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		}
 
 		if(handler == null && persistence == Persistence.CONNECTION)
-			handler = origHandler.outputHandler;
+			handler = origHandler.getOutputHandler();
 		if(handler != null)
 			handler.queue(FCPMessage.withListRequestIdentifier(msg, listRequestIdentifier));
 		else
@@ -441,7 +441,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	private void trySendAllDataMessage(FCPConnectionOutputHandler handler, String listRequestIdentifier) {
 	    if(persistence == Persistence.CONNECTION) {
 	        if(handler == null)
-	            handler = origHandler.outputHandler;
+	            handler = origHandler.getOutputHandler();
 	    }
 	    if(handler != null) {
 	        FCPMessage allData = FCPMessage.withListRequestIdentifier(getAllDataMessage(), listRequestIdentifier);
@@ -452,7 +452,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 
 	private void queueProgressMessageInner(FCPMessage msg, FCPConnectionOutputHandler handler, int verbosityMask) {
 	    if(persistence == Persistence.CONNECTION && handler == null)
-	        handler = origHandler.outputHandler;
+	        handler = origHandler.getOutputHandler();
 	    if(handler != null)
 	        handler.queue(msg);
 	    else

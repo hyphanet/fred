@@ -352,9 +352,9 @@ public class PersistentRequestClient {
 			FCPConnectionHandler connHandler = getConnection();
 			if(connHandler != null) {
 				if(persistence == Persistence.REBOOT)
-					server.globalRebootClient.queuePendingMessagesOnConnectionRestartAsync(connHandler.outputHandler, server.core.clientContext);
+					server.globalRebootClient.queuePendingMessagesOnConnectionRestartAsync(connHandler.getOutputHandler(), server.core.clientContext);
 				else
-					server.globalForeverClient.queuePendingMessagesOnConnectionRestartAsync(connHandler.outputHandler, server.core.clientContext);
+					server.globalForeverClient.queuePendingMessagesOnConnectionRestartAsync(connHandler.getOutputHandler(), server.core.clientContext);
 			}
 			watchGlobal = true;
 		}
