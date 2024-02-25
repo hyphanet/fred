@@ -193,6 +193,12 @@ public class NodeClientCore implements Persistable {
 	@Deprecated
 	/* It’s not the field that is deprecated but directly accessing it is. */
 	public final ClientLayerPersister clientLayerPersister;
+
+	/**
+	 * @deprecated Use {@link #getNode()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but directly accessing it is. */
 	public final Node node;
 	public final RequestTracker tracker;
 	final NodeStats nodeStats;
@@ -2215,6 +2221,10 @@ public class NodeClientCore implements Persistable {
 
     public ClientLayerPersister getClientLayerPersister() {
         return clientLayerPersister;
+    }
+
+    public Node getNode() {
+        return node;
     }
 
 }

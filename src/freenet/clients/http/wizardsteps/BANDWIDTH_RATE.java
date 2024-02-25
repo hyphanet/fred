@@ -77,7 +77,7 @@ public class BANDWIDTH_RATE extends BandwidthManipulator implements Step {
 		boolean addedDefault = false;
 
 		try {
-			BandwidthLimit detected = detectBandwidthLimits(core.node.ipDetector.getBandwidthIndicator());
+			BandwidthLimit detected = detectBandwidthLimits(core.getNode().ipDetector.getBandwidthIndicator());
 
 			//Detected limits reasonable; add half of both as recommended option.
 			BandwidthLimit usable = new BandwidthLimit(detected.downBytes/2, detected.upBytes/2, "bandwidthDetected", true);

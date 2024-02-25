@@ -108,7 +108,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 		while(true) {
 			// Allow 5 minutes before we start killing requests due to not connecting.
 			OpennetManager om;
-			if(core.node.peers.countConnectedPeers() < 3 && (om = core.node.getOpennet()) != null &&
+			if(core.getNode().peers.countConnectedPeers() < 3 && (om = core.getNode().getOpennet()) != null &&
 					System.currentTimeMillis() - om.getCreationTime() < MINUTES.toMillis(5)) {
 				try {
 					synchronized(this) {

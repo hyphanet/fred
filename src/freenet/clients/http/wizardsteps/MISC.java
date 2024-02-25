@@ -88,20 +88,20 @@ public class MISC implements Step {
 	 */
 	public void setUPnP(final boolean enableUPnP) {
 		//If its state would not change, don't do anything.
-		if(enableUPnP == core.node.pluginManager.isPluginLoaded("plugins.UPnP.UPnP")) {
+		if(enableUPnP == core.getNode().pluginManager.isPluginLoaded("plugins.UPnP.UPnP")) {
 				return;
 		}
 
-		core.node.executor.execute(new Runnable() {
+		core.getNode().executor.execute(new Runnable() {
 
 			private final boolean enable = enableUPnP;
 
 			@Override
 			public void run() {
 				if(enable) {
-					core.node.pluginManager.startPluginOfficial("UPnP", true);
+					core.getNode().pluginManager.startPluginOfficial("UPnP", true);
 				} else {
-					core.node.pluginManager.killPluginByClass("plugins.UPnP.UPnP", 5000);
+					core.getNode().pluginManager.killPluginByClass("plugins.UPnP.UPnP", 5000);
 				}
 			}
 

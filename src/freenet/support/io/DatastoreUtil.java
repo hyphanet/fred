@@ -54,7 +54,7 @@ public class DatastoreUtil {
             return -1;
         }
 
-        long freeSpace = core.node.getStoreDir().getUsableSpace();
+        long freeSpace = core.getNode().getStoreDir().getUsableSpace();
 
         if (freeSpace <= 0) {
             return -1;

@@ -85,7 +85,7 @@ public class FileInsertWizardToadlet extends Toadlet implements LinkEnabledCallb
 		HTMLNode insertBox = infobox.outer;
 		HTMLNode insertContent = infobox.content;
 		insertContent.addChild("p", l10n("insertIntro"));
-		NETWORK_THREAT_LEVEL seclevel = core.node.securityLevels.getNetworkThreatLevel();
+		NETWORK_THREAT_LEVEL seclevel = core.getNode().securityLevels.getNetworkThreatLevel();
 		HTMLNode insertForm = ctx.addFormChild(insertContent, QueueToadlet.PATH_UPLOADS, "queueInsertForm");
 		boolean preselectSsk = (!rememberedLastTime && seclevel != NETWORK_THREAT_LEVEL.LOW)
 				|| (rememberedLastTime && !wasCanonicalLastTime)

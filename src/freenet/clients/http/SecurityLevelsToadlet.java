@@ -109,7 +109,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 			tryConfirm = "security-levels.physicalThreatLevel.tryConfirm";
 			String physicalThreatLevel = request.getPartAsStringFailsafe(configName, 128);
 			PHYSICAL_THREAT_LEVEL newPhysicalLevel = SecurityLevels.parsePhysicalThreatLevel(physicalThreatLevel);
-			PHYSICAL_THREAT_LEVEL oldPhysicalLevel = core.node.securityLevels.getPhysicalThreatLevel();
+			PHYSICAL_THREAT_LEVEL oldPhysicalLevel = core.getNode().securityLevels.getPhysicalThreatLevel();
 			if(logMINOR) Logger.minor(this, "New physical threat level: "+newPhysicalLevel+" old = "+node.securityLevels.getPhysicalThreatLevel());
 			if(newPhysicalLevel != null) {
 				if(newPhysicalLevel == oldPhysicalLevel && newPhysicalLevel == PHYSICAL_THREAT_LEVEL.HIGH) {
@@ -118,7 +118,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 					String confirmPassword = request.getPartAsStringFailsafe("confirmMasterPassword", MAX_PASSWORD_LENGTH);
 					if (!oldPassword.isEmpty() && !confirmPassword.isEmpty() && !password.isEmpty() && password.equals(confirmPassword)) {
 						try {
-							core.node.changeMasterPassword(oldPassword, password, false);
+							core.getNode().changeMasterPassword(oldPassword, password, false);
 						} catch (MasterKeysWrongPasswordException e) {
 							sendChangePasswordForm(ctx, true, false, newPhysicalLevel.name());
 							return;
@@ -149,9 +149,9 @@ public class SecurityLevelsToadlet extends Toadlet {
 						if (!password.isEmpty() && !confirmPassword.isEmpty() && password.equals(confirmPassword)) {
 							try {
 								if(oldPhysicalLevel == PHYSICAL_THREAT_LEVEL.NORMAL || oldPhysicalLevel == PHYSICAL_THREAT_LEVEL.LOW)
-									core.node.changeMasterPassword("", password, false);
+									core.getNode().changeMasterPassword("", password, false);
 								else
-									core.node.setMasterPassword(password, false);
+									core.getNode().setMasterPassword(password, false);
 							} catch (AlreadySetPasswordException e) {
 								sendChangePasswordForm(ctx, false, false, newPhysicalLevel.name());
 								return;
@@ -194,9 +194,9 @@ public class SecurityLevelsToadlet extends Toadlet {
 						if (!password.isEmpty()) {
 							// This is actually the OLD password ...
 							try {
-								core.node.changeMasterPassword(password, "", false);
+								core.getNode().changeMasterPassword(password, "", false);
 							} catch (IOException e) {
-								if(!core.node.getMasterPasswordFile().exists()) {
+								if(!core.getNode().getMasterPasswordFile().exists()) {
 									// Ok.
 									System.out.println("Master password file no longer exists, assuming this is deliberate");
 								} else {
@@ -243,7 +243,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 									core.storeConfig();
 								return;
 							}
-						} else if(core.node.getMasterPasswordFile().exists()) {
+						} else if(core.getNode().getMasterPasswordFile().exists()) {
 							// We need the old password
 							PageNode page = ctx.getPageMaker().getPageNode(l10nSec("passwordForDecryptTitle"), ctx);
 							pageNode = page.outer;
@@ -271,7 +271,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 					}
 					if(newPhysicalLevel == PHYSICAL_THREAT_LEVEL.MAXIMUM) {
 						try {
-							core.node.killMasterKeysFile();
+							core.getNode().killMasterKeysFile();
 						} catch (IOException e) {
 							sendCantDeleteMasterKeysFile(ctx, newPhysicalLevel.name());
 							return;

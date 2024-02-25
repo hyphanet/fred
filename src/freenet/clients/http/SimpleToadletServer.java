@@ -258,8 +258,8 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 			cssTheme = THEME.themeFromName(CSSName);
 			pageMaker.setTheme(cssTheme);
 			NodeClientCore core = SimpleToadletServer.this.core;
-			if (core.node.pluginManager != null)
-				core.node.pluginManager.setFProxyTheme(cssTheme);
+			if (core.getNode().pluginManager != null)
+				core.getNode().pluginManager.setFProxyTheme(cssTheme);
 			fetchKeyBoxAboveBookmarks = cssTheme.fetchKeyBoxAboveBookmarks;
 		}
 
@@ -419,7 +419,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 
 	public void createFproxy() {
 		NodeClientCore core = this.core;
-		Node node = core.node;
+		Node node = core.getNode();
 		synchronized(this) {
 			if(haveCalledFProxy) return;
 			haveCalledFProxy = true;
@@ -887,7 +887,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 	}
 	
 	public void finishStart() {
-		core.node.securityLevels.addNetworkThreatLevelListener(new SecurityLevelListener<NETWORK_THREAT_LEVEL>() {
+		core.getNode().securityLevels.addNetworkThreatLevelListener(new SecurityLevelListener<NETWORK_THREAT_LEVEL>() {
 
 			@Override
 			public void onChange(NETWORK_THREAT_LEVEL oldLevel,
@@ -903,7 +903,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 			}
 			
 		});
-		core.node.securityLevels.addPhysicalThreatLevelListener(new SecurityLevelListener<PHYSICAL_THREAT_LEVEL> () {
+		core.getNode().securityLevels.addPhysicalThreatLevelListener(new SecurityLevelListener<PHYSICAL_THREAT_LEVEL> () {
 
 			@Override
 			public void onChange(PHYSICAL_THREAT_LEVEL oldLevel, PHYSICAL_THREAT_LEVEL newLevel) {
@@ -981,7 +981,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 
 		// Show the wizard until dismissed by the user (See bug #2624)
 		NodeClientCore core = this.core;
-		if(core != null && core.node != null && !fproxyHasCompletedWizard) {
+		if(core != null && core.getNode() != null && !fproxyHasCompletedWizard) {
 			//If the user has not completed the wizard, only allow access to the wizard and static
 			//resources. Anything else redirects to the first page of the wizard.
 			if (!(path.startsWith(FirstTimeWizardToadlet.TOADLET_URL) ||
@@ -1120,7 +1120,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 			if(advancedModeEnabled == enabled) return;
 			advancedModeEnabled = enabled;
 		}
-		core.node.config.store();
+		core.getNode().config.store();
 	}
 
 	@Override
@@ -1241,7 +1241,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 	}
 	
 	public Ticker getTicker(){
-		return core.node.getTicker();
+		return core.getNode().getTicker();
 	}
 	
 	public NodeClientCore getCore(){

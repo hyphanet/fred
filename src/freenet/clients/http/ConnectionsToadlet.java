@@ -626,7 +626,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				privateComment = request.getPartAsStringFailsafe("peerPrivateNote", 250).trim();
 
 			if (Boolean.parseBoolean(request.getPartAsStringFailsafe("peers-offers-files", 5))) {
-				File[] files = core.node.runDir().file("peers-offers").listFiles();
+				File[] files = core.getNode().runDir().file("peers-offers").listFiles();
 				if (files != null && files.length > 0) {
 					StringBuilder peersOffersFilesContent = new StringBuilder();
 					for (final File file : files) {
