@@ -202,12 +202,12 @@ public class NodeIPDetector {
 	}
 	
 	private void onAddedValidIP() {
-		node.clientCore.alerts.unregister(primaryIPUndetectedAlert);
+		node.clientCore.getAlerts().unregister(primaryIPUndetectedAlert);
 		node.onAddedValidIP();
 	}
 	
 	private void onNotAddedValidIP() {
-		node.clientCore.alerts.register(primaryIPUndetectedAlert);
+		node.clientCore.getAlerts().register(primaryIPUndetectedAlert);
 	}
 	
 	/**
@@ -606,11 +606,11 @@ public class NodeIPDetector {
 				maybeSymmetricAlert = new SimpleUserAlert(true, l10n("maybeSymmetricTitle"), 
 						l10n("maybeSymmetric"), l10n("maybeSymmetricShort"), UserAlert.ERROR);
 			}
-			if(node.clientCore != null && node.clientCore.alerts != null)
-				node.clientCore.alerts.register(maybeSymmetricAlert);
+			if(node.clientCore != null && node.clientCore.getAlerts() != null)
+				node.clientCore.getAlerts().register(maybeSymmetricAlert);
 		} else {
 			if(maybeSymmetricAlert != null)
-				node.clientCore.alerts.unregister(maybeSymmetricAlert);
+				node.clientCore.getAlerts().unregister(maybeSymmetricAlert);
 		}
 	}
 
@@ -641,11 +641,11 @@ public class NodeIPDetector {
 	}
 	
 	private void onGetValidAddressOverride() {
-		node.clientCore.alerts.unregister(invalidAddressOverrideAlert);
+		node.clientCore.getAlerts().unregister(invalidAddressOverrideAlert);
 	}
 	
 	private void onNotGetValidAddressOverride() {
-		node.clientCore.alerts.register(invalidAddressOverrideAlert);
+		node.clientCore.getAlerts().register(invalidAddressOverrideAlert);
 	}
 
 	public void addConnectionTypeBox(HTMLNode contentNode) {

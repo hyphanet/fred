@@ -2511,7 +2511,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			synchronized(completedGets) {
 				completedGets.put(identifier, event);
 			}
-			core.alerts.register(event);
+			core.getAlerts().register(event);
 		} else if(req instanceof ClientPut) {
 			FreenetURI uri = ((ClientPut)req).getFinalURI();
 			if(uri == null) {
@@ -2523,7 +2523,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			synchronized(completedPuts) {
 				completedPuts.put(identifier, event);
 			}
-			core.alerts.register(event);
+			core.getAlerts().register(event);
 		} else if(req instanceof ClientPutDir) {
 			FreenetURI uri = ((ClientPutDir)req).getFinalURI();
 			if(uri == null) {
@@ -2536,7 +2536,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			synchronized(completedPutDirs) {
 				completedPutDirs.put(identifier, event);
 			}
-			core.alerts.register(event);
+			core.getAlerts().register(event);
 		}
 	}
 

@@ -310,7 +310,7 @@ public class PeerManager {
 		}
 		if(!droppedOldPeers.isEmpty()) {
 		    try {
-		        node.clientCore.alerts.register(droppedOldPeers);
+		        node.clientCore.getAlerts().register(droppedOldPeers);
 		        Logger.error(this, droppedOldPeers.getText());
 		    } catch (Throwable t) {
 		        // Startup MUST complete, don't let client layer problems kill it.
@@ -1652,7 +1652,7 @@ public class PeerManager {
 	public void start() {
 		ua = new PeerManagerUserAlert(node.nodeStats, node.nodeUpdater);
 		updatePMUserAlert();
-		node.clientCore.alerts.register(ua);
+		node.clientCore.getAlerts().register(ua);
 		node.getTicker().queueTimedJob(writePeersRunnable, 0);
 	}
 

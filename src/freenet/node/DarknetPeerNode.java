@@ -1108,7 +1108,7 @@ public class DarknetPeerNode extends PeerNode {
 				}
 
 			};
-			node.clientCore.alerts.register(alert);
+			node.clientCore.getAlerts().register(alert);
 		}
 
 		private void onReceiveSuccess() {
@@ -1180,7 +1180,7 @@ public class DarknetPeerNode extends PeerNode {
 				}
 
 			};
-			node.clientCore.alerts.register(alert);
+			node.clientCore.getAlerts().register(alert);
 		}
 
 		/** Ask the user whether (s)he wants to download a file from a direct peer */
@@ -1237,7 +1237,7 @@ public class DarknetPeerNode extends PeerNode {
 				@Override
 				public boolean isValid() {
 					if(acceptedOrRejected) {
-						node.clientCore.alerts.unregister(this);
+						node.clientCore.getAlerts().unregister(this);
 						return false;
 					}
 					return true;
@@ -1485,8 +1485,8 @@ public class DarknetPeerNode extends PeerNode {
 			// 128. However even sending a 64kiB file
 			// (DarknetPeerNode.java) does not cause
 			// noticeable load on the receiving system.
-			synchronized (node.clientCore.alerts) {
-				for (UserAlert userAlert : node.clientCore.alerts.getAlerts()) {
+			synchronized (node.clientCore.getAlerts()) {
+				for (UserAlert userAlert : node.clientCore.getAlerts().getAlerts()) {
 					if (!(userAlert instanceof N2NTMUserAlert)) {
 						continue;
 					}
@@ -1543,10 +1543,10 @@ public class DarknetPeerNode extends PeerNode {
 		}
 		// show the alert
 		N2NTMUserAlert userAlert = new N2NTMUserAlert(this, newText, newFileNumber, composedTime, sentTime, receivedTime, msgid);
-		node.clientCore.alerts.register(userAlert);
+		node.clientCore.getAlerts().register(userAlert);
 		// remove the merged alerts
 		for (UserAlert alert : merged) {
-			node.clientCore.alerts.dismissAlert(alert.hashCode());
+			node.clientCore.getAlerts().dismissAlert(alert.hashCode());
 		}
 	}
 
@@ -1570,7 +1570,7 @@ public class DarknetPeerNode extends PeerNode {
 
 		UserAlert alert = offer.askUserUserAlert();
 
-		node.clientCore.alerts.register(alert);
+		node.clientCore.getAlerts().register(alert);
 	}
 
 	public void acceptTransfer(long id) {
@@ -1672,7 +1672,7 @@ public class DarknetPeerNode extends PeerNode {
 			return;
 		}
 		BookmarkFeedUserAlert userAlert = new BookmarkFeedUserAlert(this, name, description, hasAnActiveLink, fileNumber, uri, composedTime, sentTime, receivedTime);
-		node.clientCore.alerts.register(userAlert);
+		node.clientCore.getAlerts().register(userAlert);
 	}
 
 	public void handleFproxyDownloadFeed(SimpleFieldSet fs, int fileNumber) {
@@ -1694,7 +1694,7 @@ public class DarknetPeerNode extends PeerNode {
 			return;
 		}
 		DownloadFeedUserAlert userAlert = new DownloadFeedUserAlert(this, description, fileNumber, uri, composedTime, sentTime, receivedTime);
-		node.clientCore.alerts.register(userAlert);
+		node.clientCore.getAlerts().register(userAlert);
 	}
 
 	@Override

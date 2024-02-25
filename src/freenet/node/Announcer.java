@@ -115,7 +115,7 @@ public class Announcer {
 	}
 
 	private void registerEvent(int eventStatus) {
-		node.clientCore.alerts.register(new AnnouncementUserEvent(eventStatus));
+		node.clientCore.getAlerts().register(new AnnouncementUserEvent(eventStatus));
 	}
 
 	private void connectSomeSeednodes() {
@@ -378,7 +378,7 @@ public class Announcer {
 				Logger.error(this, "Shutting down announcement as we are older than the current mandatory build and auto-update is disabled or waiting for user input.");
 				System.err.println("Shutting down announcement as we are older than the current mandatory build and auto-update is disabled or waiting for user input.");
 				if(node.clientCore != null)
-					node.clientCore.alerts.register(announcementDisabledAlert);
+					node.clientCore.getAlerts().register(announcementDisabledAlert);
 			}
 
 		}
@@ -403,7 +403,7 @@ public class Announcer {
 				killedAnnouncementTooOld = false;
 			}
 			if(node.clientCore != null)
-				node.clientCore.alerts.unregister(announcementDisabledAlert);
+				node.clientCore.getAlerts().unregister(announcementDisabledAlert);
 			if(node.nodeUpdater.isEnabled() && node.nodeUpdater.isArmed() &&
 					node.nodeUpdater.uom.fetchingFromTwo() &&
 					node.peers.getPeerNodeStatusSize(PeerManager.PEER_NODE_STATUS_TOO_NEW, false) > 5) {

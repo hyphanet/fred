@@ -72,7 +72,7 @@ public class PluginJarUpdater extends NodeUpdater {
 			a = alert;
 			alert = null;
 		}
-		node.clientCore.alerts.unregister(a);
+		node.clientCore.getAlerts().unregister(a);
 		return false;
 	}
 	
@@ -185,7 +185,7 @@ public class PluginJarUpdater extends NodeUpdater {
 			};
 		}
 		if(toRegister != null)
-			node.clientCore.alerts.register(toRegister);
+			node.clientCore.getAlerts().register(toRegister);
 	}
 
 	private String l10n(String key) {
@@ -232,7 +232,7 @@ public class PluginJarUpdater extends NodeUpdater {
 			alert = null;
 		}
 		if(a != null)
-			node.clientCore.alerts.unregister(a);
+			node.clientCore.getAlerts().unregister(a);
 	}
 
 	@Override
@@ -244,7 +244,7 @@ public class PluginJarUpdater extends NodeUpdater {
 			alert = null;
 		}
 		if(a != null)
-			node.clientCore.alerts.unregister(a);
+			node.clientCore.getAlerts().unregister(a);
 	}
 
 	public synchronized void arm(boolean wasRunning) {

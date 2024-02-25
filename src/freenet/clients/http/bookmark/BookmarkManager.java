@@ -417,7 +417,7 @@ public class BookmarkManager implements RequestClient {
 					for (int i = 0; i < nbBookmarks; i++) {
 						SimpleFieldSet subset = sfs.getSubset(BookmarkItem.NAME + i);
 						try {
-							BookmarkItem item = new BookmarkItem(subset, this, node.alerts);
+							BookmarkItem item = new BookmarkItem(subset, this, node.getAlerts());
 							String name = (isRoot ? "" : prefix + category.name) + '/' + item.name;
 							putPaths(name, item);
 							category.addBookmark(item);

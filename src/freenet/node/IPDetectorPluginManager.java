@@ -344,8 +344,8 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 	 * is one, and if it is necessary to do so. */
 	void start() {
 		// Cannot be initialized until UserAlertManager has been created.
-		proxyAlert = new ProxyUserAlert(node.clientCore.alerts, false);
-		node.clientCore.alerts.register(portForwardAlert);
+		proxyAlert = new ProxyUserAlert(node.clientCore.getAlerts(), false);
+		node.clientCore.getAlerts().register(portForwardAlert);
 		started = true;
 		tryMaybeRun();
 	}
@@ -846,7 +846,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 								new SimpleUserAlert(false, l10n("noConnectivityTitle"), l10n("noConnectivity"), l10n("noConnectivityShort"), UserAlert.ERROR);
 					}
 					if(toRegister != null)
-						node.clientCore.alerts.register(toRegister);
+						node.clientCore.getAlerts().register(toRegister);
 				} else {
 					UserAlert toKill;
 					synchronized(this) {
@@ -854,7 +854,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 						noConnectivityAlert = null;
 					}
 					if(toKill != null)
-						node.clientCore.alerts.unregister(toKill);
+						node.clientCore.getAlerts().unregister(toKill);
 				}
 			} finally {
 				boolean finished;
@@ -959,13 +959,13 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 
 	public void addConnectionTypeBox(HTMLNode contentNode) {
 		if(node.clientCore == null) return;
-		if(node.clientCore.alerts == null) return;
+		if(node.clientCore.getAlerts() == null) return;
 		if(proxyAlert == null) {
 			Logger.error(this, "start() not called yet?", new Exception("debug"));
 			return;
 		}
 		if(proxyAlert.isValid())
-			contentNode.addChild(node.clientCore.alerts.renderAlert(proxyAlert));
+			contentNode.addChild(node.clientCore.getAlerts().renderAlert(proxyAlert));
 	}
 
 	public boolean hasJSTUN() {

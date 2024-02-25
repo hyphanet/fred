@@ -36,7 +36,7 @@ public class PeersOffersUserAlert extends AbstractUserAlert {
                     }
                 }
             }
-            node.clientCore.alerts.register(new PeersOffersUserAlert(node, frefFiles.toString()));
+            node.clientCore.getAlerts().register(new PeersOffersUserAlert(node, frefFiles.toString()));
         }
     }
 

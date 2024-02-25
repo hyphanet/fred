@@ -19,7 +19,7 @@ public class UpgradeConnectionSpeedUserAlert extends AbstractUserAlert {
     }
 
     public static void createAlert(Node node, BandwidthLimit bandwidthLimit) {
-        node.clientCore.alerts.register(
+        node.clientCore.getAlerts().register(
                 new UpgradeConnectionSpeedUserAlert(node, bandwidthLimit));
     }
 

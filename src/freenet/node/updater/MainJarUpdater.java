@@ -361,7 +361,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
         } else {
             final long now = System.currentTimeMillis();
             System.err.println("Not deploying multi-file update for "+atomicDeployer.name+" because auto-update is not enabled.");
-            node.clientCore.alerts.register(new UserAlert() {
+            node.clientCore.getAlerts().register(new UserAlert() {
 
                 private String l10n(String key) {
                     return NodeL10n.getBase().getString("MainJarUpdater.ConfirmMultiFileUpdater."+key);

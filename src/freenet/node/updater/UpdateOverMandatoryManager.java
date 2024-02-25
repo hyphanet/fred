@@ -531,7 +531,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				return;
 			alert = new PeersSayKeyBlownAlert();
 		}
-		updateManager.node.clientCore.alerts.register(alert);
+		updateManager.node.clientCore.getAlerts().register(alert);
 	}
 
 	private class PeersSayKeyBlownAlert extends AbstractUserAlert {
@@ -1165,7 +1165,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 	}
 
 	public void killAlert() {
-		updateManager.node.clientCore.alerts.unregister(alert);
+		updateManager.node.clientCore.getAlerts().unregister(alert);
 	}
 
 	public void handleRequestJar(Message m, final PeerNode source) {

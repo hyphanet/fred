@@ -1097,7 +1097,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 	public UserAlertManager getUserAlertManager() {
 		NodeClientCore core = this.core;
 		if(core == null) return null;
-		return core.alerts;
+		return core.getAlerts();
 	}
 
 	public void setCSSName(THEME theme) {

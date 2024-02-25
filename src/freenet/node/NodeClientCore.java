@@ -217,6 +217,12 @@ public class NodeClientCore implements Persistable {
 	public final RandomSource random;
 	final ProgramDirectory tempDir;	// Persistent temporary buckets
 	final ProgramDirectory persistentTempDir;
+
+	/**
+	 * @deprecated Use {@link #getAlerts()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but directly accessing it is. */
 	public final UserAlertManager alerts;
 	final TextModeClientInterfaceServer tmci;
 	TextModeClientInterface directTMCI;
@@ -2245,6 +2251,10 @@ public class NodeClientCore implements Persistable {
 
     public RandomSource getRandom() {
         return random;
+    }
+
+    public UserAlertManager getAlerts() {
+        return alerts;
     }
 
 }

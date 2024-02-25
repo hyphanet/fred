@@ -271,9 +271,9 @@ public class Node implements TimeSkewDetectorCallback {
 				name = myName;
 			}
 			if(name.startsWith("Node id|")|| name.equals("MyFirstFreenetNode") || name.startsWith("Freenet node with no name #")){
-				clientCore.alerts.register(nodeNameUserAlert);
+				clientCore.getAlerts().register(nodeNameUserAlert);
 			}else{
-				clientCore.alerts.unregister(nodeNameUserAlert);
+				clientCore.getAlerts().unregister(nodeNameUserAlert);
 			}
 			return name;
 		}
@@ -1739,7 +1739,7 @@ public class Node implements TimeSkewDetectorCallback {
 		toadlets.setCore(clientCore);
 
 		if (JVMVersion.isEOL()) {
-			clientCore.alerts.register(new JVMVersionAlert());
+			clientCore.getAlerts().register(new JVMVersionAlert());
 		}
 
 		if(showFriendsVisibilityAlert)
@@ -1864,7 +1864,7 @@ public class Node implements TimeSkewDetectorCallback {
 							} catch (NodeInitException e) {
 								opennet = null;
 								Logger.error(this, "UNABLE TO ENABLE OPENNET: "+e, e);
-								clientCore.alerts.register(new SimpleUserAlert(false, l10n("enableOpennetFailedTitle"), l10n("enableOpennetFailed", "message", e.getLocalizedMessage()), l10n("enableOpennetFailed", "message", e.getLocalizedMessage()), UserAlert.ERROR));
+								clientCore.getAlerts().register(new SimpleUserAlert(false, l10n("enableOpennetFailedTitle"), l10n("enableOpennetFailed", "message", e.getLocalizedMessage()), l10n("enableOpennetFailed", "message", e.getLocalizedMessage()), UserAlert.ERROR));
 							}
 						}
 					}
@@ -2165,7 +2165,7 @@ public class Node implements TimeSkewDetectorCallback {
 							masterKeysFile.delete();
 							Logger.error(this, "Unable to securely delete "+masterKeysFile);
 							System.err.println(NodeL10n.getBase().getString("SecurityLevels.cantDeletePasswordFile", "filename", masterKeysFile.getAbsolutePath()));
-							clientCore.alerts.register(new SimpleUserAlert(true, NodeL10n.getBase().getString("SecurityLevels.cantDeletePasswordFileTitle"), NodeL10n.getBase().getString("SecurityLevels.cantDeletePasswordFile"), NodeL10n.getBase().getString("SecurityLevels.cantDeletePasswordFileTitle"), UserAlert.CRITICAL_ERROR));
+							clientCore.getAlerts().register(new SimpleUserAlert(true, NodeL10n.getBase().getString("SecurityLevels.cantDeletePasswordFileTitle"), NodeL10n.getBase().getString("SecurityLevels.cantDeletePasswordFile"), NodeL10n.getBase().getString("SecurityLevels.cantDeletePasswordFileTitle"), UserAlert.CRITICAL_ERROR));
 						}
 					}
 					if(oldLevel == PHYSICAL_THREAT_LEVEL.MAXIMUM && newLevel != PHYSICAL_THREAT_LEVEL.HIGH) {
@@ -2667,9 +2667,9 @@ public class Node implements TimeSkewDetectorCallback {
 					@Override
 					public void set(Boolean val) {
 						if (val) {
-							for (UserAlert alert : clientCore.alerts.getAlerts())
+							for (UserAlert alert : clientCore.getAlerts().getAlerts())
 								if (alert instanceof PeersOffersUserAlert)
-									clientCore.alerts.unregister(alert);
+									clientCore.getAlerts().unregister(alert);
 						} else
 							PeersOffersUserAlert.createAlert(node);
 						peersOffersDismissed = val;
@@ -2859,7 +2859,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 	};
 	private void createPasswordUserAlert() {
-		this.clientCore.alerts.register(masterPasswordUserAlert);
+		this.clientCore.getAlerts().register(masterPasswordUserAlert);
 	}
 
 	private void initRAMClientCacheFS() {
@@ -2885,13 +2885,13 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	private void finishInitSaltHashFS(final String suffix, NodeClientCore clientCore) {
-		if(clientCore.alerts == null) throw new NullPointerException();
-		chkDatastore.getStore().setUserAlertManager(clientCore.alerts);
-		chkDatacache.getStore().setUserAlertManager(clientCore.alerts);
-		pubKeyDatastore.getStore().setUserAlertManager(clientCore.alerts);
-		pubKeyDatacache.getStore().setUserAlertManager(clientCore.alerts);
-		sskDatastore.getStore().setUserAlertManager(clientCore.alerts);
-		sskDatacache.getStore().setUserAlertManager(clientCore.alerts);
+		if(clientCore.getAlerts() == null) throw new NullPointerException();
+		chkDatastore.getStore().setUserAlertManager(clientCore.getAlerts());
+		chkDatacache.getStore().setUserAlertManager(clientCore.getAlerts());
+		pubKeyDatastore.getStore().setUserAlertManager(clientCore.getAlerts());
+		pubKeyDatacache.getStore().setUserAlertManager(clientCore.getAlerts());
+		sskDatastore.getStore().setUserAlertManager(clientCore.getAlerts());
+		sskDatacache.getStore().setUserAlertManager(clientCore.getAlerts());
 	}
 
 	private void initRAMFS() {
@@ -3164,7 +3164,7 @@ public class Node implements TimeSkewDetectorCallback {
 		checkForEvilJVMBugs();
 
 		if(!NativeThread.HAS_ENOUGH_NICE_LEVELS)
-			clientCore.alerts.register(new NotEnoughNiceLevelsUserAlert());
+			clientCore.getAlerts().register(new NotEnoughNiceLevelsUserAlert());
 
 		this.clientCore.start(config);
 
@@ -3274,12 +3274,12 @@ public class Node implements TimeSkewDetectorCallback {
 				catch(Throwable t) {
 					Logger.error(this, "GCJ version check is broken!", t);
 				}
-				clientCore.alerts.register(new SimpleUserAlert(true, l10n("usingGCJTitle"), l10n("usingGCJ"), l10n("usingGCJTitle"), UserAlert.WARNING));
+				clientCore.getAlerts().register(new SimpleUserAlert(true, l10n("usingGCJTitle"), l10n("usingGCJ"), l10n("usingGCJTitle"), UserAlert.WARNING));
 			}
 		}
 
 		if(!isUsingWrapper() && !skipWrapperWarning) {
-			clientCore.alerts.register(new SimpleUserAlert(true, l10n("notUsingWrapperTitle"), l10n("notUsingWrapper"), l10n("notUsingWrapperShort"), UserAlert.WARNING));
+			clientCore.getAlerts().register(new SimpleUserAlert(true, l10n("notUsingWrapperTitle"), l10n("notUsingWrapper"), l10n("notUsingWrapperShort"), UserAlert.WARNING));
 		}
 		
 		// Unfortunately debian's version of OpenJDK appears to have segfaulting issues.
@@ -4373,7 +4373,7 @@ public class Node implements TimeSkewDetectorCallback {
 	public synchronized void setTimeSkewDetectedUserAlert() {
 		if(timeSkewDetectedUserAlert == null) {
 			timeSkewDetectedUserAlert = new TimeSkewDetectedUserAlert();
-			clientCore.alerts.register(timeSkewDetectedUserAlert);
+			clientCore.getAlerts().register(timeSkewDetectedUserAlert);
 		}
 	}
 
@@ -4817,7 +4817,7 @@ public class Node implements TimeSkewDetectorCallback {
 	};
 	
 	private void registerFriendsVisibilityAlert() {
-		if(clientCore == null || clientCore.alerts == null) {
+		if(clientCore == null || clientCore.getAlerts() == null) {
 			// Wait until startup completed.
 			this.getTicker().queueTimedJob(new Runnable() {
 
@@ -4829,11 +4829,11 @@ public class Node implements TimeSkewDetectorCallback {
 			}, 0);
 			return;
 		}
-		clientCore.alerts.register(visibilityAlert);
+		clientCore.getAlerts().register(visibilityAlert);
 	}
 	
 	private void unregisterFriendsVisibilityAlert() {
-		clientCore.alerts.unregister(visibilityAlert);
+		clientCore.getAlerts().unregister(visibilityAlert);
 	}
 
 	public int getMinimumMTU() {

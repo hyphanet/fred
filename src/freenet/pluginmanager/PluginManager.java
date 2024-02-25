@@ -402,8 +402,8 @@ public class PluginManager {
 			PluginLoadFailedUserAlert newAlert =
 				new PluginLoadFailedUserAlert(filename, pdl.isOfficialPluginLoader(), stillTrying, e);
 			PluginLoadFailedUserAlert oldAlert = loadedPlugins.replaceUserAlert(filename, newAlert);
-			core.alerts.register(newAlert);
-			core.alerts.unregister(oldAlert);
+			core.getAlerts().register(newAlert);
+			core.getAlerts().unregister(oldAlert);
 		} catch (UnsupportedClassVersionError e) {
 			Logger.error(this, "Could not load plugin " + filename + " : " + e,
 					e);
@@ -414,8 +414,8 @@ public class PluginManager {
 			PluginLoadFailedUserAlert newAlert =
 				new PluginLoadFailedUserAlert(filename, pdl.isOfficialPluginLoader(), false, l10n("pluginReqNewerJVMTitle", "name", filename));
 			PluginLoadFailedUserAlert oldAlert = loadedPlugins.replaceUserAlert(filename, newAlert);
-			core.alerts.register(newAlert);
-			core.alerts.unregister(oldAlert);
+			core.getAlerts().register(newAlert);
+			core.getAlerts().unregister(oldAlert);
 		} catch (Throwable e) {
 			Logger.error(this, "Could not load plugin " + filename + " : " + e, e);
 			System.err.println("Could not load plugin " + filename + " : " + e);
@@ -425,8 +425,8 @@ public class PluginManager {
 			PluginLoadFailedUserAlert newAlert =
 				new PluginLoadFailedUserAlert(filename, pdl.isOfficialPluginLoader(), false, e);
 			PluginLoadFailedUserAlert oldAlert = loadedPlugins.replaceUserAlert(filename, newAlert);
-			core.alerts.register(newAlert);
-			core.alerts.unregister(oldAlert);
+			core.getAlerts().register(newAlert);
+			core.getAlerts().unregister(oldAlert);
 		} finally {
 			loadedPlugins.removeStartingPlugin(pluginProgress);
 		}
@@ -569,7 +569,7 @@ public class PluginManager {
 		public boolean isValid() {
 			boolean success = loadedPlugins.isFailedPlugin(filename);
 			if(!success) {
-				core.alerts.unregister(this);
+				core.getAlerts().unregister(this);
 			}
 			return success;
 		}
