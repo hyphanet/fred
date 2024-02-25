@@ -387,8 +387,8 @@ public class WelcomeToadlet extends Toadlet {
 
             if (errorMessage == null) {
                 try {
-                    node.config.get("node").set("inputBandwidthLimit", request.getPartAsStringFailsafe("inputBandwidthLimit", Byte.MAX_VALUE));
-                    node.config.get("node").set("outputBandwidthLimit", request.getPartAsStringFailsafe("outputBandwidthLimit", Byte.MAX_VALUE));
+                    node.getConfig().get("node").set("inputBandwidthLimit", request.getPartAsStringFailsafe("inputBandwidthLimit", Byte.MAX_VALUE));
+                    node.getConfig().get("node").set("outputBandwidthLimit", request.getPartAsStringFailsafe("outputBandwidthLimit", Byte.MAX_VALUE));
 
                     if (upgradeConnectionSpeedAlert != null) {
                         upgradeConnectionSpeedAlert.setUpgraded(true);
@@ -415,7 +415,7 @@ public class WelcomeToadlet extends Toadlet {
         if (ctx.isAllowedFullAccess()) {
 
             if (request.isParameterSet("latestlog")) {
-                final File logs = new File(node.config.get("logger").getString("dirname") + File.separator + "freenet-latest.log");
+                final File logs = new File(node.getConfig().get("logger").getString("dirname") + File.separator + "freenet-latest.log");
                 String text = readLogTail(logs, 100000);
                 this.writeTextReply(ctx, 200, "OK", text);
                 return;
@@ -520,7 +520,7 @@ public class WelcomeToadlet extends Toadlet {
 			contentNode.addChild(ctx.getAlertManager().createSummary());
         }
 		
-        if (node.config.get("fproxy").getBoolean("fetchKeyBoxAboveBookmarks")) {
+        if (node.getConfig().get("fproxy").getBoolean("fetchKeyBoxAboveBookmarks")) {
             this.putFetchKeyBox(ctx, contentNode);
         }
         
@@ -551,7 +551,7 @@ public class WelcomeToadlet extends Toadlet {
         }
 
         // Fetch key box if the theme wants it below the bookmarks.
-        if (!node.config.get("fproxy").getBoolean("fetchKeyBoxAboveBookmarks")) {
+        if (!node.getConfig().get("fproxy").getBoolean("fetchKeyBoxAboveBookmarks")) {
             this.putFetchKeyBox(ctx, contentNode);
         }
 

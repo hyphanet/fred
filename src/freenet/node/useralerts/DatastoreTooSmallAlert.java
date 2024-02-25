@@ -56,7 +56,7 @@ public class DatastoreTooSmallAlert implements UserAlert {
 
 	@Override
 	public String getText() {
-		Config config = core.getNode().config;
+		Config config = core.getNode().getConfig();
 
 		// Datastore size as configured in wizard is the sum of these three.
 		long storeSize = config.get("node").getLong("storeSize");
@@ -83,7 +83,7 @@ public class DatastoreTooSmallAlert implements UserAlert {
 
 	@Override
 	public HTMLNode getHTMLText() {
-		Config config = core.getNode().config;
+		Config config = core.getNode().getConfig();
 
 		// Datastore size as configured in wizard is the sum of these three.
 		long storeSize = config.get("node").getLong("storeSize");
@@ -120,7 +120,7 @@ public class DatastoreTooSmallAlert implements UserAlert {
 
 	@Override
 	public boolean isValid() {
-		Config config = core.getNode().config;
+		Config config = core.getNode().getConfig();
 
 		// Datastore size as configured in wizard is the sum of these three.
 		long storeSize = config.get("node").getLong("storeSize");
@@ -139,7 +139,7 @@ public class DatastoreTooSmallAlert implements UserAlert {
 
 		// Check if warning has already been dismissed on this Freenet version
 		int currentVersion = Version.buildNumber();
-		int dismissedVersion = core.getNode().config.get("node").getInt("datastoreTooSmallDismissed");
+		int dismissedVersion = core.getNode().getConfig().get("node").getInt("datastoreTooSmallDismissed");
 
 		return currentSize < minSize && currentVersion != dismissedVersion;
 	}
@@ -163,7 +163,7 @@ public class DatastoreTooSmallAlert implements UserAlert {
 		String currentVersion = Integer.toString(Version.buildNumber());
 
 		try {
-			core.getNode().config.get("node").set("datastoreTooSmallDismissed", currentVersion);
+			core.getNode().getConfig().get("node").set("datastoreTooSmallDismissed", currentVersion);
 		} catch (ConfigException e) {
 		}
 	}

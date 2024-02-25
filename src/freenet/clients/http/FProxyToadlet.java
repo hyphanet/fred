@@ -990,7 +990,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 
 	private String getSchemeHostAndPort(ToadletContext ctx) {
 		// retrieve config from froxy
-		SubConfig fProxyConfig = core.getNode().config.get("fproxy");
+		SubConfig fProxyConfig = core.getNode().getConfig().get("fproxy");
 
 		Option<?> fProxyPort = fProxyConfig.getOption("port");
 		Option<?> fProxyBindTo = fProxyConfig.getOption("bindTo");

@@ -429,7 +429,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		intervalPushManager=new IntervalPusherManager(getTicker(), pushDataManager);
 		bookmarkManager = new BookmarkManager(core, publicGatewayMode());
 		try {
-			FProxyToadlet.maybeCreateFProxyEtc(core, node, node.config, this);
+			FProxyToadlet.maybeCreateFProxyEtc(core, node, node.getConfig(), this);
 		} catch (IOException e) {
 			Logger.error(this, "Could not start fproxy: "+e, e);
 			System.err.println("Could not start fproxy:");
@@ -1120,7 +1120,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 			if(advancedModeEnabled == enabled) return;
 			advancedModeEnabled = enabled;
 		}
-		core.getNode().config.store();
+		core.getNode().getConfig().store();
 	}
 
 	@Override

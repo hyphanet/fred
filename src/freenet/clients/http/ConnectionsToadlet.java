@@ -639,7 +639,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 					reftext = peersOffersFilesContent.toString();
 				}
 
-				node.config.get("node").set("peersOffersDismissed", true);
+				node.getConfig().get("node").set("peersOffersDismissed", true);
 			}
 			
 			String trustS = request.getPartAsStringFailsafe("trust", 10);

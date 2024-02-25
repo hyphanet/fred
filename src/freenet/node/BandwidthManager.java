@@ -32,7 +32,7 @@ public class BandwidthManager {
             public void run() {
                 try {
                     FredPluginBandwidthIndicator bandwidthIndicator = node.ipDetector.getBandwidthIndicator();
-                    if (!node.config.get("node").getBoolean("connectionSpeedDetection") ||
+                    if (!node.getConfig().get("node").getBoolean("connectionSpeedDetection") ||
                             bandwidthIndicator == null) {
                         return;
                     }
@@ -40,8 +40,8 @@ public class BandwidthManager {
                     int detectedInputBandwidth = bandwidthIndicator.getDownstreamMaxBitRate() / 8;
                     int detectedOutputBandwidth = bandwidthIndicator.getUpstramMaxBitRate() / 8;
 
-                    int currentInputBandwidth = node.config.get("node").getInt("inputBandwidthLimit");
-                    int currentOutputBandwidth = node.config.get("node").getInt("outputBandwidthLimit");
+                    int currentInputBandwidth = node.getConfig().get("node").getInt("inputBandwidthLimit");
+                    int currentOutputBandwidth = node.getConfig().get("node").getInt("outputBandwidthLimit");
 
                     if (detectedInputBandwidth > currentInputBandwidth * 3 &&
                             detectedInputBandwidth > lastOfferedInputBandwidth * 3 ||

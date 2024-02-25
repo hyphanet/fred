@@ -122,7 +122,7 @@ public class StatisticsToadlet extends Toadlet {
         if(!ctx.checkFullAccess(this))
             return;
         
-		final SubConfig nodeConfig = node.config.get("node");
+		final SubConfig nodeConfig = node.getConfig().get("node");
 		
 		final String requestPath = request.getPath().substring(path().length());
 
@@ -1081,7 +1081,7 @@ public class StatisticsToadlet extends Toadlet {
 		if(delta > 0) {
 			long output_rate = (rate[3] - rate[0]) / delta;
 			long input_rate = (rate[4] - rate[1]) / delta;
-			SubConfig nodeConfig = node.config.get("node");
+			SubConfig nodeConfig = node.getConfig().get("node");
 			int outputBandwidthLimit = nodeConfig.getInt("outputBandwidthLimit");
 			int inputBandwidthLimit = nodeConfig.getInt("inputBandwidthLimit");
 			if(inputBandwidthLimit == -1) {

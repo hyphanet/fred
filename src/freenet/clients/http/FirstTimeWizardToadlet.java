@@ -81,7 +81,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		//Generic Toadlet-related initialization.
 		super(client);
 		this.core = core;
-		Config config = node.config;
+		Config config = node.getConfig();
 
 		addWizardConfiguration(config);
 

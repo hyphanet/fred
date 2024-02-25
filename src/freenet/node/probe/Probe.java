@@ -174,7 +174,7 @@ public class Probe implements ByteCounter {
 		this.timer = new Timer(true);
 
 		int sortOrder = 0;
-		final SubConfig nodeConfig = node.config.get("node");
+		final SubConfig nodeConfig = node.getConfig().get("node");
 
 		nodeConfig.register("probeBandwidth", true, sortOrder++, true, true, "Node.probeBandwidthShort",
 			"Node.probeBandwidthLong", new BooleanCallback() {
@@ -323,7 +323,7 @@ public class Probe implements ByteCounter {
 			if(probeIdentifier == -1) {
 				nodeConfig.getOption("identifier").setValue("-1");
 				//TODO: Store config here as it has changed?
-				node.config.store();
+				node.getConfig().store();
 			}
 		} catch (InvalidConfigValueException e) {
 			Logger.error(Probe.class, "node.identifier set() unexpectedly threw.", e);

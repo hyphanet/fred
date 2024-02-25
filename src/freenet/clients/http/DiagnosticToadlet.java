@@ -81,7 +81,7 @@ public class DiagnosticToadlet extends Toadlet {
 
 		node.clientCore.getBandwidthStatsPutter().updateData(node);
 
-		final SubConfig nodeConfig = node.config.get("node");
+		final SubConfig nodeConfig = node.getConfig().get("node");
 
 		StringBuilder textBuilder = new StringBuilder();
 

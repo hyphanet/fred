@@ -113,7 +113,7 @@ public class PluginManager {
 		executor = new SerialExecutor(PriorityLevel.NORM_PRIORITY.value);
 		executor.start(node.executor, "PM callback executor");
 
-        SubConfig pmconfig = node.config.createSubConfig("pluginmanager");
+        SubConfig pmconfig = node.getConfig().createSubConfig("pluginmanager");
         pmconfig.register("enabled", true, 0, true, true, "PluginManager.enabled", "PluginManager.enabledLong", new BooleanCallback() {
 
             @Override
@@ -174,7 +174,7 @@ public class PluginManager {
 
 		pmconfig.finishedInitialization();
 
-		fproxyTheme = THEME.themeFromName(node.config.get("fproxy").getString("css"));
+		fproxyTheme = THEME.themeFromName(node.getConfig().get("fproxy").getString("css"));
 		selfinstance = this;
 	}
 
@@ -606,7 +606,7 @@ public class PluginManager {
 			// malicious plugins could try to hijack node config
 			// pages, to ill effect. Let's avoid that.
 			boolean pluginIsTryingToHijackNodeConfig = false;
-			for(SubConfig subconfig : node.config.getConfigs()) {
+			for(SubConfig subconfig : node.getConfig().getConfigs()) {
 				if(pi.getPluginClassName().equals(subconfig.getPrefix())) {
 					pluginIsTryingToHijackNodeConfig = true;
 					break;

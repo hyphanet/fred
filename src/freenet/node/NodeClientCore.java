@@ -903,7 +903,7 @@ public class NodeClientCore implements Persistable {
 		// FCP (including persistent requests so needs to start before FProxy)
 		try {
 			fcpServer =
-					FCPServer.maybeCreate(node, this, node.config,
+					FCPServer.maybeCreate(node, this, node.getConfig(),
 							      fcpPersistentRoot);
 			clientContext.setDownloadCache(fcpServer);
 			if (!killedDatabase())
@@ -2047,7 +2047,7 @@ public class NodeClientCore implements Persistable {
 
 	public void storeConfig() {
 		Logger.normal(this, "Trying to write config to disk", new Exception("debug"));
-		node.config.store();
+		node.getConfig().store();
 	}
 
 	public boolean isTestnetEnabled() {

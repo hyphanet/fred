@@ -39,8 +39,8 @@ public class UpgradeConnectionSpeedUserAlert extends AbstractUserAlert {
         content.addChild("p", l10n("text",
                 new String[] {"input", "output"},
                 new String[] {
-                        SizeUtil.formatSize(node.config.get("node").getInt("inputBandwidthLimit")),
-                        SizeUtil.formatSize(node.config.get("node").getInt("outputBandwidthLimit"))}));
+                        SizeUtil.formatSize(node.getConfig().get("node").getInt("inputBandwidthLimit")),
+                        SizeUtil.formatSize(node.getConfig().get("node").getInt("outputBandwidthLimit"))}));
         if (error != null) {
             content.addChild("p", error);
             error = null;

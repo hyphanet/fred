@@ -441,7 +441,12 @@ public class Node implements TimeSkewDetectorCallback {
 	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final NodeStats nodeStats;
 
-	/** Config object for the whole node. */
+	/**
+	 * Config object for the whole node.
+	 * @deprecated Use {@link #getConfig()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final PersistentConfig config;
 
 	// Static stuff related to logger
@@ -4931,6 +4936,10 @@ public class Node implements TimeSkewDetectorCallback {
 
     public NodeStats getNodeStats() {
         return nodeStats;
+    }
+
+    public PersistentConfig getConfig() {
+        return config;
     }
 
 }

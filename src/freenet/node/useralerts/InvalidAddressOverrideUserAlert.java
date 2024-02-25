@@ -34,7 +34,7 @@ public class InvalidAddressOverrideUserAlert extends AbstractUserAlert {
 
 	@Override
 	public HTMLNode getHTMLText() {
-		SubConfig sc = node.config.get("node");
+		SubConfig sc = node.getConfig().get("node");
 		Option<?> o = sc.getOption("ipAddressOverride");
 		
 		HTMLNode textNode = new HTMLNode("div");

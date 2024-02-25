@@ -39,7 +39,7 @@ public class ModifyConfig extends FCPMessage {
 		if(!handler.hasFullAccess()) {
 			throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "ModifyConfig requires full access", identifier, false);
 		}
-		Config config = node.config;
+		Config config = node.getConfig();
 		
 		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		
