@@ -877,7 +877,7 @@ public class FCPConnectionHandler implements Closeable {
 	
 	ClientRequest getRebootRequest(boolean global, FCPConnectionHandler handler, String identifier) {
 		if(global)
-			return handler.server.globalRebootClient.getRequest(identifier);
+			return handler.server.getGlobalRebootClient().getRequest(identifier);
 		else
 			return handler.getRebootClient().getRequest(identifier);
 	}
@@ -891,7 +891,7 @@ public class FCPConnectionHandler implements Closeable {
 	
 	ClientRequest removePersistentRebootRequest(boolean global, String identifier) throws MessageInvalidException {
 		PersistentRequestClient client =
-			global ? server.globalRebootClient :
+			global ? server.getGlobalRebootClient() :
 			getRebootClient();
 		ClientRequest req = client.getRequest(identifier);
 		if(req != null) {

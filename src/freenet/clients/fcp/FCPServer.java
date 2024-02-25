@@ -94,6 +94,12 @@ public class FCPServer implements Runnable, DownloadCache {
      *  so we don't have to bloat this class with that. */
 	final FCPPluginConnectionTracker pluginConnectionTracker;
 	final WeakHashMap<String, PersistentRequestClient> rebootClientsByName;
+
+	/**
+	 * @deprecated Use {@link #getGlobalRebootClient()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	final PersistentRequestClient globalRebootClient;
 	PersistentRequestClient globalForeverClient;
 	public static final int QUEUE_MAX_RETRIES = -1;
@@ -1228,6 +1234,10 @@ public class FCPServer implements Runnable, DownloadCache {
 
 	public boolean isEnabled() {
 		return enabled;
+	}
+
+	public PersistentRequestClient getGlobalRebootClient() {
+		return globalRebootClient;
 	}
 
 }

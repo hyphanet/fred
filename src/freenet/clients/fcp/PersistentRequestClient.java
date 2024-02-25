@@ -343,16 +343,16 @@ public class PersistentRequestClient {
 		}
 		if(server.globalForeverClient == null) return false;
 		if(watchGlobal && !enabled) {
-			server.globalRebootClient.unwatch(this);
+			server.getGlobalRebootClient().unwatch(this);
 			server.globalForeverClient.unwatch(this);
 			watchGlobal = false;
 		} else if(enabled && !watchGlobal) {
-			server.globalRebootClient.watch(this);
+			server.getGlobalRebootClient().watch(this);
 			server.globalForeverClient.watch(this);
 			FCPConnectionHandler connHandler = getConnection();
 			if(connHandler != null) {
 				if(persistence == Persistence.REBOOT)
-					server.globalRebootClient.queuePendingMessagesOnConnectionRestartAsync(connHandler.getOutputHandler(), server.getCore().clientContext);
+					server.getGlobalRebootClient().queuePendingMessagesOnConnectionRestartAsync(connHandler.getOutputHandler(), server.getCore().clientContext);
 				else
 					server.globalForeverClient.queuePendingMessagesOnConnectionRestartAsync(connHandler.getOutputHandler(), server.getCore().clientContext);
 			}

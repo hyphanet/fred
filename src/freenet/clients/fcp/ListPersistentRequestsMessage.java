@@ -144,7 +144,7 @@ public class ListPersistentRequestsMessage extends FCPMessage {
 			void complete(ClientContext context) {
 				
 				if(handler.getRebootClient().watchGlobal) {
-					PersistentRequestClient globalRebootClient = handler.getServer().globalRebootClient;
+					PersistentRequestClient globalRebootClient = handler.getServer().getGlobalRebootClient();
 
 					TransientListJob job = new TransientListJob(globalRebootClient, outputHandler, context, listRequestIdentifier) {
 
