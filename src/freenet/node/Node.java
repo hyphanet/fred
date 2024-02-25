@@ -606,8 +606,14 @@ public class Node implements TimeSkewDetectorCallback {
 	@Deprecated
 	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final NodeIPDetector ipDetector;
-	/** For debugging/testing, set this to true to stop the
-	 * probabilistic decrement at the edges of the HTLs. */
+
+	/**
+	 * For debugging/testing, set this to true to stop the
+	 * probabilistic decrement at the edges of the HTLs.
+	 * @deprecated Use {@link #isDisableProbabilisticHTLs()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	boolean disableProbabilisticHTLs;
 
 	public final RequestTracker tracker;
@@ -4958,6 +4964,10 @@ public class Node implements TimeSkewDetectorCallback {
 
     public NodeIPDetector getIpDetector() {
         return ipDetector;
+    }
+
+    public boolean isDisableProbabilisticHTLs() {
+        return disableProbabilisticHTLs;
     }
 
 }

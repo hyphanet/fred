@@ -1624,12 +1624,12 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		if(htl <= 0)
 			return 0;
 		if(htl == max) {
-			if(decrementHTLAtMaximum || node.disableProbabilisticHTLs)
+			if(decrementHTLAtMaximum || node.isDisableProbabilisticHTLs())
 				htl--;
 			return htl;
 		}
 		if(htl == 1) {
-			if(decrementHTLAtMinimum || node.disableProbabilisticHTLs)
+			if(decrementHTLAtMinimum || node.isDisableProbabilisticHTLs())
 				htl--;
 			return htl;
 		}
