@@ -940,7 +940,7 @@ public class DarknetPeerNode extends PeerNode {
 			prb = new PartiallyReceivedBulk(node.getUSM(), size, Node.PACKET_SIZE, data, false);
 			receiver = new BulkReceiver(prb, DarknetPeerNode.this, uid, null);
 			// FIXME make this persistent
-			node.executor.execute(new Runnable() {
+			node.getExecutor().execute(new Runnable() {
 				@Override
 				public void run() {
 					if(logMINOR)
@@ -985,7 +985,7 @@ public class DarknetPeerNode extends PeerNode {
 			transmitter = new BulkTransmitter(prb, DarknetPeerNode.this, uid, false, node.getNodeStats().nodeToNodeCounter, false);
 			if(logMINOR)
 				Logger.minor(this, "Sending "+uid);
-			node.executor.execute(new Runnable() {
+			node.getExecutor().execute(new Runnable() {
 				@Override
 				public void run() {
 					if(logMINOR)
@@ -1904,7 +1904,7 @@ public class DarknetPeerNode extends PeerNode {
 				}
 				return;
 			}
-			node.executor.execute(new Runnable() {
+			node.getExecutor().execute(new Runnable() {
 
 				@Override
 				public void run() {
@@ -1952,7 +1952,7 @@ public class DarknetPeerNode extends PeerNode {
 			RandomAccessBuffer raf = new ByteArrayRandomAccessBuffer(data);
 			PartiallyReceivedBulk prb = new PartiallyReceivedBulk(node.getUSM(), length, Node.PACKET_SIZE, raf, false);
 			final BulkReceiver br = new BulkReceiver(prb, this, uid, node.getNodeStats().foafCounter);
-			node.executor.execute(new Runnable() {
+			node.getExecutor().execute(new Runnable() {
 
 				@Override
 				public void run() {

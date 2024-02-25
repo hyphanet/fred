@@ -100,7 +100,7 @@ public class FailureTable {
 	}
 	
 	public void start() {
-		offerExecutor.start(node.executor, "FailureTable offers executor for "+node.getDarknetPortNumber());
+		offerExecutor.start(node.getExecutor(), "FailureTable offers executor for "+node.getDarknetPortNumber());
 	}
 	
 	/**
@@ -506,7 +506,7 @@ public class FailureTable {
 			
 			source.sendAsync(headers, null, senderCounter);
 			
-			node.executor.execute(new PrioRunnable() {
+			node.getExecutor().execute(new PrioRunnable() {
 
 				@Override
 				public int getPriority() {
@@ -555,7 +555,7 @@ public class FailureTable {
 					}
 					
 				}, realTimeFlag, node.getNodeStats());
-        	node.executor.execute(new PrioRunnable() {
+        	node.getExecutor().execute(new PrioRunnable() {
 
 				@Override
 				public int getPriority() {

@@ -135,7 +135,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		for(int i=0;i<DH_CONTEXT_BUFFER_SIZE;i++) {
 			_fillJFKECDHFIFO();
 		}
-		this.authHandlingThread.start(node.executor, "FNP incoming auth packet handler thread");
+		this.authHandlingThread.start(node.getExecutor(), "FNP incoming auth packet handler thread");
 	}
 
 	/**
@@ -2047,7 +2047,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 
     private void _fillJFKECDHFIFOOffThread() {
         // do it off-thread
-        node.executor.execute(new PrioRunnable() {
+        node.getExecutor().execute(new PrioRunnable() {
             @Override
             public void run() {
                 _fillJFKECDHFIFO();

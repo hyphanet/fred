@@ -365,7 +365,7 @@ public class PeerManager {
 		notifyPeerStatusChangeListeners();
 		if(!pn.isSeed()) {
 			// LOCKING: addPeer() can be called inside PM lock, so must do this on a separate thread.
-			node.executor.execute(new Runnable() {
+			node.getExecutor().execute(new Runnable() {
 				
 				@Override
 				public void run() {
@@ -1381,7 +1381,7 @@ public class PeerManager {
 	}
 	
 	void writePeersOpennetUrgent() {
-		node.executor.execute(new PrioRunnable() {
+		node.getExecutor().execute(new PrioRunnable() {
 
 			@Override
 			public void run() {
@@ -1397,7 +1397,7 @@ public class PeerManager {
 	}
 
 	void writePeersDarknetUrgent() {
-		node.executor.execute(new PrioRunnable() {
+		node.getExecutor().execute(new PrioRunnable() {
 
 			@Override
 			public void run() {
@@ -1790,7 +1790,7 @@ public class PeerManager {
 		this.allPeersStatuses.changePeerNodeStatus(peerNode, oldStatus, newStatus, noLog);
 		if(!peerNode.isOpennet())
 			this.darknetPeersStatuses.changePeerNodeStatus(peerNode, oldStatus, newStatus, noLog);
-		node.executor.execute(new Runnable() {
+		node.getExecutor().execute(new Runnable() {
 
 			@Override
 			public void run() {

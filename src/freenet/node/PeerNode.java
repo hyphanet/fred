@@ -2210,7 +2210,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			arkFetcher = null;
 		}
 		final USKRetriever unsub = ret;
-		node.executor.execute(new Runnable() {
+		node.getExecutor().execute(new Runnable() {
 
 			@Override
 			public void run() {
@@ -2621,7 +2621,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		if(parseARK(fs, false, forDiffNodeRef))
 			changedAnything = true;
 		if(shouldUpdatePeerCounts) {
-			node.executor.execute(new Runnable() {
+			node.getExecutor().execute(new Runnable() {
 
 				@Override
 				public void run() {
@@ -4503,7 +4503,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 
 	public void reportLoadStatus(PeerLoadStats stat) {
 		outputLoadTracker(stat.realTime).reportLoadStatus(stat);
-		node.executor.execute(checkStatusAfterBackoff);
+		node.getExecutor().execute(checkStatusAfterBackoff);
 	}
 	
 	public static class SlotWaiter {

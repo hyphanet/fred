@@ -151,9 +151,9 @@ public class FCPServer implements Runnable, DownloadCache {
 		NetworkInterface tempNetworkInterface = null;
 		try {
 			if(ssl) {
-				tempNetworkInterface = SSLNetworkInterface.create(port, bindTo, allowedHosts, node.executor, true);
+				tempNetworkInterface = SSLNetworkInterface.create(port, bindTo, allowedHosts, node.getExecutor(), true);
 			} else {
-				tempNetworkInterface = NetworkInterface.create(port, bindTo, allowedHosts, node.executor, true);
+				tempNetworkInterface = NetworkInterface.create(port, bindTo, allowedHosts, node.getExecutor(), true);
 			}
 		} catch (IOException be) {
 			Logger.error(this, "Couldn't bind to FCP Port "+bindTo+ ':' +port+". FCP Server not started.", be);
@@ -531,7 +531,7 @@ public class FCPServer implements Runnable, DownloadCache {
             throws PluginNotFoundException {
         
         FCPPluginConnectionImpl connection = FCPPluginConnectionImpl.constructForNetworkedFCP(
-            pluginConnectionTracker, node.executor, node.pluginManager,
+            pluginConnectionTracker, node.getExecutor(), node.pluginManager,
             serverPluginName, messageHandler);
         // The constructor function already did this for us
         /* pluginConnectionTracker.registerConnection(connection); */
@@ -570,7 +570,7 @@ public class FCPServer implements Runnable, DownloadCache {
                 throws PluginNotFoundException {
         
         FCPPluginConnectionImpl connection = FCPPluginConnectionImpl.constructForIntraNodeFCP(
-            pluginConnectionTracker, node.executor, node.pluginManager,
+            pluginConnectionTracker, node.getExecutor(), node.pluginManager,
             serverPluginName, messageHandler);
         // The constructor function already did this for us
         /* pluginConnectionTracker.registerConnection(connection); */

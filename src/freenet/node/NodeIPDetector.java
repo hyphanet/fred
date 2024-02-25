@@ -365,7 +365,7 @@ public class NodeIPDetector {
 	}
 	
 	public boolean hasDirectlyDetectedIP() {
-		InetAddress[] addrs = ipDetector.getAddress(node.executor);
+		InetAddress[] addrs = ipDetector.getAddress(node.getExecutor());
 		if(addrs == null || addrs.length == 0) return false;
 		for(InetAddress addr: addrs) {
 			if(IPUtil.isValidAddress(addr, false)) {
@@ -536,7 +536,7 @@ public class NodeIPDetector {
 		if(!haveValidAddressOverride) {
 			onNotGetValidAddressOverride();
 		}
-		node.executor.execute(ipDetector, "IP address re-detector");
+		node.getExecutor().execute(ipDetector, "IP address re-detector");
 		redetectAddress();
 		// 60 second delay for inserting ARK to avoid reinserting more than necessary if we don't detect IP on startup.
 		// Not a FastRunnable as it can take a while to start the insert
@@ -557,7 +557,7 @@ public class NodeIPDetector {
 		// Run off thread, but at high priority.
 		// Initial messages don't need an up to date IP for the node itself, but
 		// announcements do. However announcements are not sent instantly.
-		node.executor.execute(new PrioRunnable() {
+		node.getExecutor().execute(new PrioRunnable() {
 
 			@Override
 			public void run() {

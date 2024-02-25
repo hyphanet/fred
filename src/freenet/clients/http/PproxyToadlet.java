@@ -135,7 +135,7 @@ public class PproxyToadlet extends Toadlet {
 			if (request.isPartSet("submit-official")) {
 				final String pluginName = request.getPartAsStringFailsafe("plugin-name", 40);
 
-				node.executor.execute(new Runnable() {
+				node.getExecutor().execute(new Runnable() {
 					@Override
 					public void run() {
 						pm.startPluginOfficial(pluginName, true);
@@ -150,7 +150,7 @@ public class PproxyToadlet extends Toadlet {
 				final String pluginName = request.getPartAsStringFailsafe("plugin-url", 200);
 				final boolean fileonly = "on".equalsIgnoreCase(request.getPartAsStringFailsafe("fileonly", 20));
 				
-				node.executor.execute(new Runnable() {
+				node.getExecutor().execute(new Runnable() {
 					@Override
 					public void run() {
 						if (fileonly) 
@@ -167,7 +167,7 @@ public class PproxyToadlet extends Toadlet {
 			if (request.isPartSet("submit-freenet")) {
 				final String pluginName = request.getPartAsStringFailsafe("plugin-uri", 300);
 				
-				node.executor.execute(new Runnable() {
+				node.getExecutor().execute(new Runnable() {
 					@Override
 					public void run() {
 						pm.startPluginFreenet(pluginName, true);
@@ -274,7 +274,7 @@ public class PproxyToadlet extends Toadlet {
 					if (purge) {
 						pm.removeCachedCopy(fn);
 					}
-					node.executor.execute(new Runnable() {
+					node.getExecutor().execute(new Runnable() {
 
 						@Override
 						public void run() {

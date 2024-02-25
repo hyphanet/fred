@@ -726,6 +726,11 @@ public class Node implements TimeSkewDetectorCallback {
 
 	// General stuff
 
+	/**
+	 * @deprecated Use {@link #getExecutor()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final Executor executor;
 	public final PacketSender ps;
 	public final PrioritizedTicker ticker;
@@ -5049,6 +5054,10 @@ public class Node implements TimeSkewDetectorCallback {
 
     public NodeCrypto getDarknetCrypto() {
         return darknetCrypto;
+    }
+
+    public Executor getExecutor() {
+        return executor;
     }
 
 }

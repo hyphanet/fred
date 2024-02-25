@@ -173,7 +173,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         // Receive the data, off thread
         Runnable dataReceiver = new DataReceiver();
 		receiveStarted = true;
-        node.executor.execute(dataReceiver, "CHKInsertHandler$DataReceiver for UID "+uid);
+        node.getExecutor().execute(dataReceiver, "CHKInsertHandler$DataReceiver for UID "+uid);
 
         // Wait...
         // What do we want to wait for?

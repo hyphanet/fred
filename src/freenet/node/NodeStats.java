@@ -633,7 +633,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	}
 
 	public void start() throws NodeInitException {
-		node.executor.execute(new Runnable() {
+		node.getExecutor().execute(new Runnable() {
 			@Override
 			public void run() {
 				nodePinger.start();
@@ -1882,15 +1882,15 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	}
 
 	public int getActiveThreadCount() {
-		return rootThreadGroup.activeCount() - node.executor.getWaitingThreadsCount();
+		return rootThreadGroup.activeCount() - node.getExecutor().getWaitingThreadsCount();
 	}
 
 	public int[] getActiveThreadsByPriority() {
-		return node.executor.runningThreads();
+		return node.getExecutor().runningThreads();
 	}
 
 	public int[] getWaitingThreadsByPriority() {
-		return node.executor.waitingThreads();
+		return node.getExecutor().waitingThreads();
 	}
 
 	public int getThreadLimit() {

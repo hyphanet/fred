@@ -438,7 +438,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 			
 		};
 		try {
-			node.executor.execute(r);
+			node.getExecutor().execute(r);
 		} catch (Throwable t) {
 			synchronized(this) {
 				waitingForTransfers--;

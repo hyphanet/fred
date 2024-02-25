@@ -179,7 +179,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     }
 
     public void start() {
-    	node.executor.execute(this, "RequestSender for UID "+uid+" on "+node.getDarknetPortNumber());
+    	node.getExecutor().execute(this, "RequestSender for UID "+uid+" on "+node.getDarknetPortNumber());
     }
     
     @Override

@@ -111,7 +111,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 		}
 		
 		void start() {
-			node.executor.execute(this, "CHKInsert-BackgroundTransfer for "+uid+" to "+pn.getPeer());
+			node.getExecutor().execute(this, "CHKInsert-BackgroundTransfer for "+uid+" to "+pn.getPeer());
 		}
 		
 		@Override
@@ -329,7 +329,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
     }
 
 	void start() {
-		node.executor.execute(this, "CHKInsertSender for UID "+uid+" on "+node.getDarknetPortNumber()+" at "+System.currentTimeMillis());
+		node.getExecutor().execute(this, "CHKInsertSender for UID "+uid+" on "+node.getDarknetPortNumber()+" at "+System.currentTimeMillis());
 	}
 
 	static boolean logMINOR;
@@ -1316,7 +1316,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 				};
 				
 				// Wait for the timeout off-thread.
-				node.executor.execute(r);
+				node.getExecutor().execute(r);
 				// Meanwhile, finish() to update allTransfersCompleted and hence allow the CHKInsertHandler to send the message downstream.
 				// We have already set the status code, this is necessary in order to avoid race conditions.
 				// However since it is set to TIMED_OUT, we are allowed to set it again.

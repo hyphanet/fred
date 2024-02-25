@@ -334,7 +334,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 			status = rs.getStatus();
 			// Run off-thread because, on the onRequestSenderFinished path, RequestSender won't start to wait for the noderef until we return!
 			// FIXME make waitForOpennetNoderef asynchronous.
-			node.executor.execute(new PrioRunnable() {
+			node.getExecutor().execute(new PrioRunnable() {
 
 				@Override
 				public void run() {

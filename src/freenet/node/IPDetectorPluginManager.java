@@ -690,7 +690,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 				if(runners.containsKey(plugin)) continue;
 				DetectorRunner d = new DetectorRunner(plugin);
 				runners.put(plugin, d);
-				node.executor.execute(d, "Plugin detector runner for "+plugin.getClass());
+				node.getExecutor().execute(d, "Plugin detector runner for "+plugin.getClass());
 			}
 		}
 	}
@@ -910,7 +910,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			plugins = portForwardPlugins;
 		}
 		for(final FredPluginPortForward plugin: plugins) {
-			node.executor.execute(new Runnable() {
+			node.getExecutor().execute(new Runnable() {
 
 				@Override
 				public void run() {
@@ -945,7 +945,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			// Not much more we can do / want to do for now
 			// FIXME use status.externalPort.
 		}
-		node.executor.execute(new Runnable() {
+		node.getExecutor().execute(new Runnable() {
 			@Override
 			public void run() {
 				maybeRun();

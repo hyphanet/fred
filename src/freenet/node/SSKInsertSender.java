@@ -102,7 +102,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
     }
 
     void start() {
-    	node.executor.execute(this, "SSKInsertSender for UID "+uid+" on "+node.getDarknetPortNumber()+" at "+System.currentTimeMillis());
+    	node.getExecutor().execute(this, "SSKInsertSender for UID "+uid+" on "+node.getDarknetPortNumber()+" at "+System.currentTimeMillis());
     }
     
 	@Override

@@ -310,7 +310,7 @@ public class NodeClientCore implements Persistable {
 		lazyStartDatastoreChecker = nodeConfig.getBoolean("lazyStartDatastoreChecker");
 
 		storeChecker =
-				new DatastoreChecker(node, lazyStartDatastoreChecker, node.executor,
+				new DatastoreChecker(node, lazyStartDatastoreChecker, node.getExecutor(),
 						     "Datastore checker");
 		byte[] pwdBuf = new byte[16];
 		random.nextBytes(pwdBuf);
@@ -522,7 +522,7 @@ public class NodeClientCore implements Persistable {
 
 		cryptoSecretTransient = new MasterSecret();
 		tempBucketFactory =
-				new TempBucketFactory(node.executor, tempFilenameGenerator,
+				new TempBucketFactory(node.getExecutor(), tempFilenameGenerator,
 						      nodeConfig.getLong("maxRAMBucketSize"),
 						      nodeConfig.getLong("RAMBucketPoolSize"),
 						      node.getFastWeakRandom(),
@@ -531,7 +531,7 @@ public class NodeClientCore implements Persistable {
 
 		bandwidthStatsPutter = new PersistentStatsPutter();
 
-		clientLayerPersister = new ClientLayerPersister(node.executor, node.ticker,
+		clientLayerPersister = new ClientLayerPersister(node.getExecutor(), node.ticker,
 								node, this,
 								persistentTempBucketFactory,
 								tempBucketFactory,
@@ -675,7 +675,7 @@ public class NodeClientCore implements Persistable {
 				new MemoryLimitedJobRunner(
 						nodeConfig.getLong("memoryLimitedJobMemoryLimit"),
 						nodeConfig.getInt("memoryLimitedJobThreadLimit"),
-						node.executor,
+						node.getExecutor(),
 						RequestStarter.NUMBER_OF_PRIORITY_CLASSES);
 		shutdownHook.addEarlyJob(
 				new NativeThread("Shutdown FEC", NativeThread.HIGH_PRIORITY, true) {
@@ -697,7 +697,7 @@ public class NodeClientCore implements Persistable {
 					}
 
 				});
-		clientContext = new ClientContext(node.bootID, clientLayerPersister, node.executor,
+		clientContext = new ClientContext(node.bootID, clientLayerPersister, node.getExecutor(),
 						  archiveManager, persistentTempBucketFactory,
 						  tempBucketFactory,
 						  persistentTempBucketFactory, healingQueue,
@@ -1150,7 +1150,7 @@ public class NodeClientCore implements Persistable {
 		if(tmci != null)
 			tmci.start();
 
-		node.executor.execute(new PrioRunnable() {
+		node.getExecutor().execute(new PrioRunnable() {
 
 			@Override
 			public void run() {
@@ -2127,7 +2127,7 @@ public class NodeClientCore implements Persistable {
 	}
 
 	public Executor getExecutor() {
-		return node.executor;
+		return node.getExecutor();
 	}
 
 	public File getPersistentTempDir() {

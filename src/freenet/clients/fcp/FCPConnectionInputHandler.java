@@ -40,7 +40,7 @@ public class FCPConnectionInputHandler implements Runnable {
 	void start() {
 		if (handler.getSocket() == null)
 			return;
-		handler.getServer().getNode().executor.execute(this, "FCP input handler for "+handler.getSocket().getRemoteSocketAddress());
+		handler.getServer().getNode().getExecutor().execute(this, "FCP input handler for "+handler.getSocket().getRemoteSocketAddress());
 	}
 
 	@Override

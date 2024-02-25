@@ -92,7 +92,7 @@ public class MISC implements Step {
 				return;
 		}
 
-		core.getNode().executor.execute(new Runnable() {
+		core.getNode().getExecutor().execute(new Runnable() {
 
 			private final boolean enable = enableUPnP;
 

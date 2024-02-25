@@ -1786,7 +1786,7 @@ public class NodeUpdateManager {
 	/** Called inside locks, so don't lock anything */
 	public void notPeerClaimsKeyBlown() {
 		peersSayBlown = false;
-		node.executor.execute(new Runnable() {
+		node.getExecutor().execute(new Runnable() {
 
 			@Override
 			public void run() {

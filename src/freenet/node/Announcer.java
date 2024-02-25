@@ -384,7 +384,7 @@ public class Announcer {
 		}
 		
 		if(killAnnouncement) {
-			node.executor.execute(new Runnable() {
+			node.getExecutor().execute(new Runnable() {
 
 				@Override
 				public void run() {
@@ -683,7 +683,7 @@ public class Announcer {
 				Logger.error(this, "Announcement to "+seed.userToString()+" : RELAYED ?!?!?!");
 			}
 		}, seed);
-		node.executor.execute(sender, "Announcer to "+seed);
+		node.getExecutor().execute(sender, "Announcer to "+seed);
 		return true;
 	}
 

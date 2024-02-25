@@ -61,7 +61,7 @@ public abstract class TransferThread implements PrioRunnable, ClientGetCallback,
 		mTBF = mNode.clientCore.getTempBucketFactory();
 		mName = myName;
 		
-		mTicker = new TrivialTicker(mNode.executor);
+		mTicker = new TrivialTicker(mNode.getExecutor());
 	}
 	
 	/**

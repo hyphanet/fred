@@ -69,7 +69,7 @@ public class PluginTalker {
 
 	public void send(final SimpleFieldSet plugparams, final Bucket data2) {
 
-		node.executor.execute(new Runnable() {
+		node.getExecutor().execute(new Runnable() {
 
 			@Override
 			public void run() {

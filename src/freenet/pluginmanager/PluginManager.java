@@ -111,7 +111,7 @@ public class PluginManager {
 
 		// callback executor
 		executor = new SerialExecutor(PriorityLevel.NORM_PRIORITY.value);
-		executor.start(node.executor, "PM callback executor");
+		executor.start(node.getExecutor(), "PM callback executor");
 
         SubConfig pmconfig = node.getConfig().createSubConfig("pluginmanager");
         pmconfig.register("enabled", true, 0, true, true, "PluginManager.enabled", "PluginManager.enabledLong", new BooleanCallback() {
@@ -492,7 +492,7 @@ public class PluginManager {
 		@Override
 		public void onDismiss() {
 			loadedPlugins.removeFailedPlugin(filename);
-			node.executor.execute(new Runnable() {
+			node.getExecutor().execute(new Runnable() {
 
 				@Override
 				public void run() {

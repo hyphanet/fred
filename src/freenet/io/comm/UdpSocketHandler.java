@@ -401,7 +401,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 			_started = true;
 			startTime = System.currentTimeMillis();
 		}
-		node.executor.execute(this, "UdpSocketHandler for port "+listenPort);
+		node.getExecutor().execute(this, "UdpSocketHandler for port "+listenPort);
 	}
 
 	public void close() {

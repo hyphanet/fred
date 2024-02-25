@@ -508,7 +508,7 @@ public class LocationManager implements ByteCounter {
      * the wilderness.
      */
     private void startSwapRequest() {
-    	node.executor.execute(new OutgoingSwapRequestHandler(),
+    	node.getExecutor().execute(new OutgoingSwapRequestHandler(),
                 "Outgoing swap request handler for port "+node.getDarknetPortNumber());
     }
 
@@ -915,7 +915,7 @@ public class LocationManager implements ByteCounter {
     }
 
     private void recordLocChange(final boolean randomReset, final boolean fromDupLocation) {
-        node.executor.execute(new Runnable() {
+        node.getExecutor().execute(new Runnable() {
 
 			@Override
 			public void run() {
@@ -1306,7 +1306,7 @@ public class LocationManager implements ByteCounter {
         IncomingSwapRequestHandler isrh =
             new IncomingSwapRequestHandler(m, pn, item);
         if(logMINOR) Logger.minor(this, "Handling... "+oldID+" from "+pn);
-        node.executor.execute(isrh, "Incoming swap request handler for port "+node.getDarknetPortNumber());
+        node.getExecutor().execute(isrh, "Incoming swap request handler for port "+node.getDarknetPortNumber());
 	}
 
 	private RecentlyForwardedItem addForwardedItem(long uid, long oid, PeerNode pn, PeerNode randomPeer) {

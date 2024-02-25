@@ -633,7 +633,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 
 				@Override
 				public void onFinishedPage() {
-					core.getNode().executor.execute(new Runnable() {
+					core.getNode().getExecutor().execute(new Runnable() {
 
 						@Override
 						public void run() {

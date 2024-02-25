@@ -56,7 +56,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 		dependencyCtx.maxNonSplitfileRetries = -1;
 		dependencyCtx.maxSplitfileBlockRetries = -1;
 		clientContext = core.getClientContext();
-		dependencies = new MainJarDependenciesChecker(this, manager.node.executor);
+		dependencies = new MainJarDependenciesChecker(this, manager.node.getExecutor());
 	}
 
 	private final MainJarDependenciesChecker dependencies;
@@ -153,7 +153,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 				fetched = true;
 				f = uomFetcher;
 			}
-			MainJarUpdater.this.node.executor.execute(new Runnable() {
+			MainJarUpdater.this.node.getExecutor().execute(new Runnable() {
 
 				@Override
 				public void run() {

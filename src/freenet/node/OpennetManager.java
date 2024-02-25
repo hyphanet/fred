@@ -1346,7 +1346,7 @@ public class OpennetManager {
 	 * and we can do a much more effective announcement this way. */
 	public void announce(double target, AnnouncementCallback cb) {
 		AnnounceSender sender = new AnnounceSender(target, this, node, cb, null);
-		node.executor.execute(sender, "Announcement to "+target);
+		node.getExecutor().execute(sender, "Announcement to "+target);
 	}
 
 	public long getCreationTime() {

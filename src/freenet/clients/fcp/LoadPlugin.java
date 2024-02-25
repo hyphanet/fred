@@ -73,7 +73,7 @@ public class LoadPlugin extends FCPMessage {
 			return;
 		}
 
-		node.executor.execute(new Runnable() {
+		node.getExecutor().execute(new Runnable() {
 			@Override
 			public void run() {
 				String type = null;

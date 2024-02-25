@@ -747,7 +747,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 					if(logMINOR)
 						Logger.minor(this, "Sending data...");
 					// Send the data
-					updateManager.node.executor.execute(r, "Revocation key send for " + uid + " to " + source.userToString());
+					updateManager.node.getExecutor().execute(r, "Revocation key send for " + uid + " to " + source.userToString());
 				}
 
 				@Override
@@ -892,7 +892,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 		final BulkReceiver br = new BulkReceiver(prb, source, uid, updateManager.ctr);
 
-		updateManager.node.executor.execute(new Runnable() {
+		updateManager.node.getExecutor().execute(new Runnable() {
 
 			@Override
 			public void run() {
@@ -1274,7 +1274,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 						Logger.minor(this, "Sending data...");
 					// Send the data
 
-					updateManager.node.executor.execute(r, name+" jar send for " + uid + " to " + source.userToString());
+					updateManager.node.getExecutor().execute(r, name+" jar send for " + uid + " to " + source.userToString());
 				}
 
 				@Override
@@ -1402,7 +1402,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 		final BulkReceiver br = new BulkReceiver(prb, source, uid, updateManager.ctr);
 
-		updateManager.node.executor.execute(new Runnable() {
+		updateManager.node.getExecutor().execute(new Runnable() {
 
 			@Override
 			public void run() {
@@ -1734,7 +1734,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			decrementDependencies(source);
 		} else {
 			final FileRandomAccessBuffer r = raf;
-			updateManager.node.executor.execute(new Runnable() {
+			updateManager.node.getExecutor().execute(new Runnable() {
 				
 				@Override
 				public void run() {
@@ -1807,7 +1807,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		synchronized(this) {
 			dependencyFetchers.put(f.expectedHashBuffer, f);
 		}
-		this.updateManager.node.executor.execute(new Runnable() {
+		this.updateManager.node.getExecutor().execute(new Runnable() {
 
 			@Override
 			public void run() {
@@ -1920,7 +1920,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			if(chosen == null) return false;
 			
 			final PeerNode fetchFrom = chosen;
-			updateManager.node.executor.execute(new Runnable() {
+			updateManager.node.getExecutor().execute(new Runnable() {
 
 				@Override
 				public void run() {

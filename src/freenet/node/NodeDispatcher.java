@@ -539,7 +539,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			needsPubKey = m.getBoolean(DMT.NEED_PUB_KEY);
 		RequestHandler rh = new RequestHandler(source, id, node, htl, key, tag, block, realTimeFlag, needsPubKey);
 		rh.receivedBytes(m.receivedByteCount());
-		node.executor.execute(rh, "RequestHandler for UID "+id+" on "+node.getDarknetPortNumber());
+		node.getExecutor().execute(rh, "RequestHandler for UID "+id+" on "+node.getDarknetPortNumber());
 	}
 
 	/**
@@ -602,21 +602,21 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			if(htl <= 0) htl = 1;
 			SSKInsertHandler rh = new SSKInsertHandler(key, data, headers, htl, source, id, node, now, tag, node.canWriteDatastoreInsert(htl), forkOnCacheable, preferInsert, ignoreLowBackoff, realTimeFlag);
 	        rh.receivedBytes(m.receivedByteCount());
-			node.executor.execute(rh, "SSKInsertHandler for "+id+" on "+node.getDarknetPortNumber());
+			node.getExecutor().execute(rh, "SSKInsertHandler for "+id+" on "+node.getDarknetPortNumber());
 		} else if(m.getSpec().equals(DMT.FNPSSKInsertRequestNew)) {
 			NodeSSK key = (NodeSSK) m.getObject(DMT.FREENET_ROUTING_KEY);
 			short htl = m.getShort(DMT.HTL);
 			if(htl <= 0) htl = 1;
 			SSKInsertHandler rh = new SSKInsertHandler(key, null, null, htl, source, id, node, now, tag, node.canWriteDatastoreInsert(htl), forkOnCacheable, preferInsert, ignoreLowBackoff, realTimeFlag);
 	        rh.receivedBytes(m.receivedByteCount());
-			node.executor.execute(rh, "SSKInsertHandler for "+id+" on "+node.getDarknetPortNumber());
+			node.getExecutor().execute(rh, "SSKInsertHandler for "+id+" on "+node.getDarknetPortNumber());
 		} else {
 	        NodeCHK key = (NodeCHK) m.getObject(DMT.FREENET_ROUTING_KEY);
 	        short htl = m.getShort(DMT.HTL);
 			if(htl <= 0) htl = 1;
 			CHKInsertHandler rh = new CHKInsertHandler(key, htl, source, id, node, now, tag, forkOnCacheable, preferInsert, ignoreLowBackoff, realTimeFlag);
 	        rh.receivedBytes(m.receivedByteCount());
-			node.executor.execute(rh, "CHKInsertHandler for "+id+" on "+node.getDarknetPortNumber());
+			node.getExecutor().execute(rh, "CHKInsertHandler for "+id+" on "+node.getDarknetPortNumber());
 		}
 		if(logMINOR) Logger.minor(this, "Started InsertHandler for "+id);
 	}
@@ -787,7 +787,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 				};
 			}
 			AnnounceSender sender = new AnnounceSender(target, htl, uid, source, om, node, xferUID, noderefLength, paddedLength, cb);
-			node.executor.execute(sender, "Announcement sender for "+uid);
+			node.getExecutor().execute(sender, "Announcement sender for "+uid);
 			success = true;
 			if(logMINOR) Logger.minor(this, "Accepted announcement from "+source);
 			return true;
@@ -1022,7 +1022,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 
 	void start(NodeStats stats) {
 		this.nodeStats = stats;
-		node.executor.execute(queueRunner);
+		node.getExecutor().execute(queueRunner);
 	}
 
 	public static String peersUIDsToString(long[] peerUIDs, double[] peerLocs) {
