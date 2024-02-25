@@ -239,6 +239,12 @@ public class NodeClientCore implements Persistable {
 	public final RealCompressor compressor;
 	/** If true, requests are resumed lazily i.e. startup does not block waiting for them. */
 	protected final Persister persister;
+
+	/**
+	 * @deprecated Use {@link #getStoreChecker()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but directly accessing it is. */
 	public final DatastoreChecker storeChecker;
 	/** How much disk space must be free when starting a long-term, unpredictable duration job such
 	 * as a big download? */
@@ -2261,6 +2267,10 @@ public class NodeClientCore implements Persistable {
 
     public UserAlertManager getAlerts() {
         return alerts;
+    }
+
+    public DatastoreChecker getStoreChecker() {
+        return storeChecker;
     }
 
 }
