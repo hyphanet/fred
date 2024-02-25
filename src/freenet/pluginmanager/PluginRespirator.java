@@ -78,7 +78,7 @@ public class PluginRespirator {
 	}
 	
 	/**
-	 * Add a valid form including the {@link NodeClientCore#formPassword}. See the JavaDoc there for an explanation of the purpose of this mechanism. 
+	 * Add a valid form including the {@link NodeClientCore#getFormPassword() formPassword}. See the JavaDoc there for an explanation of the purpose of this mechanism.
 	 * 
 	 * <p><b>ATTENTION</b>: It is critically important to validate the form password when processing requests which "change the server state".
 	 * Other words for this would be requests which change your database or "write" requests.
@@ -95,7 +95,7 @@ public class PluginRespirator {
 			parentNode.addChild("form", new String[] { "action", "method", "enctype", "id", "name", "accept-charset" }, 
 					new String[] { target, "post", "multipart/form-data", name, name, "utf-8"} );
 		formNode.addChild("input", new String[] { "type", "name", "value" }, 
-				new String[] { "hidden", "formPassword", node.clientCore.formPassword });
+				new String[] { "hidden", "formPassword", node.clientCore.getFormPassword() });
 		
 		return formNode;
 	}

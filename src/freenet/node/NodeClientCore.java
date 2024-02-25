@@ -144,7 +144,9 @@ public class NodeClientCore implements Persistable {
 	 * In particular, you must NOT modify anything.</p>
 	 * <p>To produce a form which already contains the password, use {@link PluginRespirator#addFormChild(freenet.support.HTMLNode, String, String)}.</p>
 	 * <p>To validate that the right password was received, use {@link WebInterfaceToadlet#isFormPassword(HTTPRequest)}.</p>
+	 * @deprecated Use {@link #getFormPassword()} instead of accessing this directly
 	 */
+	@Deprecated
 	public final String formPassword;
 
 	final ProgramDirectory downloadsDir;
@@ -2159,6 +2161,10 @@ public class NodeClientCore implements Persistable {
 
     public RequestStarterGroup getRequestStarters() {
         return requestStarters;
+    }
+
+    public String getFormPassword() {
+        return formPassword;
     }
 
 }

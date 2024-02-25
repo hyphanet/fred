@@ -55,7 +55,7 @@ public class PeersOffersUserAlert extends AbstractUserAlert {
                 new String[] {"/friends/", "post"});
         form.addChild("input",
                 new String[] {"type", "name", "value"},
-                new String[] {"hidden", "formPassword", node.clientCore.formPassword});
+                new String[] {"hidden", "formPassword", node.clientCore.getFormPassword()});
         form.addChild("input",
                 new String[] {"type", "name", "value"},
                 new String[] {"hidden", "peers-offers-files", "true"});

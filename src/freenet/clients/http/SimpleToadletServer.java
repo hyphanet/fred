@@ -1144,7 +1144,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 	@Override
 	public String getFormPassword() {
 		if(core == null) return "";
-		return core.formPassword;
+		return core.getFormPassword();
 	}
 
 	@Override

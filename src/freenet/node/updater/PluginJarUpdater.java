@@ -175,7 +175,7 @@ public class PluginJarUpdater extends NodeUpdater {
 							// This is not the same as reloading because we haven't written it yet.
 							
 							HTMLNode formNode = div.addChild("form", new String[] { "action", "method" }, new String[] { PproxyToadlet.PATH, "post" });
-							formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.clientCore.formPassword });
+							formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.clientCore.getFormPassword() });
 							formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "update", pluginName });
 							formNode.addChild("input", new String[] { "type", "value" }, new String[] { "submit", l10n("updatePlugin") });
 						}
