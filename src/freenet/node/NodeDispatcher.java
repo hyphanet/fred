@@ -142,7 +142,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		} else if(spec == DMT.FNPDetectedIPAddress) {
 			Peer p = (Peer) m.getObject(DMT.EXTERNAL_ADDRESS);
 			source.setRemoteDetectedPeer(p);
-			node.ipDetector.redetectAddress();
+			node.getIpDetector().redetectAddress();
 			return true;
 		} else if(spec == DMT.FNPTime) {
 			return handleTime(m, source);

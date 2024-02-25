@@ -621,11 +621,11 @@ public class PluginManager {
 		}
 
 		if(pi.isIPDetectorPlugin())
-			node.ipDetector.registerIPDetectorPlugin((FredPluginIPDetector) plug);
+			node.getIpDetector().registerIPDetectorPlugin((FredPluginIPDetector) plug);
 		if(pi.isPortForwardPlugin())
-			node.ipDetector.registerPortForwardPlugin((FredPluginPortForward) plug);
+			node.getIpDetector().registerPortForwardPlugin((FredPluginPortForward) plug);
 		if(pi.isBandwidthIndicator())
-			node.ipDetector.registerBandwidthIndicatorPlugin((FredPluginBandwidthIndicator) plug);
+			node.getIpDetector().registerBandwidthIndicatorPlugin((FredPluginBandwidthIndicator) plug);
 	}
 
 	public void cancelRunningLoads(String filename, PluginProgress exceptFor) {
@@ -1571,11 +1571,11 @@ public class PluginManager {
 			core.getToadletContainer().unregister(wrapper.getConfigToadlet());
 		}
 		if(wrapper.isIPDetectorPlugin())
-			node.ipDetector.unregisterIPDetectorPlugin((FredPluginIPDetector)plug);
+			node.getIpDetector().unregisterIPDetectorPlugin((FredPluginIPDetector)plug);
 		if(wrapper.isPortForwardPlugin())
-			node.ipDetector.unregisterPortForwardPlugin((FredPluginPortForward)plug);
+			node.getIpDetector().unregisterPortForwardPlugin((FredPluginPortForward)plug);
 		if(wrapper.isBandwidthIndicator())
-			node.ipDetector.unregisterBandwidthIndicatorPlugin((FredPluginBandwidthIndicator)plug);
+			node.getIpDetector().unregisterBandwidthIndicatorPlugin((FredPluginBandwidthIndicator)plug);
 		if(!reloading)
 			node.nodeUpdater.stopPluginUpdater(wrapper.getFilename());
 	}

@@ -254,7 +254,7 @@ public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
         private void detectBandwidthLimit() {
             try {
                 BandwidthLimit detected =
-                        BandwidthManipulator.detectBandwidthLimits(core.getNode().ipDetector.getBandwidthIndicator());
+                        BandwidthManipulator.detectBandwidthLimits(core.getNode().getIpDetector().getBandwidthIndicator());
 
                 // Detected limits reasonable; add half of both as recommended option.
                 downloadLimitDetected = Long.toString(detected.downBytes / 2 / KiB);

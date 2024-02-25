@@ -94,7 +94,7 @@ public class ConnectivityToadlet extends Toadlet {
 		
 		// Add connection type box.
 		
-		node.ipDetector.addConnectionTypeBox(contentNode);
+		node.getIpDetector().addConnectionTypeBox(contentNode);
 		
 		UdpSocketHandler[] handlers = node.getPacketSocketHandlers();
 		

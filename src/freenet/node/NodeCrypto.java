@@ -137,7 +137,7 @@ public class NodeCrypto {
 
 		packetMangler = new FNPPacketMangler(node, this, socket);
 
-		detector = new NodeIPPortDetector(node, node.ipDetector, this, enableARKs);
+		detector = new NodeIPPortDetector(node, node.getIpDetector(), this, enableARKs);
 
 		anonSetupCipher = new Rijndael(256,256);
 

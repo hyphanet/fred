@@ -31,7 +31,7 @@ public class BandwidthManager {
             @Override
             public void run() {
                 try {
-                    FredPluginBandwidthIndicator bandwidthIndicator = node.ipDetector.getBandwidthIndicator();
+                    FredPluginBandwidthIndicator bandwidthIndicator = node.getIpDetector().getBandwidthIndicator();
                     if (!node.getConfig().get("node").getBoolean("connectionSpeedDetection") ||
                             bandwidthIndicator == null) {
                         return;

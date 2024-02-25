@@ -599,7 +599,12 @@ public class Node implements TimeSkewDetectorCallback {
 	/** FetchContext for ARKs */
 	public final FetchContext arkFetcherContext;
 
-	/** IP detector */
+	/**
+	 * IP detector
+	 * @deprecated Use {@link #getIpDetector()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final NodeIPDetector ipDetector;
 	/** For debugging/testing, set this to true to stop the
 	 * probabilistic decrement at the edges of the HTLs. */
@@ -4949,6 +4954,10 @@ public class Node implements TimeSkewDetectorCallback {
 
     public NodeGetPubkey getGetPubKey() {
         return getPubKey;
+    }
+
+    public NodeIPDetector getIpDetector() {
+        return ipDetector;
     }
 
 }

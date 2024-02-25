@@ -347,7 +347,7 @@ public class OpennetManager {
 				}
 				if(p.getPort() == crypto.portNumber) {
 					// DNSRequester doesn't deal with our own node
-					node.ipDetector.setOldIPAddress(p.getFreenetAddress());
+					node.getIpDetector().setOldIPAddress(p.getFreenetAddress());
 					break;
 				}
 			}
