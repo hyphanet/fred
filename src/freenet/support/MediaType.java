@@ -66,7 +66,7 @@ public class MediaType {
 		if (mediaType == null) {
 			throw new NullPointerException("contentType must not be null");
 		}
-		if(!DefaultMIMETypes.isPlausibleMIMEType(mediaType))
+		  if(!DefaultMIMETypes.isPlausibleMIMEType(mediaType))
 		    throw new MalformedURLException("Doesn't look like a MIME type");
 		int slash = mediaType.indexOf('/');
 		if (slash == -1) {
