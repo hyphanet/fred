@@ -700,6 +700,11 @@ public class Node implements TimeSkewDetectorCallback {
 
 	// Darknet stuff
 
+	/**
+	 * @deprecated Use {@link #getDarknetCrypto()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	NodeCrypto darknetCrypto;
 	// Back compat
 	private boolean showFriendsVisibilityAlert;
@@ -5034,6 +5039,10 @@ public class Node implements TimeSkewDetectorCallback {
 
     public Random getFastWeakRandom() {
         return fastWeakRandom;
+    }
+
+    public NodeCrypto getDarknetCrypto() {
+        return darknetCrypto;
     }
 
 }
