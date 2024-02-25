@@ -45,7 +45,7 @@ public class DiskSpaceUserAlert implements UserAlert {
         File tempDir = core.getTempFilenameGenerator().getDir();
         if(tempDir.getUsableSpace() < shortTermLimit)
             return Status.TRANSIENT; // Takes precedence.
-        FilenameGenerator fg = core.persistentFilenameGenerator;
+        FilenameGenerator fg = core.getPersistentFilenameGenerator();
         if(fg != null) {
             File persistentTempDir = fg.getDir();
             long space = persistentTempDir.getUsableSpace();
@@ -95,7 +95,7 @@ public class DiskSpaceUserAlert implements UserAlert {
         // FIXME return the filesystem rather than the directory. Will need java.nio.file (1.7).
         if(status == Status.PERSISTENT || status == Status.PERSISTENT_COMPLETION) {
             // Be very careful about race conditions!
-            FilenameGenerator fg = core.persistentFilenameGenerator;
+            FilenameGenerator fg = core.getPersistentFilenameGenerator();
             if(fg != null) {
                 return fg.getDir();
             }
