@@ -128,7 +128,7 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
 			}
 			Message msg;
 			try {
-				msg = node.usm.waitFor(mf, this);
+				msg = node.getUSM().waitFor(mf, this);
 			} catch (DisconnectedException e) {
 				if(logMINOR) Logger.minor(this, "Lost connection to source on "+uid);
 				return;

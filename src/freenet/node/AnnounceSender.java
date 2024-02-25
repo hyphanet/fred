@@ -189,7 +189,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 				MessageFilter mf = mfRejectedOverload.or(mfRejectedLoop.or(mfOpennetDisabled.or(mfAccepted)));
 
 				try {
-					msg = node.usm.waitFor(mf, this);
+					msg = node.getUSM().waitFor(mf, this);
 					if(logMINOR) Logger.minor(this, "first part got "+msg);
 				} catch (DisconnectedException e) {
 					Logger.normal(this, "Disconnected from "+next+" while waiting for Accepted on "+uid);
@@ -267,7 +267,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 				MessageFilter mf = mfAnnounceCompleted.or(mfRouteNotFound.or(mfRejectedOverload.or(mfAnnounceReply.or(mfOpennetDisabled.or(mfNotWanted.or(mfOpennetNoderefRejected))))));
 
 				try {
-					msg = node.usm.waitFor(mf, this);
+					msg = node.getUSM().waitFor(mf, this);
 				} catch (DisconnectedException e) {
 					Logger.normal(this, "Disconnected from "+next+" while waiting for announcement");
 					break;
@@ -298,7 +298,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 					mf = mfAnnounceReply.or(mfNotWanted);
 					while(true)  {
 						try {
-							msg = node.usm.waitFor(mf, this);
+							msg = node.getUSM().waitFor(mf, this);
 						} catch (DisconnectedException e) {
 							return;
 						}

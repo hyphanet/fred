@@ -937,7 +937,7 @@ public class DarknetPeerNode extends PeerNode {
 				// Impossible
 				throw new Error("Impossible: FileNotFoundException opening with RAF with rw! "+e, e);
 			}
-			prb = new PartiallyReceivedBulk(node.usm, size, Node.PACKET_SIZE, data, false);
+			prb = new PartiallyReceivedBulk(node.getUSM(), size, Node.PACKET_SIZE, data, false);
 			receiver = new BulkReceiver(prb, DarknetPeerNode.this, uid, null);
 			// FIXME make this persistent
 			node.executor.execute(new Runnable() {
@@ -981,7 +981,7 @@ public class DarknetPeerNode extends PeerNode {
 		}
 
 		public void send() throws DisconnectedException {
-			prb = new PartiallyReceivedBulk(node.usm, size, Node.PACKET_SIZE, data, true);
+			prb = new PartiallyReceivedBulk(node.getUSM(), size, Node.PACKET_SIZE, data, true);
 			transmitter = new BulkTransmitter(prb, DarknetPeerNode.this, uid, false, node.getNodeStats().nodeToNodeCounter, false);
 			if(logMINOR)
 				Logger.minor(this, "Sending "+uid);
@@ -1885,7 +1885,7 @@ public class DarknetPeerNode extends PeerNode {
 			byte[] data = baos.toByteArray();
 			long uid = node.getFastWeakRandom().nextLong();
 			RandomAccessBuffer raf = new ByteArrayRandomAccessBuffer(data);
-			PartiallyReceivedBulk prb = new PartiallyReceivedBulk(node.usm, data.length, Node.PACKET_SIZE, raf, true);
+			PartiallyReceivedBulk prb = new PartiallyReceivedBulk(node.getUSM(), data.length, Node.PACKET_SIZE, raf, true);
 			try {
 				sendAsync(DMT.createFNPMyFullNoderef(uid, data.length), null, node.getNodeStats().foafCounter);
 			} catch (NotConnectedException e1) {
@@ -1950,7 +1950,7 @@ public class DarknetPeerNode extends PeerNode {
 		try {
 			final byte[] data = new byte[length];
 			RandomAccessBuffer raf = new ByteArrayRandomAccessBuffer(data);
-			PartiallyReceivedBulk prb = new PartiallyReceivedBulk(node.usm, length, Node.PACKET_SIZE, raf, false);
+			PartiallyReceivedBulk prb = new PartiallyReceivedBulk(node.getUSM(), length, Node.PACKET_SIZE, raf, false);
 			final BulkReceiver br = new BulkReceiver(prb, this, uid, node.getNodeStats().foafCounter);
 			node.executor.execute(new Runnable() {
 

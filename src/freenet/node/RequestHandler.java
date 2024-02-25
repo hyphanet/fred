@@ -235,7 +235,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 
 			PartiallyReceivedBlock prb = rs.getPRB();
 			bt =
-				new BlockTransmitter(node.usm, node.getTicker(), source, uid, prb, this, new ReceiverAbortHandler() {
+				new BlockTransmitter(node.getUSM(), node.getTicker(), source, uid, prb, this, new ReceiverAbortHandler() {
 
 					@Override
 					public boolean onAbort() {
@@ -589,7 +589,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 			PartiallyReceivedBlock prb =
 				new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE, block.getRawData());
 			BlockTransmitter bt =
-				new BlockTransmitter(node.usm, node.getTicker(), source, uid, prb, this, BlockTransmitter.NEVER_CASCADE,
+				new BlockTransmitter(node.getUSM(), node.getTicker(), source, uid, prb, this, BlockTransmitter.NEVER_CASCADE,
 						new BlockTransmitterCompletion() {
 
 					@Override

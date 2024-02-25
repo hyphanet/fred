@@ -452,7 +452,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
         	if(timeout >= 0) {
         		MessageFilter mf = createMessageFilter(timeout, waitingFor);
         		try {
-        			node.usm.addAsyncFilter(mf, this, RequestSender.this);
+        			node.getUSM().addAsyncFilter(mf, this, RequestSender.this);
         		} catch (DisconnectedException e) {
         			onDisconnect(lastNode);
         		}
@@ -490,7 +490,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 				Message msg;
 				try {
 		        	int timeout = (int)(Math.min(Integer.MAX_VALUE, deadline - System.currentTimeMillis()));
-					msg = node.usm.waitFor(createMessageFilter(timeout, waitingFor), RequestSender.this);
+					msg = node.getUSM().waitFor(createMessageFilter(timeout, waitingFor), RequestSender.this);
 				} catch (DisconnectedException e) {
 					Logger.normal(this, "Disconnected from " + waitingFor
 							+ " while waiting for reply on " + this);
@@ -616,7 +616,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 			receivingAsync = true;
 		}
 		try {
-			node.usm.addAsyncFilter(getOfferedKeyReplyFilter(pn, getOfferedTimeout), new SlowAsyncMessageFilterCallback() {
+			node.getUSM().addAsyncFilter(getOfferedKeyReplyFilter(pn, getOfferedTimeout), new SlowAsyncMessageFilterCallback() {
 				
 				@Override
 				public void onMatched(Message m) {
@@ -682,7 +682,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 	private OFFER_STATUS handleOfferTimeout(final BlockOffer offer, final PeerNode pn,
 			OfferList offers) {
 		try {
-			node.usm.addAsyncFilter(getOfferedKeyReplyFilter(pn, GET_OFFER_LONG_TIMEOUT), new SlowAsyncMessageFilterCallback() {
+			node.getUSM().addAsyncFilter(getOfferedKeyReplyFilter(pn, GET_OFFER_LONG_TIMEOUT), new SlowAsyncMessageFilterCallback() {
 				
 				@Override
 				public void onMatched(Message m) {
@@ -751,7 +751,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 			MessageFilter mfData = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(getOfferedTimeout).setType(DMT.FNPSSKDataFoundData);
 			Message dataMessage;
 			try {
-				dataMessage = node.usm.waitFor(mfData, this);
+				dataMessage = node.getUSM().waitFor(mfData, this);
 			} catch (DisconnectedException e) {
 				if(logMINOR)
 					Logger.minor(this, "Disconnected: "+pn+" getting data for offer for "+key);
@@ -766,7 +766,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 				MessageFilter mfPK = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(getOfferedTimeout).setType(DMT.FNPSSKPubKey);
 				Message pk;
 				try {
-					pk = node.usm.waitFor(mfPK, this);
+					pk = node.getUSM().waitFor(mfPK, this);
 				} catch (DisconnectedException e) {
 					if(logMINOR)
 						Logger.minor(this, "Disconnected: "+pn+" getting pubkey for offer for "+key);
@@ -842,7 +842,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
         		}
         		fireCHKTransferBegins();
 				
-        		BlockReceiver br = new BlockReceiver(node.usm, pn, uid, prb, this, node.getTicker(), true, realTimeFlag, myTimeoutHandler, true);
+        		BlockReceiver br = new BlockReceiver(node.getUSM(), pn, uid, prb, this, node.getTicker(), true, realTimeFlag, myTimeoutHandler, true);
         		
        			if(logMINOR) Logger.minor(this, "Receiving data (for offer reply)");
        			receivingAsync = true;
@@ -1094,7 +1094,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     		fireCHKTransferBegins();
     	
     	final long tStart = System.currentTimeMillis();
-    	final BlockReceiver br = new BlockReceiver(node.usm, next, uid, prb, this, node.getTicker(), true, realTimeFlag, myTimeoutHandler, true);
+    	final BlockReceiver br = new BlockReceiver(node.getUSM(), next, uid, prb, this, node.getTicker(), true, realTimeFlag, myTimeoutHandler, true);
     	
     	if(failNow) {
     		if(logMINOR) Logger.minor(this, "Terminating forked transfer on "+this+" from "+next);
@@ -2165,7 +2165,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 
 		MessageFilter mf = makeAcceptedRejectedFilter(next, timeout, origTag);
 		try {
-			node.usm.addAsyncFilter(mf, new SlowAsyncMessageFilterCallback() {
+			node.getUSM().addAsyncFilter(mf, new SlowAsyncMessageFilterCallback() {
 
 				@Override
 				public void onMatched(Message m) {

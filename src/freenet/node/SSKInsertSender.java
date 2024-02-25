@@ -302,7 +302,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 		// Somewhat intricate logic to try to avoid fatalTimeout() if at all possible.
 		MessageFilter mf = makeAcceptedRejectedFilter(next, TIMEOUT_AFTER_ACCEPTEDREJECTED_TIMEOUT, tag);
 		try {
-			node.usm.addAsyncFilter(mf, new SlowAsyncMessageFilterCallback() {
+			node.getUSM().addAsyncFilter(mf, new SlowAsyncMessageFilterCallback() {
 
 				@Override
 				public void onMatched(Message m) {
@@ -458,7 +458,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 		MessageFilter mfData = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(SSKInsertHandler.DATA_INSERT_TIMEOUT).setType(DMT.FNPSSKDataFoundData);
 		Message dataMessage;
 		try {
-			dataMessage = node.usm.waitFor(mfData, this);
+			dataMessage = node.getUSM().waitFor(mfData, this);
 		} catch (DisconnectedException e) {
 			if(logMINOR)
 				Logger.minor(this, "Disconnected: "+next+" getting datareply for "+this);
@@ -769,7 +769,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
         	
         	Message newAck;
 			try {
-				newAck = node.usm.waitFor(mf1, this);
+				newAck = node.getUSM().waitFor(mf1, this);
 			} catch (DisconnectedException e) {
 				if(logMINOR) Logger.minor(this, "Disconnected from "+next);
 				next.noLongerRoutingTo(thisTag, false);
@@ -793,7 +793,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
         while (true) {
         	Message msg;
 			try {
-				msg = node.usm.waitFor(mf, this);
+				msg = node.getUSM().waitFor(mf, this);
 			} catch (DisconnectedException e) {
 				Logger.normal(this, "Disconnected from " + next
 						+ " while waiting for InsertReply on " + this);
@@ -813,7 +813,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 				while(true) {
 					
 					try {
-						msg = node.usm.waitFor(mf, this);
+						msg = node.getUSM().waitFor(mf, this);
 					} catch (DisconnectedException e) {
 						Logger.normal(this, "Disconnected from " + next
 								+ " while waiting for InsertReply on " + this);

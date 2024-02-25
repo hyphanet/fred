@@ -546,7 +546,7 @@ public class FailureTable {
         	PartiallyReceivedBlock prb =
         		new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE, block.getRawData());
         	final BlockTransmitter bt =
-        		new BlockTransmitter(node.usm, node.getTicker(), source, uid, prb, senderCounter, BlockTransmitter.NEVER_CASCADE,
+        		new BlockTransmitter(node.getUSM(), node.getTicker(), source, uid, prb, senderCounter, BlockTransmitter.NEVER_CASCADE,
         				new BlockTransmitterCompletion() {
 
 					@Override

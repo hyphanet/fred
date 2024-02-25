@@ -67,7 +67,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 			this.pn = pn;
 			this.uid = CHKInsertSender.this.uid;
 			this.thisTag = thisTag;
-			bt = new BlockTransmitter(node.usm, node.getTicker(), pn, uid, prb, CHKInsertSender.this, BlockTransmitter.NEVER_CASCADE, 
+			bt = new BlockTransmitter(node.getUSM(), node.getTicker(), pn, uid, prb, CHKInsertSender.this, BlockTransmitter.NEVER_CASCADE,
 					new BlockTransmitterCompletion() {
 
 				@Override
@@ -100,7 +100,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 			//synch-version: this.receivedNotice(waitForReceivedNotification(this));
 			//Add ourselves as a listener for the longterm completion message of this transfer, then gracefully exit.
 			try {
-				node.usm.addAsyncFilter(getNotificationMessageFilter(false), BackgroundTransfer.this, null);
+				node.getUSM().addAsyncFilter(getNotificationMessageFilter(false), BackgroundTransfer.this, null);
 			} catch (DisconnectedException e) {
 				// Normal
 				if(logMINOR)
@@ -251,7 +251,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 				pn.localRejectedOverload("InsertTimeoutNoFinalAck", realTimeFlag);
 				// First timeout. Wait for second timeout.
 				try {
-					node.usm.addAsyncFilter(getNotificationMessageFilter(true), this, CHKInsertSender.this);
+					node.getUSM().addAsyncFilter(getNotificationMessageFilter(true), this, CHKInsertSender.this);
 				} catch (DisconnectedException e) {
 					// Normal
 					if(logMINOR)
@@ -660,7 +660,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 		// Somewhat intricate logic to try to avoid fatalTimeout() if at all possible.
 		MessageFilter mf = makeAcceptedRejectedFilter(next, TIMEOUT_AFTER_ACCEPTEDREJECTED_TIMEOUT, tag);
 		try {
-			node.usm.addAsyncFilter(mf, new SlowAsyncMessageFilterCallback() {
+			node.getUSM().addAsyncFilter(mf, new SlowAsyncMessageFilterCallback() {
 
 				@Override
 				public void onMatched(Message m) {
@@ -1188,7 +1188,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 			}
 			
 			try {
-				msg = node.usm.waitFor(mf, this);
+				msg = node.getUSM().waitFor(mf, this);
 			} catch (DisconnectedException e) {
 				Logger.normal(this, "Disconnected from " + next
 						+ " while waiting for InsertReply on " + this);
@@ -1249,7 +1249,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 			    			}
 							
 							try {
-								msg = node.usm.waitFor(mf, CHKInsertSender.this);
+								msg = node.getUSM().waitFor(mf, CHKInsertSender.this);
 							} catch (DisconnectedException e) {
 								Logger.normal(this, "Disconnected from " + waitingFor
 										+ " while waiting for InsertReply on " + CHKInsertSender.this);

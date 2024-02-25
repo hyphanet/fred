@@ -1231,7 +1231,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			Logger.normal(this, "Disconnected " + this, new Exception("debug"));
 		else if(logMINOR)
 			Logger.minor(this, "Disconnected "+this, new Exception("debug"));
-		node.usm.onDisconnect(this);
+		node.getUSM().onDisconnect(this);
 		if(dumpMessageQueue)
 			node.getTracker().onRestartOrDisconnect(this);
 		node.failureTable.onDisconnect(this);
@@ -1596,10 +1596,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	*/
 	public boolean ping(int pingID) throws NotConnectedException {
 		Message ping = DMT.createFNPPing(pingID);
-		node.usm.send(this, ping, node.dispatcher.pingCounter);
+		node.getUSM().send(this, ping, node.dispatcher.pingCounter);
 		Message msg;
 		try {
-			msg = node.usm.waitFor(MessageFilter.create().setTimeout(2000).setType(DMT.FNPPong).setField(DMT.PING_SEQNO, pingID), null);
+			msg = node.getUSM().waitFor(MessageFilter.create().setTimeout(2000).setType(DMT.FNPPong).setField(DMT.PING_SEQNO, pingID), null);
 		} catch(DisconnectedException e) {
 			throw new NotConnectedException("Disconnected while waiting for pong");
 		}
@@ -2139,7 +2139,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 
 		if(bootIDChanged) {
 			node.getLocationManager().lostOrRestartedNode(this);
-			node.usm.onRestart(this);
+			node.getUSM().onRestart(this);
 			node.getTracker().onRestartOrDisconnect(this);
 		}
 		if(oldPrev != null) oldPrev.disconnected();
@@ -5387,7 +5387,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	
 	@Override
 	public void handleMessage(Message m) {
-		node.usm.checkFilters(m, crypto.socket);
+		node.getUSM().checkFilters(m, crypto.socket);
 	}
 
 	@Override
@@ -5495,7 +5495,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		@Override
 		public void processDecryptedMessage(byte[] data, int offset,
 				int length, int overhead) {
-			Message m = node.usm.decodeSingleMessage(data, offset, length, PeerNode.this, overhead);
+			Message m = node.getUSM().decodeSingleMessage(data, offset, length, PeerNode.this, overhead);
 			if(m == null) {
 				if(logMINOR) Logger.minor(this, "Message not decoded from "+PeerNode.this+" ("+PeerNode.this.getVersionNumber()+")");
 				return;

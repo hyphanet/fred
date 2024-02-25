@@ -134,7 +134,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         
         Message msg;
         try {
-            msg = node.usm.waitFor(mf, this);
+            msg = node.getUSM().waitFor(mf, this);
         } catch (DisconnectedException e) {
             Logger.normal(this, "Disconnected while waiting for DataInsert on "+uid);
             return;
@@ -168,7 +168,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         prb = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE);
         if(htl > 0)
             sender = node.makeInsertSender(key, htl, uid, tag, source, headers, prb, false, false, forkOnCacheable, preferInsert, ignoreLowBackoff, realTimeFlag);
-        br = new BlockReceiver(node.usm, source, uid, prb, this, node.getTicker(), false, realTimeFlag, myTimeoutHandler, false);
+        br = new BlockReceiver(node.getUSM(), source, uid, prb, this, node.getTicker(), false, realTimeFlag, myTimeoutHandler, false);
         
         // Receive the data, off thread
         Runnable dataReceiver = new DataReceiver();
@@ -321,7 +321,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
     		Message m = DMT.createFNPInsertTransfersCompleted(uid, true);
     		source.sendAsync(m, null, this);
     		prb = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE);
-    		br = new BlockReceiver(node.usm, source, uid, prb, this, node.getTicker(), false, realTimeFlag, null, false);
+    		br = new BlockReceiver(node.getUSM(), source, uid, prb, this, node.getTicker(), false, realTimeFlag, null, false);
     		prb.abort(RetrievalException.NO_DATAINSERT, "No DataInsert", true);
     		source.localRejectedOverload("TimedOutAwaitingDataInsert", realTimeFlag);
     		
@@ -329,7 +329,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
     		// Yes it's ugly everywhere but since we have a longish connection timeout it's necessary everywhere. :|
     		// FIXME review two stage timeout everywhere with some low level networking guru.
     		MessageFilter mf = makeDataInsertFilter(SECONDS.toMillis(60));
-    		node.usm.addAsyncFilter(mf, new SlowAsyncMessageFilterCallback() {
+    		node.getUSM().addAsyncFilter(mf, new SlowAsyncMessageFilterCallback() {
 
     			@Override
     			public void onMatched(Message m) {

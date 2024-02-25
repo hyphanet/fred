@@ -1083,7 +1083,7 @@ public class OpennetManager {
 		ByteArrayRandomAccessBuffer raf = new ByteArrayRandomAccessBuffer(padded);
 		raf.setReadOnly();
 		PartiallyReceivedBulk prb =
-			new PartiallyReceivedBulk(node.usm, padded.length, Node.PACKET_SIZE, raf, true);
+			new PartiallyReceivedBulk(node.getUSM(), padded.length, Node.PACKET_SIZE, raf, true);
 		try {
 			BulkTransmitter bt =
 				new BulkTransmitter(prb, peer, xferUID, true, ctr, true, cb);
@@ -1216,7 +1216,7 @@ public class OpennetManager {
 		
 		mf = mfAck.or(mfAckTimeout.or(mf));
 		try {
-			node.usm.addAsyncFilter(mf, new SlowAsyncMessageFilterCallback() {
+			node.getUSM().addAsyncFilter(mf, new SlowAsyncMessageFilterCallback() {
 				
 				boolean completed;
 
@@ -1284,7 +1284,7 @@ public class OpennetManager {
 	static byte[] innerWaitForOpennetNoderef(long xferUID, int paddedLength, int realLength, PeerNode source, boolean isReply, long uid, boolean sendReject, ByteCounter ctr, Node node) {
 		byte[] buf = new byte[paddedLength];
 		ByteArrayRandomAccessBuffer raf = new ByteArrayRandomAccessBuffer(buf);
-		PartiallyReceivedBulk prb = new PartiallyReceivedBulk(node.usm, buf.length, Node.PACKET_SIZE, raf, false);
+		PartiallyReceivedBulk prb = new PartiallyReceivedBulk(node.getUSM(), buf.length, Node.PACKET_SIZE, raf, false);
 		BulkReceiver br = new BulkReceiver(prb, source, xferUID, ctr);
 		if (logMINOR) {
 			Logger.minor(OpennetManager.class, "Receiving noderef (reply="+isReply+") as bulk transfer for request uid "+uid+" with transfer "+xferUID+" from "+source);

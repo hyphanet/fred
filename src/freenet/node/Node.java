@@ -689,7 +689,13 @@ public class Node implements TimeSkewDetectorCallback {
 	@Deprecated
 	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final Random fastWeakRandom;
-	/** The object which handles incoming messages and allows us to wait for them */
+
+	/**
+	 * The object which handles incoming messages and allows us to wait for them
+	 * @deprecated Use {@link #getUSM()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	final MessageCore usm;
 
 	// Darknet stuff

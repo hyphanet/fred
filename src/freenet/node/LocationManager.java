@@ -597,11 +597,11 @@ public class LocationManager implements ByteCounter {
             MessageFilter filter =
                 MessageFilter.create().setType(DMT.FNPSwapCommit).setField(DMT.UID, uid).setTimeout(TIMEOUT).setSource(pn);
 
-            node.usm.send(pn, m, LocationManager.this);
+            node.getUSM().send(pn, m, LocationManager.this);
 
             Message commit;
             try {
-                commit = node.usm.waitFor(filter, LocationManager.this);
+                commit = node.getUSM().waitFor(filter, LocationManager.this);
             } catch (DisconnectedException e) {
             	if(logMINOR) Logger.minor(this, "Disconnected from "+pn+" while waiting for SwapCommit");
                 return;
@@ -666,7 +666,7 @@ public class LocationManager implements ByteCounter {
             Message confirm = DMT.createFNPSwapComplete(uid, myValue);
             //confirm.addSubMessage(DMT.createFNPSwapLocations(extractUIDs(friendLocsAndUIDs)));
 
-            node.usm.send(pn, confirm, LocationManager.this);
+            node.getUSM().send(pn, confirm, LocationManager.this);
 
             boolean shouldSwap = shouldSwap(myLoc, friendLocs, hisLoc, hisFriendLocs, random ^ hisRandom);
 
@@ -756,12 +756,12 @@ public class LocationManager implements ByteCounter {
                     MessageFilter.create().setType(DMT.FNPSwapReply).setField(DMT.UID, uid).setSource(pn).setTimeout(TIMEOUT);
                 MessageFilter filter = filter1.or(filter2);
 
-                node.usm.send(pn, m, LocationManager.this);
+                node.getUSM().send(pn, m, LocationManager.this);
 
                 if(logMINOR) Logger.minor(this, "Waiting for SwapReply/SwapRejected on "+uid);
                 Message reply;
                 try {
-                    reply = node.usm.waitFor(filter, LocationManager.this);
+                    reply = node.getUSM().waitFor(filter, LocationManager.this);
                 } catch (DisconnectedException e) {
                 	if(logMINOR) Logger.minor(this, "Disconnected while waiting for SwapReply/SwapRejected for "+uid);
                     return;
@@ -792,12 +792,12 @@ public class LocationManager implements ByteCounter {
                 MessageFilter filter3 = MessageFilter.create().setField(DMT.UID, uid).setType(DMT.FNPSwapComplete).setTimeout(TIMEOUT).setSource(pn);
                 filter = filter1.or(filter3);
 
-                node.usm.send(pn, confirm, LocationManager.this);
+                node.getUSM().send(pn, confirm, LocationManager.this);
 
                 if(logMINOR) Logger.minor(this, "Waiting for SwapComplete: uid = "+uid);
 
                 try {
-                    reply = node.usm.waitFor(filter, LocationManager.this);
+                    reply = node.getUSM().waitFor(filter, LocationManager.this);
                 } catch (DisconnectedException e) {
                 	if(logMINOR) Logger.minor(this, "Disconnected waiting for SwapComplete on "+uid);
                     return;

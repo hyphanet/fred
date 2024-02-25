@@ -607,7 +607,7 @@ loadWaiterLoop:
     		MessageFilter mf = makeAcceptedRejectedFilter(next, getAcceptedTimeout(), origTag);
     		
     		try {
-    			msg = node.usm.waitFor(mf, this);
+    			msg = node.getUSM().waitFor(mf, this);
     			if(logMINOR) Logger.minor(this, "first part got "+msg);
     		} catch (DisconnectedException e) {
     			Logger.normal(this, "Disconnected from "+next+" while waiting for Accepted on "+uid);

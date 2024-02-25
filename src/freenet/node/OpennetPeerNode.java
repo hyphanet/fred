@@ -91,7 +91,7 @@ public class OpennetPeerNode extends PeerNode {
 				opennetNodeAddedReason = null;
 			}
 		}
-		if(now - node.usm.getStartedTime() < OpennetManager.DROP_STARTUP_DELAY)
+		if(now - node.getUSM().getStartedTime() < OpennetManager.DROP_STARTUP_DELAY)
 			return NOT_DROP_REASON.TOO_LOW_UPTIME; // Give them time to connect after we startup
 		if(!ignoreDisconnect) {
 		synchronized(this) {
