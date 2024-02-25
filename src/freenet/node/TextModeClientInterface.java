@@ -209,7 +209,7 @@ public class TextModeClientInterface implements Runnable {
         sb.append("ANNOUNCE[:<location>] - announce to the specified location\r\n");
         if(n.isUsingWrapper())
         	sb.append("RESTART - restart the program\r\n");
-        if(core != null && core.directTMCI != this) {
+        if(core != null && core.getDirectTMCI() != this) {
           sb.append("QUIT - close the socket\r\n");
         }
         if(Node.isTestnetEnabled()) {
@@ -483,7 +483,7 @@ public class TextModeClientInterface implements Runnable {
 		w.write(sb.toString());
 		w.flush();
 		n.getNodeStarter().restart();
-	} else if(uline.startsWith("QUIT") && (core.directTMCI == this)) {
+	} else if(uline.startsWith("QUIT") && (core.getDirectTMCI() == this)) {
 		StringBuilder sb = new StringBuilder();
 		sb.append("QUIT command not available in console mode.\r\n");
 		w.write(sb.toString());

@@ -225,6 +225,12 @@ public class NodeClientCore implements Persistable {
 	/* It’s not the field that is deprecated but directly accessing it is. */
 	public final UserAlertManager alerts;
 	final TextModeClientInterfaceServer tmci;
+
+	/**
+	 * @deprecated Use {@link #getDirectTMCI()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but directly accessing it is. */
 	TextModeClientInterface directTMCI;
 	private final PersistentRequestRoot fcpPersistentRoot;
 	final FCPServer fcpServer;
