@@ -405,7 +405,7 @@ public class NodeClientCore implements Persistable {
 					new PersistentTempBucketFactory(persistentTempDir.dir(),
 									"freenet-temp-",
 									node.getRandom(),
-									node.fastWeakRandom,
+									node.getFastWeakRandom(),
 									nodeConfig.getBoolean(
 											"encryptPersistentTempBuckets"));
 			this.persistentFilenameGenerator = persistentTempBucketFactory.fg;
@@ -525,7 +525,7 @@ public class NodeClientCore implements Persistable {
 				new TempBucketFactory(node.executor, tempFilenameGenerator,
 						      nodeConfig.getLong("maxRAMBucketSize"),
 						      nodeConfig.getLong("RAMBucketPoolSize"),
-						      node.fastWeakRandom,
+						      node.getFastWeakRandom(),
 						      nodeConfig.getBoolean("encryptTempBuckets"),
 						      minDiskFreeShortTerm, cryptoSecretTransient);
 
@@ -591,7 +591,7 @@ public class NodeClientCore implements Persistable {
 
 		PooledFileRandomAccessBufferFactory raff =
 				new PooledFileRandomAccessBufferFactory(persistentFilenameGenerator,
-									node.fastWeakRandom);
+									node.getFastWeakRandom());
 		persistentDiskChecker =
 				new DiskSpaceCheckingRandomAccessBufferFactory(raff,
 									       persistentTempDir
@@ -701,7 +701,7 @@ public class NodeClientCore implements Persistable {
 						  archiveManager, persistentTempBucketFactory,
 						  tempBucketFactory,
 						  persistentTempBucketFactory, healingQueue,
-						  uskManager, random, node.fastWeakRandom,
+						  uskManager, random, node.getFastWeakRandom(),
 						  node.getTicker(), memoryLimitedJobRunner,
 						  tempFilenameGenerator,
 						  persistentFilenameGenerator, tempBucketFactory,

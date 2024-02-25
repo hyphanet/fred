@@ -702,7 +702,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 				return true;
 			}
 			if(om != null && source instanceof SeedClientPeerNode) {
-				if(!om.seedTracker.acceptAnnounce((SeedClientPeerNode)source, node.fastWeakRandom)) {
+				if(!om.seedTracker.acceptAnnounce((SeedClientPeerNode)source, node.getFastWeakRandom())) {
 					node.getNodeStats().endAnnouncement(uid);
 					Message msg = DMT.createFNPRejectedOverload(uid, true, false, false);
 					try {

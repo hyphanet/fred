@@ -250,7 +250,7 @@ public class LocationManager implements ByteCounter {
                     }
                 }
             }
-        }, (int) (node.fastWeakRandom.nextFloat() * PITCH_BLACK_MITIGATION_STARTUP_DELAY));
+        }, (int) (node.getFastWeakRandom().nextFloat() * PITCH_BLACK_MITIGATION_STARTUP_DELAY));
     }
 
     /** @return the millis to wait until the next pitch black check: tomorrow and at least 12 hours in the future. */
@@ -261,9 +261,9 @@ public class LocationManager implements ByteCounter {
     private long getMillisUntilRandomTimeTomorrow(LocalDateTime now) {
         LocalDateTime tomorrowTime = now
             .plusDays(1)
-            .withHour(node.fastWeakRandom.nextInt(23))
-            .withMinute(node.fastWeakRandom.nextInt(59))
-            .withSecond(node.fastWeakRandom.nextInt(59));
+            .withHour(node.getFastWeakRandom().nextInt(23))
+            .withMinute(node.getFastWeakRandom().nextInt(59))
+            .withSecond(node.getFastWeakRandom().nextInt(59));
         return now.until(tomorrowTime, ChronoUnit.MILLIS);
     }
 
@@ -300,7 +300,7 @@ public class LocationManager implements ByteCounter {
                 switchLocationToDefendAgainstPitchBlackAttack(insertFromYesterday);
             }
         } catch (FetchException e) {
-            if (isRequestExceptionBecauseUriIsNotAvailable(e) && node.fastWeakRandom.nextBoolean()) {
+            if (isRequestExceptionBecauseUriIsNotAvailable(e) && node.getFastWeakRandom().nextBoolean()) {
                 // switch to the attacked location with only 50% probability,
                 // because it could be caused by the defensive swap of another node
                 // which made its current content inaccessible.
@@ -332,7 +332,7 @@ public class LocationManager implements ByteCounter {
         try {
             highLevelSimpleClient.fetch(calculatedChkUri);
         } catch (FetchException e) {
-            if (isRequestExceptionBecauseUriIsNotAvailable(e) && node.fastWeakRandom.nextBoolean()) {
+            if (isRequestExceptionBecauseUriIsNotAvailable(e) && node.getFastWeakRandom().nextBoolean()) {
                 // switch to the attacked location with only 50% probability,
                 // because it could be caused by the defensive swap of another node
                 // which made its current content inaccessible.
@@ -356,7 +356,7 @@ public class LocationManager implements ByteCounter {
             .toNormalizedDouble();
         if (insertFromYesterday instanceof ClientSSK) {
             // decide between SSK and pubkey at random, because they always break together.
-            if (node.fastWeakRandom.nextBoolean()) {
+            if (node.getFastWeakRandom().nextBoolean()) {
                 probedLocationFromYesterday = Util.keyDigestAsNormalizedDouble(
                     ((ClientSSK) insertFromYesterday).getPubKey().getRoutingKey());
             }
@@ -375,14 +375,14 @@ public class LocationManager implements ByteCounter {
         String nameForInsert) {
         // create some random data of up to 1021 bytes to insert to the KSK
         byte[] contentLengthSource = new byte[2];
-        node.fastWeakRandom.nextBytes(contentLengthSource);
+        node.getFastWeakRandom().nextBytes(contentLengthSource);
         // bytes are -127 to 128,
         // so this gives us 253 to 1021 bytes of size
         int contentLength = (5 * 127)
             + (3 * contentLengthSource[0])
             + contentLengthSource[1] / 64; // -1 to 2
         byte[] randomContentToInsert = new byte[contentLength];
-        node.fastWeakRandom.nextBytes(randomContentToInsert);
+        node.getFastWeakRandom().nextBytes(randomContentToInsert);
         ArrayBucket randomBucketToInsert = new ArrayBucket(randomContentToInsert);
         // create the KSK
         ClientKSK insertForToday = (ClientKSK.create(nameForInsert));

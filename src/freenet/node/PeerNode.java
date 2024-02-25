@@ -1264,7 +1264,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			timeLastDisconnect = now;
 			if(dumpMessageQueue) {
 				// Reset the boot ID so that we get different trackers next time.
-				myBootID = node.fastWeakRandom.nextLong();
+				myBootID = node.getFastWeakRandom().nextLong();
 				messagesTellDisconnected = grabQueuedMessageItems();
 				oldPacketFormat = packetFormat;
 				packetFormat = null;
@@ -1307,7 +1307,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 						synchronized(this) {
 							if(isConnected()) return;
 							// Reset the boot ID so that we get different trackers next time.
-							myBootID = node.fastWeakRandom.nextLong();
+							myBootID = node.getFastWeakRandom().nextLong();
 							oldPacketFormat = packetFormat;
 							packetFormat = null;
 						}
@@ -2926,7 +2926,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			if(mandatoryBackoffUntil > -1 && mandatoryBackoffUntil > now) return;
 			Logger.error(this, "Entering mandatory backoff for "+this + (realTime ? " (realtime)" : " (bulk)"));
 			mandatoryBackoffUntil = now + (mandatoryBackoffLength / 2) +
-				node.fastWeakRandom.nextInt(mandatoryBackoffLength / 2);
+				node.getFastWeakRandom().nextInt(mandatoryBackoffLength / 2);
 			mandatoryBackoffLength *= MANDATORY_BACKOFF_MULTIPLIER;
 			node.getNodeStats().reportMandatoryBackoff(reason, mandatoryBackoffUntil - now, realTime);
 			if(realTime) {
@@ -3818,7 +3818,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			jfkNoncesSent.clear();
 			if(dumpMessageQueue) {
 				// Reset the boot ID so that we get different trackers next time.
-				myBootID = node.fastWeakRandom.nextLong();
+				myBootID = node.getFastWeakRandom().nextLong();
 				messagesTellDisconnected = grabQueuedMessageItems();
 			}
 		}

@@ -1566,7 +1566,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 	            updateManager.node.lastVersion != version) {
 	        // We just restarted after updating.
 	        priority = RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS;
-	    } else if(updateManager.node.fastWeakRandom.nextInt(RANDOM_INSERT_BLOB) != 0) {
+	    } else if(updateManager.node.getFastWeakRandom().nextInt(RANDOM_INSERT_BLOB) != 0) {
 	        // 1 in RANDOM_INSERT_BLOB chance of inserting anyway at bulk priority.
 	        return;
 	    }
@@ -1929,7 +1929,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 					FileRandomAccessBuffer raf = null;
 					try {
 						System.out.println("Fetching "+saveTo+" from "+fetchFrom);
-						long uid = updateManager.node.fastWeakRandom.nextLong();
+						long uid = updateManager.node.getFastWeakRandom().nextLong();
 						fetchFrom.sendAsync(DMT.createUOMFetchDependency(uid, expectedHash, size), null, updateManager.ctr);
 						tmp = FileUtil.createTempFile(saveTo.getName(), NodeUpdateManager.TEMP_FILE_SUFFIX, saveTo.getParentFile());
 						raf = new FileRandomAccessBuffer(tmp, size, false);
@@ -2049,7 +2049,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				if(logMINOR) Logger.minor(this, "No peers to ask for "+saveTo);
 				return null;
 			}
-			PeerNode fetchFrom = notTried.get(updateManager.node.fastWeakRandom.nextInt(notTried.size()));
+			PeerNode fetchFrom = notTried.get(updateManager.node.getFastWeakRandom().nextInt(notTried.size()));
 			peersFetching.add(fetchFrom);
 			return fetchFrom;
 		}

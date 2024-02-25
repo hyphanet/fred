@@ -444,7 +444,7 @@ loopOverLines:
 		try {
 		byte[] buf = new byte[4096];
 		for (long written = 0; written < TEST_SIZE;) {
-			node.fastWeakRandom.nextBytes(buf);
+			node.getFastWeakRandom().nextBytes(buf);
 			int toWrite = (int) Math.min(TEST_SIZE - written, buf.length);
 			os.write(buf, 0, toWrite);
 			written += toWrite;

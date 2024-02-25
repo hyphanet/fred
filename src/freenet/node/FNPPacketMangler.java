@@ -1914,7 +1914,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		int maxPacketSize = sock.getMaxPacketSize();
 		int paddingLength;
 		if(prePaddingLength < maxPacketSize) {
-			paddingLength = node.fastWeakRandom.nextInt(Math.min(100, maxPacketSize - prePaddingLength));
+			paddingLength = node.getFastWeakRandom().nextInt(Math.min(100, maxPacketSize - prePaddingLength));
 		} else {
 			paddingLength = 0; // Avoid oversize packets if at all possible, the MTU is an estimate and may be wrong, and fragmented packets are often dropped by firewalls.
 			// Tell the devs, this shouldn't happen.
@@ -1932,7 +1932,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		pcfb.blockEncipher(output, 0, output.length);
 		System.arraycopy(output, 0, data, hash.length+iv.length+2, output.length);
 
-		Util.randomBytes(node.fastWeakRandom, data, hash.length+iv.length+2+output.length, paddingLength);
+		Util.randomBytes(node.getFastWeakRandom(), data, hash.length+iv.length+2+output.length, paddingLength);
 		try {
 			sendPacket(data, replyTo, pn);
 			node.getNodeStats().reportAuthBytes(data.length + sock.getHeadersLength(replyTo));

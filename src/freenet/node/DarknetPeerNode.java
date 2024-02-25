@@ -1883,7 +1883,7 @@ public class DarknetPeerNode extends PeerNode {
 				return;
 			}
 			byte[] data = baos.toByteArray();
-			long uid = node.fastWeakRandom.nextLong();
+			long uid = node.getFastWeakRandom().nextLong();
 			RandomAccessBuffer raf = new ByteArrayRandomAccessBuffer(data);
 			PartiallyReceivedBulk prb = new PartiallyReceivedBulk(node.usm, data.length, Node.PACKET_SIZE, raf, true);
 			try {

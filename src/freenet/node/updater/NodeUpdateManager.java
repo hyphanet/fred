@@ -457,7 +457,7 @@ public class NodeUpdateManager {
 										+ filename
 										+ " after fetching it from Freenet.");
 						try {
-							Thread.sleep(SECONDS.toMillis(1) + node.fastWeakRandom.nextInt((int) SECONDS.toMillis((long) Math.min(Math.pow(2, i), MINUTES.toSeconds(15)))));
+							Thread.sleep(SECONDS.toMillis(1) + node.getFastWeakRandom().nextInt((int) SECONDS.toMillis((long) Math.min(Math.pow(2, i), MINUTES.toSeconds(15)))));
 						} catch (InterruptedException e) {
 							// Ignore
 						}

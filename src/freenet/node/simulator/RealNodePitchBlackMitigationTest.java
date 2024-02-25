@@ -206,7 +206,7 @@ public class RealNodePitchBlackMitigationTest extends RealNodeTest {
 			Node nodeToAttack,
 			int indexOfNode) {
 		double pitchBlackFakeLocation = pitchBlackAttackMeanLocation
-				+ (nodeToAttack.fastWeakRandom.nextDouble() * pitchBlackAttackJitter);
+				+ (nodeToAttack.getFastWeakRandom().nextDouble() * pitchBlackAttackJitter);
 		System.err.println("Pitch-Black-Attack on node "
 				+ indexOfNode
 				+ " using mean "
@@ -240,7 +240,7 @@ public class RealNodePitchBlackMitigationTest extends RealNodeTest {
 				for (int i = 0; i < NUMBER_OF_NODES; i++) {
 					Node nodeToAttack = nodes[i];
 					// attack 2% of the nodes per round
-					if (nodeToAttack.fastWeakRandom.nextFloat() < 0.98) {
+					if (nodeToAttack.getFastWeakRandom().nextFloat() < 0.98) {
 						continue;
 					}
 					attackSpecificNode(

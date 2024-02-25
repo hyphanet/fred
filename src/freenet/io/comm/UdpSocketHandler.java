@@ -158,7 +158,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 		if(logMINOR) Logger.minor(this, "Setting IPV6_PREFER_SRC_PUBLIC for port "+ listenPort + " is a "+(r ? "success" : "failure"));
 //		}
 		// Only used for debugging, no need to seed from Yarrow
-		dropRandom = node.fastWeakRandom;
+		dropRandom = node.getFastWeakRandom();
 		tracker = AddressTracker.create(node.lastBootID, node.runDir(), listenPort);
 		tracker.startSend(startupTime);
 	}

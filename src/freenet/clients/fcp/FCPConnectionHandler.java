@@ -794,7 +794,7 @@ public class FCPConnectionHandler implements Closeable {
 		if(job != null)
 			throw new IllegalArgumentException("There is already a TestDDA going on for that directory!");
 		
-		File writeFile = (write ? new File(path, "DDACheck-" + server.getNode().fastWeakRandom.nextInt() + ".tmp") : null);
+		File writeFile = (write ? new File(path, "DDACheck-" + server.getNode().getFastWeakRandom().nextInt() + ".tmp") : null);
 		File readFile = null;
 		if(read) {
 			try {
@@ -806,7 +806,7 @@ public class FCPConnectionHandler implements Closeable {
 			}
 		}
 
-		DDACheckJob result = new DDACheckJob(server.getNode().fastWeakRandom, directory, readFile, writeFile);
+		DDACheckJob result = new DDACheckJob(server.getNode().getFastWeakRandom(), directory, readFile, writeFile);
 		synchronized (inTestDirectories) {
 			inTestDirectories.put(directory, result);
 		}

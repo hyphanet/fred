@@ -681,7 +681,13 @@ public class Node implements TimeSkewDetectorCallback {
 	@Deprecated
 	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final SecureRandom secureRandom;
-	/** Weak but fast RNG */
+
+	/**
+	 * Weak but fast RNG
+	 * @deprecated Use {@link #getFastWeakRandom()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final Random fastWeakRandom;
 	/** The object which handles incoming messages and allows us to wait for them */
 	final MessageCore usm;
@@ -5018,6 +5024,10 @@ public class Node implements TimeSkewDetectorCallback {
 
     public SecureRandom getSecureRandom() {
         return secureRandom;
+    }
+
+    public Random getFastWeakRandom() {
+        return fastWeakRandom;
     }
 
 }

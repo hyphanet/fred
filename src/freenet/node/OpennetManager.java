@@ -1062,7 +1062,7 @@ public class OpennetManager {
 			return false;
 		}
 		System.arraycopy(noderef, 0, padded, 0, noderef.length);
-		Util.randomBytes(node.fastWeakRandom, padded, noderef.length, padded.length-noderef.length);
+		Util.randomBytes(node.getFastWeakRandom(), padded, noderef.length, padded.length-noderef.length);
 		long xferUID = node.getRandom().nextLong();
 		Message msg2 = isReply ? DMT.createFNPOpennetConnectReplyNew(uid, xferUID, noderef.length, padded.length) :
 			DMT.createFNPOpennetConnectDestinationNew(uid, xferUID, noderef.length, padded.length);
@@ -1106,7 +1106,7 @@ public class OpennetManager {
 			long xferUID) throws NotConnectedException {
 		byte[] padded = new byte[paddedSize(noderef.length)];
 		System.arraycopy(noderef, 0, padded, 0, noderef.length);
-		Util.randomBytes(node.fastWeakRandom, padded, noderef.length, padded.length-noderef.length);
+		Util.randomBytes(node.getFastWeakRandom(), padded, noderef.length, padded.length-noderef.length);
 		innerSendOpennetRef(xferUID, padded, peer, ctr, null);
 	}
 
