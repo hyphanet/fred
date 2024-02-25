@@ -672,9 +672,14 @@ public class Node implements TimeSkewDetectorCallback {
 	@Deprecated
 	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final RandomSource random;
+
 	/** JCA-compliant strong RNG. WARNING: DO NOT CALL THIS ON THE MAIN NETWORK
 	 * HANDLING THREADS! In some configurations it can block, potentially 
-	 * forever, on nextBytes()! */
+	 * forever, on nextBytes()!
+	 * @deprecated Use {@link #getSecureRandom()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final SecureRandom secureRandom;
 	/** Weak but fast RNG */
 	public final Random fastWeakRandom;
@@ -5009,6 +5014,10 @@ public class Node implements TimeSkewDetectorCallback {
 
     public RandomSource getRandom() {
         return random;
+    }
+
+    public SecureRandom getSecureRandom() {
+        return secureRandom;
     }
 
 }

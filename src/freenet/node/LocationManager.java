@@ -217,7 +217,7 @@ public class LocationManager implements ByteCounter {
                 if (previousInsertFromToday != null
                     && previousInsertFromToday.length == 0) {
                     byte[] randomContentForKSK = new byte[20];
-                    node.secureRandom.nextBytes(randomContentForKSK);
+                    node.getSecureRandom().nextBytes(randomContentForKSK);
                     String randomPart = Base64.encode(randomContentForKSK);
                     String nameForInsert = getPitchBlackPrefix(isoDateStringToday + "-" + randomPart);
                     tryToInsertPitchBlackCheck(highLevelSimpleClient, nameForInsert);
