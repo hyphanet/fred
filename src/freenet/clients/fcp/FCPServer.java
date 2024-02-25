@@ -64,6 +64,12 @@ public class FCPServer implements Runnable, DownloadCache {
 	private static boolean logMINOR;
 	public final static int DEFAULT_FCP_PORT = 9481;
 	NetworkInterface networkInterface;
+
+	/**
+	 * @deprecated Use {@link #getCore()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final NodeClientCore core;
 	final Node node;
 	final int port;
@@ -1198,6 +1204,10 @@ public class FCPServer implements Runnable, DownloadCache {
 			return new CacheFetchResult(new ClientMetadata(get.getMIMEType()), newData, filtered);
 		}
 		return null;
+	}
+
+	public NodeClientCore getCore() {
+		return core;
 	}
 
 }

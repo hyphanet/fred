@@ -50,7 +50,7 @@ public class RemovePersistentRequest extends FCPMessage {
 		}
 		if(req == null) {
 		    try {
-                handler.getServer().core.clientContext.jobRunner.queue(new PersistentJob() {
+                handler.getServer().getCore().clientContext.jobRunner.queue(new PersistentJob() {
                     
                     @Override
                     public boolean run(ClientContext context) {

@@ -154,7 +154,7 @@ public class ClientPut extends ClientPutBase {
 	}
 	
 	public ClientPut(FCPConnectionHandler handler, ClientPutMessage message, FCPServer server) throws IdentifierCollisionException, MessageInvalidException, IOException {
-		super(checkEmptySSK(message.uri, message.targetFilename, server.core.clientContext), message.identifier, message.verbosity, null, 
+		super(checkEmptySSK(message.uri, message.targetFilename, server.getCore().clientContext), message.identifier, message.verbosity, null,
 				handler, message.priorityClass, message.persistence, message.clientToken,
 				message.global, message.getCHKOnly, message.dontCompress, message.localRequestOnly, message.maxRetries, message.earlyEncode, message.canWriteClientCache, message.forkOnCacheable, message.compressorDescriptor, message.extraInsertsSingleBlock, message.extraInsertsSplitfileHeaderBlock, message.realTimeFlag, message.compatibilityMode, message.ignoreUSKDatehints, server);
 		String salt = null;
@@ -162,7 +162,7 @@ public class ClientPut extends ClientPutBase {
 		binaryBlob = message.binaryBlob;
 		
 		if(message.uploadFromType == UploadFrom.DISK) {
-			if(!handler.getServer().core.allowUploadFrom(message.origFilename))
+			if(!handler.getServer().getCore().allowUploadFrom(message.origFilename))
 				throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "Not allowed to upload from "+message.origFilename, identifier, global);
 
 			if(message.fileHash != null) {
@@ -210,7 +210,7 @@ public class ClientPut extends ClientPutBase {
 			this.targetURI = message.redirectTarget;
 			Metadata m = new Metadata(DocumentType.SIMPLE_REDIRECT, null, null, targetURI, cm);
 			try {
-	            tempData = m.toBucket(server.core.clientContext.getBucketFactory(isPersistentForever()));
+	            tempData = m.toBucket(server.getCore().clientContext.getBucketFactory(isPersistentForever()));
 			} catch (MetadataUnresolvedException e) {
 				// Impossible
 				Logger.error(this, "Impossible: "+e, e);
@@ -256,7 +256,7 @@ public class ClientPut extends ClientPutBase {
 		putter = new ClientPutter(this, data, this.uri, cm, 
 				ctx, priorityClass, 
 				isMetadata,
-				this.uri.getDocName() == null ? targetFilename : null, binaryBlob, server.core.clientContext, message.overrideSplitfileCryptoKey, message.metadataThreshold);
+				this.uri.getDocName() == null ? targetFilename : null, binaryBlob, server.getCore().clientContext, message.overrideSplitfileCryptoKey, message.metadataThreshold);
 	}
 	
 	protected ClientPut() {

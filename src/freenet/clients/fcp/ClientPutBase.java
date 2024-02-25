@@ -101,7 +101,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 			FCPConnectionHandler handler, short priorityClass, Persistence persistence, String clientToken, boolean global,
 			boolean getCHKOnly, boolean dontCompress, boolean localRequestOnly, int maxRetries, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, String compressorDescriptor, int extraInsertsSingleBlock, int extraInsertsSplitfileHeader, boolean realTimeFlag, InsertContext.CompatibilityMode compatibilityMode, boolean ignoreUSKDatehints, FCPServer server) throws MalformedURLException {
 		super(uri, identifier, verbosity, charset, handler, priorityClass, persistence, realTimeFlag, clientToken, global);
-		ctx = server.core.clientContext.getDefaultPersistentInsertContext();
+		ctx = server.getCore().clientContext.getDefaultPersistentInsertContext();
         ctx.getCHKOnly = getCHKOnly;
 		ctx.dontCompress = dontCompress;
 		ctx.eventProducer.addEventListener(this);

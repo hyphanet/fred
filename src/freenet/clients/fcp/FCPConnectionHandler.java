@@ -158,7 +158,7 @@ public class FCPConnectionHandler implements Closeable {
 		this.sock = s;
 		this.server = server;
 		isClosed = false;
-		this.bf = server.core.tempBucketFactory;
+		this.bf = server.getCore().tempBucketFactory;
 		requestsByIdentifier = new HashMap<String, ClientRequest>();
 		uskSubscriptions = new HashMap<String, SubscribeUSK>();
 		this.inputHandler = new FCPConnectionInputHandler(this);
@@ -215,12 +215,12 @@ public class FCPConnectionHandler implements Closeable {
 			dupe = killedDupe;
 		}
 		for(ClientRequest req : requests)
-			req.onLostConnection(server.core.clientContext);
+			req.onLostConnection(server.getCore().clientContext);
 		for(SubscribeUSK sub : uskSubscriptions2)
 			sub.unsubscribe();
 		if(!dupe) {
 		    try {
-		        server.core.clientContext.jobRunner.queue(new PersistentJob() {
+		        server.getCore().clientContext.jobRunner.queue(new PersistentJob() {
 		            
 		            @Override
 		            public boolean run(ClientContext context) {
@@ -286,17 +286,17 @@ public class FCPConnectionHandler implements Closeable {
 
 	public void setClientName(final String name) {
 		this.clientName = name;
-		rebootClient = server.registerRebootClient(name, server.core, this);
-		rebootClient.queuePendingMessagesOnConnectionRestartAsync(outputHandler, server.core.clientContext);
+		rebootClient = server.registerRebootClient(name, server.getCore(), this);
+		rebootClient.queuePendingMessagesOnConnectionRestartAsync(outputHandler, server.getCore().clientContext);
 		// Create foreverClient lazily. Everything that needs it (especially creating ClientGet's etc) runs on a database job.
 		if(logMINOR)
 			Logger.minor(this, "Set client name: "+name);
-		PersistentRequestClient client = server.getForeverClient(name, server.core, this);
+		PersistentRequestClient client = server.getForeverClient(name, server.getCore(), this);
 		if(client != null) {
 		    synchronized(this) {
 		        foreverClient = client;
 		    }
-            foreverClient.queuePendingMessagesOnConnectionRestartAsync(outputHandler, server.core.clientContext);
+            foreverClient.queuePendingMessagesOnConnectionRestartAsync(outputHandler, server.getCore().clientContext);
 		}
 	}
 	
@@ -304,12 +304,12 @@ public class FCPConnectionHandler implements Closeable {
 		synchronized(FCPConnectionHandler.this) {
 			if(foreverClient != null) return foreverClient;
 		}
-		PersistentRequestClient client = server.registerForeverClient(name, server.core, FCPConnectionHandler.this);
+		PersistentRequestClient client = server.registerForeverClient(name, server.getCore(), FCPConnectionHandler.this);
 		synchronized(FCPConnectionHandler.this) {
 			foreverClient = client;
 			FCPConnectionHandler.this.notifyAll();
 		}
-		client.queuePendingMessagesOnConnectionRestartAsync(outputHandler, server.core.clientContext);
+		client.queuePendingMessagesOnConnectionRestartAsync(outputHandler, server.getCore().clientContext);
 		return foreverClient;
 	}
 
@@ -340,17 +340,17 @@ public class FCPConnectionHandler implements Closeable {
 				try {
 					
 					if(!persistent) {
-						cg = new ClientGet(this, message, server.core);
+						cg = new ClientGet(this, message, server.getCore());
 						requestsByIdentifier.put(id, cg);
 					} else if(message.persistence == Persistence.FOREVER) {
 					    try {
-					        server.core.clientContext.jobRunner.queue(new PersistentJob() {
+					        server.getCore().clientContext.jobRunner.queue(new PersistentJob() {
 					            
 					            @Override
 					            public boolean run(ClientContext context) {
 					                ClientGet getter;
 					                try {
-					                    getter = new ClientGet(FCPConnectionHandler.this, message, server.core);
+					                    getter = new ClientGet(FCPConnectionHandler.this, message, server.getCore());
 					                } catch (IdentifierCollisionException e1) {
 					                    Logger.normal(this, "Identifier collision on "+this);
 					                    FCPMessage msg = new IdentifierCollisionMessage(id, message.global);
@@ -379,7 +379,7 @@ public class FCPConnectionHandler implements Closeable {
 					    }
 						return; // Don't run the start() below
 					} else {
-						cg = new ClientGet(this, message, server.core);
+						cg = new ClientGet(this, message, server.getCore());
 					}
 				} catch (IdentifierCollisionException e) {
 					success = false;
@@ -401,7 +401,7 @@ public class FCPConnectionHandler implements Closeable {
 			outputHandler.queue(msg);
 			return;
 		} else {
-			cg.start(server.core.clientContext);
+			cg.start(server.getCore().clientContext);
 		}
 	}
 
@@ -441,7 +441,7 @@ public class FCPConnectionHandler implements Closeable {
                     }
 				} else if(message.persistence == Persistence.FOREVER) {
 				    try {
-				        server.core.clientContext.jobRunner.queue(new PersistentJob() {
+				        server.getCore().clientContext.jobRunner.queue(new PersistentJob() {
 				            
 				            @Override
 				            public boolean run(ClientContext context) {
@@ -516,7 +516,7 @@ public class FCPConnectionHandler implements Closeable {
 			return;
 		} else {
 			Logger.minor(this, "Starting "+cp);
-			cp.start(server.core.clientContext);
+			cp.start(server.getCore().clientContext);
 		}
 	}
 
@@ -554,7 +554,7 @@ public class FCPConnectionHandler implements Closeable {
 				// FIXME register non-persistent requests in the constructors also, we already register persistent ones...
 			} else if(message.persistence == Persistence.FOREVER) {
 			    try {
-			        server.core.clientContext.jobRunner.queue(new PersistentJob() {
+			        server.getCore().clientContext.jobRunner.queue(new PersistentJob() {
 			            
 			            @Override
 			            public boolean run(ClientContext context) {
@@ -618,12 +618,12 @@ public class FCPConnectionHandler implements Closeable {
 			// FIXME do we need to freeData???
 			outputHandler.queue(failedMessage);
 			if(cp != null)
-				cp.cancel(server.core.clientContext);
+				cp.cancel(server.getCore().clientContext);
 			return;
 		} else {
 			if(logMINOR)
 				Logger.minor(this, "Starting "+cp);
-			cp.start(server.core.clientContext);
+			cp.start(server.getCore().clientContext);
 		}
 	}
 	
@@ -869,8 +869,8 @@ public class FCPConnectionHandler implements Closeable {
 		}
 		if(req != null) {
 			if(kill)
-				req.cancel(server.core.clientContext);
-			req.requestWasRemoved(server.core.clientContext);
+				req.cancel(server.getCore().clientContext);
+			req.requestWasRemoved(server.getCore().clientContext);
 		}
 		return req;
 	}
@@ -895,7 +895,7 @@ public class FCPConnectionHandler implements Closeable {
 			getRebootClient();
 		ClientRequest req = client.getRequest(identifier);
 		if(req != null) {
-			client.removeByIdentifier(identifier, true, server, server.core.clientContext);
+			client.removeByIdentifier(identifier, true, server, server.getCore().clientContext);
 		}
 		return req;
 	}
@@ -906,7 +906,7 @@ public class FCPConnectionHandler implements Closeable {
 			getForeverClient();
 		ClientRequest req = client.getRequest(identifier);
 		if(req != null) {
-			client.removeByIdentifier(identifier, true, server, server.core.clientContext);
+			client.removeByIdentifier(identifier, true, server, server.getCore().clientContext);
 		}
 		return req;
 	}
