@@ -889,20 +889,17 @@ public class PeerMessageQueue {
 		for (int i = 0; i < queuesByPriority.length; i++) {
 			if (
 				i == DMT.PRIORITY_BULK_DATA
-			) // Bulk: round-robin between UID's (timeout since last sent), long timeout.
-			queuesByPriority[i] = new PrioQueue(
+			) queuesByPriority[i] = new PrioQueue( // Bulk: round-robin between UID's (timeout since last sent), long timeout.
 				PacketSender.MAX_COALESCING_DELAY_BULK,
 				true
 			);
 			else if (
 				i == DMT.PRIORITY_REALTIME_DATA
-			) // Realtime: round-robin between UID's (timeout since last sent), short timeout.
-			queuesByPriority[i] = new PrioQueue(
+			) queuesByPriority[i] = new PrioQueue( // Realtime: round-robin between UID's (timeout since last sent), short timeout.
 				PacketSender.MAX_COALESCING_DELAY,
 				true
 			);
-			else // Everything else: Still round-robin between UID's, but timeout on submitted.
-			queuesByPriority[i] = new PrioQueue(
+			else queuesByPriority[i] = new PrioQueue( // Everything else: Still round-robin between UID's, but timeout on submitted.
 				PacketSender.MAX_COALESCING_DELAY,
 				false
 			);

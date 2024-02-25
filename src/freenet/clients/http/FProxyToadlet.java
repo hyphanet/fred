@@ -1021,8 +1021,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 					synchronized (this) {
 						if (
 							uris.size() < MAX_PREFETCH
-						) // FIXME Maybe we should do this randomly, but since it's a DoS protection (in an obscure feature), if so we should do it in constant space!
-						uris.add(uri);
+						) uris.add(uri); // FIXME Maybe we should do this randomly, but since it's a DoS protection (in an obscure feature), if so we should do it in constant space!
 					}
 				}
 

@@ -247,8 +247,7 @@ public class InsertCompressor implements CompressJob {
 						if (
 							bestCompressedData != null &&
 							bestCompressedData != origData
-						) // Don't need to removeFrom() : we haven't stored it.
-						bestCompressedData.free();
+						) bestCompressedData.free(); // Don't need to removeFrom() : we haven't stored it.
 						bestCompressedData = result;
 						bestCompressedDataSize = resultSize;
 						bestNumberOfBlocks = resultNumberOfBlocks;

@@ -109,8 +109,7 @@ public abstract class BinaryBlob {
 			} else if (blobType == BinaryBlob.BLOB_BLOCK) {
 				if (
 					blobVer != BinaryBlob.BLOB_BLOCK_VERSION
-				) // Even if tolerant, if we can't read a blob there probably isn't much we can do.
-				throw new BinaryBlobFormatException(
+				) throw new BinaryBlobFormatException( // Even if tolerant, if we can't read a blob there probably isn't much we can do.
 					"Unknown block blob version"
 				);
 				if (blobLength < 9) throw new BinaryBlobFormatException(

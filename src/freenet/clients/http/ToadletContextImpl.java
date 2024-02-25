@@ -505,9 +505,7 @@ public class ToadletContextImpl implements ToadletContext {
 		throws ParseException {
 		parseCookies();
 
-		if (
-			cookies == null
-		) return null; // There are no cookies.
+		if (cookies == null) return null; // There are no cookies.
 
 		name = name.toLowerCase();
 
@@ -1176,8 +1174,7 @@ public class ToadletContextImpl implements ToadletContext {
 			if (connection.equalsIgnoreCase("keep-alive")) return false;
 		}
 		if (isHTTP10 == true) return true;
-		else // HTTP 1.1
-		return false;
+		else return false; // HTTP 1.1
 	}
 
 	@Override

@@ -171,9 +171,7 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 	}
 
 	public boolean equals(DSAPublicKey o) {
-		if (
-			this == o
-		) return true; // Not necessary, but a very cheap optimization
+		if (this == o) return true; // Not necessary, but a very cheap optimization
 		return y.equals(o.y) && getGroup().equals(o.getGroup());
 	}
 
@@ -184,9 +182,7 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 
 	@Override
 	public boolean equals(Object o) {
-		if (
-			this == o
-		) return true; // Not necessary, but a very cheap optimization
+		if (this == o) return true; // Not necessary, but a very cheap optimization
 		else if ((o == null) || (o.getClass() != this.getClass())) return false;
 		return (
 			y.equals(((DSAPublicKey) o).y) &&

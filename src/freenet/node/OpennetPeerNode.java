@@ -191,8 +191,7 @@ public class OpennetPeerNode extends PeerNode {
 			System.currentTimeMillis() - timeLastConnectionCompleted();
 		if (
 			uptime < SECONDS.toMillis(30)
-		) // Allow 30 seconds to send the UOM request.
-		return false;
+		) return false; // Allow 30 seconds to send the UOM request.
 		// FIXME remove, paranoia
 		if (uptime < HOURS.toMillis(1)) return false;
 		NodeUpdateManager updater = node.nodeUpdater;

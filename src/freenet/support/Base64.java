@@ -251,8 +251,7 @@ public class Base64 {
 				"illegal Base64 character"
 			);
 			return out;
-		} // Illegal characters can cause an ArrayIndexOutOfBoundsException when
-		// looking up reverseAlphabet.
+		} // looking up reverseAlphabet. // Illegal characters can cause an ArrayIndexOutOfBoundsException when
 		catch (ArrayIndexOutOfBoundsException e) {
 			throw new IllegalBase64Exception("illegal Base64 character");
 		}

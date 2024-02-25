@@ -120,9 +120,9 @@ public class PrioritizedTicker implements Ticker, Runnable {
 
 		if (jobsToRun != null) for (Job r : jobsToRun) {
 			if (logMINOR) Logger.minor(this, "Running " + r);
-			if (r.job instanceof FastRunnable) // Run in-line
-
-			try {
+			if (
+				r.job instanceof FastRunnable
+			) try { // Run in-line
 				r.job.run();
 			} catch (Throwable t) {
 				Logger.error(this, "Caught " + t + " running " + r, t);

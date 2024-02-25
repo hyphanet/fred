@@ -1995,9 +1995,7 @@ public class OpennetManager {
 
 		if (ref != null) {
 			String identity = ref.get("identity");
-			if (
-				identity != null
-			) registerKnownIdentity(identity); // N2N_MESSAGE_TYPE_DIFFNODEREF don't have identity
+			if (identity != null) registerKnownIdentity(identity); // N2N_MESSAGE_TYPE_DIFFNODEREF don't have identity
 		}
 		return ref;
 	}

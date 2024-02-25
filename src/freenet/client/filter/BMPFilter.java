@@ -44,9 +44,7 @@ public class BMPFilter implements ContentDataFilter {
 		byte[] data = new byte[4];
 
 		result = dis.read(data);
-		if (
-			result < 0
-		) throw new EOFException(); // end of file reached
+		if (result < 0) throw new EOFException(); // end of file reached
 
 		result = (unsignedByte(data[2]) << 16) |
 		(unsignedByte(data[1]) << 8) |
@@ -58,14 +56,10 @@ public class BMPFilter implements ContentDataFilter {
 
 	public int readShort(DataInputStream dis) throws IOException {
 		int result = dis.read();
-		if (
-			result < 0
-		) throw new EOFException(); // end of file reached
+		if (result < 0) throw new EOFException(); // end of file reached
 
 		int r2 = dis.read();
-		if (
-			r2 < 0
-		) throw new EOFException(); // end of file reached
+		if (r2 < 0) throw new EOFException(); // end of file reached
 
 		return result | (r2 * 256);
 	}

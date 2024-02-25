@@ -129,9 +129,7 @@ public final class ReceivedCookie extends Cookie {
 
 				// Parse value (empty values are allowed).
 				if (value == null && i < header.length) {
-					while (
-						Character.isWhitespace(header[i])
-					) ++i; // Skip leading whitespace
+					while (Character.isWhitespace(header[i])) ++i; // Skip leading whitespace
 
 					int valueBeginIndex;
 					char valueEndChar;

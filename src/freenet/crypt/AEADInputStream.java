@@ -187,8 +187,7 @@ public class AEADInputStream extends FilterInputStream {
 	public void close() throws IOException {
 		if (
 			!finished
-		) // Must read the rest of the data to check hash integrity.
-		skip(Long.MAX_VALUE);
+		) skip(Long.MAX_VALUE); // Must read the rest of the data to check hash integrity.
 		in.close();
 	}
 

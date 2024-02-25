@@ -265,8 +265,7 @@ public class NodeStarter implements WrapperListener {
 	public void controlEvent(int event) {
 		if (WrapperManager.isControlledByNativeWrapper()) {
 			// The Wrapper will take care of this event
-		} else // We are not being controlled by the Wrapper, so
-		//  handle the event ourselves.
+		} else //  handle the event ourselves. // We are not being controlled by the Wrapper, so
 		if (
 			(event == WrapperManager.WRAPPER_CTRL_C_EVENT) ||
 			(event == WrapperManager.WRAPPER_CTRL_CLOSE_EVENT) ||

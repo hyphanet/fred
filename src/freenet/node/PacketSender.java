@@ -356,9 +356,7 @@ public class PacketSender implements Runnable {
 						pn.timeCheckForLostPackets()
 					);
 				}
-			} else // Not connected
-
-			if (pn.noContactDetails()) pn.startARKFetcher();
+			} else if (pn.noContactDetails()) pn.startARKFetcher(); // Not connected
 
 			long handshakeTime = pn.timeSendHandshake(now);
 			if (handshakeTime != Long.MAX_VALUE) {

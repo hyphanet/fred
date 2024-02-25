@@ -374,8 +374,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, Serializable {
 	public PCFBMode getPCFB() {
 		Rijndael aes = getRijndael();
 		if (iv != null) return PCFBMode.create(aes, iv);
-		else // FIXME CRYPTO We should probably migrate all old buckets automatically so we can get rid of this?
-		// Since the key is unique it is actually almost safe to use all zeros IV, but it's better to use a real IV.
+		else // Since the key is unique it is actually almost safe to use all zeros IV, but it's better to use a real IV. // FIXME CRYPTO We should probably migrate all old buckets automatically so we can get rid of this?
 		return PCFBMode.create(aes);
 	}
 

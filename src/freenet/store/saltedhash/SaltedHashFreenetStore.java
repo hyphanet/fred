@@ -214,9 +214,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock>
 		// Create a directory it not exist
 		this.baseDir.mkdirs();
 
-		if (
-			storeSize > Integer.MAX_VALUE
-		) throw new IllegalArgumentException( // FIXME 64-bit.
+		if (storeSize > Integer.MAX_VALUE) throw new IllegalArgumentException( // FIXME 64-bit.
 			"Store size over MAXINT not supported due to ResizablePersistentIntBuffer limitations."
 		);
 
@@ -516,9 +514,11 @@ public class SaltedHashFreenetStore<T extends StorableBlock>
 					if (entry != null) return entry;
 				}
 			} catch (EOFException e) {
-				if (
-					prevStoreSize == 0
-				) Logger.error(this, "EOFException on probeEntry", e); // may occur on store shrinking
+				if (prevStoreSize == 0) Logger.error(
+					this,
+					"EOFException on probeEntry",
+					e
+				); // may occur on store shrinking
 				continue;
 			}
 		}
@@ -735,10 +735,8 @@ public class SaltedHashFreenetStore<T extends StorableBlock>
 					int b = wrongStoreCount;
 					if (
 						random.nextInt(a + b) < b
-					) // Allow the overwrite to happen in the wrong store.
-					indexToOverwrite = firstWrongStoreIndex;
-					else // Force the overwrite to happen in the right store.
-					return false;
+					) indexToOverwrite = firstWrongStoreIndex; // Allow the overwrite to happen in the wrong store.
+					else return false; // Force the overwrite to happen in the right store.
 				} else {
 					// By default, overwrite offset[0] when not writing to wrong store.
 					indexToOverwrite = 0;
@@ -2103,9 +2101,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock>
 						j++
 					) {
 						buf.position(j * Entry.METADATA_LENGTH);
-						if (
-							buf.remaining() < Entry.METADATA_LENGTH
-						) break; // EOF
+						if (buf.remaining() < Entry.METADATA_LENGTH) break; // EOF
 
 						ByteBuffer enBuf = buf.slice();
 						enBuf.limit(Entry.METADATA_LENGTH);

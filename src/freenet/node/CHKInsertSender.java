@@ -243,9 +243,7 @@ public final class CHKInsertSender
 						// Normal completion.
 						completionSucceeded = success;
 						receivedCompletionNotice = true;
-						if (
-							!timeout
-						) finishedWaiting = true; // Any completion mode other than a timeout immediately sets finishedWaiting, because we won't wait any longer.
+						if (!timeout) finishedWaiting = true; // Any completion mode other than a timeout immediately sets finishedWaiting, because we won't wait any longer.
 						else {
 							// First timeout but not had second timeout yet.
 							// Unlock downstream (below), but will wait here for the peer to fatally timeout.
@@ -263,8 +261,7 @@ public final class CHKInsertSender
 			}
 			if (
 				!noUnlockPeer
-			) // Downstream (away from originator), we need to stay locked on the peer until the fatal timeout / the delayed notice.
-			// Upstream (towards originator), of course, we can unlockHandler() as soon as all the transfers are finished.
+			) // Upstream (towards originator), of course, we can unlockHandler() as soon as all the transfers are finished. // Downstream (away from originator), we need to stay locked on the peer until the fatal timeout / the delayed notice.
 			// LOCKING: Do this outside the lock as pn can do heavy stuff in response (new load management).
 			pn.noLongerRoutingTo(thisTag, false);
 			synchronized (backgroundTransfers) {

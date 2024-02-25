@@ -330,9 +330,7 @@ public class MersenneTwister
 	protected synchronized int next(final int bits) {
 		int y;
 
-		if (
-			mti >= N
-		) { // generate N words at one time
+		if (mti >= N) { // generate N words at one time
 			int kk;
 			final int[] mt = this.mt; // locals are slightly faster
 			final int[] mag01 = this.mag01; // locals are slightly faster

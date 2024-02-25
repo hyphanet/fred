@@ -495,8 +495,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 								.setSuggestedEdition(mainJarVersion)
 						)
 					) sendUOMRequest(source, true);
-					else // FIXME don't log if it's the transitional version.
-					System.err.println(
+					else System.err.println( // FIXME don't log if it's the transitional version.
 						"Node " +
 						source.userToString() +
 						" offered us a new main jar (version " +
@@ -1360,8 +1359,9 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				@Override
 				public void run() {
 					try {
-						if (br.receive()) // Success!
-						processRevocationBlob(temp, source);
+						if (
+							br.receive()
+						) processRevocationBlob(temp, source); // Success!
 						else {
 							Logger.error(
 								this,
@@ -2252,8 +2252,9 @@ public class UpdateOverMandatoryManager implements RequestClient {
 							nodesSendingMainJar.add(source);
 						}
 						success = br.receive();
-						if (success) // Success!
-						processMainJarBlob(temp, source, version, jarURI);
+						if (
+							success
+						) processMainJarBlob(temp, source, version, jarURI); // Success!
 						else {
 							Logger.error(
 								this,

@@ -164,8 +164,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		//metaStrings = uri.listMetaStrings();
 		if (metaStrings instanceof ArrayList && !persistent) this.metaStrings =
 			(ArrayList<String>) metaStrings;
-		else // Always copy if persistent
-		this.metaStrings = new ArrayList<String>(metaStrings);
+		else this.metaStrings = new ArrayList<String>(metaStrings); // Always copy if persistent
 		this.addedMetaStrings = addedMetaStrings;
 		if (logMINOR) Logger.minor(this, "Metadata: " + metadata);
 		this.clientMetadata = (metadata != null
@@ -1143,8 +1142,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				try {
 					BaseClientKey k = BaseClientKey.getBaseKey(newURI);
 					if (k instanceof ClientKey) redirectedKey = (ClientKey) k;
-					else // FIXME do we want to allow redirects to USKs?
-					// Without redirects to USKs, all SSK and CHKs are static.
+					else // Without redirects to USKs, all SSK and CHKs are static. // FIXME do we want to allow redirects to USKs?
 					// This may be a desirable property.
 					throw new FetchException(
 						FetchExceptionMode.UNKNOWN_METADATA,

@@ -354,8 +354,7 @@ public class Version {
 		if ((v.length < 3) || !goodProtocol(v[2])) {
 			return (
 				"Required protocol version is " + protocolVersion
-			)// uncomment next line if accepting stable, see also goodProtocol() above
-			//						+ " or " + stableProtocolVersion
+			)//						+ " or " + stableProtocolVersion // uncomment next line if accepting stable, see also goodProtocol() above
 			;
 		}
 		if (sameVersion(v)) {

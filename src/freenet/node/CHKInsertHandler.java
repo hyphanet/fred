@@ -882,8 +882,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 							CHKInsertHandler.this,
 							e
 						);
-						else // Annoying, but we have stats for this; no need to call attention to it, it's unlikely to be a bug.
-						Logger.normal(
+						else Logger.normal( // Annoying, but we have stats for this; no need to call attention to it, it's unlikely to be a bug.
 							this,
 							"Failed to retrieve (" +
 							e.getReason() +

@@ -285,8 +285,9 @@ public class RequestTag extends UIDTag {
 
 	public void senderTransferEnds(NodeCHK key, RequestSender requestSender) {
 		synchronized (this) {
-			if (!senderTransferring) // Already unlocked. This is okay.
-			return;
+			if (
+				!senderTransferring
+			) return; // Already unlocked. This is okay.
 			senderTransferring = false;
 			assert (this.sender != null && this.sender.get() == requestSender);
 			assert (this.key != null && this.key.equals(key));

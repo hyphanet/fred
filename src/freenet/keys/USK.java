@@ -152,9 +152,7 @@ public class USK
 		this.suggestedEdition = myARKNumber;
 		this.cryptoAlgorithm = ssk.cryptoAlgorithm;
 
-		if (
-			badDocNamePattern.matcher(siteName).matches()
-		) Logger.normal( // not error -- just "possible" bug
+		if (badDocNamePattern.matcher(siteName).matches()) Logger.normal( // not error -- just "possible" bug
 			this,
 			"POSSIBLE BUG: edition in ClientSSK " + ssk,
 			new Exception("debug")

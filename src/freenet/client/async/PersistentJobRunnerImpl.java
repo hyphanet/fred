@@ -177,8 +177,7 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
 			runningJobs--;
 			if (
 				runningJobs == 0
-			) // Even if not going to checkpoint indirectly, somebody might be waiting, need to notify.
-			sync.notifyAll();
+			) sync.notifyAll(); // Even if not going to checkpoint indirectly, somebody might be waiting, need to notify.
 			if (!enableCheckpointing) {
 				if (logMINOR) Logger.minor(this, "Not enableCheckpointing yet");
 				return;

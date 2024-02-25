@@ -909,8 +909,7 @@ public abstract class BaseSender implements ByteCounter {
 						if (
 							expectedAcceptState ==
 							RequestLikelyAcceptedState.GUARANTEED
-						) // Need to recalculate to be sure this is an error.
-						Logger.normal(
+						) Logger.normal( // Need to recalculate to be sure this is an error.
 							this,
 							"Rejected overload yet expected state was " +
 							expectedAcceptState

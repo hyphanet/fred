@@ -109,8 +109,7 @@ public class RealCompressor {
 			(!osName.contains("Windows") &&
 				(osName.toLowerCase().indexOf("mac os x") > 0)) ||
 			(!NativeThread.usingNativeCode())
-		) // OS/X niceness is really weak, so we don't want any more background CPU load than necessary
-		// Also, on non-Windows, we need the native threads library to be working.
+		) // Also, on non-Windows, we need the native threads library to be working. // OS/X niceness is really weak, so we don't want any more background CPU load than necessary
 		maxRunningThreads = 1;
 		else {
 			// Most other OSs will have reasonable niceness, so go by RAM.
@@ -118,8 +117,7 @@ public class RealCompressor {
 			int max = r.availableProcessors(); // FIXME this may change in a VM, poll it
 			long maxMemory = r.maxMemory();
 			if (maxMemory < 128 * 1024 * 1024) max = 1;
-			else // one compressor thread per (128MB of ram + available core)
-			max = Math.min(
+			else max = Math.min( // one compressor thread per (128MB of ram + available core)
 				max,
 				(int) (Math.min(
 						Integer.MAX_VALUE,

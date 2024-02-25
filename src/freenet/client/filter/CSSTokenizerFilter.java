@@ -6111,14 +6111,15 @@ class CSSTokenizerFilter {
 		) {
 			// It is a string.
 			// Anything is allowed in a string...
-			if (c == '\r' || c == '\n' || c == '\f') // Except newlines.
-			return true;
-			else if (c == stringChar) // And the quote itself.
-			return true;
+			if (
+				c == '\r' || c == '\n' || c == '\f'
+			) return true; // Except newlines.
+			else if (
+				c == stringChar
+			) return true; // And the quote itself.
 			else if (
 				c < 32 || (c >= (char) 0x0080 && !unicode)
-			) // And control chars, and anything outside Basic Latin (unless we know the output charset is unicode-complete).
-			return true;
+			) return true; // And control chars, and anything outside Basic Latin (unless we know the output charset is unicode-complete).
 			return false;
 		}
 
@@ -7102,15 +7103,11 @@ class CSSTokenizerFilter {
 						return true;
 					}
 
-					if (
-						isPercentage && FilterUtils.isPercentage(word)
-					) { //Valid percentage X%
+					if (isPercentage && FilterUtils.isPercentage(word)) { //Valid percentage X%
 						return true;
 					}
 
-					if (
-						isLength && FilterUtils.isLength(word, false)
-					) { //Valid unit Vxx where xx is unit or V
+					if (isLength && FilterUtils.isLength(word, false)) { //Valid unit Vxx where xx is unit or V
 						return true;
 					}
 
@@ -7259,9 +7256,7 @@ class CSSTokenizerFilter {
 
 			int tokensCanBeGivenLowerLimit = 1, tokensCanBeGivenUpperLimit = 1;
 			for (int i = 0; i < expression.length(); i++) {
-				if (
-					expression.charAt(i) == 'a'
-				) { //Identifying ||
+				if (expression.charAt(i) == 'a') { //Identifying ||
 					int noOfa = 0;
 					int endIndex = expression.length();
 					//Detecting the other end

@@ -1482,8 +1482,7 @@ public class NodeClientCore implements Persistable {
 							);
 						if (
 							status == RequestSender.SUCCESS
-						) // See comments above declaration of successful* : We don't report sent bytes here.
-						//nodeStats.successfulChkFetchBytesSentAverage.report(rs.getTotalSentBytes());
+						) //nodeStats.successfulChkFetchBytesSentAverage.report(rs.getTotalSentBytes()); // See comments above declaration of successful* : We don't report sent bytes here.
 						(isSSK
 								? nodeStats.successfulSskFetchBytesReceivedAverage
 								: nodeStats.successfulChkFetchBytesReceivedAverage).report(
@@ -1570,8 +1569,7 @@ public class NodeClientCore implements Persistable {
 
 					if (
 						status == RequestSender.SUCCESS
-					) // FIXME how to identify failed to decode and report it back to the client layer??? do we even need to???
-					listener.onSucceeded();
+					) listener.onSucceeded(); // FIXME how to identify failed to decode and report it back to the client layer??? do we even need to???
 					else {
 						switch (status) {
 							case RequestSender.NOT_FINISHED:
@@ -1894,8 +1892,7 @@ public class NodeClientCore implements Persistable {
 					);
 					if (
 						status == RequestSender.SUCCESS
-					) // See comments above declaration of successful* : We don't report sent bytes here.
-					//nodeStats.successfulChkFetchBytesSentAverage.report(rs.getTotalSentBytes());
+					) //nodeStats.successfulChkFetchBytesSentAverage.report(rs.getTotalSentBytes()); // See comments above declaration of successful* : We don't report sent bytes here.
 					nodeStats.successfulChkFetchBytesReceivedAverage.report(
 						rs.getTotalReceivedBytes()
 					);
@@ -2134,8 +2131,7 @@ public class NodeClientCore implements Persistable {
 					);
 					if (
 						status == RequestSender.SUCCESS
-					) // See comments above successfulSskFetchBytesSentAverage : we don't relay the data, so
-					// reporting the sent bytes would be inaccurate.
+					) // reporting the sent bytes would be inaccurate. // See comments above successfulSskFetchBytesSentAverage : we don't relay the data, so
 					//nodeStats.successfulSskFetchBytesSentAverage.report(rs.getTotalSentBytes());
 					nodeStats.successfulSskFetchBytesReceivedAverage.report(
 						rs.getTotalReceivedBytes()
@@ -2390,8 +2386,7 @@ public class NodeClientCore implements Persistable {
 			// Finished?
 			if (
 				!hasReceivedRejectedOverload
-			) // Is it ours? Did we send a request?
-			if (
+			) if ( // Is it ours? Did we send a request?
 				is.sentRequest() &&
 				(is.uid == uid) &&
 				((is.getStatus() == CHKInsertSender.ROUTE_NOT_FOUND) ||
@@ -2437,8 +2432,7 @@ public class NodeClientCore implements Persistable {
 				nodeStats.localChkInsertBytesReceivedAverage.report(received);
 				if (
 					status == CHKInsertSender.SUCCESS
-				) // Only report Sent bytes because we did not receive the data.
-				nodeStats.successfulChkInsertBytesSentAverage.report(sent);
+				) nodeStats.successfulChkInsertBytesSentAverage.report(sent); // Only report Sent bytes because we did not receive the data.
 			}
 
 			boolean deep = node.shouldStoreDeep(
@@ -2610,8 +2604,7 @@ public class NodeClientCore implements Persistable {
 			// Finished?
 			if (
 				!hasReceivedRejectedOverload
-			) // Is it ours? Did we send a request?
-			if (
+			) if ( // Is it ours? Did we send a request?
 				is.sentRequest() &&
 				(is.uid == uid) &&
 				((is.getStatus() == SSKInsertSender.ROUTE_NOT_FOUND) ||
@@ -2655,8 +2648,7 @@ public class NodeClientCore implements Persistable {
 				nodeStats.localSskInsertBytesReceivedAverage.report(received);
 				if (
 					status == SSKInsertSender.SUCCESS
-				) // Only report Sent bytes as we haven't received anything.
-				nodeStats.successfulSskInsertBytesSentAverage.report(sent);
+				) nodeStats.successfulSskInsertBytesSentAverage.report(sent); // Only report Sent bytes as we haven't received anything.
 			}
 
 			boolean deep = node.shouldStoreDeep(

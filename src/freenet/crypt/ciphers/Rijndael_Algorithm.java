@@ -1086,8 +1086,9 @@ final class Rijndael_Algorithm { // implicit no-argument constructor
 		final int BCshift;
 		if (BC == 4) BCshift = 2;
 		else if (BC == 8) BCshift = 3;
-		else /* Note: original code supported block size 192 bits */
-		throw new InvalidKeyException("Unsupported block size: " + blockSize);
+		else/* Note: original code supported block size 192 bits */ throw new InvalidKeyException(
+			"Unsupported block size: " + blockSize
+		);
 		int[][] Ke = new int[ROUNDS + 1][BC]; // encryption round keys
 		int[][] Kd = new int[ROUNDS + 1][BC]; // decryption round keys
 		int ROUND_KEY_COUNT = (ROUNDS + 1) << BCshift;
@@ -1151,11 +1152,7 @@ final class Rijndael_Algorithm { // implicit no-argument constructor
 				Kd[ROUNDS - (t >>> BCshift)][t & (BC - 1)] = tk[j];
 			}
 		}
-		for (
-			int r = 1;
-			r < ROUNDS;
-			r++
-		) for (j = 0; j < BC; j++) { // inverse MixColumn where needed
+		for (int r = 1; r < ROUNDS; r++) for (j = 0; j < BC; j++) { // inverse MixColumn where needed
 			tt = Kd[r][j];
 			Kd[r][j] = U1[(tt >>> 24) & 0xFF] ^
 			U2[(tt >>> 16) & 0xFF] ^
@@ -1219,11 +1216,7 @@ final class Rijndael_Algorithm { // implicit no-argument constructor
 		int i;
 		int j = 0, tt;
 
-		for (
-			i = 0;
-			i < BC;
-			i++
-		) t[i] = (((in[inOffset++] & 0xFF) << 24) | // plaintext to ints + key
+		for (i = 0; i < BC; i++) t[i] = (((in[inOffset++] & 0xFF) << 24) | // plaintext to ints + key
 			((in[inOffset++] & 0xFF) << 16) |
 			((in[inOffset++] & 0xFF) << 8) |
 			(in[inOffset++] & 0xFF)) ^
@@ -1306,11 +1299,7 @@ final class Rijndael_Algorithm { // implicit no-argument constructor
 		int i;
 		int j = 0, tt;
 
-		for (
-			i = 0;
-			i < BC;
-			i++
-		) t[i] = (((in[inOffset++] & 0xFF) << 24) | // ciphertext to ints + key
+		for (i = 0; i < BC; i++) t[i] = (((in[inOffset++] & 0xFF) << 24) | // ciphertext to ints + key
 			((in[inOffset++] & 0xFF) << 16) |
 			((in[inOffset++] & 0xFF) << 8) |
 			(in[inOffset++] & 0xFF)) ^

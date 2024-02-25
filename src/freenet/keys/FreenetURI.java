@@ -396,8 +396,9 @@ public class FreenetURI
 		int x = URI.indexOf('?');
 		if (x > -1) URI = URI.substring(0, x);
 
-		if (URI.indexOf('@') < 0 || URI.indexOf('/') < 0) // Encoded URL?
-		try {
+		if (
+			URI.indexOf('@') < 0 || URI.indexOf('/') < 0
+		) try { // Encoded URL?
 			URI = URLDecoder.decode(URI, false);
 		} catch (URLEncodedFormatException e) {
 			throw new MalformedURLException(
@@ -1307,7 +1308,7 @@ public class FreenetURI
 			Matcher matcher = docNameWithEditionPattern.matcher(docName);
 			if (
 				!matcher.matches()
-			)/* Taken from uskForSSK, also modify there if necessary; TODO just use isSSKForUSK() here?! */ throw new IllegalStateException();
+			) /* Taken from uskForSSK, also modify there if necessary; TODO just use isSSKForUSK() here?! */throw new IllegalStateException();
 
 			return Long.parseLong(
 				docName.substring(matcher.start(1), docName.length())

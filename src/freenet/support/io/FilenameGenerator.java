@@ -75,8 +75,7 @@ public class FilenameGenerator {
 					WrapperManager.signalStarting((int) MINUTES.toMillis(5));
 					if (
 						i % 1024 == 0 && i > 0
-					) // User may want some feedback during startup
-					System.err.println(
+					) System.err.println( // User may want some feedback during startup
 						"Deleted " +
 						wipedFiles +
 						" temp files (" +

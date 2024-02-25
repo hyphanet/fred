@@ -74,9 +74,7 @@ public class FilterUtils {
 	}
 
 	public static boolean isPercentage(String value) {
-		if (
-			value.length() >= 2 && value.charAt(value.length() - 1) == '%'
-		) { //Valid percentage X%
+		if (value.length() >= 2 && value.charAt(value.length() - 1) == '%') { //Valid percentage X%
 			// Percentages are <number>%
 			// That means they can be positive, negative, zero, >100%, and they can contain decimal points.
 			try {

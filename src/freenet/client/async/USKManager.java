@@ -1091,8 +1091,7 @@ public class USKManager {
 				uu.getSuggestedEdition(),
 				context
 			);
-			else // We don't know whether the metadata is fetchable.
-			// FIXME add a callback so if the rest of the request completes we updateKnownGood().
+			else // FIXME add a callback so if the rest of the request completes we updateKnownGood(). // We don't know whether the metadata is fetchable.
 			context.uskManager.updateSlot(
 				usk,
 				uu.getSuggestedEdition(),

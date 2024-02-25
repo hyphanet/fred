@@ -147,8 +147,9 @@ public class Base64Test {
 
 		for (int i = 0; i < methodBytesArray.length; i++) {
 			encoded = Base64.encode(methodBytesArray[i], true);
-			if (i == 0) //no occurrences expected
-			assertEquals(encoded.indexOf('='), -1);
+			if (
+				i == 0
+			) assertEquals(encoded.indexOf('='), -1); //no occurrences expected
 			else assertEquals(encoded.indexOf('='), encoded.length() - i);
 		}
 	}

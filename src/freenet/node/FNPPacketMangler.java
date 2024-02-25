@@ -3785,9 +3785,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	 * We push to it until we reach the cap where we rekey or we reach the PFS interval
 	 */
 	private int getAuthenticatorCacheSize() {
-		if (
-			crypto.isOpennet && node.wantAnonAuth(true)
-		) return 5000; // seednodes // 200kB
+		if (crypto.isOpennet && node.wantAnonAuth(true)) return 5000; // seednodes // 200kB
 		else return 250; // 10kB
 	}
 

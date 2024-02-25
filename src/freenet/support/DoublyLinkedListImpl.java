@@ -296,9 +296,7 @@ public class DoublyLinkedListImpl<T extends DoublyLinkedList.Item<? extends T>>
 		T next = i.getNext();
 		T prev = i.getPrev();
 
-		if (
-			(next == null) && (prev == null)
-		) assert size == 1; // only item in list
+		if ((next == null) && (prev == null)) assert size == 1; // only item in list
 
 		if (next == null) { // last item
 			assert _lastItem == i;

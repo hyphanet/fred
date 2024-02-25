@@ -124,9 +124,7 @@ class USKFetcherTag
 	public void start(USKManager manager, ClientContext context) {
 		USK usk = origUSK;
 		if (usk.suggestedEdition < edition) usk = usk.copy(edition);
-		else if (
-			persistent
-		) usk = usk.copy(); // Copy it to avoid deactivation issues
+		else if (persistent) usk = usk.copy(); // Copy it to avoid deactivation issues
 		fetcher = manager.getFetcher(
 			usk,
 			ctx,

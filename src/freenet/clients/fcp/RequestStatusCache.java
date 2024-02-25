@@ -102,8 +102,7 @@ public class RequestStatusCache {
 		if (status == null) return; // Can happen during cancel etc.
 		if (
 			status.getFinalURI() == null
-		) // No final URI set yet, put into the index.
-		uploadsByFinalURI.put(finalURI, status);
+		) uploadsByFinalURI.put(finalURI, status); // No final URI set yet, put into the index.
 		status.setFinalURI(finalURI);
 	}
 
@@ -120,8 +119,7 @@ public class RequestStatusCache {
 		if (status == null) return; // Can happen during cancel etc.
 		if (
 			status.getFinalURI() == null && finalURI != null
-		) // No final URI set yet, put into the index.
-		uploadsByFinalURI.put(finalURI, status);
+		) uploadsByFinalURI.put(finalURI, status); // No final URI set yet, put into the index.
 		status.setFinished(
 			success,
 			finalURI,
@@ -229,10 +227,8 @@ public class RequestStatusCache {
 
 		if (
 			!started
-		) // Caller should call with false first, so we only need to unset finished when setting started=false.
-		status.restart(false);
-		else // Already restarted, just set started = true.
-		status.setStarted(started);
+		) status.restart(false); // Caller should call with false first, so we only need to unset finished when setting started=false.
+		else status.setStarted(started); // Already restarted, just set started = true.
 	}
 
 	/** Restart a download. Caller should call ,false first, at which point we setStarted,

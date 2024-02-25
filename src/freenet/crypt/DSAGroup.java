@@ -116,9 +116,7 @@ public class DSAGroup extends CryptoKey {
 
 	@Override
 	public boolean equals(Object o) {
-		if (
-			this == o
-		) return true; // Not necessary, but a very cheap optimization
+		if (this == o) return true; // Not necessary, but a very cheap optimization
 		return (
 			(o instanceof DSAGroup) &&
 			p.equals(((DSAGroup) o).p) &&
@@ -128,9 +126,7 @@ public class DSAGroup extends CryptoKey {
 	}
 
 	public boolean equals(DSAGroup o) {
-		if (
-			this == o
-		) return true; // Not necessary, but a very cheap optimization
+		if (this == o) return true; // Not necessary, but a very cheap optimization
 		return p.equals(o.p) && q.equals(o.q) && g.equals(o.g);
 	}
 

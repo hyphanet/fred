@@ -1364,9 +1364,7 @@ class SingleFileInserter implements ClientPutState, Serializable {
 			ClientPutState state,
 			ClientContext context
 		) {
-			if (
-				persistent
-			) if (logMINOR) Logger.minor( // FIXME debug-point
+			if (persistent) if (logMINOR) Logger.minor( // FIXME debug-point
 				this,
 				"onEncode() for " + this + " : " + state + " : " + key
 			);
@@ -1434,9 +1432,10 @@ class SingleFileInserter implements ClientPutState, Serializable {
 
 		@Override
 		public void onFetchable(ClientPutState state) {
-			if (
-				persistent
-			) if (logMINOR) Logger.minor(this, "onFetchable on " + this); // FIXME debug-point
+			if (persistent) if (logMINOR) Logger.minor(
+				this,
+				"onFetchable on " + this
+			); // FIXME debug-point
 
 			if (logMINOR) Logger.minor(this, "onFetchable(" + state + ')');
 
@@ -1485,9 +1484,10 @@ class SingleFileInserter implements ClientPutState, Serializable {
 		 * @return True unless we don't have all URI's and so can't remove sfi.
 		 */
 		private boolean startMetadata(ClientContext context) {
-			if (
-				persistent
-			) if (logMINOR) Logger.minor(this, "startMetadata() on " + this); // FIXME debug-point
+			if (persistent) if (logMINOR) Logger.minor(
+				this,
+				"startMetadata() on " + this
+			); // FIXME debug-point
 			try {
 				ClientPutState putter;
 				synchronized (this) {

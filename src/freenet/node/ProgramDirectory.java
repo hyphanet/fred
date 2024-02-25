@@ -106,8 +106,7 @@ public class ProgramDirectory {
 			File f = new File(val);
 			if (
 				!((f.exists() && f.isDirectory()) || (f.mkdir()))
-			) // Relatively commonly used, despite being advanced (i.e. not something we want to show to newbies). So translate it.
-			throw new InvalidConfigValueException(l10n(moveErrMsg));
+			) throw new InvalidConfigValueException(l10n(moveErrMsg)); // Relatively commonly used, despite being advanced (i.e. not something we want to show to newbies). So translate it.
 			dir = new File(val);
 		}
 

@@ -1286,8 +1286,7 @@ public class SplitFileFetcherStorage {
 			}
 		}
 		if (this.crossSegments != null) {
-			for (SplitFileFetcherCrossSegmentStorage crossSegment : this.crossSegments) // Must be after reading the metadata for the plain segments.
-			crossSegment.checkBlocks();
+			for (SplitFileFetcherCrossSegmentStorage crossSegment : this.crossSegments) crossSegment.checkBlocks(); // Must be after reading the metadata for the plain segments.
 		}
 		readGeneralProgress();
 	}

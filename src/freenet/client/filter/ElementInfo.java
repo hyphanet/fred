@@ -454,8 +454,7 @@ public class ElementInfo {
 					}
 					if (
 						c == '\r' || c == '\n' || c == '\f'
-					) // Explicitly not allowed to escape these, see grammar, and 4.1.3.
-					return false;
+					) return false; // Explicitly not allowed to escape these, see grammar, and 4.1.3.
 					// Directly escaped character
 					escape = false;
 					continue;

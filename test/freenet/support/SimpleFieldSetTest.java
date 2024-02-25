@@ -148,11 +148,7 @@ public class SimpleFieldSetTest {
 			aPairsArray[i][0],
 			aPairsArray[i][1]
 		);
-		for (
-			int i = 0;
-			i < aPairsArray.length;
-			i++
-		) retValue &= //getting values
+		for (int i = 0; i < aPairsArray.length; i++) retValue &= //getting values
 		methodSFS.get(aPairsArray[i][0]).equals(aPairsArray[i][1]);
 		retValue &= checkSimpleFieldSetSize(methodSFS, aPairsArray.length);
 		return retValue;

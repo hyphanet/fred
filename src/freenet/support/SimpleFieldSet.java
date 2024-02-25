@@ -897,8 +897,7 @@ public class SimpleFieldSet {
 						ret = subIterator.next();
 						if (
 							subIterator.hasNext()
-						) // If we have a retval, and we have a next value, return
-						if (ret != null) return ret;
+						) if (ret != null) return ret; // If we have a retval, and we have a next value, return
 					}
 					// Otherwise, we need to get a new subIterator (or hasNext() will return false)
 					subIterator = null;
@@ -970,9 +969,7 @@ public class SimpleFieldSet {
 	 */
 	public void put(String key, SimpleFieldSet fs) {
 		if (fs == null) return; // legal no-op, because used everywhere
-		if (
-			fs.isEmpty()
-		) throw new IllegalArgumentException("Empty"); // can't just no-op, because caller might add the FS then populate it...
+		if (fs.isEmpty()) throw new IllegalArgumentException("Empty"); // can't just no-op, because caller might add the FS then populate it...
 		if (subsets == null) subsets = new HashMap<String, SimpleFieldSet>();
 		if (subsets.containsKey(key)) throw new IllegalArgumentException(
 			"Already contains " + key + " but trying to add a SimpleFieldSet!"

@@ -287,8 +287,7 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 		synchronized (this) {
 			if (
 				isOutdated
-			) // Arguably we should provide a button to turn on auto-update,
-			// but very few users will turn off auto-update completely.
+			) // but very few users will turn off auto-update completely. // Arguably we should provide a button to turn on auto-update,
 			// This is useful to not lose those who do however.
 			alertNode.addChild("#", l10n("outdatedUpdate"));
 			else if (peers == 0 && !isOpennetEnabled) {

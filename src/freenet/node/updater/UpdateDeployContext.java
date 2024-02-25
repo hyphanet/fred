@@ -70,8 +70,7 @@ public class UpdateDeployContext {
 					name.equals("freenet-ext.jar") ||
 					name.equals("freenet-ext.jar.new") ||
 					(name.startsWith("freenet-ext") && name.endsWith(".jar"))
-				) // Don't match freenet-ext.jar!
-				continue;
+				) continue; // Don't match freenet-ext.jar!
 				// Try to match it
 				if ((name.startsWith("freenet") && (name.endsWith(".jar")))) {
 					mainJar = f;

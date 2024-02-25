@@ -946,8 +946,7 @@ public class NodeUpdateManager {
 			.getPluginManager()
 			.getOfficialPlugin(plugName);
 		if (plugin != null) startPluginUpdater(plugin);
-		else // Most likely not an official plugin
-		if (logMINOR) Logger.minor(
+		else if (logMINOR) Logger.minor( // Most likely not an official plugin
 			this,
 			"No such plugin " + plugName + " in startPluginUpdater()"
 		);

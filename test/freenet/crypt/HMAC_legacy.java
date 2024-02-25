@@ -41,9 +41,7 @@ public class HMAC_legacy {
 	public byte[] mac(byte[] K, byte[] text, int macbytes) {
 		byte[] K0 = null;
 
-		if (
-			K.length == B
-		) K0 = K; // Step 1
+		if (K.length == B) K0 = K; // Step 1
 		else {
 			// Step 2
 			if (K.length > B) K0 = K = Util.hashBytes(d, K);

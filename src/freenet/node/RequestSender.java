@@ -1272,8 +1272,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 									"Transfer failed (disconnect): " + e,
 									e
 								);
-								else // A certain number of these are normal, it's better to track them through statistics than call attention to them in the logs.
-								Logger.normal(
+								else Logger.normal( // A certain number of these are normal, it's better to track them through statistics than call attention to them in the logs.
 									this,
 									"Transfer for offer failed (" +
 									e.getReason() +
@@ -1582,8 +1581,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 		}
 		if (
 			!wasFork
-		) // Don't fire transfer begins on a fork since we have not set headers or prb.
-		// If we find the data we will offer it to the requester.
+		) // If we find the data we will offer it to the requester. // Don't fire transfer begins on a fork since we have not set headers or prb.
 		fireCHKTransferBegins();
 
 		final long tStart = System.currentTimeMillis();
@@ -1697,9 +1695,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 							else next.noLongerRoutingTo(origTag, false);
 							return;
 						}
-						if (
-							haveSetPRB
-						) fireCHKTransferBegins(); // It was a fork, so we didn't immediately send the data.
+						if (haveSetPRB) fireCHKTransferBegins(); // It was a fork, so we didn't immediately send the data.
 						finish(SUCCESS, next, false);
 					} catch (Throwable t) {
 						Logger.error(this, "Failed on " + this, t);
@@ -1727,8 +1723,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 							"Transfer failed (disconnect): " + e,
 							e
 						);
-						else // A certain number of these are normal, it's better to track them through statistics than call attention to them in the logs.
-						Logger.normal(
+						else Logger.normal( // A certain number of these are normal, it's better to track them through statistics than call attention to them in the logs.
 							this,
 							"Transfer failed (" +
 							e.getReason() +

@@ -408,9 +408,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 		if (essential) System.out.println(
 			"Fetching " + downloadTo + " needed for new Freenet update " + build
 		);
-		else if (
-			build != 0
-		) System.out.println( // build 0 means it's a preload or a multi-file update.
+		else if (build != 0) System.out.println( // build 0 means it's a preload or a multi-file update.
 			"Preloading " +
 			downloadTo +
 			" needed for new Freenet update " +

@@ -166,8 +166,7 @@ public class TempBucketFactory
 			synchronized (this) {
 				if (
 					!isRAMBucket() || hasBeenFreed
-				) // Nothing to migrate! We don't want to switch back to ram, do we?
-				return false;
+				) return false; // Nothing to migrate! We don't want to switch back to ram, do we?
 				toMigrate = currentBucket;
 				RandomAccessBucket tempFB = _makeFileBucket();
 				size = currentSize;
@@ -311,9 +310,7 @@ public class TempBucketFactory
 					_maybeMigrateRamBucket(futureSize);
 					os.write(b);
 					currentSize = futureSize;
-					if (
-						isRAMBucket()
-					) _hasTaken(1); // We need to re-check because it might have changed!
+					if (isRAMBucket()) _hasTaken(1); // We need to re-check because it might have changed!
 				}
 			}
 
@@ -326,9 +323,7 @@ public class TempBucketFactory
 					_maybeMigrateRamBucket(futureSize);
 					os.write(b, off, len);
 					currentSize = futureSize;
-					if (
-						isRAMBucket()
-					) _hasTaken(len); // We need to re-check because it might have changed!
+					if (isRAMBucket()) _hasTaken(len); // We need to re-check because it might have changed!
 				}
 			}
 

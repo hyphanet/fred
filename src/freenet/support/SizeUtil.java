@@ -51,9 +51,7 @@ public class SizeUtil {
 			s *= 1024;
 		}
 
-		if (
-			s == 1
-		) { // Bytes? Then we don't need real numbers with a comma
+		if (s == 1) { // Bytes? Then we don't need real numbers with a comma
 			return new String[] {
 				(negative ? "-" : "") + String.valueOf(bytes),
 				SizeUtil.suffixes[0],
@@ -68,9 +66,10 @@ public class SizeUtil {
 				(o.length() > 4)
 			) o = o.substring(0, 4);
 			if (negative) o = "-" + o;
-			if (
-				i < SizeUtil.suffixes.length
-			) return new String[] { o, SizeUtil.suffixes[i] }; // handle the case where the mantissa is Infinity
+			if (i < SizeUtil.suffixes.length) return new String[] {
+				o,
+				SizeUtil.suffixes[i],
+			}; // handle the case where the mantissa is Infinity
 			return new String[] { o, "" };
 		}
 	}

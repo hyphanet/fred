@@ -1577,10 +1577,8 @@ public class PeerManager {
 							long check;
 							if (
 								best == closestNotBackedOff
-							) // We are routing to the perfect node, so no node coming out of backoff/FailureTable will make any difference; don't check.
-							check = Long.MAX_VALUE;
-							else // A node waking up from backoff or FailureTable might well change the decision, which limits the length of a RecentlyFailed.
-							check = checkBackoffsForRecentlyFailed(
+							) check = Long.MAX_VALUE; // We are routing to the perfect node, so no node coming out of backoff/FailureTable will make any difference; don't check.
+							else check = checkBackoffsForRecentlyFailed( // A node waking up from backoff or FailureTable might well change the decision, which limits the length of a RecentlyFailed.
 								peers,
 								best,
 								target,
@@ -1673,8 +1671,7 @@ public class PeerManager {
 			//racy... getLocation() could have changed
 			if (
 				addUnpickedLocsTo != null
-			) //Add the location which we did not pick, if it exists.
-			if (
+			) if ( //Add the location which we did not pick, if it exists.
 				closestNotBackedOff != null && closestBackedOff != null
 			) addUnpickedLocsTo.add(closestBackedOff.getLocation());
 		}

@@ -141,9 +141,8 @@ public class Yarrow extends RandomSource implements PersistentRandomSource {
 			throw new RuntimeException("Cannot initialize Yarrow!: " + e, e);
 		}
 
-		if (
-			updateSeed && !(seed.toString()).equals("/dev/urandom")
-		) seedfile = seed; //Dont try to update the seedfile if we know that it wont be possible anyways
+		if (updateSeed && !(seed.toString()).equals("/dev/urandom")) seedfile =
+			seed; //Dont try to update the seedfile if we know that it wont be possible anyways
 		else seedfile = null;
 		if (reseedOnStartup) {
 			entropy_init(seed, reseedOnStartup);
@@ -201,8 +200,9 @@ public class Yarrow extends RandomSource implements PersistentRandomSource {
 				Closer.close(dis);
 				Closer.close(fis);
 			}
-			if (canBlock) // Read some bits from /dev/random
-			try {
+			if (
+				canBlock
+			) try { // Read some bits from /dev/random
 				fis = new FileInputStream("/dev/random");
 				dis = new DataInputStream(fis);
 				dis.readFully(buf);
@@ -216,8 +216,7 @@ public class Yarrow extends RandomSource implements PersistentRandomSource {
 				Closer.close(fis);
 			}
 			fis = null;
-		} else // Force generateSeed(), since we can't read random data from anywhere else.
-		// Anyway, Windows's CAPI won't block.
+		} else // Anyway, Windows's CAPI won't block. // Force generateSeed(), since we can't read random data from anywhere else.
 		canBlock = true;
 		if (canBlock) {
 			// SecureRandom hopefully acts as a proxy for CAPI on Windows
@@ -598,8 +597,7 @@ public class Yarrow extends RandomSource implements PersistentRandomSource {
 			}
 			if (
 				DEBUG
-			) //	    Core.logger.log(this,"Fast pool: "+fast_entropy+"\tSlow pool:
-			// "+slow_entropy, LogLevel.NORMAL);
+			) // "+slow_entropy, LogLevel.NORMAL); //	    Core.logger.log(this,"Fast pool: "+fast_entropy+"\tSlow pool:
 			System.err.println(
 				"Fast pool: " + fast_entropy + "\tSlow pool: " + slow_entropy
 			);
