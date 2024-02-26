@@ -1952,7 +1952,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		if(pn != null)
 			pn.reportOutgoingBytes(data.length);
 		if(PeerNode.shouldThrottle(replyTo, node)) {
-			node.outputThrottle.forceGrab(data.length);
+			node.getOutputThrottle().forceGrab(data.length);
 		}
 	}
 

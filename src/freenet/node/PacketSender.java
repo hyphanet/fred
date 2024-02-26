@@ -159,11 +159,11 @@ public class PacketSender implements Runnable {
 		final boolean canSendThrottled;
 
 		int MAX_PACKET_SIZE = node.getDarknetCrypto().socket.getMaxPacketSize();
-		long count = node.outputThrottle.getCount();
+		long count = node.getOutputThrottle().getCount();
 		if(count > MAX_PACKET_SIZE)
 			canSendThrottled = true;
 		else {
-			long canSendAt = node.outputThrottle.getNanosPerTick() * (MAX_PACKET_SIZE - count);
+			long canSendAt = node.getOutputThrottle().getNanosPerTick() * (MAX_PACKET_SIZE - count);
 			canSendAt = MILLISECONDS.convert(canSendAt + MILLISECONDS.toNanos(1) - 1, NANOSECONDS);
 			if(logMINOR)
 				Logger.minor(this, "Can send throttled packets in "+canSendAt+"ms");

@@ -767,6 +767,12 @@ public class Node implements TimeSkewDetectorCallback {
 	@Deprecated
 	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final UptimeEstimator uptime;
+
+	/**
+	 * @deprecated Use {@link #getOutputThrottle()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final TokenBucket outputThrottle;
 	public boolean throttleLocalData;
 	private int outputBandwidthLimit;
@@ -5104,6 +5110,10 @@ public class Node implements TimeSkewDetectorCallback {
 
     public UptimeEstimator getUptimeEstimator() {
         return uptime;
+    }
+
+    public TokenBucket getOutputThrottle() {
+        return outputThrottle;
     }
 
 }

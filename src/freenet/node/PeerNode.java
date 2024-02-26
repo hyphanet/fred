@@ -5407,7 +5407,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	
 	@Override
 	public void sentThrottledBytes(int count) {
-		node.outputThrottle.forceGrab(count);
+		node.getOutputThrottle().forceGrab(count);
 	}
 	
 	@Override
