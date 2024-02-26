@@ -1100,7 +1100,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	@Override
 	public void wakeUpSender() {
 		if(logMINOR) Logger.minor(this, "Waking up PacketSender");
-		node.ps.wakeUp();
+		node.getPacketSender().wakeUp();
 	}
 
 	@Override

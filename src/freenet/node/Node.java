@@ -732,6 +732,12 @@ public class Node implements TimeSkewDetectorCallback {
 	@Deprecated
 	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final Executor executor;
+
+	/**
+	 * @deprecated Use {@link #getPacketSender()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final PacketSender ps;
 	public final PrioritizedTicker ticker;
 	final DNSRequester dnsr;
@@ -5058,6 +5064,10 @@ public class Node implements TimeSkewDetectorCallback {
 
     public Executor getExecutor() {
         return executor;
+    }
+
+    public PacketSender getPacketSender() {
+        return ps;
     }
 
 }
