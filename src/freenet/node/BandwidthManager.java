@@ -27,7 +27,7 @@ public class BandwidthManager {
         /* offer upgrade of the connection speed on upgrade, if auto-detected
          * speed is much higher than the set speed, or even better: if the
          * detected speed increased significantly since the last offer. */
-        node.ticker.queueTimedJob(new Runnable() {
+        node.getTicker().queueTimedJob(new Runnable() {
             @Override
             public void run() {
                 try {
@@ -57,7 +57,7 @@ public class BandwidthManager {
                     Logger.minor(this, e.getMessage());
                     throw e;
                 } finally {
-                    node.ticker.queueTimedJob(this, HOURS.toMillis(DELAY_HOURS));
+                    node.getTicker().queueTimedJob(this, HOURS.toMillis(DELAY_HOURS));
                 }
             }
         }, HOURS.toMillis(DELAY_HOURS));

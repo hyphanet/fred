@@ -479,7 +479,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				@Override
 				public void sent() {
 					// Timeout...
-					updateManager.node.ticker.queueTimedJob(new Runnable() {
+					updateManager.node.getTicker().queueTimedJob(new Runnable() {
 
 						@Override
 						public void run() {

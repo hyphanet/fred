@@ -739,6 +739,12 @@ public class Node implements TimeSkewDetectorCallback {
 	@Deprecated
 	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final PacketSender ps;
+
+	/**
+	 * @deprecated Use {@link #getTicker()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final PrioritizedTicker ticker;
 	final DNSRequester dnsr;
 	final NodeDispatcher dispatcher;

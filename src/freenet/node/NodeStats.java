@@ -513,7 +513,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		statsConfig.registerIgnoredOption("enableNewLoadManagementBulk");
 
 		persister = new ConfigurablePersister(this, statsConfig, "nodeThrottleFile", "node-throttle.dat", sortOrder++, true, false,
-				"NodeStat.statsPersister", "NodeStat.statsPersisterLong", node.ticker, node.getRunDir());
+				"NodeStat.statsPersister", "NodeStat.statsPersisterLong", node.getTicker(), node.getRunDir());
 
 		SimpleFieldSet throttleFS = persister.read();
 		if(logMINOR) Logger.minor(this, "Read throttleFS:\n"+throttleFS);
@@ -3763,7 +3763,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 					}
 				}
 			} finally {
-				node.ticker.queueTimedJob(this, rejectStatsUpdateInterval);
+				node.getTicker().queueTimedJob(this, rejectStatsUpdateInterval);
 			}
 		}
 		

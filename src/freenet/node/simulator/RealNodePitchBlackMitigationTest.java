@@ -170,7 +170,7 @@ public class RealNodePitchBlackMitigationTest extends RealNodeTest {
 		Runnable dayIncrementingJob = new Runnable() {
 			@Override
 			public void run() {
-				nodes[0].ticker.queueTimedJob(
+				nodes[0].getTicker().queueTimedJob(
 						this,
 						PITCH_BLACK_MITIGATION_FREQUENCY_ONE_DAY);
 				nodes[0].getLocationManager().setClockForTesting(Clock.offset(
@@ -178,7 +178,7 @@ public class RealNodePitchBlackMitigationTest extends RealNodeTest {
 						Duration.ofDays(1)));
 			}
 		};
-		nodes[0].ticker.queueTimedJob(
+		nodes[0].getTicker().queueTimedJob(
 				dayIncrementingJob,
 				PITCH_BLACK_MITIGATION_FREQUENCY_ONE_DAY);
 

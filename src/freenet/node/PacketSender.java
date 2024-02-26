@@ -82,7 +82,7 @@ public class PacketSender implements Runnable {
 
 	private void schedulePeriodicJob() {
 		
-		node.ticker.queueTimedJob(new Runnable() {
+		node.getTicker().queueTimedJob(new Runnable() {
 
 			@Override
 			public void run() {
@@ -103,7 +103,7 @@ public class PacketSender implements Runnable {
 								"Finished running shedulePeriodicJob() at "
 										+ System.currentTimeMillis());
 				} finally {
-					node.ticker.queueTimedJob(this, 1000);
+					node.getTicker().queueTimedJob(this, 1000);
 				}
 			}
 		}, 1000);

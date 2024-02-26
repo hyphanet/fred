@@ -1743,7 +1743,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 								this,
 								"Delaying opennet completion for " + TimeUtil.formatTime(delay, 2, true));
 					}
-					node.ticker.queueTimedJob(new Runnable() {
+					node.getTicker().queueTimedJob(new Runnable() {
 
 						@Override
 						public void run() {

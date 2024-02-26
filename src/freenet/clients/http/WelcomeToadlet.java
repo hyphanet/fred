@@ -306,7 +306,7 @@ public class WelcomeToadlet extends Toadlet {
             MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
             headers.put("Location", "/?terminated&formPassword=" + ctx.getFormPassword());
             ctx.sendReplyHeaders(302, "Found", headers, null, 0);
-            node.ticker.queueTimedJob(new Runnable() {
+            node.getTicker().queueTimedJob(new Runnable() {
 
 				@Override
                         public void run() {
@@ -330,7 +330,7 @@ public class WelcomeToadlet extends Toadlet {
             MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
             headers.put("Location", "/?restarted&formPassword=" + ctx.getFormPassword());
             ctx.sendReplyHeaders(302, "Found", headers, null, 0);
-            node.ticker.queueTimedJob(new Runnable() {
+            node.getTicker().queueTimedJob(new Runnable() {
 
 				@Override
                         public void run() {

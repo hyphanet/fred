@@ -323,7 +323,7 @@ public class NodeClientCore implements Persistable {
 							  false,
 							  "NodeClientCore.fileForClientStats",
 							  "NodeClientCore.fileForClientStatsLong",
-							  node.ticker, node.getRunDir());
+							  node.getTicker(), node.getRunDir());
 
 		SimpleFieldSet throttleFS = persister.read();
 		if (logMINOR)
@@ -531,7 +531,7 @@ public class NodeClientCore implements Persistable {
 
 		bandwidthStatsPutter = new PersistentStatsPutter();
 
-		clientLayerPersister = new ClientLayerPersister(node.getExecutor(), node.ticker,
+		clientLayerPersister = new ClientLayerPersister(node.getExecutor(), node.getTicker(),
 								node, this,
 								persistentTempBucketFactory,
 								tempBucketFactory,

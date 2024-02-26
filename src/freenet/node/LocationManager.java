@@ -178,7 +178,7 @@ public class LocationManager implements ByteCounter {
     	if(node.enableSwapping) {
           node.getTicker().queueTimedJob(sender, STARTUP_DELAY);
       }
-		node.ticker.queueTimedJob(new Runnable() {
+		node.getTicker().queueTimedJob(new Runnable() {
 
 			@Override
 			public void run() {
@@ -186,19 +186,19 @@ public class LocationManager implements ByteCounter {
 					clearOldSwapChains();
 					removeTooOldQueuedItems();
 				} finally {
-					node.ticker.queueTimedJob(this, SECONDS.toMillis(10));
+					node.getTicker().queueTimedJob(this, SECONDS.toMillis(10));
 				}
 			}
 
 		}, SECONDS.toMillis(10));
     	// Insert key to probe whether its part of the keyspace is operational. If it is not, switch location to it.
-        node.ticker.queueTimedJob(new Runnable() {
+        node.getTicker().queueTimedJob(new Runnable() {
 
             @Override
             public void run() {
                 LocalDateTime now = LocalDateTime.now(systemClockUTC);
                 long millisUntilNextRequestTomorrow = getNextPitchBlackMitigationDelayMillisecondsTomorrow(now);
-                node.ticker.queueTimedJob(this, millisUntilNextRequestTomorrow);
+                node.getTicker().queueTimedJob(this, millisUntilNextRequestTomorrow);
                 if (swappingDisabled()) {
                     return;
                 }

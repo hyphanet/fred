@@ -72,7 +72,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 		this.manager = manager;
 		this.node = manager.node;
 		this.URI = URI.setSuggestedEdition(Version.buildNumber() + 1);
-		this.ticker = node.ticker;
+		this.ticker = node.getTicker();
 		this.core = node.clientCore;
 		this.currentVersion = current;
 		this.availableVersion = -1;
@@ -279,7 +279,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 				System.err.println("Cannot update: result either null or empty for " + availableVersion);
 				// Try again
 				if(result == null || result.asBucket() == null || availableVersion > fetchedVersion)
-					node.ticker.queueTimedJob(new Runnable() {
+					node.getTicker().queueTimedJob(new Runnable() {
 
 						@Override
 						public void run() {

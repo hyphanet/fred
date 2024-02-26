@@ -417,7 +417,7 @@ public class TextModeClientInterface implements Runnable {
     } else if(uline.startsWith("UPDATE")) {
     	outsb.append("starting the update process");
     	// FIXME run on separate thread
-    	n.ticker.queueTimedJob(new Runnable() {
+    	n.getTicker().queueTimedJob(new Runnable() {
     		@Override
     		public void run() {
     		    freenet.support.Logger.OSThread.logPID(this);

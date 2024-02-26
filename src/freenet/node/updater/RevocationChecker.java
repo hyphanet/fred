@@ -316,7 +316,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 			if(errorCode == FetchExceptionMode.RECENTLY_FAILED) {
 				// Try again in 1 second.
 				// This ensures we don't constantly start them, fail them, and start them again.
-				this.manager.node.ticker.queueTimedJob(new Runnable() {
+				this.manager.node.getTicker().queueTimedJob(new Runnable() {
 
 					@Override
 					public void run() {

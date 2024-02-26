@@ -1546,7 +1546,7 @@ public class NodeUpdateManager {
 		deployPluginUpdates();
 		// If we're still here, we didn't update.
 		broadcastUOMAnnouncesNew();
-		node.ticker.queueTimedJob(new Runnable() {
+		node.getTicker().queueTimedJob(new Runnable() {
 			@Override
 			public void run() {
 				revocationChecker.start(false);
@@ -1589,7 +1589,7 @@ public class NodeUpdateManager {
 	}
 
 	void deployOffThread(long delay, final boolean announce) {
-		node.ticker.queueTimedJob(new Runnable() {
+		node.getTicker().queueTimedJob(new Runnable() {
 			@Override
 			public void run() {
 				if(announce)

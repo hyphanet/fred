@@ -342,7 +342,7 @@ public class BookmarkManager implements RequestClient {
 		synchronized(bookmarks) {
 			if(isSavingBookmarksLazy) return;
 			isSavingBookmarksLazy = true;
-			node.getNode().ticker.queueTimedJob(new Runnable() {
+			node.getNode().getTicker().queueTimedJob(new Runnable() {
 
 				@Override
 				public void run() {

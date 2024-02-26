@@ -96,7 +96,7 @@ public class FailureTable {
 		offerAuthenticatorKey = new byte[32];
 		node.getRandom().nextBytes(offerAuthenticatorKey);
 		offerExecutor = new SerialExecutor(NativeThread.HIGH_PRIORITY);
-		node.ticker.queueTimedJob(new FailureTableCleaner(), CLEANUP_PERIOD);
+		node.getTicker().queueTimedJob(new FailureTableCleaner(), CLEANUP_PERIOD);
 	}
 	
 	public void start() {
@@ -692,7 +692,7 @@ public class FailureTable {
 			} catch (Throwable t) {
 				Logger.error(this, "FailureTableCleaner caught "+t, t);
 			} finally {
-				node.ticker.queueTimedJob(this, CLEANUP_PERIOD);
+				node.getTicker().queueTimedJob(this, CLEANUP_PERIOD);
 			}
 		}
 

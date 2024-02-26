@@ -3501,7 +3501,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		if(peerNodeStatus == PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF) {
 			long delta = Math.max(localRoutingBackedOffUntilRT, localRoutingBackedOffUntilBulk) - now + 1;
 			if(delta > 0)
-				node.ticker.queueTimedJob(checkStatusAfterBackoff, "Update status for "+this, delta, true, true);
+				node.getTicker().queueTimedJob(checkStatusAfterBackoff, "Update status for "+this, delta, true, true);
 		}
 		return peerNodeStatus;
 	}
