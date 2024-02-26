@@ -788,6 +788,12 @@ public class Node implements TimeSkewDetectorCallback {
 	private int maxTimeForSingleCompressor;
 	private boolean connectionSpeedDetection;
 	boolean inputLimitDefault;
+
+	/**
+	 * @deprecated Use {@link #isEnableARKs()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	final boolean enableARKs;
 	final boolean enablePerNodeFailureTables;
 	final boolean enableULPRDataPropagation;
@@ -5124,6 +5130,10 @@ public class Node implements TimeSkewDetectorCallback {
 
     public boolean isThrottleLocalData() {
         return throttleLocalData;
+    }
+
+    public boolean isEnableARKs() {
+        return enableARKs;
     }
 
 }

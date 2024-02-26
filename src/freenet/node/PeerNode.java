@@ -2183,7 +2183,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 
 	void startARKFetcher() {
 		// FIXME any way to reduce locking here?
-		if(!node.enableARKs) return;
+		if(!node.isEnableARKs()) return;
 		synchronized(arkFetcherSync) {
 			if(myARK == null) {
 				Logger.minor(this, "No ARK for " + this + " !!!!");
@@ -2197,7 +2197,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	}
 
 	protected void stopARKFetcher() {
-		if(!node.enableARKs) return;
+		if(!node.isEnableARKs()) return;
 		Logger.minor(this, "Stopping ARK fetcher for " + this + " : " + myARK);
 		// FIXME any way to reduce locking here?
 		USKRetriever ret;

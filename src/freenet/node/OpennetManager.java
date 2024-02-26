@@ -255,7 +255,7 @@ public class OpennetManager {
 		this.creationTime = System.currentTimeMillis();
 		this.node = node;
 		crypto =
-			new NodeCrypto(node, true, opennetConfig, startupTime, node.enableARKs);
+			new NodeCrypto(node, true, opennetConfig, startupTime, node.isEnableARKs());
 
 		timeLastDropped = new EnumMap<ConnectionType,Long>(ConnectionType.class);
 		connectionAttempts = new EnumMap<ConnectionType,Long>(ConnectionType.class);
