@@ -753,6 +753,12 @@ public class Node implements TimeSkewDetectorCallback {
 	@Deprecated
 	/* It’s not the field that is deprecated but accessing it directly is. */
 	final DNSRequester dnsr;
+
+	/**
+	 * @deprecated Use {@link #getDispatcher()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	final NodeDispatcher dispatcher;
 	public final UptimeEstimator uptime;
 	public final TokenBucket outputThrottle;
@@ -5084,6 +5090,10 @@ public class Node implements TimeSkewDetectorCallback {
 
     public DNSRequester getDNSRequester() {
         return dnsr;
+    }
+
+    public NodeDispatcher getDispatcher() {
+        return dispatcher;
     }
 
 }
