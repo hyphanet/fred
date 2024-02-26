@@ -2259,7 +2259,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		Message ipMsg = DMT.createFNPDetectedIPAddress(detectedPeer);
 		Message timeMsg = DMT.createFNPTime(System.currentTimeMillis());
 		Message dRoutingMsg = DMT.createRoutingStatus(!disableRoutingHasBeenSetLocally);
-		Message uptimeMsg = DMT.createFNPUptime((byte)(int)(100*node.uptime.getUptime()));
+		Message uptimeMsg = DMT.createFNPUptime((byte)(int)(100*node.getUptimeEstimator().getUptime()));
 
 		try {
 			if(isRealConnection())

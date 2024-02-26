@@ -1278,7 +1278,7 @@ public class StatisticsToadlet extends Toadlet {
 		overviewList.addChild("li", "pInstantRejectInsertRT:\u00a0" + fix3p1pct.format(stats.pRejectIncomingInstantlyCHKInsertRT())+" (CHK) "+fix3p1pct.format(stats.pRejectIncomingInstantlySSKInsertRT())+" (SSK)");
 		overviewList.addChild("li", "unclaimedFIFOSize:\u00a0" + node.getUnclaimedFIFOSize());
 		overviewList.addChild("li", "RAMBucketPoolSize:\u00a0" + SizeUtil.formatSize(core.getTempBucketFactory().getRamUsed())+ " / "+ SizeUtil.formatSize(core.getTempBucketFactory().getMaxRamUsed()));
-		overviewList.addChild("li", "uptimeAverage:\u00a0" + fix3p1pct.format(node.uptime.getUptime()));
+		overviewList.addChild("li", "uptimeAverage:\u00a0" + fix3p1pct.format(node.getUptimeEstimator().getUptime()));
 		
 		long[] decoded = IncomingPacketFilterImpl.getDecodedPackets();
 		if(decoded != null) {
