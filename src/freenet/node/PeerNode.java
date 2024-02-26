@@ -4095,7 +4095,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	}
 
 	public static boolean shouldThrottle(Peer peer, Node node) {
-		if(node.throttleLocalData) return true;
+		if(node.isThrottleLocalData()) return true;
 		if(peer == null) return true; // presumably
 		InetAddress addr = peer.getAddress(false);
 		if(addr == null) return true; // presumably
