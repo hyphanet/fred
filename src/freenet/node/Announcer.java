@@ -199,7 +199,7 @@ public class Announcer {
 				}
 			}
 		}
-		node.dnsr.forceRun();
+		node.getDNSRequester().forceRun();
 		// If none connect in a minute, try some more.
 		node.getTicker().queueTimedJob(new Runnable() {
 			@Override
