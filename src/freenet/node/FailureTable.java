@@ -123,7 +123,7 @@ public class FailureTable {
 				Logger.error(this, "Bogus timeout "+rfTimeout, new Exception("error"));
 			rfTimeout = Math.max(Math.min(RECENTLY_FAILED_TIME, rfTimeout), 0);
 		}
-		if(!(node.enableULPRDataPropagation || node.enablePerNodeFailureTables)) return;
+		if(!(node.enableULPRDataPropagation || node.isEnablePerNodeFailureTables())) return;
 		long now = System.currentTimeMillis();
 		FailureTableEntry entry;
 		synchronized(this) {
@@ -158,7 +158,7 @@ public class FailureTable {
 				Logger.error(this, "Bogus timeout "+rfTimeout, new Exception("error"));
 			rfTimeout = Math.max(Math.min(RECENTLY_FAILED_TIME, rfTimeout), 0);
 		}
-		if(!(node.enableULPRDataPropagation || node.enablePerNodeFailureTables)) return;
+		if(!(node.enableULPRDataPropagation || node.isEnablePerNodeFailureTables())) return;
 		long now = System.currentTimeMillis();
 		FailureTableEntry entry;
 		synchronized(this) {
@@ -287,8 +287,8 @@ public class FailureTable {
 	 */
 	public void onFound(KeyBlock block) {
 		if(logMINOR) Logger.minor(this, "Found "+block.getKey());
-		if(!(node.enableULPRDataPropagation || node.enablePerNodeFailureTables)) {
-			if(logMINOR) Logger.minor(this, "Ignoring onFound because enable ULPR = "+node.enableULPRDataPropagation+" and enable failure tables = "+node.enablePerNodeFailureTables);
+		if(!(node.enableULPRDataPropagation || node.isEnablePerNodeFailureTables())) {
+			if(logMINOR) Logger.minor(this, "Ignoring onFound because enable ULPR = "+node.enableULPRDataPropagation+" and enable failure tables = "+node.isEnablePerNodeFailureTables());
 			return;
 		}
 		Key key = block.getKey();
@@ -672,12 +672,12 @@ public class FailureTable {
 
 	/** Called when a node disconnects */
 	public void onDisconnect(final PeerNode pn) {
-		if(!(node.enableULPRDataPropagation || node.enablePerNodeFailureTables)) return;
+		if(!(node.enableULPRDataPropagation || node.isEnablePerNodeFailureTables())) return;
 		// FIXME do something (off thread if expensive)
 	}
 
 	public TimedOutNodesList getTimedOutNodesList(Key key) {
-		if(!node.enablePerNodeFailureTables) return null;
+		if(!node.isEnablePerNodeFailureTables()) return null;
 		synchronized(this) {
 			return entriesByKey.get(key);
 		}

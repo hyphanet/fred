@@ -905,7 +905,7 @@ public class PeerManager {
 		long soonestTimeoutWakeup = Long.MAX_VALUE;
 		
 		PeerNode[] peers = connectedPeers();
-		if(!node.enablePerNodeFailureTables)
+		if(!node.isEnablePerNodeFailureTables())
 			key = null;
 		if(logMINOR)
 			Logger.minor(this, "Choosing closest peer: connectedPeers=" + peers.length+" key "+key);

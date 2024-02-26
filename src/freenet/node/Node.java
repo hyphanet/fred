@@ -795,6 +795,12 @@ public class Node implements TimeSkewDetectorCallback {
 	@Deprecated
 	/* It’s not the field that is deprecated but accessing it directly is. */
 	final boolean enableARKs;
+
+	/**
+	 * @deprecated Use {@link #isEnablePerNodeFailureTables()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	final boolean enablePerNodeFailureTables;
 	final boolean enableULPRDataPropagation;
 	final boolean enableSwapping;
@@ -5134,6 +5140,10 @@ public class Node implements TimeSkewDetectorCallback {
 
     public boolean isEnableARKs() {
         return enableARKs;
+    }
+
+    public boolean isEnablePerNodeFailureTables() {
+        return enablePerNodeFailureTables;
     }
 
 }
