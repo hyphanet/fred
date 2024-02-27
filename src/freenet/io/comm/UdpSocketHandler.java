@@ -159,7 +159,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 //		}
 		// Only used for debugging, no need to seed from Yarrow
 		dropRandom = node.getFastWeakRandom();
-		tracker = AddressTracker.create(node.lastBootID, node.runDir(), listenPort);
+		tracker = AddressTracker.create(node.getLastBootId(), node.runDir(), listenPort);
 		tracker.startSend(startupTime);
 	}
 

@@ -883,7 +883,11 @@ public class Node implements TimeSkewDetectorCallback {
 	 * permissions problems, or we suspect that the node has been booted and not
 	 * written the file e.g. if we can't write it. So if we want to compare data
 	 * gathered in the last session and only recorded to disk on a clean shutdown
-	 * to data we have now, we just include the lastBootID. */
+	 * to data we have now, we just include the lastBootID.
+	 * @deprecated Use {@link #getLastBootId()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final long lastBootID;
 	public final long bootID;
 	public final long startupTime;
@@ -5260,6 +5264,10 @@ public class Node implements TimeSkewDetectorCallback {
 
     public FetchContext getArkFetcherContext() {
         return arkFetcherContext;
+    }
+
+    public long getLastBootId() {
+        return lastBootID;
     }
 
 }
