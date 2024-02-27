@@ -254,7 +254,7 @@ public class PproxyToadlet extends Toadlet {
 					sendErrorPage(ctx, 404, l10n("pluginNotFoundUpdatingTitle"), 
 							l10n("pluginNotFoundUpdating", "name", pluginFilename));
 				} else {
-					node.nodeUpdater.deployPluginWhenReady(pluginFilename);
+					node.getNodeUpdater().deployPluginWhenReady(pluginFilename);
 
 					headers.put("Location", ".");
 					ctx.sendReplyHeaders(302, "Found", headers, null, 0);

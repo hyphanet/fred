@@ -160,18 +160,18 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			node.receivedNodeToNodeMessage(m, source);
 			return true;
 		} else if(spec == DMT.UOMAnnouncement && source.isRealConnection()) {
-			return node.nodeUpdater.uom.handleAnnounce(m, source);
+			return node.getNodeUpdater().uom.handleAnnounce(m, source);
 		} else if(spec == DMT.UOMRequestRevocation && source.isRealConnection()) {
-			return node.nodeUpdater.uom.handleRequestRevocation(m, source);
+			return node.getNodeUpdater().uom.handleRequestRevocation(m, source);
 		} else if(spec == DMT.UOMSendingRevocation && source.isRealConnection()) {
-			return node.nodeUpdater.uom.handleSendingRevocation(m, source);
-		} else if(spec == DMT.UOMRequestMainJar && node.nodeUpdater.isEnabled() && source.isRealConnection()) {
-			node.nodeUpdater.uom.handleRequestJar(m, source);
+			return node.getNodeUpdater().uom.handleSendingRevocation(m, source);
+		} else if(spec == DMT.UOMRequestMainJar && node.getNodeUpdater().isEnabled() && source.isRealConnection()) {
+			node.getNodeUpdater().uom.handleRequestJar(m, source);
 			return true;
-		} else if(spec == DMT.UOMSendingMainJar && node.nodeUpdater.isEnabled() && source.isRealConnection()) {
-			return node.nodeUpdater.uom.handleSendingMain(m, source);
-		} else if(spec == DMT.UOMFetchDependency && node.nodeUpdater.isEnabled() && source.isRealConnection()) {
-			node.nodeUpdater.uom.handleFetchDependency(m, source);
+		} else if(spec == DMT.UOMSendingMainJar && node.getNodeUpdater().isEnabled() && source.isRealConnection()) {
+			return node.getNodeUpdater().uom.handleSendingMain(m, source);
+		} else if(spec == DMT.UOMFetchDependency && node.getNodeUpdater().isEnabled() && source.isRealConnection()) {
+			node.getNodeUpdater().uom.handleFetchDependency(m, source);
 			return true;
 		} else if(spec == DMT.FNPOpennetAnnounceRequest) {
 			return handleAnnounceRequest(m, source);

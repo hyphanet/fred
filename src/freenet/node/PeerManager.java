@@ -1650,7 +1650,7 @@ public class PeerManager {
 	}
 
 	public void start() {
-		ua = new PeerManagerUserAlert(node.getNodeStats(), node.nodeUpdater);
+		ua = new PeerManagerUserAlert(node.getNodeStats(), node.getNodeUpdater());
 		updatePMUserAlert();
 		node.getClientCore().getAlerts().register(ua);
 		node.getTicker().queueTimedJob(writePeersRunnable, 0);

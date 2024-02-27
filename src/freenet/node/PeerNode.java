@@ -1236,7 +1236,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			node.getTracker().onRestartOrDisconnect(this);
 		node.getFailureTable().onDisconnect(this);
 		node.getPeers().disconnected(this);
-		node.nodeUpdater.disconnected(this);
+		node.getNodeUpdater().disconnected(this);
 		boolean ret;
 		SessionKey cur, prev, unv;
 		MessageItem[] messagesTellDisconnected = null;
@@ -2356,7 +2356,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		processNewNoderef(fs, false, true, false);
 		// Send UOMAnnouncement only *after* we know what the other side's version.
 		if(isRealConnection())
-		    node.nodeUpdater.maybeSendUOMAnnounce(this);
+		    node.getNodeUpdater().maybeSendUOMAnnounce(this);
 	}
 
 	/**

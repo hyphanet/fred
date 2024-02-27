@@ -313,7 +313,7 @@ public class Announcer {
 		public HTMLNode getHTMLText() {
 			HTMLNode div = new HTMLNode("div");
 			div.addChild("#", l10n("announceDisabledTooOld"));
-			if(!node.nodeUpdater.isEnabled()) {
+			if(!node.getNodeUpdater().isEnabled()) {
 				div.addChild("#", " ");
 				NodeL10n.getBase().addL10nSubstitution(div, "Announcer.announceDisabledTooOldUpdateDisabled", new String[] { "config" }, new HTMLNode[] { HTMLNode.link("/config/node.updater") });
 			}
@@ -326,7 +326,7 @@ public class Announcer {
 			StringBuilder sb = new StringBuilder();
 			sb.append(l10n("announceDisabledTooOld"));
 			sb.append(" ");
-			if(!node.nodeUpdater.isEnabled()) {
+			if(!node.getNodeUpdater().isEnabled()) {
 				sb.append(l10n("announceDisabledTooOldUpdateDisabled", new String[] { "config", "/config" }, new String[] { "", "" }));
 			}
 			return sb.toString();
@@ -334,7 +334,7 @@ public class Announcer {
 		
 		@Override
 		public boolean isValid() {
-			if(node.nodeUpdater.isEnabled()) return false;
+			if(node.getNodeUpdater().isEnabled()) return false;
 			// If it is enabled but not armed there will be a message from the updater.
 			synchronized(Announcer.this) {
 				return killedAnnouncementTooOld;
@@ -360,8 +360,8 @@ public class Announcer {
 			return true;
 		}
 		boolean killAnnouncement = false;
-		if((!node.nodeUpdater.isEnabled()) ||
-				(node.nodeUpdater.canUpdateNow() && !node.nodeUpdater.isArmed())) {
+		if((!node.getNodeUpdater().isEnabled()) ||
+				(node.getNodeUpdater().canUpdateNow() && !node.getNodeUpdater().isArmed())) {
 			// If we also have 10 TOO_NEW peers, we should shut down the announcement,
 			// because we're obviously broken and would only be spamming the seednodes
 			synchronized(this) {
@@ -404,8 +404,8 @@ public class Announcer {
 			}
 			if(node.getClientCore() != null)
 				node.getClientCore().getAlerts().unregister(announcementDisabledAlert);
-			if(node.nodeUpdater.isEnabled() && node.nodeUpdater.isArmed() &&
-					node.nodeUpdater.uom.fetchingFromTwo() &&
+			if(node.getNodeUpdater().isEnabled() && node.getNodeUpdater().isArmed() &&
+					node.getNodeUpdater().uom.fetchingFromTwo() &&
 					node.getPeers().getPeerNodeStatusSize(PeerManager.PEER_NODE_STATUS_TOO_NEW, false) > 5) {
 				// No point announcing at the moment, but we might need to if a transfer falls through.
 				return true;

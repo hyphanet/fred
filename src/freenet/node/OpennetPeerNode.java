@@ -179,7 +179,7 @@ public class OpennetPeerNode extends PeerNode {
 		// FIXME remove, paranoia
 		if(uptime < HOURS.toMillis(1))
 			return false;
-		NodeUpdateManager updater = node.nodeUpdater;
+		NodeUpdateManager updater = node.getNodeUpdater();
 		if(updater == null) return true; // Not going to UOM.
 		UpdateOverMandatoryManager uom = updater.uom;
 		if(uom == null) return true; // Not going to UOM

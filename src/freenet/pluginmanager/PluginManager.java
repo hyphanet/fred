@@ -436,7 +436,7 @@ public class PluginManager {
 				core.storeConfig();
 		}
 		if(pi != null)
-			node.nodeUpdater.startPluginUpdater(filename);
+			node.getNodeUpdater().startPluginUpdater(filename);
 		return pi;
 	}
 
@@ -1577,7 +1577,7 @@ public class PluginManager {
 		if(wrapper.isBandwidthIndicator())
 			node.getIpDetector().unregisterBandwidthIndicatorPlugin((FredPluginBandwidthIndicator)plug);
 		if(!reloading)
-			node.nodeUpdater.stopPluginUpdater(wrapper.getFilename());
+			node.getNodeUpdater().stopPluginUpdater(wrapper.getFilename());
 	}
 
     public boolean isEnabled() {

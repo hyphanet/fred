@@ -606,7 +606,7 @@ public class Probe implements ByteCounter {
 			listener.onOutputBandwidth((float)randomNoise((double)node.getOutputBandwidthLimit()/(1 << 10), 0.05));
 			break;
 		case BUILD:
-			listener.onBuild(node.nodeUpdater.getMainVersion());
+			listener.onBuild(node.getNodeUpdater().getMainVersion());
 			break;
 		case IDENTIFIER:
 			/*
