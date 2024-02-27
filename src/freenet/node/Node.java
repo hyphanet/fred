@@ -1974,7 +1974,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		usm.setDispatcher(dispatcher=new NodeDispatcher(this));
 
-		uptime = new UptimeEstimator(runDir, ticker, darknetCrypto.identityHash);
+		uptime = new UptimeEstimator(runDir, ticker, darknetCrypto.getIdentityHash());
 
 		// ULPRs
 

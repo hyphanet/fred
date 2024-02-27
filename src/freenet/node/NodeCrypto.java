@@ -81,7 +81,13 @@ public class NodeCrypto {
 	@Deprecated
 	/* It’s not the field that is deprecated but accessing it directly is. */
 	byte[] myIdentity;
-	/** Hash of identity. Used as setup key. */
+
+	/**
+	 * Hash of identity. Used as setup key.
+	 * @deprecated Use {@link #getIdentityHash()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	byte[] identityHash;
 	/** Hash of hash of identity i.e. hash of setup key. */
 	byte[] identityHashHash;
@@ -603,6 +609,10 @@ public class NodeCrypto {
 
 	public byte[] getMyIdentity() {
 		return myIdentity;
+	}
+
+	public byte[] getIdentityHash() {
+		return identityHash;
 	}
 
 }
