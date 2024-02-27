@@ -285,7 +285,7 @@ public class DiagnosticToadlet extends Toadlet {
 
 		// drawBandwidth
 		textBuilder.append("Bandwidth:\n");
-		long[] total = node.collector.getTotalIO();
+		long[] total = node.getCollector().getTotalIO();
 		if(total[0] == 0 || total[1] == 0)
 			textBuilder.append("bandwidth error\n");
 		else  {

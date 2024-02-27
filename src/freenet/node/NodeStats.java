@@ -1339,7 +1339,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 	private double getNonOverheadFraction(long now) {
 		
-		long[] total = node.collector.getTotalIO();
+		long[] total = node.getCollector().getTotalIO();
 		long totalSent = total[0];
 		long totalOverhead = getSentOverhead();
 		long uptime = node.getUptime();
@@ -1841,7 +1841,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	 */
 	public void maybeUpdateNodeIOStats(long now) {
 		if(now > nextNodeIOStatsUpdateTime) {
-			long[] io_stats = node.collector.getTotalIO();
+			long[] io_stats = node.getCollector().getTotalIO();
 			long outdiff;
 			long indiff;
 			synchronized(ioStatSync) {
@@ -2037,7 +2037,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		fs.put("unsuccessfulLocalSSKFetchTimeBulk", unsuccessfulLocalSSKFetchTimeAverageBulk.currentValue());
 		fs.put("unsuccessfulLocalSSKFetchTimeRT", unsuccessfulLocalSSKFetchTimeAverageRT.currentValue());
 
-		long[] total = node.collector.getTotalIO();
+		long[] total = node.getCollector().getTotalIO();
 		long total_output_rate = (total[0]) / nodeUptimeSeconds;
 		long total_input_rate = (total[1]) / nodeUptimeSeconds;
 		long totalPayloadOutput = node.getTotalPayloadSent();

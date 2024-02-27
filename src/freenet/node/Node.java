@@ -844,6 +844,12 @@ public class Node implements TimeSkewDetectorCallback {
 	public static final boolean PREFER_INSERT_DEFAULT = false;
 	/** Should inserts fork when the HTL reaches cacheability? */
 	public static final boolean FORK_ON_CACHEABLE_DEFAULT = true;
+
+	/**
+	 * @deprecated Use {@link #getCollector()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final IOStatisticCollector collector;
 	/** Type identifier for fproxy node to node messages, as sent on DMT.nodeToNodeMessage's */
 	public static final int N2N_MESSAGE_TYPE_FPROXY = 1;
@@ -5184,6 +5190,10 @@ public class Node implements TimeSkewDetectorCallback {
 
     public boolean isEnablePacketCoalescing() {
         return enablePacketCoalescing;
+    }
+
+    public IOStatisticCollector getCollector() {
+        return collector;
     }
 
 }
