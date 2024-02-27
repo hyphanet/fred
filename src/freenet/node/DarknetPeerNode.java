@@ -929,8 +929,8 @@ public class DarknetPeerNode extends PeerNode {
 		public void accept() {
 			acceptedOrRejected = true;
 			final String baseFilename = "direct-"+FileUtil.sanitize(getName())+"-"+filename;
-			final File dest = node.clientCore.downloadsDir().file(baseFilename+".part");
-			destination = node.clientCore.downloadsDir().file(baseFilename);
+			final File dest = node.getClientCore().downloadsDir().file(baseFilename+".part");
+			destination = node.getClientCore().downloadsDir().file(baseFilename);
 			try {
 				data = new FileRandomAccessBuffer(dest, size, false);
 			} catch (IOException e) {
@@ -953,7 +953,7 @@ public class DarknetPeerNode extends PeerNode {
 							onReceiveFailure();
 						} else {
 							data.close();
-							if(!dest.renameTo(node.clientCore.downloadsDir().file(baseFilename))){
+							if(!dest.renameTo(node.getClientCore().downloadsDir().file(baseFilename))){
 								Logger.error(this, "Failed to rename "+dest.getName()+" to remove .part suffix.");
 							}
 							onReceiveSuccess();
@@ -1108,7 +1108,7 @@ public class DarknetPeerNode extends PeerNode {
 				}
 
 			};
-			node.clientCore.getAlerts().register(alert);
+			node.getClientCore().getAlerts().register(alert);
 		}
 
 		private void onReceiveSuccess() {
@@ -1180,7 +1180,7 @@ public class DarknetPeerNode extends PeerNode {
 				}
 
 			};
-			node.clientCore.getAlerts().register(alert);
+			node.getClientCore().getAlerts().register(alert);
 		}
 
 		/** Ask the user whether (s)he wants to download a file from a direct peer */
@@ -1202,7 +1202,7 @@ public class DarknetPeerNode extends PeerNode {
 					// Accept/reject form
 
 					// Hopefully we will have a container when this function is called!
-					HTMLNode form = node.clientCore.getToadletContainer().addFormChild(div, "/friends/", "f2fFileOfferAcceptForm");
+					HTMLNode form = node.getClientCore().getToadletContainer().addFormChild(div, "/friends/", "f2fFileOfferAcceptForm");
 
 					// FIXME node_ is inefficient
 					form.addChild("input", new String[] { "type", "name" },
@@ -1237,7 +1237,7 @@ public class DarknetPeerNode extends PeerNode {
 				@Override
 				public boolean isValid() {
 					if(acceptedOrRejected) {
-						node.clientCore.getAlerts().unregister(this);
+						node.getClientCore().getAlerts().unregister(this);
 						return false;
 					}
 					return true;
@@ -1485,8 +1485,8 @@ public class DarknetPeerNode extends PeerNode {
 			// 128. However even sending a 64kiB file
 			// (DarknetPeerNode.java) does not cause
 			// noticeable load on the receiving system.
-			synchronized (node.clientCore.getAlerts()) {
-				for (UserAlert userAlert : node.clientCore.getAlerts().getAlerts()) {
+			synchronized (node.getClientCore().getAlerts()) {
+				for (UserAlert userAlert : node.getClientCore().getAlerts().getAlerts()) {
 					if (!(userAlert instanceof N2NTMUserAlert)) {
 						continue;
 					}
@@ -1543,10 +1543,10 @@ public class DarknetPeerNode extends PeerNode {
 		}
 		// show the alert
 		N2NTMUserAlert userAlert = new N2NTMUserAlert(this, newText, newFileNumber, composedTime, sentTime, receivedTime, msgid);
-		node.clientCore.getAlerts().register(userAlert);
+		node.getClientCore().getAlerts().register(userAlert);
 		// remove the merged alerts
 		for (UserAlert alert : merged) {
-			node.clientCore.getAlerts().dismissAlert(alert.hashCode());
+			node.getClientCore().getAlerts().dismissAlert(alert.hashCode());
 		}
 	}
 
@@ -1570,7 +1570,7 @@ public class DarknetPeerNode extends PeerNode {
 
 		UserAlert alert = offer.askUserUserAlert();
 
-		node.clientCore.getAlerts().register(alert);
+		node.getClientCore().getAlerts().register(alert);
 	}
 
 	public void acceptTransfer(long id) {
@@ -1672,7 +1672,7 @@ public class DarknetPeerNode extends PeerNode {
 			return;
 		}
 		BookmarkFeedUserAlert userAlert = new BookmarkFeedUserAlert(this, name, description, hasAnActiveLink, fileNumber, uri, composedTime, sentTime, receivedTime);
-		node.clientCore.getAlerts().register(userAlert);
+		node.getClientCore().getAlerts().register(userAlert);
 	}
 
 	public void handleFproxyDownloadFeed(SimpleFieldSet fs, int fileNumber) {
@@ -1694,7 +1694,7 @@ public class DarknetPeerNode extends PeerNode {
 			return;
 		}
 		DownloadFeedUserAlert userAlert = new DownloadFeedUserAlert(this, description, fileNumber, uri, composedTime, sentTime, receivedTime);
-		node.clientCore.getAlerts().register(userAlert);
+		node.getClientCore().getAlerts().register(userAlert);
 	}
 
 	@Override

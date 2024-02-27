@@ -531,7 +531,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				return;
 			alert = new PeersSayKeyBlownAlert();
 		}
-		updateManager.node.clientCore.getAlerts().register(alert);
+		updateManager.node.getClientCore().getAlerts().register(alert);
 	}
 
 	private class PeersSayKeyBlownAlert extends AbstractUserAlert {
@@ -858,7 +858,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		final File temp;
 
 		try {
-			temp = File.createTempFile("revocation-", ".fblob.tmp", updateManager.node.clientCore.getPersistentTempDir());
+			temp = File.createTempFile("revocation-", ".fblob.tmp", updateManager.node.getClientCore().getPersistentTempDir());
 			temp.deleteOnExit();
 		} catch(IOException e) {
 			System.err.println("Cannot save revocation certificate to disk and therefore cannot fetch it from our peer!: " + e);
@@ -1020,7 +1020,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 		// Fetch our revocation key from the datastore plus the binary blob
 
-		FetchContext seedContext = updateManager.node.clientCore.makeClient((short) 0, true, false).getFetchContext();
+		FetchContext seedContext = updateManager.node.getClientCore().makeClient((short) 0, true, false).getFetchContext();
 		FetchContext tempContext = new FetchContext(seedContext, FetchContext.IDENTICAL_MASK, true, blocks);
 		// If it is too big, we get a TOO_BIG. This is fatal so we will blow, which is the right thing as it means the top block is valid.
 		tempContext.maxOutputLength = NodeUpdateManager.MAX_REVOCATION_KEY_LENGTH;
@@ -1088,7 +1088,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			updateManager.getRevocationURI(), tempContext, (short) 0, null, new BinaryBlobWriter(cleanedBlob), null);
 
 		try {
-			updateManager.node.clientCore.getClientContext().start(cg);
+			updateManager.node.getClientCore().getClientContext().start(cg);
 		} catch(FetchException e1) {
 			System.err.println("Failed to decode UOM blob: " + e1);
 			e1.printStackTrace();
@@ -1142,12 +1142,12 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 		};
 		// We are inserting a binary blob so we don't need to worry about CompatibilityMode etc.
-		InsertContext ctx = updateManager.node.clientCore.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS, false, false).getInsertContext(true);
+		InsertContext ctx = updateManager.node.getClientCore().makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS, false, false).getInsertContext(true);
 		ClientPutter putter = new ClientPutter(callback, bucket,
 			FreenetURI.EMPTY_CHK_URI, null, ctx,
-			priority, false, null, true, updateManager.node.clientCore.getClientContext(), null, -1);
+			priority, false, null, true, updateManager.node.getClientCore().getClientContext(), null, -1);
 		try {
-			updateManager.node.clientCore.getClientContext().start(putter);
+			updateManager.node.getClientCore().getClientContext().start(putter);
 		} catch(InsertException e1) {
 			Logger.error(this, "Failed to start insert of "+type+" binary blob: " + e1, e1);
 		} catch (PersistenceDisabledException e) {
@@ -1165,7 +1165,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 	}
 
 	public void killAlert() {
-		updateManager.node.clientCore.getAlerts().unregister(alert);
+		updateManager.node.getClientCore().getAlerts().unregister(alert);
 	}
 
 	public void handleRequestJar(Message m, final PeerNode source) {
@@ -1373,7 +1373,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		final File temp;
 
 		try {
-			temp = File.createTempFile("main-", ".fblob.tmp", updateManager.node.clientCore.getPersistentTempDir());
+			temp = File.createTempFile("main-", ".fblob.tmp", updateManager.node.getClientCore().getPersistentTempDir());
 			temp.deleteOnExit();
 		} catch(IOException e) {
 			System.err.println("Cannot save new main jar to disk and therefore cannot fetch it from our peer!: " + e);
@@ -1468,14 +1468,14 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 		// Fetch the jar from the datastore plus the binary blob
 
-		FetchContext seedContext = updateManager.node.clientCore.makeClient((short) 0, true, false).getFetchContext();
+		FetchContext seedContext = updateManager.node.getClientCore().makeClient((short) 0, true, false).getFetchContext();
 		FetchContext tempContext = new FetchContext(seedContext, FetchContext.IDENTICAL_MASK, true, blocks);
 		tempContext.localRequestOnly = true;
 
 		File f;
 		FileBucket b = null;
 		try {
-			f = File.createTempFile("main-", ".fblob.tmp", updateManager.node.clientCore.getPersistentTempDir());
+			f = File.createTempFile("main-", ".fblob.tmp", updateManager.node.getClientCore().getPersistentTempDir());
 			f.deleteOnExit();
 			b = new FileBucket(f, false, false, true, true);
 		} catch(IOException e) {
@@ -1547,7 +1547,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			uri, tempContext, (short) 0, null, new BinaryBlobWriter(cleanedBlob), null);
 
 		try {
-			updateManager.node.clientCore.getClientContext().start(cg);
+			updateManager.node.getClientCore().getClientContext().start(cg);
 		} catch(FetchException e1) {
 			myCallback.onFailure(e1, cg);
 		} catch (PersistenceDisabledException e) {
@@ -1574,7 +1574,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
     }
 
     protected boolean removeOldTempFiles() {
-		File oldTempFilesPeerDir = updateManager.node.clientCore.getPersistentTempDir();
+		File oldTempFilesPeerDir = updateManager.node.getClientCore().getPersistentTempDir();
 		if(!oldTempFilesPeerDir.exists())
 			return false;
 		if(!oldTempFilesPeerDir.isDirectory()) {

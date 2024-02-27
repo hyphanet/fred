@@ -73,7 +73,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 		this.node = manager.node;
 		this.URI = URI.setSuggestedEdition(Version.buildNumber() + 1);
 		this.ticker = node.getTicker();
-		this.core = node.clientCore;
+		this.core = node.getClientCore();
 		this.currentVersion = current;
 		this.availableVersion = -1;
 		this.isRunning = true;
@@ -106,7 +106,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 		if(oldBlob.exists()) {
 			File temp;
 			try {
-				temp = File.createTempFile(blobFilenamePrefix + availableVersion + "-", ".fblob.tmp", manager.node.clientCore.getPersistentTempDir());
+				temp = File.createTempFile(blobFilenamePrefix + availableVersion + "-", ".fblob.tmp", manager.node.getClientCore().getPersistentTempDir());
 			} catch (IOException e) {
 				Logger.error(this, "Unable to process old blob: "+e, e);
 				return;
@@ -214,7 +214,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 					if(availableVersion > currentVersion)
 						System.err.println("Starting " + jarName() + " fetch for " + availableVersion);
 					tempBlobFile =
-						File.createTempFile(blobFilenamePrefix + availableVersion + "-", ".fblob.tmp", manager.node.clientCore.getPersistentTempDir());
+						File.createTempFile(blobFilenamePrefix + availableVersion + "-", ".fblob.tmp", manager.node.getClientCore().getPersistentTempDir());
 					FreenetURI uri = URI.setSuggestedEdition(availableVersion);
 					uri = uri.sskForUSK();
 					cg = new ClientGetter(this,  
@@ -232,7 +232,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 		}
 		if(toStart != null)
 			try {
-				node.clientCore.getClientContext().start(toStart);
+				node.getClientCore().getClientContext().start(toStart);
 			} catch(FetchException e) {
 				Logger.error(this, "Error while starting the fetching: " + e, e);
 				synchronized(this) {
@@ -246,7 +246,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 	}
 
 	final File getBlobFile(int availableVersion) {
-		return new File(node.clientCore.getPersistentTempDir(), blobFilenamePrefix + availableVersion + ".fblob");
+		return new File(node.getClientCore().getPersistentTempDir(), blobFilenamePrefix + availableVersion + ".fblob");
 	}
 	
 	RandomAccessBucket getBlobBucket(int availableVersion) {

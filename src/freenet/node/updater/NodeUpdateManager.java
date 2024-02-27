@@ -310,9 +310,9 @@ public class NodeUpdateManager {
 
 		};
 
-		transitionMainJarFile = new File(node.clientCore.getPersistentTempDir(), transitionMainJarFilename);
+		transitionMainJarFile = new File(node.getClientCore().getPersistentTempDir(), transitionMainJarFilename);
 		transitionMainJarFetcher = new LegacyJarFetcher(previousMainJarSSK,
-				transitionMainJarFile, node.clientCore,
+				transitionMainJarFile, node.getClientCore(),
 				legacyFetcherCallback);
 
 		updaterConfig.register("updateSeednodes", wasEnabledOnStartup, 6, true,
@@ -375,7 +375,7 @@ public class NodeUpdateManager {
 		updaterConfig.finishedInitialization();
 
 		this.revocationChecker = new RevocationChecker(this, new File(
-				node.clientCore.getPersistentTempDir(), "revocation-key.fblob"));
+				node.getClientCore().getPersistentTempDir(), "revocation-key.fblob"));
 
 		this.uom = new UpdateOverMandatoryManager(this);
 		this.uom.removeOldTempFiles();
@@ -411,7 +411,7 @@ public class NodeUpdateManager {
 		}
 
 		public void start(short priority, long maxSize) {
-			HighLevelSimpleClient hlsc = node.clientCore.makeClient(priority,
+			HighLevelSimpleClient hlsc = node.getClientCore().makeClient(priority,
 					false, false);
 			FetchContext context = hlsc.getFetchContext();
 			context.maxNonSplitfileRetries = -1;
@@ -421,7 +421,7 @@ public class NodeUpdateManager {
 			ClientGetter get = new ClientGetter(this, freenetURI, context,
 					priority, null, null, null);
 			try {
-				node.clientCore.getClientContext().start(get);
+				node.getClientCore().getClientContext().start(get);
 			} catch (PersistenceDisabledException e) {
 				// Impossible
 			} catch (FetchException e) {
@@ -529,7 +529,7 @@ public class NodeUpdateManager {
 
 	public void start() throws InvalidConfigValueException {
 
-		node.clientCore.getAlerts().register(alert);
+		node.getClientCore().getAlerts().register(alert);
 
 		enable(wasEnabledOnStartup);
 
@@ -1119,7 +1119,7 @@ public class NodeUpdateManager {
 			t.printStackTrace();
 			failUpdate(t.getMessage());
 			String error = l10n("updateFailedInternalError", "reason", t.getMessage());
-			node.clientCore.getAlerts().register(new SimpleUserAlert(false,
+			node.getClientCore().getAlerts().register(new SimpleUserAlert(false,
 					error, error, error, UserAlert.CRITICAL_ERROR));
 		} finally {
 			if(started && !success) {
@@ -1234,12 +1234,12 @@ public class NodeUpdateManager {
 			return false;
 		} catch (UpdateCatastropheException e) {
 			failUpdate(e.getMessage());
-			node.clientCore.getAlerts().register(new SimpleUserAlert(false,
+			node.getClientCore().getAlerts().register(new SimpleUserAlert(false,
 					l10n("updateCatastropheTitle"), e.getMessage(),
 					l10n("updateCatastropheTitle"), UserAlert.CRITICAL_ERROR));
 			return false;
 		} catch (UpdaterParserException e) {
-			node.clientCore.getAlerts().register(new SimpleUserAlert(false,
+			node.getClientCore().getAlerts().register(new SimpleUserAlert(false,
 					l10n("updateFailedTitle"), e.getMessage(), l10n(
 							"updateFailedShort", "reason", e.getMessage()),
 					UserAlert.CRITICAL_ERROR));
@@ -1397,7 +1397,7 @@ public class NodeUpdateManager {
 		Logger.error(this, "Update failed: " + reason);
 		System.err.println("Update failed: " + reason);
 		this.killUpdateAlerts();
-		node.clientCore.getAlerts().register(new SimpleUserAlert(true,
+		node.getClientCore().getAlerts().register(new SimpleUserAlert(true,
 				l10n("updateFailedTitle"), l10n("updateFailed", "reason",
 						reason), l10n("updateFailedShort", "reason", reason),
 				UserAlert.CRITICAL_ERROR));
@@ -1524,7 +1524,7 @@ public class NodeUpdateManager {
 		if (revocationAlert == null) {
 			revocationAlert = new RevocationKeyFoundUserAlert(msg,
 					disabledNotBlown);
-			node.clientCore.getAlerts().register(revocationAlert);
+			node.getClientCore().getAlerts().register(revocationAlert);
 			// we don't need to advertize updates : we are not going to do them
 			killUpdateAlerts();
 		}
@@ -1537,7 +1537,7 @@ public class NodeUpdateManager {
 	 * Kill all UserAlerts asking the user whether he wants to update.
 	 */
 	private void killUpdateAlerts() {
-		node.clientCore.getAlerts().unregister(alert);
+		node.getClientCore().getAlerts().unregister(alert);
 	}
 
 	/** Called when the RevocationChecker has got 3 DNFs on the revocation key */

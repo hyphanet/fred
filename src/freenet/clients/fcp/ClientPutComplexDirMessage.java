@@ -170,7 +170,7 @@ public class ClientPutComplexDirMessage extends ClientPutDirMessage {
 				convertFilesByNameToManifestElements(h, manifests, node);
 			} else {
 				DirPutFile f = (DirPutFile) val;
-				if(f instanceof DiskDirPutFile && !node.clientCore.allowUploadFrom(((DiskDirPutFile)f).getFile()))
+				if(f instanceof DiskDirPutFile && !node.getClientCore().allowUploadFrom(((DiskDirPutFile)f).getFile()))
 					throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "Not allowed to upload "+((DiskDirPutFile) f).getFile(), identifier, global);
 				ManifestElement e = f.getElement();
 				manifestElements.put(tempName, e);

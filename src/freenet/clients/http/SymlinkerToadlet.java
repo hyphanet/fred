@@ -73,7 +73,7 @@ public class SymlinkerToadlet extends Toadlet {
 			}
 			Logger.normal(this, "Adding link: " + alias + " => " + target);
 		}
-		if(store) node.clientCore.storeConfig();
+		if(store) node.getClientCore().storeConfig();
 		return ret;
 	}
 	
@@ -88,7 +88,7 @@ public class SymlinkerToadlet extends Toadlet {
 			
 			Logger.normal(this, "Removing link: " + alias + " => " + o);
 		}
-		if(store) node.clientCore.storeConfig();
+		if(store) node.getClientCore().storeConfig();
 		return ret;
 	}
 	

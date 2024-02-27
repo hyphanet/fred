@@ -383,7 +383,7 @@ public final class PageMaker {
 		if (renderParameters.isRenderStatus() && fullAccess) {
 			final HTMLNode statusBarDiv = pageDiv.addChild("div", "id", "statusbar-container").addChild("div", "id", "statusbar");
 
-			 if (node != null && node.clientCore != null) {
+			 if (node != null && node.getClientCore() != null) {
 				 final HTMLNode alerts = ctx.getAlertManager().createSummary(true);
 				 if (alerts != null) {
 					 statusBarDiv.addChild(alerts).addAttribute("id", "statusbar-alerts");
@@ -394,7 +394,7 @@ public final class PageMaker {
 
 			statusBarDiv.addChild("div", "id", "statusbar-language").addChild("a", "href", "/config/node#l10n", NodeL10n.getBase().getSelectedLanguage().fullName);
 
-			if (node.clientCore != null && ctx != null && renderParameters.isRenderModeSwitch()) {
+			if (node.getClientCore() != null && ctx != null && renderParameters.isRenderModeSwitch()) {
 				boolean isAdvancedMode = ctx.isAdvancedModeEnabled();
 				String uri = ctx.getUri().getQuery();
 				Map<String, List<String>> parameters = HTTPRequestImpl.parseUriParameters(uri, true);
@@ -409,7 +409,7 @@ public final class PageMaker {
 				switchMode.addChild("a", "href", "?" + HTTPRequestImpl.createQueryString(parameters, false), isAdvancedMode ? NodeL10n.getBase().getString("StatusBar.switchToSimpleMode") : NodeL10n.getBase().getString("StatusBar.switchToAdvancedMode"));
 			}
 
-			if (node != null && node.clientCore != null) {
+			if (node != null && node.getClientCore() != null) {
 				statusBarDiv.addChild("div", "class", "separator", "\u00a0");
 				final HTMLNode secLevels = statusBarDiv.addChild("div", "id", "statusbar-seclevels", NodeL10n.getBase().getString("SecurityLevels.statusBarPrefix"));
 

@@ -115,7 +115,7 @@ public class Announcer {
 	}
 
 	private void registerEvent(int eventStatus) {
-		node.clientCore.getAlerts().register(new AnnouncementUserEvent(eventStatus));
+		node.getClientCore().getAlerts().register(new AnnouncementUserEvent(eventStatus));
 	}
 
 	private void connectSomeSeednodes() {
@@ -377,8 +377,8 @@ public class Announcer {
 				}
 				Logger.error(this, "Shutting down announcement as we are older than the current mandatory build and auto-update is disabled or waiting for user input.");
 				System.err.println("Shutting down announcement as we are older than the current mandatory build and auto-update is disabled or waiting for user input.");
-				if(node.clientCore != null)
-					node.clientCore.getAlerts().register(announcementDisabledAlert);
+				if(node.getClientCore() != null)
+					node.getClientCore().getAlerts().register(announcementDisabledAlert);
 			}
 
 		}
@@ -402,8 +402,8 @@ public class Announcer {
 			synchronized(this) {
 				killedAnnouncementTooOld = false;
 			}
-			if(node.clientCore != null)
-				node.clientCore.getAlerts().unregister(announcementDisabledAlert);
+			if(node.getClientCore() != null)
+				node.getClientCore().getAlerts().unregister(announcementDisabledAlert);
 			if(node.nodeUpdater.isEnabled() && node.nodeUpdater.isArmed() &&
 					node.nodeUpdater.uom.fetchingFromTwo() &&
 					node.getPeers().getPeerNodeStatusSize(PeerManager.PEER_NODE_STATUS_TOO_NEW, false) > 5) {
@@ -720,7 +720,7 @@ public class Announcer {
 			if(status == STATUS_LOADING) {
 				return l10n("announceLoading");
 			}
-			if(node.clientCore.isAdvancedModeEnabled()) {
+			if(node.getClientCore().isAdvancedModeEnabled()) {
 				// Detail
 				sb.append(' ');
 				int addedNodes;

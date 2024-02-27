@@ -95,7 +95,7 @@ public class RealNodeBusyNetworkTest extends RealNodeRoutingTest {
 
         HighLevelSimpleClient[] clients = new HighLevelSimpleClient[nodes.length];
         for(int i=0;i<clients.length;i++) {
-        	clients[i] = nodes[i].clientCore.makeClient(RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, false, false);
+        	clients[i] = nodes[i].getClientCore().makeClient(RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, false, false);
         }
 
         // Insert 100 keys into random nodes
@@ -122,7 +122,7 @@ public class RealNodeBusyNetworkTest extends RealNodeRoutingTest {
             Logger.minor(RealNodeRequestInsertTest.class,"Headers: "+HexUtil.bytesToHex(block.getHeaders()));
             // Insert it.
 			try {
-				randomNode.clientCore.realPut(block, false, FORK_ON_CACHEABLE, false, false, REAL_TIME_FLAG);
+				randomNode.getClientCore().realPut(block, false, FORK_ON_CACHEABLE, false, false, REAL_TIME_FLAG);
 				Logger.error(RealNodeRequestInsertTest.class, "Inserted to "+node1);
 				Logger.minor(RealNodeRequestInsertTest.class, "Data: "+Fields.hashCode(encData)+", Headers: "+Fields.hashCode(encHeaders));
 			} catch (freenet.node.LowLevelPutException putEx) {
@@ -141,7 +141,7 @@ public class RealNodeBusyNetworkTest extends RealNodeRoutingTest {
         	}
         	long totalRunningRequests = 0;
         	for(int j=0;j<nodes.length;j++) {
-        		totalRunningRequests += nodes[j].clientCore.countQueuedRequests();
+        		totalRunningRequests += nodes[j].getClientCore().countQueuedRequests();
         	}
         	System.err.println("Running requests: "+totalRunningRequests);
         }
@@ -151,7 +151,7 @@ public class RealNodeBusyNetworkTest extends RealNodeRoutingTest {
         while(true) {
         	long totalRunningRequests = 0;
         	for(int i=0;i<nodes.length;i++) {
-        		totalRunningRequests += nodes[i].clientCore.countQueuedRequests();
+        		totalRunningRequests += nodes[i].getClientCore().countQueuedRequests();
         	}
         	System.err.println("Running requests: "+totalRunningRequests);
         	if(totalRunningRequests == 0) break;

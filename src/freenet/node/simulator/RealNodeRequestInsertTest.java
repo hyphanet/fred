@@ -205,7 +205,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         Logger.normal(RealNodeRequestInsertTest.class,"Fetch Key: "+fetchKey.getURI());
 		try {
 			insertAttempts++;
-			randomNode.clientCore.realPut(block.getBlock(), false, FORK_ON_CACHEABLE, false, false, REAL_TIME_FLAG);
+			randomNode.getClientCore().realPut(block.getBlock(), false, FORK_ON_CACHEABLE, false, false, REAL_TIME_FLAG);
 			Logger.error(RealNodeRequestInsertTest.class, "Inserted to "+node1);
 		} catch (freenet.node.LowLevelPutException putEx) {
 			Logger.error(RealNodeRequestInsertTest.class, "Insert failed: "+ putEx);
@@ -219,7 +219,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         } while(node2 == node1);
         Node fetchNode = nodes[node2];
         try {
-        	block = fetchNode.clientCore.realGetKey(fetchKey, false, false, false, REAL_TIME_FLAG);
+        	block = fetchNode.getClientCore().realGetKey(fetchKey, false, false, false, REAL_TIME_FLAG);
         } catch (LowLevelGetException e) {
         	block = null;
         }

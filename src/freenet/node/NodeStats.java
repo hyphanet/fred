@@ -1949,7 +1949,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		fs.put("backedOffPercent", backedOffPercent.currentValue());
 		fs.put("pInstantReject", pRejectIncomingInstantly());
 		fs.put("unclaimedFIFOSize", node.getUSM().getUnclaimedFIFOSize());
-		fs.put("RAMBucketPoolSize", node.clientCore.getTempBucketFactory().getRamUsed());
+		fs.put("RAMBucketPoolSize", node.getClientCore().getTempBucketFactory().getRamUsed());
 
 		/* gather connection statistics */
 		PeerNodeStatus[] peerNodeStatuses = peers.getPeerNodeStatuses(true);

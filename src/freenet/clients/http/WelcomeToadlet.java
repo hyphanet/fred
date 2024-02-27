@@ -105,7 +105,7 @@ public class WelcomeToadlet extends Toadlet {
 
                 if (updated) {
                     cell = row.addChild("td", "style", "border: none");
-                    cell.addChild(node.clientCore.getAlerts().renderDismissButton(
+                    cell.addChild(node.getClientCore().getAlerts().renderDismissButton(
                         item.getUserAlert(), path() + "#" + BOOKMARKS_ANCHOR));
                 }
             }
@@ -352,7 +352,7 @@ public class WelcomeToadlet extends Toadlet {
             }
 
             UpgradeConnectionSpeedUserAlert upgradeConnectionSpeedAlert = null;
-            for (UserAlert alert : node.clientCore.getAlerts().getAlerts()) {
+            for (UserAlert alert : node.getClientCore().getAlerts().getAlerts()) {
                 if (alert instanceof UpgradeConnectionSpeedUserAlert) {
                     upgradeConnectionSpeedAlert = (UpgradeConnectionSpeedUserAlert) alert;
                     break;

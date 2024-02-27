@@ -79,7 +79,7 @@ public class DiagnosticToadlet extends Toadlet {
         if(!ctx.checkFullAccess(this))
             return;
 
-		node.clientCore.getBandwidthStatsPutter().updateData(node);
+		node.getClientCore().getBandwidthStatsPutter().updateData(node);
 
 		final SubConfig nodeConfig = node.getConfig().get("node");
 
@@ -295,8 +295,8 @@ public class DiagnosticToadlet extends Toadlet {
 			long total_input_rate = (total[1]) / nodeUptimeSeconds;
 			long totalPayload = node.getTotalPayloadSent();
 			long total_payload_rate = totalPayload / nodeUptimeSeconds;
-			if(node.clientCore == null) throw new NullPointerException();
-			BandwidthStatsContainer stats = node.clientCore.getBandwidthStatsPutter().getLatestBWData();
+			if(node.getClientCore() == null) throw new NullPointerException();
+			BandwidthStatsContainer stats = node.getClientCore().getBandwidthStatsPutter().getLatestBWData();
 			if(stats == null) throw new NullPointerException();
 			long overall_total_out = stats.totalBytesOut;
 			long overall_total_in = stats.totalBytesIn;

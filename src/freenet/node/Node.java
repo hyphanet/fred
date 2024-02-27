@@ -885,6 +885,11 @@ public class Node implements TimeSkewDetectorCallback {
 
 	private SimpleToadletServer toadlets;
 
+	/**
+	 * @deprecated Use {@link #getClientCore()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final NodeClientCore clientCore;
 
 	// ULPRs, RecentlyFailed, per node failure tables, are all managed by FailureTable.
@@ -5194,6 +5199,10 @@ public class Node implements TimeSkewDetectorCallback {
 
     public IOStatisticCollector getCollector() {
         return collector;
+    }
+
+    public NodeClientCore getClientCore() {
+        return clientCore;
     }
 
 }

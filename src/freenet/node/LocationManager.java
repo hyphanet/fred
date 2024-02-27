@@ -209,7 +209,7 @@ public class LocationManager implements ByteCounter {
                 File[] previousInsertFromToday = node.userDir().dir()
                     .listFiles((file, name) -> name.startsWith(getPitchBlackPrefix(
                         isoDateStringToday)));
-                HighLevelSimpleClient highLevelSimpleClient = node.clientCore.makeClient(
+                HighLevelSimpleClient highLevelSimpleClient = node.getClientCore().makeClient(
                     RequestStarter.INTERACTIVE_PRIORITY_CLASS,
                     true,
                     false);

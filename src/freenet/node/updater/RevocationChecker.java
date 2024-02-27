@@ -59,7 +59,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 
 	public RevocationChecker(NodeUpdateManager manager, File blobFile) {
 		this.manager = manager;
-		core = manager.node.clientCore;
+		core = manager.node.getClientCore();
 		this.revocationDNFCounter = 0;
 		this.blobFile = blobFile;
 		this.logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
@@ -139,7 +139,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 					if(logMINOR) Logger.minor(this, "fetcher="+revocationGetter);
 					if(revocationGetter != null && logMINOR) Logger.minor(this, "revocation fetcher: cancelled="+revocationGetter.isCancelled()+", finished="+revocationGetter.isFinished());
 					// Client startup may not have completed yet.
-					manager.node.clientCore.getPersistentTempDir().mkdirs();
+					manager.node.getClientCore().getPersistentTempDir().mkdirs();
 					cg = revocationGetter = new ClientGetter(this, 
 							manager.getRevocationURI(), ctxRevocation, 
 							aggressive ? RequestStarter.MAXIMUM_PRIORITY_CLASS : RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, 

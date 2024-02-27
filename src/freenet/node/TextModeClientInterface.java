@@ -94,7 +94,7 @@ public class TextModeClientInterface implements Runnable {
 
     public TextModeClientInterface(TextModeClientInterfaceServer server, InputStream in, OutputStream out) {
     	this.n = server.n;
-    	this.core = server.n.clientCore;
+    	this.core = server.n.getClientCore();
     	this.r = server.r;
         client = core.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS, true, false);
     	this.downloadsDir = server.downloadsDir;
@@ -312,7 +312,7 @@ public class TextModeClientInterface implements Runnable {
 	        		FetchWaiter fw = new FetchWaiter((RequestClient)client);
 	        		ClientGetter get = new ClientGetter(fw, uri, context, RequestStarter.INTERACTIVE_PRIORITY_CLASS, null, null, null);
 	        		get.setMetaSnoop(new DumperSnoopMetadata());
-	            	get.start(n.clientCore.getClientContext());
+	            	get.start(n.getClientCore().getClientContext());
 					FetchResult result = fw.waitForCompletion();
 					ClientMetadata cm = result.getMetadata();
 	                outsb.append("Content MIME type: ").append(cm.getMIMEType());

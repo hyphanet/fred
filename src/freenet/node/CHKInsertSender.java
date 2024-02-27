@@ -483,7 +483,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
             	// Existing transfers will keep their existing UIDs, since they copied the UID in the constructor.
             	// Both local and remote inserts can be forked here: If it has reached this HTL, it means it's already been routed to some nodes.
             	
-            	uid = node.clientCore.makeUID();
+            	uid = node.getClientCore().makeUID();
 				forkedRequestTag = new InsertTag(false, InsertTag.START.REMOTE, source, realTimeFlag, uid, node);
 				forkedRequestTag.reassignToSelf();
 				forkedRequestTag.startedSender();

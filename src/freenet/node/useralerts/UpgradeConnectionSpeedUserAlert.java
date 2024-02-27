@@ -19,7 +19,7 @@ public class UpgradeConnectionSpeedUserAlert extends AbstractUserAlert {
     }
 
     public static void createAlert(Node node, BandwidthLimit bandwidthLimit) {
-        node.clientCore.getAlerts().register(
+        node.getClientCore().getAlerts().register(
                 new UpgradeConnectionSpeedUserAlert(node, bandwidthLimit));
     }
 
@@ -66,7 +66,7 @@ public class UpgradeConnectionSpeedUserAlert extends AbstractUserAlert {
                 new String[] {"hidden", "upgradeConnectionSpeed", "upgradeConnectionSpeed"});
         form.addChild("input",
                 new String[] {"type", "name", "value"},
-                new String[] {"hidden", "formPassword", node.clientCore.getFormPassword()});
+                new String[] {"hidden", "formPassword", node.getClientCore().getFormPassword()});
         form.addChild("input",
                 new String[] {"type", "value"},
                 new String[] {"submit", "Upgrade"});

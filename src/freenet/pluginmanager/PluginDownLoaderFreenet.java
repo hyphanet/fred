@@ -76,7 +76,7 @@ public class PluginDownLoaderFreenet extends PluginDownLoader<FreenetURI> {
 
 				get = new ClientGetter(fw, uri, context, PluginManager.PRIO, null, null, null);
 				try {
-					node.clientCore.getClientContext().start(get);
+					node.getClientCore().getClientContext().start(get);
 				} catch (PersistenceDisabledException e) {
 					// Impossible
 				}
@@ -112,7 +112,7 @@ public class PluginDownLoaderFreenet extends PluginDownLoader<FreenetURI> {
 	@Override
 	void tryCancel() {
 		if(get != null)
-			get.cancel(node.clientCore.getClientContext());
+			get.cancel(node.getClientCore().getClientContext());
 	}
 
 	@Override

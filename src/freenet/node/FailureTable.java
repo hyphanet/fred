@@ -233,7 +233,7 @@ public class FailureTable {
 				if(offers.length > 1) return;
 				blockOfferListByKey.removeKey(entry.key);
 			}
-			node.clientCore.dequeueOfferedKey(entry.key);
+			node.getClientCore().dequeueOfferedKey(entry.key);
 		}
 
 		public void addOffer(BlockOffer offer) {
@@ -440,7 +440,7 @@ public class FailureTable {
 		// For the same reason that priorities are not safe?
 		// But do it at low priorities?
 		// Offers mostly happen for SSKs anyway ... reconsider?
-		node.clientCore.queueOfferedKey(key, false);
+		node.getClientCore().queueOfferedKey(key, false);
 	}
 
 	private void trimOffersList(long now) {

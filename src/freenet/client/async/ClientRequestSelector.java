@@ -596,7 +596,7 @@ outer:	for(;choosenPriorityClass <= RequestStarter.MINIMUM_FETCHABLE_PRIORITY_CL
 	@Override
 	public long checkRecentlyFailed(Key key, boolean realTime) {
 		Node node = sched.getNode();
-		return node.clientCore.checkRecentlyFailed(key, realTime);
+		return node.getClientCore().checkRecentlyFailed(key, realTime);
 	}
 	
 	   /** Add a request (or insert) to the request selection tree.

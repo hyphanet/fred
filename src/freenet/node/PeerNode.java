@@ -2191,7 +2191,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			}
 			if(arkFetcher == null) {
 				Logger.minor(this, "Starting ARK fetcher for " + this + " : " + myARK);
-				arkFetcher = node.clientCore.getUskManager().subscribeContent(myARK, this, true, node.arkFetcherContext, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, node.nonPersistentClientRT);
+				arkFetcher = node.getClientCore().getUskManager().subscribeContent(myARK, this, true, node.arkFetcherContext, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, node.nonPersistentClientRT);
 			}
 		}
 	}
@@ -2214,7 +2214,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 
 			@Override
 			public void run() {
-				node.clientCore.getUskManager().unsubscribeContent(myARK, unsub, true);
+				node.getClientCore().getUskManager().unsubscribeContent(myARK, unsub, true);
 			}
 			
 		});

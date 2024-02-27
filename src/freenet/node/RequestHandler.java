@@ -258,7 +258,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 							node.getTracker().reassignTagToSelf(tag);
 							return false; // Want it
 						}
-						if(node.clientCore != null && node.clientCore.wantKey(key)) {
+						if(node.getClientCore() != null && node.getClientCore().wantKey(key)) {
 							/** REDFLAG SECURITY JUSTIFICATION:
 							 * Theoretically if A routes to us and then we route to B,
 							 * and Mallory controls both A and B, and A cancels the transfer,

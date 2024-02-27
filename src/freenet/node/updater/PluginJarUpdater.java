@@ -72,7 +72,7 @@ public class PluginJarUpdater extends NodeUpdater {
 			a = alert;
 			alert = null;
 		}
-		node.clientCore.getAlerts().unregister(a);
+		node.getClientCore().getAlerts().unregister(a);
 		return false;
 	}
 	
@@ -175,7 +175,7 @@ public class PluginJarUpdater extends NodeUpdater {
 							// This is not the same as reloading because we haven't written it yet.
 							
 							HTMLNode formNode = div.addChild("form", new String[] { "action", "method" }, new String[] { PproxyToadlet.PATH, "post" });
-							formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.clientCore.getFormPassword() });
+							formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.getClientCore().getFormPassword() });
 							formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "update", pluginName });
 							formNode.addChild("input", new String[] { "type", "value" }, new String[] { "submit", l10n("updatePlugin") });
 						}
@@ -185,7 +185,7 @@ public class PluginJarUpdater extends NodeUpdater {
 			};
 		}
 		if(toRegister != null)
-			node.clientCore.getAlerts().register(toRegister);
+			node.getClientCore().getAlerts().register(toRegister);
 	}
 
 	private String l10n(String key) {
@@ -232,7 +232,7 @@ public class PluginJarUpdater extends NodeUpdater {
 			alert = null;
 		}
 		if(a != null)
-			node.clientCore.getAlerts().unregister(a);
+			node.getClientCore().getAlerts().unregister(a);
 	}
 
 	@Override
@@ -244,7 +244,7 @@ public class PluginJarUpdater extends NodeUpdater {
 			alert = null;
 		}
 		if(a != null)
-			node.clientCore.getAlerts().unregister(a);
+			node.getClientCore().getAlerts().unregister(a);
 	}
 
 	public synchronized void arm(boolean wasRunning) {
