@@ -4597,7 +4597,7 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	public int getDarknetPortNumber() {
-		return darknetCrypto.portNumber;
+		return darknetCrypto.getPortNumber();
 	}
 
 	public synchronized int getOutputBandwidthLimit() {
@@ -4703,7 +4703,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 	public int getOpennetFNPPort() {
 		if(opennet == null) return -1;
-		return opennet.getCrypto().portNumber;
+		return opennet.getCrypto().getPortNumber();
 	}
 
 	public OpennetManager getOpennet() {
@@ -4722,11 +4722,11 @@ public class Node implements TimeSkewDetectorCallback {
 	public Set<ForwardPort> getPublicInterfacePorts() {
 		HashSet<ForwardPort> set = new HashSet<ForwardPort>();
 		// FIXME IPv6 support
-		set.add(new ForwardPort("darknet", false, ForwardPort.PROTOCOL_UDP_IPV4, darknetCrypto.portNumber));
+		set.add(new ForwardPort("darknet", false, ForwardPort.PROTOCOL_UDP_IPV4, darknetCrypto.getPortNumber()));
 		if(opennet != null) {
 			NodeCrypto crypto = opennet.getCrypto();
 			if(crypto != null) {
-				set.add(new ForwardPort("opennet", false, ForwardPort.PROTOCOL_UDP_IPV4, crypto.portNumber));
+				set.add(new ForwardPort("opennet", false, ForwardPort.PROTOCOL_UDP_IPV4, crypto.getPortNumber()));
 			}
 		}
 		return set;

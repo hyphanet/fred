@@ -65,6 +65,12 @@ public class NodeCrypto {
 	@Deprecated
 	/* It’s not the field that is deprecated but accessing it directly is. */
 	public FNPPacketMangler packetMangler;
+
+	/**
+	 * @deprecated Use {@link #getPortNumber()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	// FIXME: abstract out address stuff? Possibly to something like NodeReference?
 	final int portNumber;
 	/** @see PeerNode.identity */
@@ -583,6 +589,10 @@ public class NodeCrypto {
 
 	public UdpSocketHandler getSocket() {
 		return socket;
+	}
+
+	public int getPortNumber() {
+		return portNumber;
 	}
 
 }

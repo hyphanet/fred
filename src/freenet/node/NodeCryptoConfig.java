@@ -63,7 +63,7 @@ public class NodeCryptoConfig {
 			public Integer get() {
 				synchronized(NodeCryptoConfig.class) {
 					if(crypto != null)
-						portNumber = crypto.portNumber;
+						portNumber = crypto.getPortNumber();
 					return portNumber;
 				}
 			}

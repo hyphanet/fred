@@ -320,10 +320,10 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			}
 		} else {
 			if(darknetStatus.ordinal() >= AddressTracker.Status.DONT_KNOW.ordinal()) {
-				return new int[] { (opennetStatus.ordinal() < AddressTracker.Status.MAYBE_NATED.ordinal() ? -1 : 1 ) * om.getCrypto().portNumber };
+				return new int[] { (opennetStatus.ordinal() < AddressTracker.Status.MAYBE_NATED.ordinal() ? -1 : 1 ) * om.getCrypto().getPortNumber() };
 			} else {
 				return new int[] { ((darknetStatus.ordinal() < AddressTracker.Status.MAYBE_NATED.ordinal()) ? -1 : 1 ) * node.getDarknetPortNumber(), 
-						(opennetStatus.ordinal() < AddressTracker.Status.MAYBE_NATED.ordinal() ? -1 : 1 ) * om.getCrypto().portNumber };
+						(opennetStatus.ordinal() < AddressTracker.Status.MAYBE_NATED.ordinal() ? -1 : 1 ) * om.getCrypto().getPortNumber() };
 			}
 		}
 	}

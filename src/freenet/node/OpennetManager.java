@@ -297,8 +297,8 @@ public class OpennetManager {
 			successCount.put(c, 0L);
 		}
 
-		File nodeFile = node.nodeDir().file("opennet-"+crypto.portNumber);
-		File backupNodeFile = node.nodeDir().file("opennet-"+crypto.portNumber+".bak");
+		File nodeFile = node.nodeDir().file("opennet-"+crypto.getPortNumber());
+		File backupNodeFile = node.nodeDir().file("opennet-"+crypto.getPortNumber()+".bak");
 
 		// Keep opennet crypto details in a separate file
 		try {
@@ -318,8 +318,8 @@ public class OpennetManager {
 	}
 
 	public void writeFile() {
-		File nodeFile = node.nodeDir().file("opennet-"+crypto.portNumber);
-		File backupNodeFile = node.nodeDir().file("opennet-"+crypto.portNumber+".bak");
+		File nodeFile = node.nodeDir().file("opennet-"+crypto.getPortNumber());
+		File backupNodeFile = node.nodeDir().file("opennet-"+crypto.getPortNumber()+".bak");
 		writeFile(nodeFile, backupNodeFile);
 	}
 
@@ -368,7 +368,7 @@ public class OpennetManager {
 				} catch (PeerParseException e) {
 					throw (IOException)new IOException().initCause(e);
 				}
-				if(p.getPort() == crypto.portNumber) {
+				if(p.getPort() == crypto.getPortNumber()) {
 					// DNSRequester doesn't deal with our own node
 					node.getIpDetector().setOldIPAddress(p.getFreenetAddress());
 					break;
@@ -384,7 +384,7 @@ public class OpennetManager {
 			stopping = false;
 		}
 		// Do this outside the constructor, since the constructor is called by the Node constructor, and callbacks may make assumptions about data structures being ready.
-		node.getPeers().tryReadPeers(node.nodeDir().file("openpeers-"+crypto.portNumber).toString(), crypto, this, true, false);
+		node.getPeers().tryReadPeers(node.nodeDir().file("openpeers-"+crypto.getPortNumber()).toString(), crypto, this, true, false);
 		OpennetPeerNode[] nodes = node.getPeers().getOpennetPeers();
 		Arrays.sort(nodes, new Comparator<OpennetPeerNode>() {
 			@Override
@@ -427,7 +427,7 @@ public class OpennetManager {
 		dropAllExcessPeers();
 		writeFile();
 		// Read old peers
-		node.getPeers().tryReadPeers(node.nodeDir().file("openpeers-old-"+crypto.portNumber).toString(), crypto, this, true, true);
+		node.getPeers().tryReadPeers(node.nodeDir().file("openpeers-old-"+crypto.getPortNumber()).toString(), crypto, this, true, true);
 		crypto.start();
 		if(announcer!= null)
 			announcer.start();
@@ -985,7 +985,7 @@ public class OpennetManager {
 	}
 
 	final String getOldPeersFilename() {
-		return node.nodeDir().file("openpeers-old-"+crypto.portNumber).toString();
+		return node.nodeDir().file("openpeers-old-"+crypto.getPortNumber()).toString();
 	}
 
 	synchronized int countOldOpennetPeers() {
