@@ -2143,7 +2143,7 @@ public class Node implements TimeSkewDetectorCallback {
 		acceptSeedConnections = opennetConfig.getBoolean("acceptSeedConnections");
 
 		if(acceptSeedConnections && opennet != null)
-			opennet.getCrypto().socket.getAddressTracker().setHugeTracker();
+			opennet.getCrypto().getSocket().getAddressTracker().setHugeTracker();
 
 		opennetConfig.finishedInitialization();
 
@@ -4744,10 +4744,10 @@ public class Node implements TimeSkewDetectorCallback {
 	public synchronized UdpSocketHandler[] getPacketSocketHandlers() {
 		// FIXME better way to get these!
 		if(opennet != null) {
-			return new UdpSocketHandler[] { darknetCrypto.socket, opennet.getCrypto().socket };
+			return new UdpSocketHandler[] { darknetCrypto.getSocket(), opennet.getCrypto().getSocket() };
 			// TODO Auto-generated method stub
 		} else {
-			return new UdpSocketHandler[] { darknetCrypto.socket };
+			return new UdpSocketHandler[] { darknetCrypto.getSocket() };
 		}
 	}
 
@@ -5109,10 +5109,10 @@ public class Node implements TimeSkewDetectorCallback {
 
 
 	public void updateMTU() {
-		this.darknetCrypto.socket.calculateMaxPacketSize();
+		this.darknetCrypto.getSocket().calculateMaxPacketSize();
 		OpennetManager om = opennet;
 		if(om != null) {
-			om.getCrypto().socket.calculateMaxPacketSize();
+			om.getCrypto().getSocket().calculateMaxPacketSize();
 		}
 	}
 

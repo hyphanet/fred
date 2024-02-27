@@ -445,7 +445,7 @@ public class OpennetManager {
 		crypto.stop();
 		if(purge)
 			node.getPeers().removeOpennetPeers();
-		crypto.socket.getAddressTracker().setPresumedInnocent();
+		crypto.getSocket().getAddressTracker().setPresumedInnocent();
 	}
 	
 	synchronized boolean stopping() {

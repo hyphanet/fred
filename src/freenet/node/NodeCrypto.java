@@ -50,7 +50,13 @@ public class NodeCrypto {
 	/* It’s not the field that is deprecated but accessing it directly is. */
 	final boolean isOpennet;
 	final RandomSource random;
-	/** The object which handles our specific UDP port, pulls messages from it, feeds them to the packet mangler for decryption etc */
+
+	/**
+	 * The object which handles our specific UDP port, pulls messages from it, feeds them to the packet mangler for decryption etc
+	 * @deprecated Use {@link #getSocket()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	final UdpSocketHandler socket;
 
 	/**
@@ -573,6 +579,10 @@ public class NodeCrypto {
 
 	public boolean isOpennet() {
 		return isOpennet;
+	}
+
+	public UdpSocketHandler getSocket() {
+		return socket;
 	}
 
 }

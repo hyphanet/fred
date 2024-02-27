@@ -5387,17 +5387,17 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	
 	@Override
 	public void handleMessage(Message m) {
-		node.getUSM().checkFilters(m, crypto.socket);
+		node.getUSM().checkFilters(m, crypto.getSocket());
 	}
 
 	@Override
 	public void sendEncryptedPacket(byte[] data) throws LocalAddressException {
-		crypto.socket.sendPacket(data, getPeer(), allowLocalAddresses());
+		crypto.getSocket().sendPacket(data, getPeer(), allowLocalAddresses());
 	}
 	
 	@Override
 	public int getMaxPacketSize() {
-		return crypto.socket.getMaxPacketSize();
+		return crypto.getSocket().getMaxPacketSize();
 	}
 	
 	@Override

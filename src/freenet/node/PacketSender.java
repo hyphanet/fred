@@ -158,7 +158,7 @@ public class PacketSender implements Runnable {
 
 		final boolean canSendThrottled;
 
-		int MAX_PACKET_SIZE = node.getDarknetCrypto().socket.getMaxPacketSize();
+		int MAX_PACKET_SIZE = node.getDarknetCrypto().getSocket().getMaxPacketSize();
 		long count = node.getOutputThrottle().getCount();
 		if(count > MAX_PACKET_SIZE)
 			canSendThrottled = true;
