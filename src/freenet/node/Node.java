@@ -229,6 +229,12 @@ public class Node implements TimeSkewDetectorCallback {
 	volatile SSKStore oldSSKCache;
 
 	volatile CHKStore oldCHKClientCache;
+
+	/**
+	 * @deprecated Use {@link #getOldPKClientCache()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	volatile PubkeyStore oldPKClientCache;
 	volatile SSKStore oldSSKClientCache;
 
@@ -5327,6 +5333,10 @@ public class Node implements TimeSkewDetectorCallback {
 
     public PubkeyStore getOldPKCache() {
         return oldPKCache;
+    }
+
+    public PubkeyStore getOldPKClientCache() {
+        return oldPKClientCache;
     }
 
 }

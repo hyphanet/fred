@@ -70,8 +70,8 @@ public class NodeGetPubkey implements GetPubkey {
 			DSAPublicKey key = null;
 			if(pubKeyClientcache != null && canReadClientCache)
 				key = pubKeyClientcache.fetch(hash, false, false, meta);
-			if(node.oldPKClientCache != null && canReadClientCache && key == null) {
-				PubkeyStore pks = node.oldPKClientCache;
+			if(node.getOldPKClientCache() != null && canReadClientCache && key == null) {
+				PubkeyStore pks = node.getOldPKClientCache();
 				if(pks != null) key = pks.fetch(hash, false, false, meta);
 				if(key != null && logMINOR)
 					Logger.minor(this, "Got "+HexUtil.bytesToHex(hash)+" from old client cache");
