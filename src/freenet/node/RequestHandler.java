@@ -813,7 +813,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 		}
 
 		try {
-			om.sendOpennetRef(false, uid, source, om.crypto.myCompressedFullRef(), this);
+			om.sendOpennetRef(false, uid, source, om.getCrypto().myCompressedFullRef(), this);
 		} catch(NotConnectedException e) {
 			Logger.normal(this, "Can't send opennet ref because node disconnected on " + this);
 			// Oh well...

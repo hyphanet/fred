@@ -77,7 +77,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 		this.target = target;
 		this.cb = cb;
 		this.onlyNode = onlyNode;
-		noderefBuf = om.crypto.myCompressedFullRef();
+		noderefBuf = om.getCrypto().myCompressedFullRef();
 		this.xferUID = 0;
 		this.paddedLength = 0;
 		this.noderefLength = 0;
@@ -537,7 +537,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 		try {
 			// Allow reconnection - sometimes one side has the ref and the other side doesn't.
 			if(om.addNewOpennetNode(fs, ConnectionType.ANNOUNCE, true) != null) {
-				sendOurRef(source, om.crypto.myCompressedFullRef());
+				sendOurRef(source, om.getCrypto().myCompressedFullRef());
 			} else {
 				if(logMINOR)
 					Logger.minor(this, "Don't need the node");

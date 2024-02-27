@@ -311,7 +311,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 	public int[] getUDPPortsNotForwarded() {
 		OpennetManager om = node.getOpennet();
 		Status darknetStatus = (node.getPeers().anyDarknetPeers() ? node.getDarknetCrypto().getDetectedConnectivityStatus() : AddressTracker.Status.DONT_KNOW);
-		Status opennetStatus = om == null ? Status.DONT_KNOW : om.crypto.getDetectedConnectivityStatus();
+		Status opennetStatus = om == null ? Status.DONT_KNOW : om.getCrypto().getDetectedConnectivityStatus();
 		if(om == null || opennetStatus.ordinal() >= AddressTracker.Status.DONT_KNOW.ordinal()) {
 			if(darknetStatus.ordinal() >= AddressTracker.Status.DONT_KNOW.ordinal()) {
 				return new int[] { };
@@ -320,10 +320,10 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			}
 		} else {
 			if(darknetStatus.ordinal() >= AddressTracker.Status.DONT_KNOW.ordinal()) {
-				return new int[] { (opennetStatus.ordinal() < AddressTracker.Status.MAYBE_NATED.ordinal() ? -1 : 1 ) * om.crypto.portNumber };
+				return new int[] { (opennetStatus.ordinal() < AddressTracker.Status.MAYBE_NATED.ordinal() ? -1 : 1 ) * om.getCrypto().portNumber };
 			} else {
 				return new int[] { ((darknetStatus.ordinal() < AddressTracker.Status.MAYBE_NATED.ordinal()) ? -1 : 1 ) * node.getDarknetPortNumber(), 
-						(opennetStatus.ordinal() < AddressTracker.Status.MAYBE_NATED.ordinal() ? -1 : 1 ) * om.crypto.portNumber };
+						(opennetStatus.ordinal() < AddressTracker.Status.MAYBE_NATED.ordinal() ? -1 : 1 ) * om.getCrypto().portNumber };
 			}
 		}
 	}

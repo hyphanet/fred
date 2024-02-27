@@ -2143,7 +2143,7 @@ public class Node implements TimeSkewDetectorCallback {
 		acceptSeedConnections = opennetConfig.getBoolean("acceptSeedConnections");
 
 		if(acceptSeedConnections && opennet != null)
-			opennet.crypto.socket.getAddressTracker().setHugeTracker();
+			opennet.getCrypto().socket.getAddressTracker().setHugeTracker();
 
 		opennetConfig.finishedInitialization();
 
@@ -4646,12 +4646,12 @@ public class Node implements TimeSkewDetectorCallback {
 
 	public OpennetPeerNode createNewOpennetNode(SimpleFieldSet fs) throws FSParseException, OpennetDisabledException, PeerParseException, ReferenceSignatureVerificationException, PeerTooOldException {
 		if(opennet == null) throw new OpennetDisabledException("Opennet is not currently enabled");
-		return new OpennetPeerNode(fs, this, opennet.crypto, opennet, false);
+		return new OpennetPeerNode(fs, this, opennet.getCrypto(), opennet, false);
 	}
 
 	public SeedServerTestPeerNode createNewSeedServerTestPeerNode(SimpleFieldSet fs) throws FSParseException, OpennetDisabledException, PeerParseException, ReferenceSignatureVerificationException, PeerTooOldException {
 		if(opennet == null) throw new OpennetDisabledException("Opennet is not currently enabled");
-		return new SeedServerTestPeerNode(fs, this, opennet.crypto, true);
+		return new SeedServerTestPeerNode(fs, this, opennet.getCrypto(), true);
 	}
 
 	public OpennetPeerNode addNewOpennetNode(SimpleFieldSet fs, ConnectionType connectionType) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
@@ -4661,7 +4661,7 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	public byte[] getOpennetPubKeyHash() {
-		return opennet.crypto.ecdsaPubKeyHash;
+		return opennet.getCrypto().ecdsaPubKeyHash;
 	}
 
 	public byte[] getDarknetPubKeyHash() {
@@ -4677,7 +4677,7 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	public SimpleFieldSet exportOpennetPublicFieldSet() {
-		return opennet.crypto.exportPublicFieldSet();
+		return opennet.getCrypto().exportPublicFieldSet();
 	}
 
 	public SimpleFieldSet exportDarknetPrivateFieldSet() {
@@ -4685,7 +4685,7 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	public SimpleFieldSet exportOpennetPrivateFieldSet() {
-		return opennet.crypto.exportPrivateFieldSet();
+		return opennet.getCrypto().exportPrivateFieldSet();
 	}
 
 	/**
@@ -4696,14 +4696,14 @@ public class Node implements TimeSkewDetectorCallback {
 		// Only return true if bindTo is set on all ports which are in use
 		if(!darknetCrypto.getBindTo().isRealInternetAddress(false, true, false)) return false;
 		if(opennet != null) {
-			if(opennet.crypto.getBindTo().isRealInternetAddress(false, true, false)) return false;
+			if(opennet.getCrypto().getBindTo().isRealInternetAddress(false, true, false)) return false;
 		}
 		return true;
 	}
 
 	public int getOpennetFNPPort() {
 		if(opennet == null) return -1;
-		return opennet.crypto.portNumber;
+		return opennet.getCrypto().portNumber;
 	}
 
 	public OpennetManager getOpennet() {
@@ -4724,7 +4724,7 @@ public class Node implements TimeSkewDetectorCallback {
 		// FIXME IPv6 support
 		set.add(new ForwardPort("darknet", false, ForwardPort.PROTOCOL_UDP_IPV4, darknetCrypto.portNumber));
 		if(opennet != null) {
-			NodeCrypto crypto = opennet.crypto;
+			NodeCrypto crypto = opennet.getCrypto();
 			if(crypto != null) {
 				set.add(new ForwardPort("opennet", false, ForwardPort.PROTOCOL_UDP_IPV4, crypto.portNumber));
 			}
@@ -4744,7 +4744,7 @@ public class Node implements TimeSkewDetectorCallback {
 	public synchronized UdpSocketHandler[] getPacketSocketHandlers() {
 		// FIXME better way to get these!
 		if(opennet != null) {
-			return new UdpSocketHandler[] { darknetCrypto.socket, opennet.crypto.socket };
+			return new UdpSocketHandler[] { darknetCrypto.socket, opennet.getCrypto().socket };
 			// TODO Auto-generated method stub
 		} else {
 			return new UdpSocketHandler[] { darknetCrypto.socket };
@@ -4795,7 +4795,7 @@ public class Node implements TimeSkewDetectorCallback {
 			om = this.opennet;
 		}
 		if(om == null) return false;
-		NodeCrypto crypto = om.crypto;
+		NodeCrypto crypto = om.getCrypto();
 		if(crypto == null) return false;
 		return crypto.definitelyPortForwarded();
 	}
@@ -5112,7 +5112,7 @@ public class Node implements TimeSkewDetectorCallback {
 		this.darknetCrypto.socket.calculateMaxPacketSize();
 		OpennetManager om = opennet;
 		if(om != null) {
-			om.crypto.socket.calculateMaxPacketSize();
+			om.getCrypto().socket.calculateMaxPacketSize();
 		}
 	}
 

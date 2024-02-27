@@ -1763,7 +1763,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 			}
 			
 	    	// We want the node: send our reference
-    		om.sendOpennetRef(true, uid, next, om.crypto.myCompressedFullRef(), this);
+    		om.sendOpennetRef(true, uid, next, om.getCrypto().myCompressedFullRef(), this);
 			origTag.finishedWaitingForOpennet(next);
 
 		} catch (FSParseException e) {

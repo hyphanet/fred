@@ -223,7 +223,7 @@ public class Announcer {
 			SimpleFieldSet fs = ListUtils.removeRandomBySwapLastSimple(node.getRandom(), seeds);
 			try {
 				SeedServerPeerNode seed =
-					new SeedServerPeerNode(fs, node, om.crypto, false);
+					new SeedServerPeerNode(fs, node, om.getCrypto(), false);
 				if(node.wantAnonAuth(true) && Arrays.equals(node.getOpennetPubKeyHash(), seed.peerECDSAPubKeyHash)) {
                                     if(logMINOR)
                                         Logger.minor("Not adding: I am a seednode attempting to connect to myself!", seed.userToString());

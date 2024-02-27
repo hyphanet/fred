@@ -1583,8 +1583,8 @@ public class PeerManager {
 		boolean opennetAssumeNAT;
 		if(om != null) {
 			opennetEnabled = true;
-			opennetDefinitelyPortForwarded = om.crypto.definitelyPortForwarded();
-			opennetAssumeNAT = om.crypto.config.alwaysHandshakeAggressively();
+			opennetDefinitelyPortForwarded = om.getCrypto().definitelyPortForwarded();
+			opennetAssumeNAT = om.getCrypto().config.alwaysHandshakeAggressively();
 		} else {
 			opennetEnabled = false;
 			opennetDefinitelyPortForwarded = false;
