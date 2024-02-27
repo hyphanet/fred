@@ -116,7 +116,12 @@ public class NodeCrypto {
 	@Deprecated
 	/* It’s not the field that is deprecated but accessing it directly is. */
 	InsertableClientSSK myARK;
-	/** My ARK sequence number */
+	/**
+	 * My ARK sequence number
+	 * @deprecated Use {@link #getMyARKNumber()} and {@link #setMyARKNumber(long)} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	long myARKNumber;
 	final NodeCryptoConfig config;
 	final NodeIPPortDetector detector;
@@ -643,6 +648,14 @@ public class NodeCrypto {
 
 	public InsertableClientSSK getMyARK() {
 		return myARK;
+	}
+
+	public long getMyARKNumber() {
+		return myARKNumber;
+	}
+
+	public void setMyARKNumber(long myARKNumber) {
+		this.myARKNumber = myARKNumber;
 	}
 
 }

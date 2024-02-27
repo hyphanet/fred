@@ -157,7 +157,7 @@ public class NodeARKInserter implements ClientPutCallback, RequestClient {
 
 		RandomAccessBucket b = new SimpleReadOnlyArrayBucket(buf);
 		
-		long number = crypto.myARKNumber;
+		long number = crypto.getMyARKNumber();
 		InsertableClientSSK ark = crypto.getMyARK();
 		FreenetURI uri = ark.getInsertURI().setKeyType("USK").setSuggestedEdition(number);
 		
@@ -230,18 +230,18 @@ public class NodeARKInserter implements ClientPutCallback, RequestClient {
 	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {
 		if(logMINOR) Logger.minor(this, "Generated URI for " + darknetOpennetString + " ARK: "+uri);
 		long l = uri.getSuggestedEdition();
-		if(l < crypto.myARKNumber) {
-			Logger.error(this, "Inserted " + darknetOpennetString + " ARK edition # lower than attempted: "+l+" expected "+crypto.myARKNumber);
-		} else if(l > crypto.myARKNumber) {
-			if(logMINOR) Logger.minor(this, darknetOpennetString + " ARK number moving from "+crypto.myARKNumber+" to "+l);
-			crypto.myARKNumber = l;
+		if(l < crypto.getMyARKNumber()) {
+			Logger.error(this, "Inserted " + darknetOpennetString + " ARK edition # lower than attempted: "+l+" expected "+crypto.getMyARKNumber());
+		} else if(l > crypto.getMyARKNumber()) {
+			if(logMINOR) Logger.minor(this, darknetOpennetString + " ARK number moving from "+crypto.getMyARKNumber()+" to "+l);
+			crypto.setMyARKNumber(l);
 			if(crypto.isOpennet())
 				node.writeOpennetFile();
 			else
 				node.writeNodeFile();
 			// We'll broadcast the new ARK edition to our connected peers via a differential node reference
 			SimpleFieldSet fs = new SimpleFieldSet(true);
-			fs.put("ark.number", crypto.myARKNumber);
+			fs.put("ark.number", crypto.getMyARKNumber());
 			node.getPeers().locallyBroadcastDiffNodeRef(fs, !crypto.isOpennet(), crypto.isOpennet());
 		}
 	}
