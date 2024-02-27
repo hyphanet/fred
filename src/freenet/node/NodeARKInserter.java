@@ -45,7 +45,7 @@ public class NodeARKInserter implements ClientPutCallback, RequestClient {
 		this.crypto = crypto;
 		this.detector = detector;
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-		if(crypto.isOpennet) darknetOpennetString = "Opennet";
+		if(crypto.isOpennet()) darknetOpennetString = "Opennet";
 		else darknetOpennetString = "Darknet";
 		this.enabled = enableARKs;
 	}
@@ -85,7 +85,7 @@ public class NodeARKInserter implements ClientPutCallback, RequestClient {
 			SimpleFieldSet fs = new SimpleFieldSet(true);
 			fs.putOverwrite("physical.udp", entries);
 			if(logMINOR) Logger.minor(this, darknetOpennetString + " ref's physical.udp is '" + fs.toString() + "'");
-			node.getPeers().locallyBroadcastDiffNodeRef(fs, !crypto.isOpennet, crypto.isOpennet);
+			node.getPeers().locallyBroadcastDiffNodeRef(fs, !crypto.isOpennet(), crypto.isOpennet());
 		} else {
 			if(logMINOR) Logger.minor(this, darknetOpennetString + " ref's physical.udp is null");
 		}
@@ -235,14 +235,14 @@ public class NodeARKInserter implements ClientPutCallback, RequestClient {
 		} else if(l > crypto.myARKNumber) {
 			if(logMINOR) Logger.minor(this, darknetOpennetString + " ARK number moving from "+crypto.myARKNumber+" to "+l);
 			crypto.myARKNumber = l;
-			if(crypto.isOpennet)
+			if(crypto.isOpennet())
 				node.writeOpennetFile();
 			else
 				node.writeNodeFile();
 			// We'll broadcast the new ARK edition to our connected peers via a differential node reference
 			SimpleFieldSet fs = new SimpleFieldSet(true);
 			fs.put("ark.number", crypto.myARKNumber);
-			node.getPeers().locallyBroadcastDiffNodeRef(fs, !crypto.isOpennet, crypto.isOpennet);
+			node.getPeers().locallyBroadcastDiffNodeRef(fs, !crypto.isOpennet(), crypto.isOpennet());
 		}
 	}
 

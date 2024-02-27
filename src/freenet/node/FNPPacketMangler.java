@@ -222,7 +222,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		}
 
                 // Don't log too much if we are a seednode
-                if(logMINOR && crypto.isOpennet && wantAnonAuth) {
+                if(logMINOR && crypto.isOpennet() && wantAnonAuth) {
                 	if(!didntTryOldOpennetPeers)
                 		Logger.minor(this,"Unmatchable packet from "+peer);
                 } else
@@ -2196,7 +2196,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	 * We push to it until we reach the cap where we rekey or we reach the PFS interval
 	 */
 	private int getAuthenticatorCacheSize() {
-		if(crypto.isOpennet && node.wantAnonAuth(true)) // seednodes
+		if(crypto.isOpennet() && node.wantAnonAuth(true)) // seednodes
 			return 5000; // 200kB
 		else
 			return 250; // 10kB

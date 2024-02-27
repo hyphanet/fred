@@ -430,7 +430,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		this.outgoingMangler = crypto.getPacketMangler();
 		this.node = node2;
 		this.crypto = crypto;
-		assert(crypto.isOpennet == isOpennetForNoderef());
+		assert(crypto.isOpennet() == isOpennetForNoderef());
 		this.peers = node.getPeers();
 		this.backedOffPercent = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
 		this.backedOffPercentRT = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
@@ -3788,7 +3788,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	 * @throws PeerTooOldException 
 	 */
 	public static PeerNode create(SimpleFieldSet fs, Node node2, NodeCrypto crypto, OpennetManager opennet, PeerManager manager) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException, PeerTooOldException {
-		if(crypto.isOpennet)
+		if(crypto.isOpennet())
 			return new OpennetPeerNode(fs, node2, crypto, opennet, true);
 		else
 			return new DarknetPeerNode(fs, node2, crypto, true, null, null);

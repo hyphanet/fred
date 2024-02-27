@@ -274,7 +274,7 @@ public class PeerManager {
 					continue;
 					// FIXME tell the user???
 				} catch (PeerTooOldException e) {
-				    if(crypto.isOpennet) {
+				    if(crypto.isOpennet()) {
 				        // Ignore.
 				        Logger.error(this, "Dropping too-old opennet peer");
 				    } else {

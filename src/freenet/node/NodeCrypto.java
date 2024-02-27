@@ -42,6 +42,12 @@ public class NodeCrypto {
 	/** Length of a node identity */
 	public static final int IDENTITY_LENGTH = 32;
 	final Node node;
+
+	/**
+	 * @deprecated Use {@link #isOpennet()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	final boolean isOpennet;
 	final RandomSource random;
 	/** The object which handles our specific UDP port, pulls messages from it, feeds them to the packet mangler for decryption etc */
@@ -563,6 +569,10 @@ public class NodeCrypto {
 
 	public FNPPacketMangler getPacketMangler() {
 		return packetMangler;
+	}
+
+	public boolean isOpennet() {
+		return isOpennet;
 	}
 
 }
