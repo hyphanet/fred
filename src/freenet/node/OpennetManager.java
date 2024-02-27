@@ -83,6 +83,12 @@ public class OpennetManager {
 	@Deprecated
 	/* It’s not the field that is deprecated but accessing it directly is. */
 	final NodeCrypto crypto;
+
+	/**
+	 * @deprecated Use {@link #getAnnouncer()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	final Announcer announcer;
 	final SeedAnnounceTracker seedTracker = new SeedAnnounceTracker();
 
@@ -1469,6 +1475,10 @@ public class OpennetManager {
 
     public NodeCrypto getCrypto() {
         return crypto;
+    }
+
+    public Announcer getAnnouncer() {
+        return announcer;
     }
 
 }

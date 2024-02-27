@@ -4761,7 +4761,7 @@ public class Node implements TimeSkewDetectorCallback {
 			om = opennet;
 		}
 		if(om != null) {
-			Announcer announcer = om.announcer;
+			Announcer announcer = om.getAnnouncer();
 			if(announcer != null) {
 				announcer.maybeSendAnnouncement();
 			}
@@ -5146,7 +5146,7 @@ public class Node implements TimeSkewDetectorCallback {
 	public boolean updateIsUrgent() {
 		OpennetManager om = getOpennet();
 		if(om != null) {
-			if(om.announcer != null && om.announcer.isWaitingForUpdater())
+			if(om.getAnnouncer() != null && om.getAnnouncer().isWaitingForUpdater())
 				return true;
 		}
 		if(peers.getPeerNodeStatusSize(PeerManager.PEER_NODE_STATUS_TOO_NEW, true) > PeerManager.OUTDATED_MIN_TOO_NEW_DARKNET)

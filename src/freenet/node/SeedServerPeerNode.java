@@ -90,7 +90,7 @@ public class SeedServerPeerNode extends PeerNode {
 				@Override
 				public void run() {
 					try {
-						om.announcer.maybeSendAnnouncement();
+						om.getAnnouncer().maybeSendAnnouncement();
 					} catch (Throwable t) {
 						Logger.error(this, "Caught "+t, t);
 					}
@@ -135,10 +135,10 @@ public class SeedServerPeerNode extends PeerNode {
 	public boolean shouldDisconnectAndRemoveNow() {
 		OpennetManager om = node.getOpennet();
 		if(om == null) return true;
-		if(!om.announcer.enoughPeers()) return false;
+		if(!om.getAnnouncer().enoughPeers()) return false;
 		// We have enough peers, but we might fluctuate a bit.
 		// Drop the connection once we have consistently had enough opennet peers for 5 minutes.
-		return System.currentTimeMillis() - om.announcer.timeGotEnoughPeers() > MINUTES.toMillis(5);
+		return System.currentTimeMillis() - om.getAnnouncer().timeGotEnoughPeers() > MINUTES.toMillis(5);
 	}
 
 	@Override
