@@ -583,7 +583,7 @@ public class OpennetManager {
 				return false;
 			}
 		}
-		if(nodeToAddNow != null && crypto.config.oneConnectionPerAddress()) {
+		if(nodeToAddNow != null && crypto.getConfig().oneConnectionPerAddress()) {
 			boolean okay = false;
 			boolean any = false;
 			Peer[] handshakeIPs = nodeToAddNow.getHandshakeIPs();

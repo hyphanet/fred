@@ -5402,7 +5402,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	
 	@Override
 	public boolean shouldPadDataPackets() {
-		return crypto.config.paddDataPackets();
+		return crypto.getConfig().paddDataPackets();
 	}
 	
 	@Override

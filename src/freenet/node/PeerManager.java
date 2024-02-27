@@ -1584,14 +1584,14 @@ public class PeerManager {
 		if(om != null) {
 			opennetEnabled = true;
 			opennetDefinitelyPortForwarded = om.getCrypto().definitelyPortForwarded();
-			opennetAssumeNAT = om.getCrypto().config.alwaysHandshakeAggressively();
+			opennetAssumeNAT = om.getCrypto().getConfig().alwaysHandshakeAggressively();
 		} else {
 			opennetEnabled = false;
 			opennetDefinitelyPortForwarded = false;
 			opennetAssumeNAT = false;
 		}
 		boolean darknetDefinitelyPortForwarded = node.darknetDefinitelyPortForwarded();
-		boolean darknetAssumeNAT = node.getDarknetCrypto().config.alwaysHandshakeAggressively();
+		boolean darknetAssumeNAT = node.getDarknetCrypto().getConfig().alwaysHandshakeAggressively();
 		synchronized(ua) {
 			ua.opennetDefinitelyPortForwarded = opennetDefinitelyPortForwarded;
 			ua.darknetDefinitelyPortForwarded = darknetDefinitelyPortForwarded;

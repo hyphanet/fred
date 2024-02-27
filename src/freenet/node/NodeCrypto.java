@@ -123,6 +123,12 @@ public class NodeCrypto {
 	@Deprecated
 	/* It’s not the field that is deprecated but accessing it directly is. */
 	long myARKNumber;
+
+	/**
+	 * @deprecated Use {@link #getConfig()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	final NodeCryptoConfig config;
 	final NodeIPPortDetector detector;
 	final BlockCipher anonSetupCipher;
@@ -656,6 +662,10 @@ public class NodeCrypto {
 
 	public void setMyARKNumber(long myARKNumber) {
 		this.myARKNumber = myARKNumber;
+	}
+
+	public NodeCryptoConfig getConfig() {
+		return config;
 	}
 
 }

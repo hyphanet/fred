@@ -1948,7 +1948,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 				if(p != null) replyTo = p;
 			}
 		}
-		sock.sendPacket(data, replyTo, pn == null ? crypto.config.alwaysAllowLocalAddresses() : pn.allowLocalAddresses());
+		sock.sendPacket(data, replyTo, pn == null ? crypto.getConfig().alwaysAllowLocalAddresses() : pn.allowLocalAddresses());
 		if(pn != null)
 			pn.reportOutgoingBytes(data.length);
 		if(PeerNode.shouldThrottle(replyTo, node)) {
@@ -2034,7 +2034,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 
 	@Override
 	public boolean alwaysAllowLocalAddresses() {
-		return crypto.config.alwaysAllowLocalAddresses();
+		return crypto.getConfig().alwaysAllowLocalAddresses();
 	}
 
 
@@ -2240,7 +2240,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			return lastConnectivityStatus;
 
 		Status value;
-		if (crypto.config.alwaysHandshakeAggressively())
+		if (crypto.getConfig().alwaysHandshakeAggressively())
 			value = AddressTracker.Status.DEFINITELY_NATED;
 		else
 			value = sock.getDetectedConnectivityStatus();
