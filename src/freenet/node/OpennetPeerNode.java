@@ -278,7 +278,7 @@ public class OpennetPeerNode extends PeerNode {
             return LinkLengthClass.SHORT; // FIXME add unknown to enum? Would need more complex error handling...
         }
         // FIXME OPTIMISE This should not change since we don't swap on opennet.
-        if(Location.distance(this, opennet.node.getLocation()) > OpennetManager.LONG_DISTANCE)
+        if(Location.distance(this, opennet.getNode().getLocation()) > OpennetManager.LONG_DISTANCE)
             return LinkLengthClass.LONG;
         else
             return LinkLengthClass.SHORT;

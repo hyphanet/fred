@@ -74,7 +74,7 @@ public class Announcer {
 
 	Announcer(OpennetManager om) {
 		this.om = om;
-		this.node = om.node;
+		this.node = om.getNode();
 		announcedToIdentities = new HashSet<ByteArrayWrapper>();
 		announcedToIPs = new HashSet<InetAddress>();
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);

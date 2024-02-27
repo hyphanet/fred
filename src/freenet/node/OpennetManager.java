@@ -70,6 +70,11 @@ import freenet.support.transport.ip.IPUtil;
  */
 public class OpennetManager {
 
+	/**
+	 * @deprecated Use {@link #getNode()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	final Node node;
 	final NodeCrypto crypto;
 	final Announcer announcer;
@@ -1450,6 +1455,10 @@ public class OpennetManager {
             // The peer count target may have decreased, so we may need to drop an opennet peer.
             dropAllExcessPeers();
         }
+    }
+
+    public Node getNode() {
+        return node;
     }
 
 }
