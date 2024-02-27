@@ -182,7 +182,7 @@ public class FCPServer implements Runnable, DownloadCache {
 			this.networkInterface = null;
 		}
 		
-		if(node.pluginManager.isEnabled()) {
+		if(node.getPluginManager().isEnabled()) {
 		    // We need to start the FCPPluginConnectionTracker no matter whether this.enabled == true:
 		    // If networked FCP is disabled, plugins might still communicate via non-networked
 		    // intra-node FCP.
@@ -531,7 +531,7 @@ public class FCPServer implements Runnable, DownloadCache {
             throws PluginNotFoundException {
         
         FCPPluginConnectionImpl connection = FCPPluginConnectionImpl.constructForNetworkedFCP(
-            pluginConnectionTracker, node.getExecutor(), node.pluginManager,
+            pluginConnectionTracker, node.getExecutor(), node.getPluginManager(),
             serverPluginName, messageHandler);
         // The constructor function already did this for us
         /* pluginConnectionTracker.registerConnection(connection); */
@@ -570,7 +570,7 @@ public class FCPServer implements Runnable, DownloadCache {
                 throws PluginNotFoundException {
         
         FCPPluginConnectionImpl connection = FCPPluginConnectionImpl.constructForIntraNodeFCP(
-            pluginConnectionTracker, node.getExecutor(), node.pluginManager,
+            pluginConnectionTracker, node.getExecutor(), node.getPluginManager(),
             serverPluginName, messageHandler);
         // The constructor function already did this for us
         /* pluginConnectionTracker.registerConnection(connection); */

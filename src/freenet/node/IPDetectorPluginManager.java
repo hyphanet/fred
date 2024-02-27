@@ -704,7 +704,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 		}
 
 		public void kill() {
-			node.pluginManager.killPlugin((FredPlugin)plugin, 0);
+			node.getPluginManager().killPlugin((FredPlugin)plugin, 0);
 		}
 
 		@Override
@@ -969,7 +969,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 	}
 
 	public boolean hasJSTUN() {
-		return node.pluginManager.isPluginLoadedOrLoadingOrWantLoad("JSTUN");
+		return node.getPluginManager().isPluginLoadedOrLoadingOrWantLoad("JSTUN");
 	}
 	
 }

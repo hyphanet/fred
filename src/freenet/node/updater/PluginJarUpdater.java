@@ -132,7 +132,7 @@ public class PluginJarUpdater extends NodeUpdater {
 		PluginInfoWrapper loaded = pluginManager.getPluginInfo(pluginName);
 		
 		if(loaded == null) {
-			if(!node.pluginManager.isPluginLoadedOrLoadingOrWantLoad(pluginName)) {
+			if(!node.getPluginManager().isPluginLoadedOrLoadingOrWantLoad(pluginName)) {
 				System.err.println("Don't want plugin: "+pluginName);
 				Logger.error(this, "Don't want plugin: "+pluginName);
 				tempBlobFile.delete();

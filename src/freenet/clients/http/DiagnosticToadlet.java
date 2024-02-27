@@ -376,7 +376,7 @@ public class DiagnosticToadlet extends Toadlet {
 
 		// showStartingPlugins
 		textBuilder.append("Plugins:\n");
-		PluginManager pm = node.pluginManager;
+		PluginManager pm = node.getPluginManager();
 		if (!pm.getPlugins().isEmpty()) {
 			textBuilder.append(baseL10n.getString("PluginToadlet.pluginListTitle")).append("\n");
 			for(PluginInfoWrapper pi: pm.getPlugins()) {

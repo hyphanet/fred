@@ -79,7 +79,7 @@ public class PproxyToadlet extends Toadlet {
 
 		if(logMINOR) Logger.minor(this, "Pproxy received POST on "+path);
 
-		final PluginManager pm = node.pluginManager;
+		final PluginManager pm = node.getPluginManager();
 
 		if(path.length()>0)
 		{
@@ -348,7 +348,7 @@ public class PproxyToadlet extends Toadlet {
 		if(path.startsWith("/")) path = path.substring(1);
 		if(path.startsWith("plugins/")) path = path.substring("plugins/".length());
 
-		PluginManager pm = node.pluginManager;
+		PluginManager pm = node.getPluginManager();
 
 		if(logMINOR)
 			Logger.minor(this, "Pproxy fetching "+path);

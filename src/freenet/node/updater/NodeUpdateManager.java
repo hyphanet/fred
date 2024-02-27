@@ -784,9 +784,9 @@ public class NodeUpdateManager {
 		// @see https://emu.freenetproject.org/pipermail/devl/2015-November/038581.html
 		long minVer = (plugin.essential ? plugin.minimumVersion : plugin.recommendedVersion);
 		// But it might already be past that ...
-		PluginInfoWrapper info = node.pluginManager.getPluginInfo(name);
+		PluginInfoWrapper info = node.getPluginManager().getPluginInfo(name);
 		if (info == null) {
-			if (!(node.pluginManager.isPluginLoadedOrLoadingOrWantLoad(name))) {
+			if (!(node.getPluginManager().isPluginLoadedOrLoadingOrWantLoad(name))) {
 				if (logMINOR)
 					Logger.minor(this, "Plugin not loaded");
 				return;
@@ -797,7 +797,7 @@ public class NodeUpdateManager {
 		FreenetURI uri = updateURI.setDocName(name).setSuggestedEdition(minVer);
 		PluginJarUpdater updater = new PluginJarUpdater(this, uri,
 				(int) minVer, -1, (plugin.essential ? (int)minVer : Integer.MAX_VALUE)
-				, name + "-", name, node.pluginManager, autoDeployPluginsOnRestart);
+				, name + "-", name, node.getPluginManager(), autoDeployPluginsOnRestart);
 		synchronized (this) {
 			if (pluginUpdaters == null) {
 				if (logMINOR)

@@ -68,7 +68,7 @@ public class LoadPlugin extends FCPMessage {
 			throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "LoadPlugin requires full access", identifier, false);
 		}
 		
-		if(!node.pluginManager.isEnabled()) {
+		if(!node.getPluginManager().isEnabled()) {
 			handler.send(new ProtocolErrorMessage(ProtocolErrorMessage.PLUGINS_DISABLED, false, "Plugins disabled", identifier, false));
 			return;
 		}
@@ -78,7 +78,7 @@ public class LoadPlugin extends FCPMessage {
 			public void run() {
 				String type = null;
 				if (urlType == null) {
-					if (node.pluginManager.isOfficialPlugin(pluginURL) != null) {
+					if (node.getPluginManager().isOfficialPlugin(pluginURL) != null) {
 						type = TYPENAME_OFFICIAL;
 					} else if (new File(pluginURL).exists()) {
 						type = TYPENAME_FILE;
@@ -107,13 +107,13 @@ public class LoadPlugin extends FCPMessage {
 				}
 				PluginInfoWrapper pi;
 				if (TYPENAME_OFFICIAL.equals(type)) {
-					pi = node.pluginManager.startPluginOfficial(pluginURL, store);
+					pi = node.getPluginManager().startPluginOfficial(pluginURL, store);
 				} else if (TYPENAME_FILE.equals(type)) {
-					pi = node.pluginManager.startPluginFile(pluginURL, store);
+					pi = node.getPluginManager().startPluginFile(pluginURL, store);
 				} else if (TYPENAME_FREENET.equals(type)) {
-					pi = node.pluginManager.startPluginFreenet(pluginURL, store);
+					pi = node.getPluginManager().startPluginFreenet(pluginURL, store);
 				} else if (TYPENAME_URL.equals(type)) {
-					pi = node.pluginManager.startPluginURL(pluginURL, store);
+					pi = node.getPluginManager().startPluginURL(pluginURL, store);
 				} else {
 					Logger.error(this, "This should really not happen!", new Exception("FIXME"));
 					handler.send(new ProtocolErrorMessage(ProtocolErrorMessage.INTERNAL_ERROR, false, "This should really not happen! See logs for details.", identifier, false));

@@ -125,15 +125,15 @@ public class WelcomeToadlet extends Toadlet {
 
     public boolean showSearchBox() {
         // Only show it if Library is loaded.
-        return (node.pluginManager != null &&
-                node.pluginManager.isPluginLoaded("plugins.Library.Main"));
+        return (node.getPluginManager() != null &&
+                node.getPluginManager().isPluginLoaded("plugins.Library.Main"));
     }
     
     public boolean showSearchBoxLoading() {
         // Only show it if Library is loaded.
-        return (node.pluginManager == null ||
-                (!node.pluginManager.isPluginLoaded("plugins.Library.Main") &&
-                 node.pluginManager.isPluginLoadedOrLoadingOrWantLoad("Library")));
+        return (node.getPluginManager() == null ||
+                (!node.getPluginManager().isPluginLoaded("plugins.Library.Main") &&
+                 node.getPluginManager().isPluginLoadedOrLoadingOrWantLoad("Library")));
     }
 
     public void addSearchBox(HTMLNode contentNode) {

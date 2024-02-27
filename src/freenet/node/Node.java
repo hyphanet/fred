@@ -927,7 +927,12 @@ public class Node implements TimeSkewDetectorCallback {
 	/** Diagnostics */
 	private final DefaultNodeDiagnostics nodeDiagnostics;
 
-	// Things that's needed to keep track of
+	/**
+	 * Things that's needed to keep track of
+	 * @deprecated Use {@link #getPluginManager()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final PluginManager pluginManager;
 
 	// Helpers

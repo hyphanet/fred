@@ -258,8 +258,8 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 			cssTheme = THEME.themeFromName(CSSName);
 			pageMaker.setTheme(cssTheme);
 			NodeClientCore core = SimpleToadletServer.this.core;
-			if (core.getNode().pluginManager != null)
-				core.getNode().pluginManager.setFProxyTheme(cssTheme);
+			if (core.getNode().getPluginManager() != null)
+				core.getNode().getPluginManager().setFProxyTheme(cssTheme);
 			fetchKeyBoxAboveBookmarks = cssTheme.fetchKeyBoxAboveBookmarks;
 		}
 

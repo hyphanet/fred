@@ -929,16 +929,16 @@ public class TextModeClientInterface implements Runnable {
         } else if(uline.startsWith("PLUGLOAD")) {
         	if(uline.startsWith("PLUGLOAD:O:")) {
         		String name = line.substring("PLUGLOAD:O:".length()).trim();
-        		n.pluginManager.startPluginOfficial(name, true);
+        		n.getPluginManager().startPluginOfficial(name, true);
         	} else if(uline.startsWith("PLUGLOAD:F:")) {
         		String name = line.substring("PLUGLOAD:F:".length()).trim();
-        		n.pluginManager.startPluginFile(name, true);
+        		n.getPluginManager().startPluginFile(name, true);
         	} else if(uline.startsWith("PLUGLOAD:U:")) {
         		String name = line.substring("PLUGLOAD:U:".length()).trim();
-        		n.pluginManager.startPluginURL(name, true);
+        		n.getPluginManager().startPluginURL(name, true);
         	} else if(uline.startsWith("PLUGLOAD:K:")) {
         		String name = line.substring("PLUGLOAD:K:".length()).trim();
-        		n.pluginManager.startPluginFreenet(name, true);
+        		n.getPluginManager().startPluginFreenet(name, true);
         	} else {
         		outsb.append("  PLUGLOAD:O: pluginName         - Load official plugin from freenetproject.org\r\n");
         		outsb.append("  PLUGLOAD:F: file://<filename>  - Load plugin from file\r\n");
@@ -946,9 +946,9 @@ public class TextModeClientInterface implements Runnable {
         		outsb.append("  PLUGLOAD:K: freenet key        - Load plugin from freenet uri\r\n");
         	}
         } else if(uline.startsWith("PLUGLIST")) {
-        	outsb.append(n.pluginManager.dumpPlugins());
+        	outsb.append(n.getPluginManager().dumpPlugins());
         } else if(uline.startsWith("PLUGKILL:")) {
-        	n.pluginManager.killPlugin(line.substring("PLUGKILL:".length()).trim(), MINUTES.toMillis(1), false);
+        	n.getPluginManager().killPlugin(line.substring("PLUGKILL:".length()).trim(), MINUTES.toMillis(1), false);
         } else if(uline.startsWith("ANNOUNCE")) {
         	OpennetManager om = n.getOpennet();
         	if(om == null) {
