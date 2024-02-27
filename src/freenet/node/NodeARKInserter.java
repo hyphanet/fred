@@ -158,7 +158,7 @@ public class NodeARKInserter implements ClientPutCallback, RequestClient {
 		RandomAccessBucket b = new SimpleReadOnlyArrayBucket(buf);
 		
 		long number = crypto.myARKNumber;
-		InsertableClientSSK ark = crypto.myARK;
+		InsertableClientSSK ark = crypto.getMyARK();
 		FreenetURI uri = ark.getInsertURI().setKeyType("USK").setSuggestedEdition(number);
 		
 		if(logMINOR) Logger.minor(this, "Inserting " + darknetOpennetString + " ARK: " + uri + "  contents:\n" + s);

@@ -108,7 +108,13 @@ public class NodeCrypto {
 	@Deprecated
 	/* It’s not the field that is deprecated but accessing it directly is. */
 	byte[] ecdsaPubKeyHash;
-	/** My ARK SSK private key */
+
+	/**
+	 * My ARK SSK private key
+	 * @deprecated Use {@link #getMyARK()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	InsertableClientSSK myARK;
 	/** My ARK sequence number */
 	long myARKNumber;
@@ -633,6 +639,10 @@ public class NodeCrypto {
 
 	public byte[] getEcdsaPubKeyHash() {
 		return ecdsaPubKeyHash;
+	}
+
+	public InsertableClientSSK getMyARK() {
+		return myARK;
 	}
 
 }
