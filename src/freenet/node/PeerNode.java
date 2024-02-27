@@ -528,7 +528,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 
 		// Setup incoming and outgoing setup ciphers
 		byte[] nodeKey = crypto.getIdentityHash();
-		byte[] nodeKeyHash = crypto.identityHashHash;
+		byte[] nodeKeyHash = crypto.getIdentityHashHash();
 
 		int digestLength = SHA256.getDigestLength();
 		incomingSetupKey = new byte[digestLength];

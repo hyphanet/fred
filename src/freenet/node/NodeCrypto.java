@@ -89,7 +89,13 @@ public class NodeCrypto {
 	@Deprecated
 	/* It’s not the field that is deprecated but accessing it directly is. */
 	byte[] identityHash;
-	/** Hash of hash of identity i.e. hash of setup key. */
+
+	/**
+	 * Hash of hash of identity i.e. hash of setup key.
+	 * @deprecated Use {@link #getIdentityHashHash()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	byte[] identityHashHash;
 	/** Nonce used to generate ?secureid= for fproxy etc */
 	byte[] clientNonce;
@@ -613,6 +619,10 @@ public class NodeCrypto {
 
 	public byte[] getIdentityHash() {
 		return identityHash;
+	}
+
+	public byte[] getIdentityHashHash() {
+		return identityHashHash;
 	}
 
 }

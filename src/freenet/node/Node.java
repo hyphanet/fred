@@ -1077,7 +1077,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		darknetCrypto.readCrypto(fs);
 
-		swapIdentifier = Fields.bytesToLong(darknetCrypto.identityHashHash);
+		swapIdentifier = Fields.bytesToLong(darknetCrypto.getIdentityHashHash());
 		String loc = fs.get("location");
 		double locD = Location.getLocation(loc);
 		if (locD == -1.0)
@@ -1161,7 +1161,7 @@ public class Node implements TimeSkewDetectorCallback {
 		// Don't need to set getDarknetPortNumber()
 		// FIXME use a real IP!
 		darknetCrypto.initCrypto();
-		swapIdentifier = Fields.bytesToLong(darknetCrypto.identityHashHash);
+		swapIdentifier = Fields.bytesToLong(darknetCrypto.getIdentityHashHash());
 		myName = newName();
 	}
 
