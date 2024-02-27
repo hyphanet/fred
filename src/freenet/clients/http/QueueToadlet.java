@@ -1995,7 +1995,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			new String[] { "id", "name", "cols", "rows" },
 			new String[] { "bulkDownloads", "bulkDownloads", "120", "8" });
 		downloadForm.addChild("br");
-		PHYSICAL_THREAT_LEVEL threatLevel = core.getNode().securityLevels.getPhysicalThreatLevel();
+		PHYSICAL_THREAT_LEVEL threatLevel = core.getNode().getSecurityLevels().getPhysicalThreatLevel();
 		//Force downloading to encrypted space if high/maximum threat level or if the user has disabled
 		//downloading to disk.
 		if(threatLevel == PHYSICAL_THREAT_LEVEL.HIGH || threatLevel == PHYSICAL_THREAT_LEVEL.MAXIMUM ||

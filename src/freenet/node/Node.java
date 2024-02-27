@@ -917,6 +917,11 @@ public class Node implements TimeSkewDetectorCallback {
 	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final NodeUpdateManager nodeUpdater;
 
+	/**
+	 * @deprecated Use {@link #getSecurityLevels()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final SecurityLevels securityLevels;
 
 	/** Diagnostics */
@@ -5227,6 +5232,10 @@ public class Node implements TimeSkewDetectorCallback {
 
     public int getLastVersion() {
         return lastVersion;
+    }
+
+    public SecurityLevels getSecurityLevels() {
+        return securityLevels;
     }
 
 }

@@ -887,7 +887,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 	}
 	
 	public void finishStart() {
-		core.getNode().securityLevels.addNetworkThreatLevelListener(new SecurityLevelListener<NETWORK_THREAT_LEVEL>() {
+		core.getNode().getSecurityLevels().addNetworkThreatLevelListener(new SecurityLevelListener<NETWORK_THREAT_LEVEL>() {
 
 			@Override
 			public void onChange(NETWORK_THREAT_LEVEL oldLevel,
@@ -903,7 +903,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 			}
 			
 		});
-		core.getNode().securityLevels.addPhysicalThreatLevelListener(new SecurityLevelListener<PHYSICAL_THREAT_LEVEL> () {
+		core.getNode().getSecurityLevels().addPhysicalThreatLevelListener(new SecurityLevelListener<PHYSICAL_THREAT_LEVEL> () {
 
 			@Override
 			public void onChange(PHYSICAL_THREAT_LEVEL oldLevel, PHYSICAL_THREAT_LEVEL newLevel) {

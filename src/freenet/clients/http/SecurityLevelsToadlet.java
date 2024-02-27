@@ -74,9 +74,9 @@ public class SecurityLevelsToadlet extends Toadlet {
 			String networkThreatLevel = request.getPartAsStringFailsafe(configName, 128);
 			NETWORK_THREAT_LEVEL newThreatLevel = SecurityLevels.parseNetworkThreatLevel(networkThreatLevel);
 			if(newThreatLevel != null) {
-				if(newThreatLevel != node.securityLevels.getNetworkThreatLevel()) {
+				if(newThreatLevel != node.getSecurityLevels().getNetworkThreatLevel()) {
 					if(!request.isPartSet(confirm) && !request.isPartSet(tryConfirm)) {
-						HTMLNode warning = node.securityLevels.getConfirmWarning(newThreatLevel, confirm);
+						HTMLNode warning = node.getSecurityLevels().getConfirmWarning(newThreatLevel, confirm);
 						if(warning != null) {
 							PageNode page = ctx.getPageMaker().getPageNode(NodeL10n.getBase().getString("ConfigToadlet.fullTitle"), ctx);
 							pageNode = page.outer;
@@ -93,12 +93,12 @@ public class SecurityLevelsToadlet extends Toadlet {
 							infoboxContent.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", tryConfirm, "on" });
 						} else {
 							// Apply immediately, no confirm needed.
-							node.securityLevels.setThreatLevel(newThreatLevel);
+							node.getSecurityLevels().setThreatLevel(newThreatLevel);
 							changedAnything = true;
 						}
 					} else if(request.isPartSet(confirm)) {
 						// Apply immediately, user confirmed it.
-						node.securityLevels.setThreatLevel(newThreatLevel);
+						node.getSecurityLevels().setThreatLevel(newThreatLevel);
 						changedAnything = true;
 					}
 				}
@@ -109,8 +109,8 @@ public class SecurityLevelsToadlet extends Toadlet {
 			tryConfirm = "security-levels.physicalThreatLevel.tryConfirm";
 			String physicalThreatLevel = request.getPartAsStringFailsafe(configName, 128);
 			PHYSICAL_THREAT_LEVEL newPhysicalLevel = SecurityLevels.parsePhysicalThreatLevel(physicalThreatLevel);
-			PHYSICAL_THREAT_LEVEL oldPhysicalLevel = core.getNode().securityLevels.getPhysicalThreatLevel();
-			if(logMINOR) Logger.minor(this, "New physical threat level: "+newPhysicalLevel+" old = "+node.securityLevels.getPhysicalThreatLevel());
+			PHYSICAL_THREAT_LEVEL oldPhysicalLevel = core.getNode().getSecurityLevels().getPhysicalThreatLevel();
+			if(logMINOR) Logger.minor(this, "New physical threat level: "+newPhysicalLevel+" old = "+node.getSecurityLevels().getPhysicalThreatLevel());
 			if(newPhysicalLevel != null) {
 				if(newPhysicalLevel == oldPhysicalLevel && newPhysicalLevel == PHYSICAL_THREAT_LEVEL.HIGH) {
 					String password = request.getPartAsStringFailsafe("masterPassword", MAX_PASSWORD_LENGTH);
@@ -142,7 +142,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 				}
 				if(newPhysicalLevel != oldPhysicalLevel) {
 					// No confirmation for changes to physical threat level.
-					if(newPhysicalLevel == PHYSICAL_THREAT_LEVEL.HIGH && node.securityLevels.getPhysicalThreatLevel() != newPhysicalLevel) {
+					if(newPhysicalLevel == PHYSICAL_THREAT_LEVEL.HIGH && node.getSecurityLevels().getPhysicalThreatLevel() != newPhysicalLevel) {
 						// Check for password
 						String password = request.getPartAsStringFailsafe("masterPassword", MAX_PASSWORD_LENGTH);
 						String confirmPassword = request.getPartAsStringFailsafe("confirmMasterPassword", MAX_PASSWORD_LENGTH);
@@ -277,7 +277,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 							return;
 						}
 					}
-					node.securityLevels.setThreatLevel(newPhysicalLevel);
+					node.getSecurityLevels().setThreatLevel(newPhysicalLevel);
 					changedAnything = true;
 				}
 			}
@@ -481,7 +481,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 		HTMLNode seclevelGroup = ul.addChild("li");
 		seclevelGroup.addChild("#", l10nSec("networkThreatLevel.opennetIntro"));
 
-		NETWORK_THREAT_LEVEL networkLevel = node.securityLevels.getNetworkThreatLevel();
+		NETWORK_THREAT_LEVEL networkLevel = node.getSecurityLevels().getNetworkThreatLevel();
 
 		HTMLNode p = seclevelGroup.addChild("p");
 		p.addChild("b", l10nSec("networkThreatLevel.opennetLabel"));
@@ -561,7 +561,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 			swapWarning.addChild("#", " " + WizardL10n.l10nSec("physicalThreatLevelSwapfileWindows"));
 		}
 
-		PHYSICAL_THREAT_LEVEL physicalLevel = node.securityLevels.getPhysicalThreatLevel();
+		PHYSICAL_THREAT_LEVEL physicalLevel = node.getSecurityLevels().getPhysicalThreatLevel();
 
 		controlName = "security-levels.physicalThreatLevel";
 		for(PHYSICAL_THREAT_LEVEL level : PHYSICAL_THREAT_LEVEL.values()) {

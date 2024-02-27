@@ -82,7 +82,7 @@ public class SECURITY_PHYSICAL implements Step {
 			input.addChild("#", ": ");
 			NodeL10n.getBase().addL10nSubstitution(input, "SecurityLevels.physicalThreatLevel.choice."+level, new String[] { "bold" }, new HTMLNode[] { HTMLNode.STRONG });
 			if(level == SecurityLevels.PHYSICAL_THREAT_LEVEL.HIGH &&
-			        core.getNode().securityLevels.getPhysicalThreatLevel() != level) {
+			        core.getNode().getSecurityLevels().getPhysicalThreatLevel() != level) {
 				// Add password form on high security if not already at high security.
 				HTMLNode p = div.addChild("p");
 				p.addChild("label", "for", "passwordBox", WizardL10n.l10nSec("setPasswordLabel")+":");
@@ -190,7 +190,7 @@ public class SECURITY_PHYSICAL implements Step {
 	}
 
 	public SecurityLevels.PHYSICAL_THREAT_LEVEL getCurrentLevel() {
-		return core.getNode().securityLevels.getPhysicalThreatLevel();
+		return core.getNode().getSecurityLevels().getPhysicalThreatLevel();
 	}
 
 	@Override
@@ -202,7 +202,7 @@ public class SECURITY_PHYSICAL implements Step {
 		final boolean passwordsDoNotMatch = !pass.equals(confirmPass);
 
 		String physicalThreatLevel = request.getPartAsStringFailsafe("security-levels.physicalThreatLevel", 128);
-		SecurityLevels.PHYSICAL_THREAT_LEVEL oldThreatLevel = core.getNode().securityLevels.getPhysicalThreatLevel();
+		SecurityLevels.PHYSICAL_THREAT_LEVEL oldThreatLevel = core.getNode().getSecurityLevels().getPhysicalThreatLevel();
 		SecurityLevels.PHYSICAL_THREAT_LEVEL newThreatLevel = SecurityLevels.parsePhysicalThreatLevel(physicalThreatLevel);
 		if (FirstTimeWizardToadlet.shouldLogMinor()) {
 			Logger.minor(this, "Old threat level: " + oldThreatLevel + " new threat level: " + newThreatLevel);
@@ -297,7 +297,7 @@ public class SECURITY_PHYSICAL implements Step {
 	}
 
 	public void setThreatLevel(SecurityLevels.PHYSICAL_THREAT_LEVEL newThreatLevel, SecurityLevels.PHYSICAL_THREAT_LEVEL oldThreatLevel) throws IOException {
-		core.getNode().securityLevels.setThreatLevel(newThreatLevel);
+		core.getNode().getSecurityLevels().setThreatLevel(newThreatLevel);
 		core.storeConfig();
 		try {
 			core.getNode().lateSetupDatabase(null);

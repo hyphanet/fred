@@ -185,7 +185,7 @@ public class SECURITY_NETWORK implements Step {
 	}
 
 	public void setThreatLevel(SecurityLevels.NETWORK_THREAT_LEVEL level) {
-		core.getNode().securityLevels.setThreatLevel(level);
+		core.getNode().getSecurityLevels().setThreatLevel(level);
 		core.storeConfig();
 	}
 }

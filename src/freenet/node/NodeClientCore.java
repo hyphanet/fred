@@ -738,7 +738,7 @@ public class NodeClientCore implements Persistable {
 			node.setDatabaseAwaitingPassword();
 		}
 
-		node.securityLevels.addPhysicalThreatLevelListener(
+		node.getSecurityLevels().addPhysicalThreatLevelListener(
 				new SecurityLevelListener<PHYSICAL_THREAT_LEVEL>() {
 
 					@Override
@@ -2079,7 +2079,7 @@ public class NodeClientCore implements Persistable {
 	}
 
 	public boolean allowDownloadTo(File filename) {
-		PHYSICAL_THREAT_LEVEL physicalThreatLevel = node.securityLevels.getPhysicalThreatLevel();
+		PHYSICAL_THREAT_LEVEL physicalThreatLevel = node.getSecurityLevels().getPhysicalThreatLevel();
 		if(physicalThreatLevel == PHYSICAL_THREAT_LEVEL.MAXIMUM) return false;
 		synchronized(this) {
 			if(downloadAllowedEverywhere) return true;

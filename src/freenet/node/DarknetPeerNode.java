@@ -182,7 +182,7 @@ public class DarknetPeerNode extends PeerNode {
 			if(s != null) {
 				trustLevel = FRIEND_TRUST.valueOf(s);
 			} else {
-				trustLevel = node.securityLevels.getDefaultFriendTrust();
+				trustLevel = node.getSecurityLevels().getDefaultFriendTrust();
 				System.err.println("Assuming friend ("+name+") trust is opposite of friend seclevel: "+trustLevel);
 			}
 			s = metadata.get("ourVisibility");

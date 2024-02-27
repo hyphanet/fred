@@ -413,13 +413,13 @@ public final class PageMaker {
 				statusBarDiv.addChild("div", "class", "separator", "\u00a0");
 				final HTMLNode secLevels = statusBarDiv.addChild("div", "id", "statusbar-seclevels", NodeL10n.getBase().getString("SecurityLevels.statusBarPrefix"));
 
-				final HTMLNode network = secLevels.addChild("a", "href", "/seclevels/", SecurityLevels.localisedName(node.securityLevels.getNetworkThreatLevel()) + "\u00a0");
+				final HTMLNode network = secLevels.addChild("a", "href", "/seclevels/", SecurityLevels.localisedName(node.getSecurityLevels().getNetworkThreatLevel()) + "\u00a0");
 				network.addAttribute("title", NodeL10n.getBase().getString("SecurityLevels.networkThreatLevelShort"));
-				network.addAttribute("class", node.securityLevels.getNetworkThreatLevel().toString().toLowerCase());
+				network.addAttribute("class", node.getSecurityLevels().getNetworkThreatLevel().toString().toLowerCase());
 
-				final HTMLNode physical = secLevels.addChild("a", "href", "/seclevels/", SecurityLevels.localisedName(node.securityLevels.getPhysicalThreatLevel()));
+				final HTMLNode physical = secLevels.addChild("a", "href", "/seclevels/", SecurityLevels.localisedName(node.getSecurityLevels().getPhysicalThreatLevel()));
 				physical.addAttribute("title", NodeL10n.getBase().getString("SecurityLevels.physicalThreatLevelShort"));
-				physical.addAttribute("class", node.securityLevels.getPhysicalThreatLevel().toString().toLowerCase());
+				physical.addAttribute("class", node.getSecurityLevels().getPhysicalThreatLevel().toString().toLowerCase());
 
 				statusBarDiv.addChild("div", "class", "separator", "\u00a0");
 

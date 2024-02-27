@@ -305,8 +305,8 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 
 	private static void addDownloadOptions(ToadletContext ctx, HTMLNode optionList, FreenetURI key, String mimeType,
 	        boolean disableFiltration, boolean dontShowFilter, NodeClientCore core) {
-		PHYSICAL_THREAT_LEVEL threatLevel = core.getNode().securityLevels.getPhysicalThreatLevel();
-		NETWORK_THREAT_LEVEL netLevel = core.getNode().securityLevels.getNetworkThreatLevel();
+		PHYSICAL_THREAT_LEVEL threatLevel = core.getNode().getSecurityLevels().getPhysicalThreatLevel();
+		NETWORK_THREAT_LEVEL netLevel = core.getNode().getSecurityLevels().getNetworkThreatLevel();
 		boolean filterChecked = !(((threatLevel == PHYSICAL_THREAT_LEVEL.LOW &&
 		        netLevel == NETWORK_THREAT_LEVEL.LOW)) || disableFiltration);
 		if((filterChecked) && mimeType != null && !mimeType.equals("application/octet-stream") &&

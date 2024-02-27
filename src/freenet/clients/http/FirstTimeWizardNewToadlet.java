@@ -59,7 +59,7 @@ public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
 
         // if threat level is high, the password must already be set: user is running the wizard again?
         isPasswordAlreadySet =
-                core.getNode().securityLevels.getPhysicalThreatLevel() == SecurityLevels.PHYSICAL_THREAT_LEVEL.HIGH;
+                core.getNode().getSecurityLevels().getPhysicalThreatLevel() == SecurityLevels.PHYSICAL_THREAT_LEVEL.HIGH;
         showForm(ctx, new FormModel().toModel());
     }
 
@@ -294,14 +294,14 @@ public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
         private void save() {
             if (knowSomeone.isEmpty()) {
                 // Opennet + Darknet (possible)
-                core.getNode().securityLevels.setThreatLevel(SecurityLevels.NETWORK_THREAT_LEVEL.NORMAL);
+                core.getNode().getSecurityLevels().setThreatLevel(SecurityLevels.NETWORK_THREAT_LEVEL.NORMAL);
             } else {
                 if (connectToStrangers.isEmpty()) {
                     // Darknet
-                    core.getNode().securityLevels.setThreatLevel(SecurityLevels.NETWORK_THREAT_LEVEL.HIGH);
+                    core.getNode().getSecurityLevels().setThreatLevel(SecurityLevels.NETWORK_THREAT_LEVEL.HIGH);
                 } else {
                     // Opennet + Darknet
-                    core.getNode().securityLevels.setThreatLevel(SecurityLevels.NETWORK_THREAT_LEVEL.NORMAL);
+                    core.getNode().getSecurityLevels().setThreatLevel(SecurityLevels.NETWORK_THREAT_LEVEL.NORMAL);
                 }
             }
 
@@ -323,10 +323,10 @@ public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
             if (!isPasswordAlreadySet) {
                 try {
                     if (setPassword.isEmpty()) { // no password protection requested
-                        core.getNode().securityLevels.setThreatLevel(SecurityLevels.PHYSICAL_THREAT_LEVEL.NORMAL);
+                        core.getNode().getSecurityLevels().setThreatLevel(SecurityLevels.PHYSICAL_THREAT_LEVEL.NORMAL);
                         core.getNode().setMasterPassword("", true);
                     } else {
-                        core.getNode().securityLevels.setThreatLevel(SecurityLevels.PHYSICAL_THREAT_LEVEL.HIGH);
+                        core.getNode().getSecurityLevels().setThreatLevel(SecurityLevels.PHYSICAL_THREAT_LEVEL.HIGH);
                         core.getNode().setMasterPassword(password, true);
                     }
                 } catch (Node.AlreadySetPasswordException | MasterKeysWrongPasswordException | MasterKeysFileSizeException | IOException e) {

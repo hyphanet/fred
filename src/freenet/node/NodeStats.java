@@ -496,7 +496,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		// This is a *network* level setting, because it affects the rate at which we initiate local
 		// requests, which could be seen by distant nodes.
 
-		node.securityLevels.addNetworkThreatLevelListener(new SecurityLevelListener<NETWORK_THREAT_LEVEL>() {
+		node.getSecurityLevels().addNetworkThreatLevelListener(new SecurityLevelListener<NETWORK_THREAT_LEVEL>() {
 
 			@Override
 			public void onChange(NETWORK_THREAT_LEVEL oldLevel, NETWORK_THREAT_LEVEL newLevel) {
