@@ -937,6 +937,12 @@ public class Node implements TimeSkewDetectorCallback {
 
 	// Helpers
 	public final InetAddress localhostAddress;
+
+	/**
+	 * @deprecated Use {@link #getFreenetLocalhostAddress()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final FreenetInetAddress fLocalhostAddress;
 
 	// The node starter
@@ -5241,6 +5247,10 @@ public class Node implements TimeSkewDetectorCallback {
 
     public SecurityLevels getSecurityLevels() {
         return securityLevels;
+    }
+
+    public FreenetInetAddress getFreenetLocalhostAddress() {
+        return fLocalhostAddress;
     }
 
 }

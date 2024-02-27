@@ -902,7 +902,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		}
 
 		// Hack for two nodes on the same IP that can't talk over inet for routing reasons
-		FreenetInetAddress localhost = node.fLocalhostAddress;
+		FreenetInetAddress localhost = node.getFreenetLocalhostAddress();
 		Peer[] nodePeers = outgoingMangler.getPrimaryIPAddress();
 
 		List<Peer> localPeers = null;
