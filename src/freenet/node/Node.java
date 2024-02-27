@@ -596,7 +596,12 @@ public class Node implements TimeSkewDetectorCallback {
 	/* It’s not the field that is deprecated but accessing it directly is. */
 	final NodeGetPubkey getPubKey;
 
-	/** FetchContext for ARKs */
+	/**
+	 * FetchContext for ARKs
+	 * @deprecated Use {@link #getArkFetcherContext()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final FetchContext arkFetcherContext;
 
 	/**
@@ -5251,6 +5256,10 @@ public class Node implements TimeSkewDetectorCallback {
 
     public FreenetInetAddress getFreenetLocalhostAddress() {
         return fLocalhostAddress;
+    }
+
+    public FetchContext getArkFetcherContext() {
+        return arkFetcherContext;
     }
 
 }
