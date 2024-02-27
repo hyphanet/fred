@@ -818,6 +818,12 @@ public class Node implements TimeSkewDetectorCallback {
 	final boolean enableSwapping;
 	private volatile boolean publishOurPeersLocation;
 	private volatile boolean routeAccordingToOurPeersLocation;
+
+	/**
+	 * @deprecated Use {@link #isEnableSwapQueueing()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	boolean enableSwapQueueing;
 	boolean enablePacketCoalescing;
 	public static final short DEFAULT_MAX_HTL = (short)18;
@@ -5164,6 +5170,10 @@ public class Node implements TimeSkewDetectorCallback {
 
     public boolean isEnableSwapping() {
         return enableSwapping;
+    }
+
+    public boolean isEnableSwapQueueing() {
+        return enableSwapQueueing;
     }
 
 }

@@ -1266,7 +1266,7 @@ public class LocationManager implements ByteCounter {
     	        lockedTime = System.currentTimeMillis();
     		} else {
     			// Locked.
-    			if((!node.enableSwapQueueing) ||
+    			if((!node.isEnableSwapQueueing()) ||
     					incomingMessageQueue.size() > MAX_INCOMING_QUEUE_LENGTH) {
     				// Reject anyway.
     				reject = true;
