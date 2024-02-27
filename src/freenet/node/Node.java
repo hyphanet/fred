@@ -809,6 +809,12 @@ public class Node implements TimeSkewDetectorCallback {
 	@Deprecated
 	/* It’s not the field that is deprecated but accessing it directly is. */
 	final boolean enableULPRDataPropagation;
+
+	/**
+	 * @deprecated Use {@link #isEnableSwapping()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	final boolean enableSwapping;
 	private volatile boolean publishOurPeersLocation;
 	private volatile boolean routeAccordingToOurPeersLocation;
@@ -5154,6 +5160,10 @@ public class Node implements TimeSkewDetectorCallback {
 
     public boolean isEnableULPRDataPropagation() {
         return enableULPRDataPropagation;
+    }
+
+    public boolean isEnableSwapping() {
+        return enableSwapping;
     }
 
 }

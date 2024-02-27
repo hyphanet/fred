@@ -175,7 +175,7 @@ public class LocationManager implements ByteCounter {
      * we are not locked.
      */
     public void start() {
-    	if(node.enableSwapping) {
+    	if(node.isEnableSwapping()) {
           node.getTicker().queueTimedJob(sender, STARTUP_DELAY);
       }
 		node.getTicker().queueTimedJob(new Runnable() {
@@ -1197,7 +1197,7 @@ public class LocationManager implements ByteCounter {
         	htl = SWAP_MAX_HTL;
         }
         htl--;
-        if(!node.enableSwapping || htl <= 0 && swappingDisabled()) {
+        if(!node.isEnableSwapping() || htl <= 0 && swappingDisabled()) {
             // Reject
             Message reject = DMT.createFNPSwapRejected(oldID);
             try {
