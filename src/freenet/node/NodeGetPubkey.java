@@ -94,7 +94,7 @@ public class NodeGetPubkey implements GetPubkey {
 					Logger.minor(this, "Got "+HexUtil.bytesToHex(hash)+" from cache");
 			}
 			if(key == null) {
-				PubkeyStore pks = node.oldPKCache;
+				PubkeyStore pks = node.getOldPKCache();
 				if(pks != null) key = pks.fetch(hash, false, ignoreOldBlocks, meta);
 				if(key != null && logMINOR)
 					Logger.minor(this, "Got "+HexUtil.bytesToHex(hash)+" from old cache");
