@@ -101,6 +101,12 @@ public class NodeCrypto {
 	byte[] clientNonce;
 	/** My ECDSA/P256 keypair and context */
 	private ECDSA ecdsaP256;
+
+	/**
+	 * @deprecated Use {@link #getEcdsaPubKeyHash()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	byte[] ecdsaPubKeyHash;
 	/** My ARK SSK private key */
 	InsertableClientSSK myARK;
@@ -623,6 +629,10 @@ public class NodeCrypto {
 
 	public byte[] getIdentityHashHash() {
 		return identityHashHash;
+	}
+
+	public byte[] getEcdsaPubKeyHash() {
+		return ecdsaPubKeyHash;
 	}
 
 }
