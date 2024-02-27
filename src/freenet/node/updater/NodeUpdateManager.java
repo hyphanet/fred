@@ -1841,6 +1841,11 @@ public class NodeUpdateManager {
 		return Math.max(0, REVOCATION_FETCH_TIMEOUT - (now - gotJarTime));
 	}
 
+	/**
+	 * @deprecated Use {@link #getByteCounter()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	final ByteCounter ctr = new ByteCounter() {
 
 		@Override
@@ -1991,6 +1996,10 @@ public class NodeUpdateManager {
 
 	public UpdateOverMandatoryManager getUpdateOverMandatory() {
 		return uom;
+	}
+
+	public ByteCounter getByteCounter() {
+		return ctr;
 	}
 
 }
