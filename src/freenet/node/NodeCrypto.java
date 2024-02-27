@@ -130,6 +130,12 @@ public class NodeCrypto {
 	@Deprecated
 	/* It’s not the field that is deprecated but accessing it directly is. */
 	final NodeCryptoConfig config;
+
+	/**
+	 * @deprecated Use {@link #getDetector()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	final NodeIPPortDetector detector;
 	final BlockCipher anonSetupCipher;
 
@@ -666,6 +672,10 @@ public class NodeCrypto {
 
 	public NodeCryptoConfig getConfig() {
 		return config;
+	}
+
+	public NodeIPPortDetector getDetector() {
+		return detector;
 	}
 
 }

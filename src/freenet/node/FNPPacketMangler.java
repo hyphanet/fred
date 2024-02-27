@@ -2024,7 +2024,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 
 	@Override
 	public Peer[] getPrimaryIPAddress() {
-		return crypto.detector.getPrimaryPeers();
+		return crypto.getDetector().getPrimaryPeers();
 	}
 
 	@Override
