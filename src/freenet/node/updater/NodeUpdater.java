@@ -70,7 +70,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 	NodeUpdater(NodeUpdateManager manager, FreenetURI URI, int current, int min, int max, String blobFilenamePrefix) {
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		this.manager = manager;
-		this.node = manager.node;
+		this.node = manager.getNode();
 		this.URI = URI.setSuggestedEdition(Version.buildNumber() + 1);
 		this.ticker = node.getTicker();
 		this.core = node.getClientCore();
@@ -106,7 +106,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 		if(oldBlob.exists()) {
 			File temp;
 			try {
-				temp = File.createTempFile(blobFilenamePrefix + availableVersion + "-", ".fblob.tmp", manager.node.getClientCore().getPersistentTempDir());
+				temp = File.createTempFile(blobFilenamePrefix + availableVersion + "-", ".fblob.tmp", manager.getNode().getClientCore().getPersistentTempDir());
 			} catch (IOException e) {
 				Logger.error(this, "Unable to process old blob: "+e, e);
 				return;
@@ -214,7 +214,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 					if(availableVersion > currentVersion)
 						System.err.println("Starting " + jarName() + " fetch for " + availableVersion);
 					tempBlobFile =
-						File.createTempFile(blobFilenamePrefix + availableVersion + "-", ".fblob.tmp", manager.node.getClientCore().getPersistentTempDir());
+						File.createTempFile(blobFilenamePrefix + availableVersion + "-", ".fblob.tmp", manager.getNode().getClientCore().getPersistentTempDir());
 					FreenetURI uri = URI.setSuggestedEdition(availableVersion);
 					uri = uri.sskForUSK();
 					cg = new ClientGetter(this,  

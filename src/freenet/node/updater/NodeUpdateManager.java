@@ -154,6 +154,11 @@ public class NodeUpdateManager {
 	private boolean broadcastUOMAnnouncesOld = false;
 	private boolean broadcastUOMAnnouncesNew = false;
 
+	/**
+	 * @deprecated Use {@link #getNode()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final Node node;
 
 	final RevocationChecker revocationChecker;
@@ -1964,6 +1969,10 @@ public class NodeUpdateManager {
 
 	MainJarUpdater getMainUpdater() {
 		return mainUpdater;
+	}
+
+	public Node getNode() {
+		return node;
 	}
 
 }
