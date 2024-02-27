@@ -73,7 +73,13 @@ public class NodeCrypto {
 	/* It’s not the field that is deprecated but accessing it directly is. */
 	// FIXME: abstract out address stuff? Possibly to something like NodeReference?
 	final int portNumber;
-	/** @see PeerNode.identity */
+
+	/**
+	 * @see PeerNode#identity
+	 * @deprecated Use {@link #getMyIdentity()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	byte[] myIdentity;
 	/** Hash of identity. Used as setup key. */
 	byte[] identityHash;
@@ -593,6 +599,10 @@ public class NodeCrypto {
 
 	public int getPortNumber() {
 		return portNumber;
+	}
+
+	public byte[] getMyIdentity() {
+		return myIdentity;
 	}
 
 }

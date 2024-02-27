@@ -538,7 +538,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		for(int i = 0; i < outgoingSetupKey.length; i++)
 			outgoingSetupKey[i] = (byte) (nodeKeyHash[i] ^ identityHash[i]);
 		if(logMINOR)
-			Logger.minor(this, "Keys:\nIdentity:  " + HexUtil.bytesToHex(crypto.myIdentity) +
+			Logger.minor(this, "Keys:\nIdentity:  " + HexUtil.bytesToHex(crypto.getMyIdentity()) +
 				"\nThisIdent: " + HexUtil.bytesToHex(identity) +
 				"\nNode:      " + HexUtil.bytesToHex(nodeKey) +
 				"\nNode hash: " + HexUtil.bytesToHex(nodeKeyHash) +

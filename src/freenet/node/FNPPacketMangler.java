@@ -1186,11 +1186,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		int theirInitialMsgID, ourInitialMsgID;
 
 			theirInitialMsgID =
-				unknownInitiator ? getInitialMessageID(crypto.myIdentity) :
-					getInitialMessageID(pn.identity, crypto.myIdentity);
+				unknownInitiator ? getInitialMessageID(crypto.getMyIdentity()) :
+					getInitialMessageID(pn.identity, crypto.getMyIdentity());
 			ourInitialMsgID =
-				unknownInitiator ? getInitialMessageID(crypto.myIdentity) :
-					getInitialMessageID(crypto.myIdentity, pn.identity);
+				unknownInitiator ? getInitialMessageID(crypto.getMyIdentity()) :
+					getInitialMessageID(crypto.getMyIdentity(), pn.identity);
 
 		if(logMINOR)
 			Logger.minor(this, "Their initial message ID: "+theirInitialMsgID+" ours "+ourInitialMsgID);
@@ -1685,10 +1685,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 
 			pn.theirInitialMsgID =
 				unknownInitiator ? getInitialMessageID(pn.identity) :
-					getInitialMessageID(pn.identity, crypto.myIdentity);
+					getInitialMessageID(pn.identity, crypto.getMyIdentity());
 			pn.ourInitialMsgID =
 				unknownInitiator ? getInitialMessageID(pn.identity) :
-					getInitialMessageID(crypto.myIdentity, pn.identity);
+					getInitialMessageID(crypto.getMyIdentity(), pn.identity);
 
 		if(logMINOR)
 			Logger.minor(this, "Their initial message ID: "+pn.theirInitialMsgID+" ours "+pn.ourInitialMsgID);
