@@ -4814,6 +4814,12 @@ public class Node implements TimeSkewDetectorCallback {
 	@Deprecated
 	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final RequestClient nonPersistentClientBulk = new RequestClientBuilder().build();
+
+	/**
+	 * @deprecated Use {@link #getNonPersistentClientRT()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final RequestClient nonPersistentClientRT = new RequestClientBuilder().realTime().build();
 
 	public void setDispatcherHook(NodeDispatcherCallback cb) {
@@ -5297,6 +5303,10 @@ public class Node implements TimeSkewDetectorCallback {
 
     public RequestClient getNonPersistentClientBulk() {
         return nonPersistentClientBulk;
+    }
+
+    public RequestClient getNonPersistentClientRT() {
+        return nonPersistentClientRT;
     }
 
 }
