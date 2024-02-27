@@ -1087,7 +1087,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		reportBackoffStatus(now);
 		int maxSize = getMaxPacketSize();
 		int x = messageQueue.queueAndEstimateSize(item, maxSize);
-		if(x > maxSize || !node.enablePacketCoalescing) {
+		if(x > maxSize || !node.isEnablePacketCoalescing()) {
 			// If there is a packet's worth to send, wake up the packetsender.
 			wakeUpSender();
 		}
