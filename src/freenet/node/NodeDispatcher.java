@@ -646,7 +646,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		OpennetManager om = node.getOpennet();
 		if(om == null || !source.canAcceptAnnouncements()) {
 			if(om != null && source instanceof SeedClientPeerNode)
-				om.seedTracker.rejectedAnnounce((SeedClientPeerNode)source);
+				om.getSeedTracker().rejectedAnnounce((SeedClientPeerNode)source);
 			Message msg = DMT.createFNPOpennetDisabled(uid);
 			try {
 				source.sendAsync(msg, null, node.getNodeStats().announceByteCounter);
@@ -663,7 +663,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			NodeStats.AnnouncementDecision shouldAcceptAnnouncement = node.getNodeStats().shouldAcceptAnnouncement(uid);
 			if (!(NodeStats.AnnouncementDecision.ACCEPT == shouldAcceptAnnouncement)) {
 				if (om != null && source instanceof SeedClientPeerNode)
-					om.seedTracker.rejectedAnnounce((SeedClientPeerNode)source);
+					om.getSeedTracker().rejectedAnnounce((SeedClientPeerNode)source);
 				Message msg = null;
 				if (NodeStats.AnnouncementDecision.OVERLOAD == shouldAcceptAnnouncement) {
 					msg = DMT.createFNPRejectedOverload(uid, true, false, false);
@@ -690,7 +690,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			}
 			if(!source.shouldAcceptAnnounce(uid)) {
 				if(om != null && source instanceof SeedClientPeerNode)
-					om.seedTracker.rejectedAnnounce((SeedClientPeerNode)source);
+					om.getSeedTracker().rejectedAnnounce((SeedClientPeerNode)source);
 				node.getNodeStats().endAnnouncement(uid);
 				Message msg = DMT.createFNPRejectedOverload(uid, true, false, false);
 				try {
@@ -702,7 +702,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 				return true;
 			}
 			if(om != null && source instanceof SeedClientPeerNode) {
-				if(!om.seedTracker.acceptAnnounce((SeedClientPeerNode)source, node.getFastWeakRandom())) {
+				if(!om.getSeedTracker().acceptAnnounce((SeedClientPeerNode)source, node.getFastWeakRandom())) {
 					node.getNodeStats().endAnnouncement(uid);
 					Message msg = DMT.createFNPRejectedOverload(uid, true, false, false);
 					try {

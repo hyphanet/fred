@@ -158,7 +158,7 @@ public class SeedClientPeerNode extends PeerNode {
 	protected void onConnect() {
 		OpennetManager om = node.getOpennet();
 		if(om != null)
-			om.seedTracker.onConnectSeed(this);
+			om.getSeedTracker().onConnectSeed(this);
 		super.onConnect();
 	}
 

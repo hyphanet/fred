@@ -90,6 +90,12 @@ public class OpennetManager {
 	@Deprecated
 	/* It’s not the field that is deprecated but accessing it directly is. */
 	final Announcer announcer;
+
+	/**
+	 * @deprecated Use {@link #getSeedTracker()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	final SeedAnnounceTracker seedTracker = new SeedAnnounceTracker();
 
 	/* The routing table is split into "buckets" by distance, each of which has a separate LRU 
@@ -1479,6 +1485,10 @@ public class OpennetManager {
 
     public Announcer getAnnouncer() {
         return announcer;
+    }
+
+    public SeedAnnounceTracker getSeedTracker() {
+        return seedTracker;
     }
 
 }
