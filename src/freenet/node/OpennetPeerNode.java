@@ -181,7 +181,7 @@ public class OpennetPeerNode extends PeerNode {
 			return false;
 		NodeUpdateManager updater = node.getNodeUpdater();
 		if(updater == null) return true; // Not going to UOM.
-		UpdateOverMandatoryManager uom = updater.uom;
+		UpdateOverMandatoryManager uom = updater.getUpdateOverMandatory();
 		if(uom == null) return true; // Not going to UOM
 		if(uptime > HOURS.toMillis(2)) {
 			// UOM transfers can take ages, but there has to be some limit...

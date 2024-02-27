@@ -405,7 +405,7 @@ public class Announcer {
 			if(node.getClientCore() != null)
 				node.getClientCore().getAlerts().unregister(announcementDisabledAlert);
 			if(node.getNodeUpdater().isEnabled() && node.getNodeUpdater().isArmed() &&
-					node.getNodeUpdater().uom.fetchingFromTwo() &&
+					node.getNodeUpdater().getUpdateOverMandatory().fetchingFromTwo() &&
 					node.getPeers().getPeerNodeStatusSize(PeerManager.PEER_NODE_STATUS_TOO_NEW, false) > 5) {
 				// No point announcing at the moment, but we might need to if a transfer falls through.
 				return true;

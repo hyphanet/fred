@@ -187,6 +187,11 @@ public class NodeUpdateManager {
 	// Update alert
 	private final UpdatedVersionAvailableUserAlert alert;
 
+	/**
+	 * @deprecated Use {@link #getUpdateOverMandatory()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final UpdateOverMandatoryManager uom;
 
 	private static volatile boolean logMINOR;
@@ -1982,6 +1987,10 @@ public class NodeUpdateManager {
 
 	public RevocationChecker getRevocationChecker() {
 		return revocationChecker;
+	}
+
+	public UpdateOverMandatoryManager getUpdateOverMandatory() {
+		return uom;
 	}
 
 }

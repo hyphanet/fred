@@ -240,7 +240,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 				if(fetched) return;
 				if(!essential) return;
 			}
-			UOMDependencyFetcher f = manager.uom.fetchDependency(expectedHash, expectedLength, filename, executable,
+			UOMDependencyFetcher f = manager.getUpdateOverMandatory().fetchDependency(expectedHash, expectedLength, filename, executable,
 					new UOMDependencyFetcherCallback() {
 
 						@Override
@@ -289,7 +289,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 				essentialFetchers.add(fetcher);
 		}
 		fetcher.start();
-		if(manager.uom.fetchingUOM()) {
+		if(manager.getUpdateOverMandatory().fetchingUOM()) {
 			if(essential)
 				fetcher.fetchFromUOM();
 		}
@@ -345,7 +345,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 
 	@Override
 	public void addDependency(byte[] expectedHash, File filename) {
-		manager.uom.addDependency(expectedHash, filename);
+		manager.getUpdateOverMandatory().addDependency(expectedHash, filename);
 	}
 
     @Override

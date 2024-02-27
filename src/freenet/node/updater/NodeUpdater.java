@@ -115,7 +115,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 				FreenetURI uri = URI.setSuggestedEdition(currentVersion);
 				uri = uri.sskForUSK();
 				try {
-					manager.uom.processMainJarBlob(temp, null, currentVersion, uri);
+					manager.getUpdateOverMandatory().processMainJarBlob(temp, null, currentVersion, uri);
 				} catch (Throwable t) {
 					// Don't disrupt startup.
 					Logger.error(this, "Unable to process old blob, caught "+t, t);
