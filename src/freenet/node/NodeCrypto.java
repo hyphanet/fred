@@ -46,6 +46,12 @@ public class NodeCrypto {
 	final RandomSource random;
 	/** The object which handles our specific UDP port, pulls messages from it, feeds them to the packet mangler for decryption etc */
 	final UdpSocketHandler socket;
+
+	/**
+	 * @deprecated Use {@link #getPacketMangler()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public FNPPacketMangler packetMangler;
 	// FIXME: abstract out address stuff? Possibly to something like NodeReference?
 	final int portNumber;
@@ -553,6 +559,10 @@ public class NodeCrypto {
 	
 	public boolean wantAnonAuthChangeIP() {
 		return node.wantAnonAuthChangeIP(isOpennet);
+	}
+
+	public FNPPacketMangler getPacketMangler() {
+		return packetMangler;
 	}
 
 }
