@@ -694,7 +694,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 	public boolean handleRequestRevocation(Message m, final PeerNode source) {
 		// Do we have the data?
 
-		final RandomAccessBuffer data = updateManager.revocationChecker.getBlobBuffer();
+		final RandomAccessBuffer data = updateManager.getRevocationChecker().getBlobBuffer();
 
 		if(data == null) {
 			Logger.normal(this, "Peer " + source + " asked us for the blob file for the revocation key but we don't have it!");
@@ -1044,12 +1044,12 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 					System.err.println("Got revocation certificate from " + source + " (fatal error i.e. someone with the key inserted bad data) : "+e);
 					// Blow the update, and propagate the revocation certificate.
-					updateManager.revocationChecker.onFailure(e, state, cleanedBlob);
+					updateManager.getRevocationChecker().onFailure(e, state, cleanedBlob);
 					// Don't delete it if it's from disk, as it's already in the right place.
 					if(!fromDisk)
 						temp.free();
 
-					insertBlob(updateManager.revocationChecker.getBlobBucket(), "revocation", RequestStarter.INTERACTIVE_PRIORITY_CLASS);
+					insertBlob(updateManager.getRevocationChecker().getBlobBucket(), "revocation", RequestStarter.INTERACTIVE_PRIORITY_CLASS);
 				} else {
 					String message = "Failed to fetch revocation certificate from blob from " +
 						source + " : "+e+
@@ -1067,10 +1067,10 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			@Override
 			public void onSuccess(FetchResult result, ClientGetter state) {
 				System.err.println("Got revocation certificate from " + source);
-				updateManager.revocationChecker.onSuccess(result, state, cleanedBlob);
+				updateManager.getRevocationChecker().onSuccess(result, state, cleanedBlob);
 				if(!fromDisk)
 					temp.free();
-				insertBlob(updateManager.revocationChecker.getBlobBucket(), "revocation", RequestStarter.INTERACTIVE_PRIORITY_CLASS);
+				insertBlob(updateManager.getRevocationChecker().getBlobBucket(), "revocation", RequestStarter.INTERACTIVE_PRIORITY_CLASS);
 			}
 			
             @Override

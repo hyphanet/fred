@@ -161,6 +161,11 @@ public class NodeUpdateManager {
 	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final Node node;
 
+	/**
+	 * @deprecated Use {@link #getRevocationChecker()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	final RevocationChecker revocationChecker;
 	private String revocationMessage;
 	private volatile boolean hasBeenBlown;
@@ -1973,6 +1978,10 @@ public class NodeUpdateManager {
 
 	public Node getNode() {
 		return node;
+	}
+
+	public RevocationChecker getRevocationChecker() {
+		return revocationChecker;
 	}
 
 }
