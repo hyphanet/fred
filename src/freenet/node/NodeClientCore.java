@@ -697,7 +697,7 @@ public class NodeClientCore implements Persistable {
 					}
 
 				});
-		clientContext = new ClientContext(node.bootID, clientLayerPersister, node.getExecutor(),
+		clientContext = new ClientContext(node.getBootId(), clientLayerPersister, node.getExecutor(),
 						  archiveManager, persistentTempBucketFactory,
 						  tempBucketFactory,
 						  persistentTempBucketFactory, healingQueue,

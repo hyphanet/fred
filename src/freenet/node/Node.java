@@ -889,6 +889,12 @@ public class Node implements TimeSkewDetectorCallback {
 	@Deprecated
 	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final long lastBootID;
+
+	/**
+	 * @deprecated Use {@link #getBootId()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final long bootID;
 	public final long startupTime;
 
@@ -5268,6 +5274,10 @@ public class Node implements TimeSkewDetectorCallback {
 
     public long getLastBootId() {
         return lastBootID;
+    }
+
+    public long getBootId() {
+        return bootID;
     }
 
 }

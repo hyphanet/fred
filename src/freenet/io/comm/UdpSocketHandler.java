@@ -419,7 +419,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 				}
 			}
 		}
-		tracker.storeData(node.bootID, node.runDir(), listenPort);
+		tracker.storeData(node.getBootId(), node.runDir(), listenPort);
 	}
 
 	public int getDropProbability() {

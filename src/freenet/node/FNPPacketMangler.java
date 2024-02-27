@@ -1805,7 +1805,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 
 		byte[] params = assembleDHParams(nonceInitiatorHashed, nonceResponder, initiatorExponential, responderExponential, pn.getPubKeyHash(), data);
 		if(logMINOR)
-			Logger.minor(this, "Message length "+params.length+" myRef: "+myRef.length+" hash "+Fields.hashCode(myRef)+" hisRef: "+hisRef.length+" hash "+Fields.hashCode(hisRef)+" boot ID "+node.bootID);
+			Logger.minor(this, "Message length "+params.length+" myRef: "+myRef.length+" hash "+Fields.hashCode(myRef)+" hisRef: "+hisRef.length+" hash "+Fields.hashCode(hisRef)+" boot ID "+node.getBootId());
 		byte[] sig = crypto.ecdsaSign(params);
 
 		int ivLength = PCFBMode.lengthIV(c);

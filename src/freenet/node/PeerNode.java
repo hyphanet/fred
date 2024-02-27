@@ -435,7 +435,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		this.backedOffPercent = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
 		this.backedOffPercentRT = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
 		this.backedOffPercentBulk = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
-		this.myBootID = node2.bootID;
+		this.myBootID = node2.getBootId();
 		this.bootID = new AtomicLong();
 		version = fs.get("version");
 		Version.seenVersion(version);
