@@ -230,7 +230,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			} else if(spec == DMT.FNPSSKInsertRequestNew) {
 				rejectRequest(m, node.getNodeStats().sskInsertCtr);
 			} else if(spec == DMT.FNPGetOfferedKey) {
-				rejectRequest(m, node.failureTable.senderCounter);
+				rejectRequest(m, node.getFailureTable().senderCounter);
 			} else {
 				return false;
 			}
@@ -314,7 +314,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 	private boolean handleOfferKey(Message m, PeerNode source) {
 		Key key = (Key) m.getObject(DMT.KEY);
 		byte[] authenticator = ((ShortBuffer) m.getObject(DMT.OFFER_AUTHENTICATOR)).getData();
-		node.failureTable.onOffer(key, source, authenticator);
+		node.getFailureTable().onOffer(key, source, authenticator);
 		return true;
 	}
 
@@ -322,10 +322,10 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		Key key = (Key) m.getObject(DMT.KEY);
 		byte[] authenticator = ((ShortBuffer) m.getObject(DMT.OFFER_AUTHENTICATOR)).getData();
 		long uid = m.getLong(DMT.UID);
-		if(!HMAC.verifyWithSHA256(node.failureTable.offerAuthenticatorKey, key.getFullKey(), authenticator)) {
+		if(!HMAC.verifyWithSHA256(node.getFailureTable().offerAuthenticatorKey, key.getFullKey(), authenticator)) {
 			Logger.error(this, "Invalid offer request from "+source+" : authenticator did not verify");
 			try {
-				source.sendAsync(DMT.createFNPGetOfferedKeyInvalid(uid, DMT.GET_OFFERED_KEY_REJECTED_BAD_AUTHENTICATOR), null, node.failureTable.senderCounter);
+				source.sendAsync(DMT.createFNPGetOfferedKeyInvalid(uid, DMT.GET_OFFERED_KEY_REJECTED_BAD_AUTHENTICATOR), null, node.getFailureTable().senderCounter);
 			} catch (NotConnectedException e) {
 				// Too bad.
 			}
@@ -342,7 +342,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			if(logMINOR) Logger.minor(this, "Could not lock ID "+uid+" -> rejecting (already running)");
 			Message rejected = DMT.createFNPRejectedLoop(uid);
 			try {
-				source.sendAsync(rejected, null, node.failureTable.senderCounter);
+				source.sendAsync(rejected, null, node.getFailureTable().senderCounter);
 			} catch (NotConnectedException e) {
 				Logger.normal(this, "Rejecting request from "+source.getPeer()+": "+e);
 			}
@@ -361,7 +361,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			if(reject.soft)
 				rejected.addSubMessage(DMT.createFNPRejectIsSoft());
 			try {
-				source.sendAsync(rejected, null, node.failureTable.senderCounter);
+				source.sendAsync(rejected, null, node.getFailureTable().senderCounter);
 			} catch (NotConnectedException e) {
 				Logger.normal(this, "Rejecting (overload) data request from "+source.getPeer()+": "+e);
 			}
@@ -380,7 +380,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		// Accept it.
 		
 		try {
-			node.failureTable.sendOfferedKey(key, isSSK, needPubKey, uid, source, tag,realTimeFlag);
+			node.getFailureTable().sendOfferedKey(key, isSSK, needPubKey, uid, source, tag,realTimeFlag);
 		} catch (NotConnectedException e) {
 			// Too bad.
 		}
@@ -498,7 +498,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			} catch (NotConnectedException e) {
 				Logger.normal(this, "Rejecting request from "+source.getPeer()+": "+e);
 			}
-			node.failureTable.onFinalFailure(key, null, htl, htl, -1, -1, source);
+			node.getFailureTable().onFinalFailure(key, null, htl, htl, -1, -1, source);
 			return;
 		} else {
 			if(logMINOR) Logger.minor(this, "Locked "+id);

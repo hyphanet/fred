@@ -893,6 +893,12 @@ public class Node implements TimeSkewDetectorCallback {
 	public final NodeClientCore clientCore;
 
 	// ULPRs, RecentlyFailed, per node failure tables, are all managed by FailureTable.
+
+	/**
+	 * @deprecated Use {@link #getFailureTable()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	final FailureTable failureTable;
 
 	// The version we were before we restarted.
@@ -5203,6 +5209,10 @@ public class Node implements TimeSkewDetectorCallback {
 
     public NodeClientCore getClientCore() {
         return clientCore;
+    }
+
+    public FailureTable getFailureTable() {
+        return failureTable;
     }
 
 }

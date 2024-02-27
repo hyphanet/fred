@@ -1234,7 +1234,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		node.getUSM().onDisconnect(this);
 		if(dumpMessageQueue)
 			node.getTracker().onRestartOrDisconnect(this);
-		node.failureTable.onDisconnect(this);
+		node.getFailureTable().onDisconnect(this);
 		node.getPeers().disconnected(this);
 		node.nodeUpdater.disconnected(this);
 		boolean ret;
@@ -3745,7 +3745,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	public void offer(Key key) {
 		byte[] keyBytes = key.getFullKey();
 		// FIXME maybe the authenticator should be shorter than 32 bytes to save memory?
-		byte[] authenticator = HMAC.macWithSHA256(node.failureTable.offerAuthenticatorKey, keyBytes);
+		byte[] authenticator = HMAC.macWithSHA256(node.getFailureTable().offerAuthenticatorKey, keyBytes);
 		Message msg = DMT.createFNPOfferKey(key, authenticator);
 		try {
 			sendAsync(msg, null, node.getNodeStats().sendOffersCtr);

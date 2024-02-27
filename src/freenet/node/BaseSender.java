@@ -621,7 +621,7 @@ loadWaiterLoop:
     			next.localRejectedOverload("AcceptedTimeout", realTimeFlag);
     			forwardRejectedOverload();
     			int t = timeSinceSent();
-    			node.failureTable.onFailed(key, next, htl, t, t);
+    			node.getFailureTable().onFailed(key, next, htl, t, t);
     			synchronized(this) {
     				rejectedLoops++;
     			}
@@ -634,7 +634,7 @@ loadWaiterLoop:
     			if(logMINOR) Logger.minor(this, "Rejected loop");
     			next.successNotOverload(realTimeFlag);
     			int t = timeSinceSent();
-    			node.failureTable.onFailed(key, next, htl, t, t);
+    			node.getFailureTable().onFailed(key, next, htl, t, t);
     			// Find another node to route to
     			next.noLongerRoutingTo(origTag, false);
     			return DO.NEXT_PEER;
@@ -673,7 +673,7 @@ loadWaiterLoop:
         			forwardRejectedOverload();
     				next.localRejectedOverload("ForwardRejectedOverload", realTimeFlag);
     				int t = timeSinceSent();
-    				node.failureTable.onFailed(key, next, htl, t, t);
+    				node.getFailureTable().onFailed(key, next, htl, t, t);
     				if(logMINOR) Logger.minor(this, "Local RejectedOverload, moving on to next peer");
     				// Give up on this one, try another
     				next.noLongerRoutingTo(origTag, false);

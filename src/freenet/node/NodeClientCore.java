@@ -1222,7 +1222,7 @@ public class NodeClientCore implements Persistable {
 		// us to cache it in the datastore. Find the lowest HTL fetching the key in that period,
 		// and use that for purposes of deciding whether to cache it in the store.
 		if(offersOnly) {
-			htl = node.failureTable.minOfferedHTL(key, htl);
+			htl = node.getFailureTable().minOfferedHTL(key, htl);
 			if(logMINOR) Logger.minor(this, "Using old HTL for GetOfferedKey: "+htl);
 		}
 		final long startTime = System.currentTimeMillis();

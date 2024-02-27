@@ -235,7 +235,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
         
         // First ask any nodes that have offered the data
         
-        final OfferList offers = node.failureTable.getOffers(key);
+        final OfferList offers = node.getFailureTable().getOffers(key);
         
         if(offers != null)
         	tryOffers(offers, null, null);
@@ -320,7 +320,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
             if(htl <= 0) {
             	// This used to be RNF, I dunno why
 				//???: finish(GENERATED_REJECTED_OVERLOAD, null);
-                node.failureTable.onFinalFailure(key, null, htl, origHTL, FailureTable.RECENTLY_FAILED_TIME, FailureTable.REJECT_TIME, source);
+                node.getFailureTable().onFinalFailure(key, null, htl, origHTL, FailureTable.RECENTLY_FAILED_TIME, FailureTable.REJECT_TIME, source);
                 finish(DATA_NOT_FOUND, null, false);
                 return;
             }
@@ -359,7 +359,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
             		recentlyFailedTimeLeft = (int)Math.min(Integer.MAX_VALUE, recentlyFailed - now);
             	}
             	finish(RECENTLY_FAILED, null, false);
-                node.failureTable.onFinalFailure(key, null, htl, origHTL, -1, -1, source);
+                node.getFailureTable().onFinalFailure(key, null, htl, origHTL, -1, -1, source);
             	return;
             } else {
             	boolean rfAnyway = false;
@@ -377,7 +377,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
             			recentlyFailedTimeLeft = 0;
             		}
                 	finish(RECENTLY_FAILED, null, false);
-                    node.failureTable.onFinalFailure(key, null, htl, origHTL, -1, -1, source);
+                    node.getFailureTable().onFinalFailure(key, null, htl, origHTL, -1, -1, source);
                 	return;
             	}
             }
@@ -387,7 +387,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 					Logger.minor(this, "no more peers, but overloads ("+rejectOverloads+"/"+routeAttempts+" overloaded)");
                 // Backtrack
                 finish(ROUTE_NOT_FOUND, null, false);
-                node.failureTable.onFinalFailure(key, null, htl, origHTL, -1, -1, source);
+                node.getFailureTable().onFinalFailure(key, null, htl, origHTL, -1, -1, source);
                 return;
             }
             
@@ -478,7 +478,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 				// Fatal timeout
 				waitingFor.localRejectedOverload("FatalTimeout", realTimeFlag);
 				forwardRejectedOverload();
-				node.failureTable.onFinalFailure(key, waitingFor, htl, origHTL, FailureTable.RECENTLY_FAILED_TIME, FailureTable.REJECT_TIME, source);
+				node.getFailureTable().onFinalFailure(key, waitingFor, htl, origHTL, FailureTable.RECENTLY_FAILED_TIME, FailureTable.REJECT_TIME, source);
 				finish(TIMED_OUT, waitingFor, false);
 			}
     		
@@ -1033,7 +1033,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     	
    		Logger.error(this, "Unexpected message: "+msg);
    		int t = timeSinceSent();
-   		node.failureTable.onFailed(key, source, htl, t, t);
+   		node.getFailureTable().onFailed(key, source, htl, t, t);
    		source.noLongerRoutingTo(origTag, false);
    		return DO.NEXT_PEER;
     	
@@ -1052,13 +1052,13 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 			pubKey = null;
 			Logger.error(this, "Invalid pubkey from "+source+" on "+uid+" ("+e.getMessage()+ ')', e);
 			int t = timeSinceSent();
-    		node.failureTable.onFailed(key, next, htl, t, t);
+    		node.getFailureTable().onFailed(key, next, htl, t, t);
     		next.noLongerRoutingTo(origTag, false);
 			return false; // try next node
 		} catch (CryptFormatException e) {
 			Logger.error(this, "Invalid pubkey from "+source+" on "+uid+" ("+e+ ')');
 			int t = timeSinceSent();
-    		node.failureTable.onFailed(key, next, htl, t, t);
+    		node.getFailureTable().onFailed(key, next, htl, t, t);
     		next.noLongerRoutingTo(origTag, false);
 			return false; // try next node
 		}
@@ -1155,7 +1155,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     					if(logMINOR) Logger.minor(this, "Written to store");
     				} catch (KeyVerifyException e1) {
     					Logger.normal(this, "Got data but verify failed: "+e1, e1);
-    					node.failureTable.onFinalFailure(key, next, htl, origHTL, FailureTable.RECENTLY_FAILED_TIME, FailureTable.REJECT_TIME, source);
+    					node.getFailureTable().onFinalFailure(key, next, htl, origHTL, FailureTable.RECENTLY_FAILED_TIME, FailureTable.REJECT_TIME, source);
     					if(!wasFork)
     						finish(VERIFY_FAILURE, next, false);
     					else
@@ -1193,7 +1193,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     				// We do an ordinary backoff in all cases.
     				if(!prb.abortedLocally())
     					next.localRejectedOverload("TransferFailedRequest"+e.getReason(), realTimeFlag);
-    				node.failureTable.onFinalFailure(key, next, htl, origHTL, FailureTable.RECENTLY_FAILED_TIME, FailureTable.REJECT_TIME, source);
+    				node.getFailureTable().onFinalFailure(key, next, htl, origHTL, FailureTable.RECENTLY_FAILED_TIME, FailureTable.REJECT_TIME, source);
     				if(!wasFork)
     					finish(TRANSFER_FAILED, next, false);
     				int reason = e.getReason();
@@ -1208,7 +1208,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     				} else {
     					// Quick failure (in that we didn't have to timeout). Don't backoff.
     					// Treat as a DNF.
-    					node.failureTable.onFinalFailure(key, next, htl, origHTL, FailureTable.RECENTLY_FAILED_TIME, FailureTable.REJECT_TIME, source);
+    					node.getFailureTable().onFinalFailure(key, next, htl, origHTL, FailureTable.RECENTLY_FAILED_TIME, FailureTable.REJECT_TIME, source);
     				}
     				if(!prb.abortedLocally())
     					node.getNodeStats().failedBlockReceive(true, timeout, realTimeFlag, source == null);
@@ -1236,7 +1236,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 			//NB: IS_LOCAL means it's terminal. not(IS_LOCAL) implies that the rejection message was forwarded from a downstream node.
 			//"Local" from our peers perspective, this has nothing to do with local requests (source==null)
 			long t = timeSinceSentForTimeout();
-    		node.failureTable.onFailed(key, next, htl, t, t);
+    		node.getFailureTable().onFailed(key, next, htl, t, t);
 			next.localRejectedOverload("ForwardRejectedOverload2", realTimeFlag);
 			// Node in trouble suddenly??
 			Logger.normal(this, "Local RejectedOverload after Accepted, moving on to next peer");
@@ -1249,7 +1249,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 			// So this is fatal. Treat similarly to a DNF.
 			// FIXME use a different message for termination after accepted.
 			next.noLongerRoutingTo(origTag, false);
-			node.failureTable.onFinalFailure(key, next, htl, origHTL, FailureTable.RECENTLY_FAILED_TIME, FailureTable.REJECT_TIME, source);
+			node.getFailureTable().onFinalFailure(key, next, htl, origHTL, FailureTable.RECENTLY_FAILED_TIME, FailureTable.REJECT_TIME, source);
 			if(!wasFork)
 				finish(TIMED_OUT, next, false);
 			return false;
@@ -1265,13 +1265,13 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 		if(newHtl < htl) htl = newHtl;
 		next.successNotOverload(realTimeFlag);
 		int t = timeSinceSent();
-		node.failureTable.onFailed(key, next, htl, t, t);
+		node.getFailureTable().onFailed(key, next, htl, t, t);
 		next.noLongerRoutingTo(origTag, false);
 	}
 
 	private void handleDataNotFound(Message msg, boolean wasFork, PeerNode next) {
 		next.successNotOverload(realTimeFlag);
-		node.failureTable.onFinalFailure(key, next, htl, origHTL, FailureTable.RECENTLY_FAILED_TIME, FailureTable.REJECT_TIME, source);
+		node.getFailureTable().onFinalFailure(key, next, htl, origHTL, FailureTable.RECENTLY_FAILED_TIME, FailureTable.REJECT_TIME, source);
 		if(!wasFork)
 			finish(DATA_NOT_FOUND, next, false);
 		else
@@ -1350,7 +1350,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 		
 		// Kill the request, regardless of whether there is timeout left.
 		// If there is, we will avoid sending requests for the specified period.
-		node.failureTable.onFinalFailure(key, next, htl, origHTL, timeLeft, FailureTable.REJECT_TIME, source);
+		node.getFailureTable().onFinalFailure(key, next, htl, origHTL, timeLeft, FailureTable.REJECT_TIME, source);
 		next.noLongerRoutingTo(origTag, false);
 	}
 
@@ -2146,7 +2146,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 				Logger.minor(this, "Local request timed out while waiting for a slot on "+this);
 		}
     	finish(ROUTE_NOT_FOUND, null, false);
-        node.failureTable.onFinalFailure(key, null, htl, origHTL, -1, -1, source);
+        node.getFailureTable().onFinalFailure(key, null, htl, origHTL, -1, -1, source);
 	}
 
 	@Override

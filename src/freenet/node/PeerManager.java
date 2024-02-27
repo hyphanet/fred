@@ -951,7 +951,7 @@ public class PeerManager {
 		TimedOutNodesList entry = null;
 
 		if(key != null)
-			entry = node.failureTable.getTimedOutNodesList(key);
+			entry = node.getFailureTable().getTimedOutNodesList(key);
 		
 		double[] selectionRates = new double[peers.length];
 		double totalSelectionRate = 0.0;
@@ -1195,7 +1195,7 @@ public class PeerManager {
 									Logger.error(this, "Wakeup time is too long: "+TimeUtil.formatTime(until-now));
 									until = now + FailureTable.RECENTLY_FAILED_TIME;
 								}
-								if(!node.failureTable.hadAnyOffers(key)) {
+								if(!node.getFailureTable().hadAnyOffers(key)) {
 									recentlyFailed.fail(countWaiting, until);
 									return null;
 								} else {
