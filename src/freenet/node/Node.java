@@ -901,7 +901,12 @@ public class Node implements TimeSkewDetectorCallback {
 	/* It’s not the field that is deprecated but accessing it directly is. */
 	final FailureTable failureTable;
 
-	// The version we were before we restarted.
+	/**
+	 * The version we were before we restarted.
+	 * @deprecated Use {@link #getLastVersion()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public int lastVersion;
 
 	/** NodeUpdater **/
@@ -5213,6 +5218,10 @@ public class Node implements TimeSkewDetectorCallback {
 
     public FailureTable getFailureTable() {
         return failureTable;
+    }
+
+    public int getLastVersion() {
+        return lastVersion;
     }
 
 }

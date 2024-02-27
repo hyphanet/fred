@@ -1562,8 +1562,8 @@ public class UpdateOverMandatoryManager implements RequestClient {
 	    if(source != null) {
 	        // We got it from another node.
 	        priority = RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS;
-	    } else if(updateManager.node.lastVersion > 0 && 
-	            updateManager.node.lastVersion != version) {
+	    } else if(updateManager.node.getLastVersion() > 0 &&
+	            updateManager.node.getLastVersion() != version) {
 	        // We just restarted after updating.
 	        priority = RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS;
 	    } else if(updateManager.node.getFastWeakRandom().nextInt(RANDOM_INSERT_BLOB) != 0) {
