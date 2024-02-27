@@ -123,7 +123,7 @@ public class FailureTable {
 				Logger.error(this, "Bogus timeout "+rfTimeout, new Exception("error"));
 			rfTimeout = Math.max(Math.min(RECENTLY_FAILED_TIME, rfTimeout), 0);
 		}
-		if(!(node.enableULPRDataPropagation || node.isEnablePerNodeFailureTables())) return;
+		if(!(node.isEnableULPRDataPropagation() || node.isEnablePerNodeFailureTables())) return;
 		long now = System.currentTimeMillis();
 		FailureTableEntry entry;
 		synchronized(this) {
@@ -158,7 +158,7 @@ public class FailureTable {
 				Logger.error(this, "Bogus timeout "+rfTimeout, new Exception("error"));
 			rfTimeout = Math.max(Math.min(RECENTLY_FAILED_TIME, rfTimeout), 0);
 		}
-		if(!(node.enableULPRDataPropagation || node.isEnablePerNodeFailureTables())) return;
+		if(!(node.isEnableULPRDataPropagation() || node.isEnablePerNodeFailureTables())) return;
 		long now = System.currentTimeMillis();
 		FailureTableEntry entry;
 		synchronized(this) {
@@ -287,8 +287,8 @@ public class FailureTable {
 	 */
 	public void onFound(KeyBlock block) {
 		if(logMINOR) Logger.minor(this, "Found "+block.getKey());
-		if(!(node.enableULPRDataPropagation || node.isEnablePerNodeFailureTables())) {
-			if(logMINOR) Logger.minor(this, "Ignoring onFound because enable ULPR = "+node.enableULPRDataPropagation+" and enable failure tables = "+node.isEnablePerNodeFailureTables());
+		if(!(node.isEnableULPRDataPropagation() || node.isEnablePerNodeFailureTables())) {
+			if(logMINOR) Logger.minor(this, "Ignoring onFound because enable ULPR = "+node.isEnableULPRDataPropagation()+" and enable failure tables = "+node.isEnablePerNodeFailureTables());
 			return;
 		}
 		Key key = block.getKey();
@@ -306,7 +306,7 @@ public class FailureTable {
 			entriesByKey.removeKey(key);
 		}
 		if(logMINOR) Logger.minor(this, "Offering key");
-		if(!node.enableULPRDataPropagation) return;
+		if(!node.isEnableULPRDataPropagation()) return;
 		entry.offer();
 	}
 	
@@ -322,7 +322,7 @@ public class FailureTable {
 	 * @param authenticator 
 	 */
 	void onOffer(final Key key, final PeerNode peer, final byte[] authenticator) {
-		if(!node.enableULPRDataPropagation) return;
+		if(!node.isEnableULPRDataPropagation()) return;
 		if(logMINOR)
 			Logger.minor(this, "Offered key "+key+" by peer "+peer);
 		FailureTableEntry entry;
@@ -661,7 +661,7 @@ public class FailureTable {
 	}
 
 	public OfferList getOffers(Key key) {
-		if(!node.enableULPRDataPropagation) return null;
+		if(!node.isEnableULPRDataPropagation()) return null;
 		BlockOfferList bl;
 		synchronized(blockOfferListByKey) {
 			bl = blockOfferListByKey.get(key);
@@ -672,7 +672,7 @@ public class FailureTable {
 
 	/** Called when a node disconnects */
 	public void onDisconnect(final PeerNode pn) {
-		if(!(node.enableULPRDataPropagation || node.isEnablePerNodeFailureTables())) return;
+		if(!(node.isEnableULPRDataPropagation() || node.isEnablePerNodeFailureTables())) return;
 		// FIXME do something (off thread if expensive)
 	}
 

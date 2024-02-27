@@ -802,6 +802,12 @@ public class Node implements TimeSkewDetectorCallback {
 	@Deprecated
 	/* It’s not the field that is deprecated but accessing it directly is. */
 	final boolean enablePerNodeFailureTables;
+
+	/**
+	 * @deprecated Use {@link #isEnableULPRDataPropagation()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	final boolean enableULPRDataPropagation;
 	final boolean enableSwapping;
 	private volatile boolean publishOurPeersLocation;
@@ -5144,6 +5150,10 @@ public class Node implements TimeSkewDetectorCallback {
 
     public boolean isEnablePerNodeFailureTables() {
         return enablePerNodeFailureTables;
+    }
+
+    public boolean isEnableULPRDataPropagation() {
+        return enableULPRDataPropagation;
     }
 
 }

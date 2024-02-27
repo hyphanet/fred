@@ -1151,7 +1151,7 @@ public class PeerManager {
 			Logger.minor(this, "Count waiting: "+countWaiting);
 		int maxCountWaiting = maxCountWaiting(peers);
 		if(recentlyFailed != null && countWaiting >= maxCountWaiting && 
-				node.enableULPRDataPropagation /* dangerous to do RecentlyFailed if we won't track/propagate offers */) {
+				node.isEnableULPRDataPropagation() /* dangerous to do RecentlyFailed if we won't track/propagate offers */) {
 			// Recently failed is possible.
 			// Route twice, each time ignoring timeout.
 			// If both return a node which is in timeout, we should do RecentlyFailed.
