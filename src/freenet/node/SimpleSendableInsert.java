@@ -45,7 +45,7 @@ public class SimpleSendableInsert extends SendableInsert {
 		super(false, false);
 		this.block = block;
 		this.prioClass = prioClass;
-		this.client = core.getNode().nonPersistentClientBulk;
+		this.client = core.getNode().getNonPersistentClientBulk();
 		if(block instanceof CHKBlock)
 			scheduler = core.getRequestStarters().chkPutSchedulerBulk;
 		else if(block instanceof SSKBlock)

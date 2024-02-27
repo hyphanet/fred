@@ -4808,6 +4808,11 @@ public class Node implements TimeSkewDetectorCallback {
 
 	private SimpleUserAlert alertMTUTooSmall;
 
+	/**
+	 * @deprecated Use {@link #getNonPersistentClientBulk()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final RequestClient nonPersistentClientBulk = new RequestClientBuilder().build();
 	public final RequestClient nonPersistentClientRT = new RequestClientBuilder().realTime().build();
 
@@ -5288,6 +5293,10 @@ public class Node implements TimeSkewDetectorCallback {
 
     public long getStartupTime() {
         return startupTime;
+    }
+
+    public RequestClient getNonPersistentClientBulk() {
+        return nonPersistentClientBulk;
     }
 
 }

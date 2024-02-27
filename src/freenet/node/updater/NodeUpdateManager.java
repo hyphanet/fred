@@ -486,7 +486,7 @@ public class NodeUpdateManager {
 
         @Override
         public RequestClient getRequestClient() {
-            return node.nonPersistentClientBulk;
+            return node.getNonPersistentClientBulk();
         }
 
 	}
