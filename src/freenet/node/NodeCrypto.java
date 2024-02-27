@@ -137,6 +137,12 @@ public class NodeCrypto {
 	@Deprecated
 	/* It’s not the field that is deprecated but accessing it directly is. */
 	final NodeIPPortDetector detector;
+
+	/**
+	 * @deprecated Use {@link #getAnonSetupCipher()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	final BlockCipher anonSetupCipher;
 
 	// Noderef related

@@ -908,7 +908,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		System.arraycopy(authenticator, 0, message2, offset, HASH_LENGTH);
 
 		if(unknownInitiator) {
-			sendAnonAuthPacket(1,negType,1,setupType,message2,pn,replyTo,crypto.anonSetupCipher);
+			sendAnonAuthPacket(1,negType,1,setupType,message2,pn,replyTo,crypto.getAnonSetupCipher());
 		} else {
 			sendAuthPacket(1,negType,1,message2,pn,replyTo);
 		}
@@ -1131,7 +1131,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			// We are replaying a JFK(4).
 			// Therefore if it is anon-initiator it is encrypted with our setup key.
 			if(unknownInitiator) {
-				sendAnonAuthPacket(1,negType,3,setupType, (byte[]) message4, null, replyTo, crypto.anonSetupCipher);
+				sendAnonAuthPacket(1,negType,3,setupType, (byte[]) message4, null, replyTo, crypto.getAnonSetupCipher());
 			} else {
 				sendAuthPacket(1, negType, 3, (byte[]) message4, pn, replyTo);
 			}
@@ -1848,7 +1848,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		}
 
 		if(unknownInitiator) {
-			sendAnonAuthPacket(1, negType, 3, setupType, message4, pn, replyTo, crypto.anonSetupCipher);
+			sendAnonAuthPacket(1, negType, 3, setupType, message4, pn, replyTo, crypto.getAnonSetupCipher());
 		} else {
 			sendAuthPacket(1, negType, 3, message4, pn, replyTo);
 		}
