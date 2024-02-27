@@ -290,7 +290,7 @@ public class DiagnosticToadlet extends Toadlet {
 			textBuilder.append("bandwidth error\n");
 		else  {
 			final long now = System.currentTimeMillis();
-			final long nodeUptimeSeconds = (now - node.startupTime) / 1000;
+			final long nodeUptimeSeconds = (now - node.getStartupTime()) / 1000;
 			long total_output_rate = (total[0]) / nodeUptimeSeconds;
 			long total_input_rate = (total[1]) / nodeUptimeSeconds;
 			long totalPayload = node.getTotalPayloadSent();

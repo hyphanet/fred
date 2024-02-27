@@ -259,7 +259,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			if(advancedMode) {
 
 				/* node status values */
-				long nodeUptimeSeconds = SECONDS.convert(now - node.startupTime, MILLISECONDS);
+				long nodeUptimeSeconds = SECONDS.convert(now - node.getStartupTime(), MILLISECONDS);
 				int bwlimitDelayTime = (int) stats.getBwlimitDelayTime();
 				int nodeAveragePingTime = (int) stats.getNodeAveragePingTime();
 				int networkSizeEstimateSession = stats.getDarknetSizeEstimate(-1);

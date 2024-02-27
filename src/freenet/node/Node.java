@@ -896,6 +896,12 @@ public class Node implements TimeSkewDetectorCallback {
 	@Deprecated
 	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final long bootID;
+
+	/**
+	 * @deprecated Use {@link #getStartupTime()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final long startupTime;
 
 	private SimpleToadletServer toadlets;
@@ -5278,6 +5284,10 @@ public class Node implements TimeSkewDetectorCallback {
 
     public long getBootId() {
         return bootID;
+    }
+
+    public long getStartupTime() {
+        return startupTime;
     }
 
 }

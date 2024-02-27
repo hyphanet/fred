@@ -1920,8 +1920,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		fs.put("isUsingWrapper", node.isUsingWrapper());
 		long nodeUptimeSeconds = 0;
 		synchronized(this) {
-			fs.put("startupTime", node.startupTime);
-			nodeUptimeSeconds = (now - node.startupTime) / 1000;
+			fs.put("startupTime", node.getStartupTime());
+			nodeUptimeSeconds = (now - node.getStartupTime()) / 1000;
 			if (nodeUptimeSeconds == 0) nodeUptimeSeconds = 1;	// prevent division by zero
 			fs.put("uptimeSeconds", nodeUptimeSeconds);
 		}

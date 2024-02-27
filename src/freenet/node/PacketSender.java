@@ -453,7 +453,7 @@ public class PacketSender implements Runnable {
 		// MAX_COALESCING_DELAYms maximum sleep time - same as the maximum coalescing delay
 		sleepTime = Math.min(sleepTime, MAX_COALESCING_DELAY);
 
-		if(now - node.startupTime > MINUTES.toMillis(5))
+		if(now - node.getStartupTime() > MINUTES.toMillis(5))
 			if(now - lastReceivedPacketFromAnyNode > Node.ALARM_TIME) {
 				Logger.error(this, "Have not received any packets from any node in last " + SECONDS.convert(Node.ALARM_TIME, MILLISECONDS) + " seconds");
 				lastReportedNoPackets = now;

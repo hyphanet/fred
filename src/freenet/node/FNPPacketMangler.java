@@ -1961,7 +1961,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	 * caused by a handshake across a restart boundary?
 	 */
 	private boolean shouldLogErrorInHandshake(long now) {
-		if(now - node.startupTime < Node.HANDSHAKE_TIMEOUT*2)
+		if(now - node.getStartupTime() < Node.HANDSHAKE_TIMEOUT*2)
 			return false;
 		return true;
 	}

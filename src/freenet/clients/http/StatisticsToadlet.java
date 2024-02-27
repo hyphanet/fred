@@ -179,7 +179,7 @@ public class StatisticsToadlet extends Toadlet {
 		// FIXME! We need some nice images
 		final long now = System.currentTimeMillis();
 		double myLocation = node.getLocation();
-		final long nodeUptimeSeconds = (now - node.startupTime) / 1000;
+		final long nodeUptimeSeconds = (now - node.getStartupTime()) / 1000;
 
 		if(ctx.isAllowedFullAccess())
 			contentNode.addChild(ctx.getAlertManager().createSummary());
