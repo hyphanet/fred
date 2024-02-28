@@ -124,10 +124,15 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 	private int fproxyConnections;
 	
 	private boolean finishedStartup;
-	
-	/** The PushDataManager handles all the pushing tasks*/
-	public PushDataManager pushDataManager; 
-	
+
+	/**
+	 * The PushDataManager handles all the pushing tasks
+	 * @deprecated Use {@link #getPushDataManager()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
+	public PushDataManager pushDataManager;
+
 	/** The IntervalPusherManager handles interval pushing*/
 	public IntervalPusherManager intervalPushManager;
 
@@ -1314,6 +1319,10 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 	public long generateUniqueID() {
 		// FIXME increment a counter?
 		return random.nextLong();
+	}
+
+	public PushDataManager getPushDataManager() {
+		return pushDataManager;
 	}
 
 }
