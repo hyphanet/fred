@@ -259,7 +259,7 @@ public class PluginJarUpdater extends NodeUpdater {
 
 	@Override
 	public RequestClient getRequestClient() {
-		return pluginManager.singleUpdaterRequestClient;
+		return pluginManager.getSingleUpdaterRequestClient();
 	}
 	
 }

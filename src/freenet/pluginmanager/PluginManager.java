@@ -1016,7 +1016,12 @@ public class PluginManager {
 	 * must not be taken in any other circumstance. */
 	private final Object pluginLoadSyncObject = new Object();
 
-	/** All plugin updates are on a single request client. */
+	/**
+	 * All plugin updates are on a single request client.
+	 * @deprecated Use {@link #getSingleUpdaterRequestClient()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final RequestClient singleUpdaterRequestClient = new RequestClientBuilder().build();
 
 	public File getPluginFilename(String pluginName) {
@@ -1680,6 +1685,10 @@ public class PluginManager {
 			}
 			return false;
 		}
+	}
+
+	public RequestClient getSingleUpdaterRequestClient() {
+		return singleUpdaterRequestClient;
 	}
 
 }
