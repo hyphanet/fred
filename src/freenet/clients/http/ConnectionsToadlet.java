@@ -124,9 +124,9 @@ public abstract class ConnectionsToadlet extends Toadlet {
 					return Double.compare(firstNode.getBackedOffPercent(true), secondNode.getBackedOffPercent(true));
 				case "backoffBulk":
 					return Double.compare(firstNode.getBackedOffPercent(false), secondNode.getBackedOffPercent(false));
-				case ("overload_p"):
+				case "overload_p":
 					return Double.compare(firstNode.getPReject(), secondNode.getPReject());
-				case ("idle"):
+				case "idle":
 					return compareLongs(firstNode.getTimeLastConnectionCompleted(), secondNode.getTimeLastConnectionCompleted());
 				case "time_routable":
 					return Double.compare(firstNode.getPercentTimeRoutableConnection(), secondNode.getPercentTimeRoutableConnection());
@@ -144,7 +144,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 					return Double.compare(firstNode.getSelectionRate(), secondNode.getSelectionRate());
 				case "time_delta":
 					return compareLongs(firstNode.getClockDelta(), secondNode.getClockDelta());
-				case ("uptime"):
+				case "uptime":
 					return compareInts(firstNode.getReportedUptimePercentage(), secondNode.getReportedUptimePercentage());
 				default:
 					return 0;
