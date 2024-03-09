@@ -3,6 +3,10 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.api;
 
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
+
 import freenet.config.ConfigCallback;
 
 /**
@@ -10,4 +14,10 @@ import freenet.config.ConfigCallback;
  * Also reports the current value.
  */
 public abstract class BooleanCallback extends ConfigCallback<Boolean> {
+  public static BooleanCallback fromBoolean(Supplier<Boolean> get, Function<Boolean, Exception> set) {
+    return (BooleanCallback) ConfigCallback.from(get, set);
+  }
+  public static BooleanCallback fromBoolean(Supplier<Boolean> get, Consumer<Boolean> set) {
+    return (BooleanCallback) ConfigCallback.from(get, set);
+  }
 }
