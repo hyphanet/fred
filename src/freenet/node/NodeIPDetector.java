@@ -11,7 +11,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 
+import freenet.config.ConfigCallback;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.NodeNeedRestartException;
 import freenet.config.SubConfig;
@@ -63,7 +65,7 @@ public class NodeIPDetector {
 	/** Explicit forced IP address in string form because we want to keep it even if it's invalid and therefore unused */
 	String overrideIPAddressString;
 	/** config: allow bindTo localhost? */
-	boolean allowBindToLocalhost;
+	Boolean allowBindToLocalhost;
 	/** IP address from last time */
 	FreenetInetAddress oldIPAddress;
 	/** Detected IP's and their NAT status from plugins */
@@ -533,25 +535,17 @@ public class NodeIPDetector {
 
 		// allow binding to localhost, 127.0.0.1, ...?
 
-		nodeConfig.register("allowBindToLocalhost", false, sortOrder++, true, false, "Node.allowBindToLocalhost", "Node.allowBindToLocalhostLong", new BooleanCallback() {
-
-			@Override
-			public Boolean get() {
-				return allowBindToLocalhost;
+		nodeConfig.register("allowBindToLocalhost", false, sortOrder++, true, false, "Node.allowBindToLocalhost", "Node.allowBindToLocalhostLong", BooleanCallback.fromBoolean(
+		  () -> allowBindToLocalhost,
+		  value -> {
+			if (Objects.equals(allowBindToLocalhost, value)) {
+				return null; // no exception
 			}
-
-			@Override
-			public void set(Boolean val) throws NodeNeedRestartException {
-				if (allowBindToLocalhost != val) {
-					synchronized(this) {
-						allowBindToLocalhost = val;
-					}
-					throw new NodeNeedRestartException("allowBindToLocalhost needs a restart");
-				}
-			}
-		});
+			allowBindToLocalhost = value;
+			return new NodeNeedRestartException("allowBindToLocalhost needs a restart");
+		  }));
 		allowBindToLocalhost = nodeConfig.getBoolean("allowBindToLocalhost");
-		
+
 		return sortOrder;
 	}
 
