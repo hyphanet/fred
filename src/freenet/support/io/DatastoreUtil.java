@@ -41,7 +41,7 @@ public class DatastoreUtil {
             long unallocatedSpace = Files.getFileStore(Paths.get("")).getUnallocatedSpace();
             // TODO: leave some free space
             // probably limit 256GB see comments of the autodetectDatastoreSize method
-            return unallocatedSpace < maxDatastoreSize ? unallocatedSpace : maxDatastoreSize;
+            return Math.min(unallocatedSpace, maxDatastoreSize);
         } catch (IOException e) {
             Logger.error(DatastoreUtil.class, "Error querying space", e);
         }
