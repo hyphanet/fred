@@ -4622,7 +4622,7 @@ class CSSTokenizerFilter {
 				if(fontSize.checkValidity(word, cb)) continue;
 				if(word instanceof SimpleParsedWord) {
 					String orig = ((SimpleParsedWord)word).original;
-					if(orig.indexOf("/")!=-1)
+					if(orig.contains("/"))
 					{
 						int slashIndex=orig.indexOf("/");
 						String firstPart=orig.substring(0,slashIndex);

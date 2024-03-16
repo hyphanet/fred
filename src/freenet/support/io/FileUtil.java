@@ -148,19 +148,19 @@ final public class FileUtil {
 
 			// Please adapt sanitizeFileName when adding new OS.
 
-			if(name.indexOf("win") >= 0)
+			if(name.contains("win"))
 				return OperatingSystem.Windows;
 
-			if(name.indexOf("mac") >= 0)
+			if(name.contains("mac"))
 				return OperatingSystem.MacOS;
 
-			if(name.indexOf("linux") >= 0)
+			if(name.contains("linux"))
 				return OperatingSystem.Linux;
 			
-			if(name.indexOf("freebsd") >= 0)
+			if(name.contains("freebsd"))
 				return OperatingSystem.FreeBSD;
 			
-			if(name.indexOf("unix") >= 0)
+			if(name.contains("unix"))
 				return OperatingSystem.GenericUnix;
 			else if(File.separatorChar == '/')
 				return OperatingSystem.GenericUnix;

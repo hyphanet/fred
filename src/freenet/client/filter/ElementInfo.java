@@ -453,19 +453,19 @@ public class ElementInfo {
 				return true;
 
 			
-			else if(cname.indexOf("lang")!=-1 && LANGUAGES.contains(getPseudoClassArg(cname, "lang")))
+			else if(cname.contains("lang") && LANGUAGES.contains(getPseudoClassArg(cname, "lang")))
 			{
 				// FIXME accept unknown languages as long as they are [a-z-]
 				return true;
 			}
 			
-			else if(cname.indexOf("nth-child")!=-1 && FilterUtils.isNth(getPseudoClassArg(cname, "nth-child")))
+			else if(cname.contains("nth-child") && FilterUtils.isNth(getPseudoClassArg(cname, "nth-child")))
 				return true;
-			else if(cname.indexOf("nth-last-child")!=-1 && FilterUtils.isNth(getPseudoClassArg(cname, "nth-last-child")))
+			else if(cname.contains("nth-last-child") && FilterUtils.isNth(getPseudoClassArg(cname, "nth-last-child")))
 				return true;
-			else if(cname.indexOf("nth-of-type")!=-1 && FilterUtils.isNth(getPseudoClassArg(cname, "nth-of-type")))
+			else if(cname.contains("nth-of-type") && FilterUtils.isNth(getPseudoClassArg(cname, "nth-of-type")))
 				return true;
-			else if(cname.indexOf("nth-last-of-type")!=-1 && FilterUtils.isNth(getPseudoClassArg(cname, "nth-last-of-type")))
+			else if(cname.contains("nth-last-of-type") && FilterUtils.isNth(getPseudoClassArg(cname, "nth-last-of-type")))
 				return true;
 			
 			return false;
