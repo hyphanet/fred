@@ -66,10 +66,16 @@ public final class ISO639_3 {
 			Special;
 			
 			private static Scope fromTabFile(String abbreviation) {
-				if(abbreviation.equals("I")) return Scope.Individual;
-				else if(abbreviation.equals("M")) return Scope.Macrolanguage;
-				else if(abbreviation.equals("S")) return Scope.Special;
-				else throw new IllegalArgumentException("Unknown scope abbreviation: " + abbreviation);
+				switch (abbreviation) {
+					case "I":
+						return Scope.Individual;
+					case "M":
+						return Scope.Macrolanguage;
+					case "S":
+						return Scope.Special;
+					default:
+						throw new IllegalArgumentException("Unknown scope abbreviation: " + abbreviation);
+				}
 			}
 		}
 
@@ -87,13 +93,22 @@ public final class ISO639_3 {
 			Special;
 			
 			private static Type fromTabFile(String abbreviation) {
-				if(abbreviation.equals("A")) return Type.Ancient;
-				else if(abbreviation.equals("C")) return Type.Constructed;
-				else if(abbreviation.equals("E")) return Type.Extinct;
-				else if(abbreviation.equals("H")) return Type.Historical;
-				else if(abbreviation.equals("L")) return Type.Living;
-				else if(abbreviation.equals("S")) return Type.Special;
-				else throw new IllegalArgumentException("Unknwon type abbreviation: " + abbreviation); 
+				switch (abbreviation) {
+					case "A":
+						return Type.Ancient;
+					case "C":
+						return Type.Constructed;
+					case "E":
+						return Type.Extinct;
+					case "H":
+						return Type.Historical;
+					case "L":
+						return Type.Living;
+					case "S":
+						return Type.Special;
+					default:
+						throw new IllegalArgumentException("Unknwon type abbreviation: " + abbreviation);
+				}
 			}
 		}
 		
