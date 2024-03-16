@@ -60,7 +60,7 @@ public class BitArrayTest {
 	 * Tests BitArray(int) constructor
 	 * and verifies if the instance is
 	 * well created (all values must be
-	 * readables and false, and the length
+	 * readable and false, and the length
 	 * has to be correct)
 	 */
 	@Test

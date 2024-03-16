@@ -93,7 +93,7 @@ public class ClientPutDiskDirMessage extends ClientPutDirMessage {
     	for(int i = 0 ; i < filelist.length ; i++) {
     		if(filelist[i].isHidden() && !includeHiddenFiles) continue;
                 //   Skip unreadable files and dirs
-		//   Skip files nonexistant (dangling symlinks) - check last 
+		//   Skip files nonexistent (dangling symlinks) - check last
 	        if (filelist[i].canRead() && filelist[i].exists()) {
 	        	if (filelist[i].isFile()) {
 	        		File f = filelist[i];

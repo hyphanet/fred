@@ -550,7 +550,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 	
 	/**
 	 * Used to discard leftover messages, usually just packetTransmit and allSent.
-	 * allSent, is quite common, as the receive() routine usually quits immeadiately on receiving all packets.
+	 * allSent, is quite common, as the receive() routine usually quits immediately on receiving all packets.
 	 * packetTransmit is less common, when receive() requested what it thought was a missing packet, only reordered.
 	 */
 	@Override

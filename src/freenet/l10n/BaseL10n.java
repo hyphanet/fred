@@ -31,7 +31,7 @@ import freenet.support.io.FileUtil;
  * Note : do not use this class *as is*, use NodeL10n.getBase() or
  * PluginL10n.getBase().
  *
- * Note : this class also supports using/saving/editing overriden translations.
+ * Note : this class also supports using/saving/editing overridden translations.
  * @author Florent Daigni&egrave;re &lt;nextgens@freenetproject.org&gt;
  * @author Artefact2
  */
@@ -246,7 +246,7 @@ public class BaseL10n {
 	 * Note : you shouldn't have to run this yourself. Use PluginL10n or NodeL10n.
 	 * @param l10nFilesBasePath Base path of the l10n files, ex. "com/mycorp/myproject/l10n"
 	 * @param l10nFilesMask Mask of the l10n files, ex. "messages_${lang}.l10n"
-	 * @param l10nOverrideFilesMask Same as l10nFilesMask, but for overriden messages.
+	 * @param l10nOverrideFilesMask Same as l10nFilesMask, but for overridden messages.
 	 * @param lang Language to use.
 	 * @param cl ClassLoader to use.
 	 */
@@ -376,7 +376,7 @@ public class BaseL10n {
 	}
 
 	/**
-	 * Returns true if a key is overriden.
+	 * Returns true if a key is overridden.
 	 * @param key Key to check override status
 	 * @return boolean
 	 */
@@ -417,7 +417,7 @@ public class BaseL10n {
 	}
 
 	/**
-	 * Save the SimpleFieldSet of overriden keys in a file.
+	 * Save the SimpleFieldSet of overridden keys in a file.
 	 */
 	private void saveTranslationFile() {
 		FileOutputStream fos = null;
@@ -451,7 +451,7 @@ public class BaseL10n {
 	}
 
 	/**
-	 * Get a copy of the currently used SimpleFieldSet (overriden messages).
+	 * Get a copy of the currently used SimpleFieldSet (overridden messages).
 	 * @return SimpleFieldSet
 	 */
 	public SimpleFieldSet getOverrideForCurrentLanguageTranslation() {

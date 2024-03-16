@@ -199,7 +199,7 @@ public class CachingFreenetStoreTest {
 
 	/*
 	 * Check that if we are going over the maximum size, the caching store will call
-	 * pushAll and all blocks is in the *undelying* store and the size is 0
+	 * pushAll and all blocks is in the *underlying* store and the size is 0
 	 */
 	@Test
  	public void testOverMaximumSize()
