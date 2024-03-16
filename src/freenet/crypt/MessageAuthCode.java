@@ -43,7 +43,7 @@ public final class MessageAuthCode {
         mac = type.get();
         this.key = key;
         try {
-            if(type.ivlen != -1){;
+            if(type.ivlen != -1){
             checkPoly1305Key(key.getEncoded());
             if(genIV){
                 genIV();

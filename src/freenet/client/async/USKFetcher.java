@@ -1546,7 +1546,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
             return USKFetcher.this;
         }
 
-	};
+	}
 
 
 	@Override

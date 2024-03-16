@@ -35,8 +35,8 @@ public abstract class Option<T> {
 	
 	public static enum DataType {
 		STRING, NUMBER, BOOLEAN, STRING_ARRAY
-	};
-	
+	}
+
 	/** Data type : used to make it possible to make user inputs more friendly in FCP apps */
 	final DataType dataType;
 	

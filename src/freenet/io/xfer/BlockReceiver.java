@@ -494,7 +494,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 		this.callback = callback;
 		synchronized(_prb) {
 			try {
-				_prb.addListener(myListener = new PartiallyReceivedBlock.PacketReceivedListener() {;
+				_prb.addListener(myListener = new PartiallyReceivedBlock.PacketReceivedListener() {
 
 					@Override
 					public void packetReceived(int packetNo) {

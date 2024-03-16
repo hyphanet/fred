@@ -541,8 +541,8 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 			return super.toString()+":"+waitingFor+":"+noReroute+":"+RequestSender.this;
 		}
     	
-    };
-    
+    }
+
     enum OFFER_STATUS {
     	FETCHING, // Fetching asynchronously or already fetched.
     	TWO_STAGE_TIMEOUT, // Waiting asynchronously for two stage timeout; remove the offer, but don't unlock the tag.

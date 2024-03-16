@@ -19,7 +19,7 @@ import freenet.support.Logger.LogLevel;
  */
 public class FlacFilter implements ContentDataFilter {
 	static final byte[] magicNumber = new byte[] {0x66, 0x4C, 0x61, 0x43};
-	enum State {UNINITIALIZED, STREAMINFO_FOUND, METADATA_FOUND, STREAM_FINISHED};
+	enum State {UNINITIALIZED, STREAMINFO_FOUND, METADATA_FOUND, STREAM_FINISHED}
 
 	public void readFilter(
       InputStream input, OutputStream output,
