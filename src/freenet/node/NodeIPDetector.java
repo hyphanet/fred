@@ -533,7 +533,7 @@ public class NodeIPDetector {
 
 		// allow binding to localhost, 127.0.0.1, ...?
 
-		nodeConfig.register("allowBindToLocalhost", false, sortOrder++, true, false, "Node.allowBindToLocalhost", "Node.allowBindToLocalhostLong", BooleanCallback.from(
+		nodeConfig.register("allowBindToLocalhost", false, sortOrder++, true, false, "NodeIPDetector.allowBindToLocalhost", "NodeIPDetector.allowBindToLocalhostLong", BooleanCallback.from(
 		  () -> allowBindToLocalhost,
 		  value -> {
 			if (!Objects.equals(allowBindToLocalhost, value)) {
