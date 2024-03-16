@@ -122,7 +122,7 @@ public class AddPeer extends FCPMessage {
 			try {
 				try {
 					FreenetURI refUri = new FreenetURI(urlString);
-					HighLevelSimpleClient client = node.clientCore.makeClient(
+					HighLevelSimpleClient client = node.getClientCore().makeClient(
 							RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS,
 							true,
 							true);

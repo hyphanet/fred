@@ -34,7 +34,7 @@ public class InvalidAddressOverrideUserAlert extends AbstractUserAlert {
 
 	@Override
 	public HTMLNode getHTMLText() {
-		SubConfig sc = node.config.get("node");
+		SubConfig sc = node.getConfig().get("node");
 		Option<?> o = sc.getOption("ipAddressOverride");
 		
 		HTMLNode textNode = new HTMLNode("div");
@@ -42,7 +42,7 @@ public class InvalidAddressOverrideUserAlert extends AbstractUserAlert {
 				new String[] { "link" }, 
 				new HTMLNode[] { HTMLNode.link("/config/node")});
 		HTMLNode formNode = textNode.addChild("form", new String[] { "action", "method" }, new String[] { "/config/node", "post" });
-		formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.clientCore.formPassword });
+		formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.getClientCore().getFormPassword() });
 		formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "subconfig", sc.getPrefix() });
 		HTMLNode listNode = formNode.addChild("ul", "class", "config");
 		HTMLNode itemNode = listNode.addChild("li");

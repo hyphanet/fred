@@ -223,7 +223,7 @@ public class RealNodeProbeTest extends RealNodeRoutingTest {
 					System.err.print("Enter new HTL: ");
 					htl = Byte.valueOf(r.readLine());
 				} else if (selection == types.length+2) {
-					SubConfig nodeConfig = nodes[index].config.get("node");
+					SubConfig nodeConfig = nodes[index].getConfig().get("node");
 					String[] options = { "probeBandwidth", "probeBuild", "probeIdentifier", "probeLinkLengths", "probeLinkLengths", "probeUptime" };
 					for (String option : options) {
 						System.err.print(option + ": ");

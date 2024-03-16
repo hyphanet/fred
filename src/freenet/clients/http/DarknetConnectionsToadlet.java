@@ -133,7 +133,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 
 	@Override
 	protected PeerNodeStatus[] getPeerNodeStatuses(boolean noHeavy) {
-		return node.peers.getDarknetPeerNodeStatuses(noHeavy);
+		return node.getPeers().getDarknetPeerNodeStatuses(noHeavy);
 	}
 
 	@Override

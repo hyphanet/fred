@@ -154,7 +154,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 				prioClass,
 				(persistRebootOnly ? Persistence.REBOOT : Persistence.FOREVER), realTimeFlag, null, true);
 
-		fctx = core.clientContext.getDefaultPersistentFetchContext();
+		fctx = core.getClientContext().getDefaultPersistentFetchContext();
 		fctx.eventProducer.addEventListener(this);
 		fctx.localRequestOnly = dsOnly;
 		fctx.ignoreStore = ignoreDS;
@@ -213,7 +213,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 				message.priorityClass, message.persistence, message.realTimeFlag, message.clientToken, message.global);
 		// Create a Fetcher directly in order to get more fine-grained control,
 		// since the client may override a few context elements.
-		fctx = core.clientContext.getDefaultPersistentFetchContext();
+		fctx = core.getClientContext().getDefaultPersistentFetchContext();
 		fctx.eventProducer.addEventListener(this);
 		// ignoreDS
 		fctx.localRequestOnly = message.dsOnly;
@@ -280,7 +280,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 
     private ClientGetter makeGetter(NodeClientCore core, Bucket ret) throws IOException {
         if (binaryBlob && ret == null) {
-            ret = core.clientContext.getBucketFactory(persistence == Persistence.FOREVER).makeBucket(fctx.maxOutputLength);
+            ret = core.getClientContext().getBucketFactory(persistence == Persistence.FOREVER).makeBucket(fctx.maxOutputLength);
         }
 
 	    return new ClientGetter(this,
@@ -421,7 +421,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		}
 
 		if(handler == null && persistence == Persistence.CONNECTION)
-			handler = origHandler.outputHandler;
+			handler = origHandler.getOutputHandler();
 		if(handler != null)
 			handler.queue(FCPMessage.withListRequestIdentifier(msg, listRequestIdentifier));
 		else
@@ -441,7 +441,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	private void trySendAllDataMessage(FCPConnectionOutputHandler handler, String listRequestIdentifier) {
 	    if(persistence == Persistence.CONNECTION) {
 	        if(handler == null)
-	            handler = origHandler.outputHandler;
+	            handler = origHandler.getOutputHandler();
 	    }
 	    if(handler != null) {
 	        FCPMessage allData = FCPMessage.withListRequestIdentifier(getAllDataMessage(), listRequestIdentifier);
@@ -452,7 +452,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 
 	private void queueProgressMessageInner(FCPMessage msg, FCPConnectionOutputHandler handler, int verbosityMask) {
 	    if(persistence == Persistence.CONNECTION && handler == null)
-	        handler = origHandler.outputHandler;
+	        handler = origHandler.getOutputHandler();
 	    if(handler != null)
 	        handler.queue(msg);
 	    else

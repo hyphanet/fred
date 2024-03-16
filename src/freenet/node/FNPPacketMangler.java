@@ -135,7 +135,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		for(int i=0;i<DH_CONTEXT_BUFFER_SIZE;i++) {
 			_fillJFKECDHFIFO();
 		}
-		this.authHandlingThread.start(node.executor, "FNP incoming auth packet handler thread");
+		this.authHandlingThread.start(node.getExecutor(), "FNP incoming auth packet handler thread");
 	}
 
 	/**
@@ -222,7 +222,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		}
 
                 // Don't log too much if we are a seednode
-                if(logMINOR && crypto.isOpennet && wantAnonAuth) {
+                if(logMINOR && crypto.isOpennet() && wantAnonAuth) {
                 	if(!didntTryOldOpennetPeers)
                 		Logger.minor(this,"Unmatchable packet from "+peer);
                 } else
@@ -723,8 +723,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			// Check IDr'
 			offset += modulusLength;
 			byte[] expectedIdentityHash = Arrays.copyOfRange(payload, offset, offset + NodeCrypto.IDENTITY_LENGTH);
-			if(!MessageDigest.isEqual(expectedIdentityHash, crypto.identityHash)) {
-				Logger.error(this, "Invalid unknown-initiator JFK(1), IDr' is "+HexUtil.bytesToHex(expectedIdentityHash)+" should be "+HexUtil.bytesToHex(crypto.identityHash));
+			if(!MessageDigest.isEqual(expectedIdentityHash, crypto.getIdentityHash())) {
+				Logger.error(this, "Invalid unknown-initiator JFK(1), IDr' is "+HexUtil.bytesToHex(expectedIdentityHash)+" should be "+HexUtil.bytesToHex(crypto.getIdentityHash()));
 				return;
 			}
 		}
@@ -832,7 +832,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		int offset = 0;
 		byte[] nonce = new byte[nonceSize];
 		byte[] myExponential = ctx.getPublicKeyNetworkFormat();
-		node.random.nextBytes(nonce);
+		node.getRandom().nextBytes(nonce);
 
 		synchronized (pn.jfkNoncesSent) {
 			pn.jfkNoncesSent.add(nonce);
@@ -881,7 +881,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		
 		// Nr
 		byte[] myNonce = new byte[nonceSize];
-		node.random.nextBytes(myNonce);
+		node.getRandom().nextBytes(myNonce);
 		byte[] myExponential = ctx.getPublicKeyNetworkFormat();
 		// Neg type 9 and later use ECDSA signature.
 		byte[] sig = ctx.ecdsaSig;
@@ -908,7 +908,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		System.arraycopy(authenticator, 0, message2, offset, HASH_LENGTH);
 
 		if(unknownInitiator) {
-			sendAnonAuthPacket(1,negType,1,setupType,message2,pn,replyTo,crypto.anonSetupCipher);
+			sendAnonAuthPacket(1,negType,1,setupType,message2,pn,replyTo,crypto.getAnonSetupCipher());
 		} else {
 			sendAuthPacket(1,negType,1,message2,pn,replyTo);
 		}
@@ -1131,7 +1131,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			// We are replaying a JFK(4).
 			// Therefore if it is anon-initiator it is encrypted with our setup key.
 			if(unknownInitiator) {
-				sendAnonAuthPacket(1,negType,3,setupType, (byte[]) message4, null, replyTo, crypto.anonSetupCipher);
+				sendAnonAuthPacket(1,negType,3,setupType, (byte[]) message4, null, replyTo, crypto.getAnonSetupCipher());
 			} else {
 				sendAuthPacket(1, negType, 3, (byte[]) message4, pn, replyTo);
 			}
@@ -1186,11 +1186,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		int theirInitialMsgID, ourInitialMsgID;
 
 			theirInitialMsgID =
-				unknownInitiator ? getInitialMessageID(crypto.myIdentity) :
-					getInitialMessageID(pn.identity, crypto.myIdentity);
+				unknownInitiator ? getInitialMessageID(crypto.getMyIdentity()) :
+					getInitialMessageID(pn.identity, crypto.getMyIdentity());
 			ourInitialMsgID =
-				unknownInitiator ? getInitialMessageID(crypto.myIdentity) :
-					getInitialMessageID(crypto.myIdentity, pn.identity);
+				unknownInitiator ? getInitialMessageID(crypto.getMyIdentity()) :
+					getInitialMessageID(crypto.getMyIdentity(), pn.identity);
 
 		if(logMINOR)
 			Logger.minor(this, "Their initial message ID: "+theirInitialMsgID+" ours "+ourInitialMsgID);
@@ -1312,7 +1312,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 					c, Ke, Ka, authenticator, hisRef, pn, replyTo, unknownInitiator, setupType, newTrackerID, newTrackerID == trackerID);
 
 			if(dontWant) {
-				node.peers.disconnectAndRemove(pn, true, true, true); // Let it connect then tell it to remove it.
+				node.getPeers().disconnectAndRemove(pn, true, true, true); // Let it connect then tell it to remove it.
 			} else {
 				pn.maybeSendInitialMessages();
 			}
@@ -1364,7 +1364,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 				Logger.normal(this, "Already connected to seednode");
 				return pn;
 			}
-			node.peers.addPeer(seed);
+			node.getPeers().addPeer(seed);
 			return seed;
 		} else {
 			Logger.error(this, "Unknown setup type");
@@ -1546,7 +1546,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 				pn.theirInitialMsgID);
 		if(newTrackerID >= 0) {
 			if(dontWant) {
-				node.peers.disconnectAndRemove(pn, true, true, true);
+				node.getPeers().disconnectAndRemove(pn, true, true, true);
 			} else {
 				pn.maybeSendInitialMessages();
 			}
@@ -1685,10 +1685,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 
 			pn.theirInitialMsgID =
 				unknownInitiator ? getInitialMessageID(pn.identity) :
-					getInitialMessageID(pn.identity, crypto.myIdentity);
+					getInitialMessageID(pn.identity, crypto.getMyIdentity());
 			pn.ourInitialMsgID =
 				unknownInitiator ? getInitialMessageID(pn.identity) :
-					getInitialMessageID(crypto.myIdentity, pn.identity);
+					getInitialMessageID(crypto.getMyIdentity(), pn.identity);
 
 		if(logMINOR)
 			Logger.minor(this, "Their initial message ID: "+pn.theirInitialMsgID+" ours "+pn.ourInitialMsgID);
@@ -1697,7 +1697,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		c.initialize(pn.jfkKe);
 		int ivLength = PCFBMode.lengthIV(c);
 		byte[] iv = new byte[ivLength];
-		node.random.nextBytes(iv);
+		node.getRandom().nextBytes(iv);
 		PCFBMode pcfb = PCFBMode.create(c, iv);
 		int cleartextOffset = 0;
 		byte[] cleartext = new byte[JFK_PREFIX_INITIATOR.length + ivLength + sig.length + data.length];
@@ -1805,12 +1805,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 
 		byte[] params = assembleDHParams(nonceInitiatorHashed, nonceResponder, initiatorExponential, responderExponential, pn.getPubKeyHash(), data);
 		if(logMINOR)
-			Logger.minor(this, "Message length "+params.length+" myRef: "+myRef.length+" hash "+Fields.hashCode(myRef)+" hisRef: "+hisRef.length+" hash "+Fields.hashCode(hisRef)+" boot ID "+node.bootID);
+			Logger.minor(this, "Message length "+params.length+" myRef: "+myRef.length+" hash "+Fields.hashCode(myRef)+" hisRef: "+hisRef.length+" hash "+Fields.hashCode(hisRef)+" boot ID "+node.getBootId());
 		byte[] sig = crypto.ecdsaSign(params);
 
 		int ivLength = PCFBMode.lengthIV(c);
 		byte[] iv=new byte[ivLength];
-		node.random.nextBytes(iv);
+		node.getRandom().nextBytes(iv);
 		PCFBMode pk=PCFBMode.create(c, iv);
 		// Don't include the last bit
 		int dataLength = data.length - hisRef.length;
@@ -1848,7 +1848,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		}
 
 		if(unknownInitiator) {
-			sendAnonAuthPacket(1, negType, 3, setupType, message4, pn, replyTo, crypto.anonSetupCipher);
+			sendAnonAuthPacket(1, negType, 3, setupType, message4, pn, replyTo, crypto.getAnonSetupCipher());
 		} else {
 			sendAuthPacket(1, negType, 3, message4, pn, replyTo);
 		}
@@ -1907,14 +1907,14 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			throw new IllegalStateException("Cannot send auth packet: too long: "+length);
 		}
 		byte[] iv = new byte[PCFBMode.lengthIV(cipher)];
-		node.random.nextBytes(iv);
+		node.getRandom().nextBytes(iv);
 		byte[] hash = SHA256.digest(output);
 		if(logDEBUG) Logger.debug(this, "Data hash: "+HexUtil.bytesToHex(hash));
 		int prePaddingLength = iv.length + hash.length + 2 /* length */ + output.length;
 		int maxPacketSize = sock.getMaxPacketSize();
 		int paddingLength;
 		if(prePaddingLength < maxPacketSize) {
-			paddingLength = node.fastWeakRandom.nextInt(Math.min(100, maxPacketSize - prePaddingLength));
+			paddingLength = node.getFastWeakRandom().nextInt(Math.min(100, maxPacketSize - prePaddingLength));
 		} else {
 			paddingLength = 0; // Avoid oversize packets if at all possible, the MTU is an estimate and may be wrong, and fragmented packets are often dropped by firewalls.
 			// Tell the devs, this shouldn't happen.
@@ -1932,10 +1932,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		pcfb.blockEncipher(output, 0, output.length);
 		System.arraycopy(output, 0, data, hash.length+iv.length+2, output.length);
 
-		Util.randomBytes(node.fastWeakRandom, data, hash.length+iv.length+2+output.length, paddingLength);
+		Util.randomBytes(node.getFastWeakRandom(), data, hash.length+iv.length+2+output.length, paddingLength);
 		try {
 			sendPacket(data, replyTo, pn);
-			node.nodeStats.reportAuthBytes(data.length + sock.getHeadersLength(replyTo));
+			node.getNodeStats().reportAuthBytes(data.length + sock.getHeadersLength(replyTo));
 		} catch (LocalAddressException e) {
 			Logger.warning(this, "Tried to send auth packet to local address: "+replyTo+" for "+pn+" - maybe you should set allowLocalAddresses for this peer??");
 		}
@@ -1948,11 +1948,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 				if(p != null) replyTo = p;
 			}
 		}
-		sock.sendPacket(data, replyTo, pn == null ? crypto.config.alwaysAllowLocalAddresses() : pn.allowLocalAddresses());
+		sock.sendPacket(data, replyTo, pn == null ? crypto.getConfig().alwaysAllowLocalAddresses() : pn.allowLocalAddresses());
 		if(pn != null)
 			pn.reportOutgoingBytes(data.length);
 		if(PeerNode.shouldThrottle(replyTo, node)) {
-			node.outputThrottle.forceGrab(data.length);
+			node.getOutputThrottle().forceGrab(data.length);
 		}
 	}
 
@@ -1961,7 +1961,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	 * caused by a handshake across a restart boundary?
 	 */
 	private boolean shouldLogErrorInHandshake(long now) {
-		if(now - node.startupTime < Node.HANDSHAKE_TIMEOUT*2)
+		if(now - node.getStartupTime() < Node.HANDSHAKE_TIMEOUT*2)
 			return false;
 		return true;
 	}
@@ -1975,7 +1975,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		if(negType == -1) {
 			// Pick a random negType from what I do support
 			int[] negTypes = supportedNegTypes(true);
-			negType = negTypes[node.random.nextInt(negTypes.length)];
+			negType = negTypes[node.getRandom().nextInt(negTypes.length)];
 			Logger.normal(this, "Cannot send handshake to "+pn+" because no common negTypes, choosing random negType of "+negType);
 		}
 		if(logMINOR) Logger.minor(this, "Possibly sending handshake to "+pn+" negotiation type "+negType);
@@ -2024,7 +2024,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 
 	@Override
 	public Peer[] getPrimaryIPAddress() {
-		return crypto.detector.getPrimaryPeers();
+		return crypto.getDetector().getPrimaryPeers();
 	}
 
 	@Override
@@ -2034,7 +2034,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 
 	@Override
 	public boolean alwaysAllowLocalAddresses() {
-		return crypto.config.alwaysAllowLocalAddresses();
+		return crypto.getConfig().alwaysAllowLocalAddresses();
 	}
 
 
@@ -2047,7 +2047,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 
     private void _fillJFKECDHFIFOOffThread() {
         // do it off-thread
-        node.executor.execute(new PrioRunnable() {
+        node.getExecutor().execute(new PrioRunnable() {
             @Override
             public void run() {
                 _fillJFKECDHFIFO();
@@ -2196,7 +2196,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	 * We push to it until we reach the cap where we rekey or we reach the PFS interval
 	 */
 	private int getAuthenticatorCacheSize() {
-		if(crypto.isOpennet && node.wantAnonAuth(true)) // seednodes
+		if(crypto.isOpennet() && node.wantAnonAuth(true)) // seednodes
 			return 5000; // 200kB
 		else
 			return 250; // 10kB
@@ -2223,7 +2223,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			}
 			timeLastReset = now;
 
-			node.random.nextBytes(transientKey);
+			node.getRandom().nextBytes(transientKey);
 
 			// reset the authenticator cache
 			authenticatorCache.clear();
@@ -2240,7 +2240,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			return lastConnectivityStatus;
 
 		Status value;
-		if (crypto.config.alwaysHandshakeAggressively())
+		if (crypto.getConfig().alwaysHandshakeAggressively())
 			value = AddressTracker.Status.DEFINITELY_NATED;
 		else
 			value = sock.getDetectedConnectivityStatus();

@@ -45,7 +45,7 @@ public class DATASTORE_SIZE implements Step {
 		HTMLNode bandwidthForm = helper.addFormChild(bandwidthInfoboxContent, ".", "dsForm");
 		HTMLNode result = bandwidthForm.addChild("select", "name", "ds");
 
-		long maxSize = maxDatastoreSize(core.node);
+		long maxSize = maxDatastoreSize(core.getNode());
 
 		long autodetectedSize = canAutoconfigureDatastoreSize();
 		if(maxSize < autodetectedSize) autodetectedSize = maxSize;

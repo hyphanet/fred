@@ -158,8 +158,8 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 		if(logMINOR) Logger.minor(this, "Setting IPV6_PREFER_SRC_PUBLIC for port "+ listenPort + " is a "+(r ? "success" : "failure"));
 //		}
 		// Only used for debugging, no need to seed from Yarrow
-		dropRandom = node.fastWeakRandom;
-		tracker = AddressTracker.create(node.lastBootID, node.runDir(), listenPort);
+		dropRandom = node.getFastWeakRandom();
+		tracker = AddressTracker.create(node.getLastBootId(), node.runDir(), listenPort);
 		tracker.startSend(startupTime);
 	}
 
@@ -401,7 +401,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 			_started = true;
 			startTime = System.currentTimeMillis();
 		}
-		node.executor.execute(this, "UdpSocketHandler for port "+listenPort);
+		node.getExecutor().execute(this, "UdpSocketHandler for port "+listenPort);
 	}
 
 	public void close() {
@@ -419,7 +419,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 				}
 			}
 		}
-		tracker.storeData(node.bootID, node.runDir(), listenPort);
+		tracker.storeData(node.getBootId(), node.runDir(), listenPort);
 	}
 
 	public int getDropProbability() {

@@ -36,7 +36,7 @@ public class PushDataToadlet extends Toadlet {
 		if (logMINOR) {
 			Logger.minor(this, "Getting data for element:" + elementId);
 		}
-		BaseUpdateableElement node = ((SimpleToadletServer) ctx.getContainer()).pushDataManager.getRenderedElement(requestId, elementId);
+		BaseUpdateableElement node = ((SimpleToadletServer) ctx.getContainer()).getPushDataManager().getRenderedElement(requestId, elementId);
 		if (logMINOR) {
 			Logger.minor(this, "Data got element:" + node.generateChildren());
 		}

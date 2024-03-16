@@ -65,10 +65,10 @@ public class BootstrapSeedTest {
 		int targetPeers = node.getOpennet().getAnnouncementThreshold();
         while(seconds < 600) {
         	Thread.sleep(1000);
-        	int seeds = node.peers.countSeednodes();
-        	int seedConns = node.peers.getConnectedSeedServerPeersVector(null).size();
-        	int opennetPeers = node.peers.countValidPeers();
-        	int opennetConns = node.peers.countConnectedOpennetPeers();
+        	int seeds = node.getPeers().countSeednodes();
+        	int seedConns = node.getPeers().getConnectedSeedServerPeersVector(null).size();
+        	int opennetPeers = node.getPeers().countValidPeers();
+        	int opennetConns = node.getPeers().countConnectedOpennetPeers();
         	System.err.println(""+seconds+" : seeds: "+seeds+", connected: "+seedConns
         			+" opennet: peers: "+opennetPeers+", connected: "+opennetConns);
         	seconds++;

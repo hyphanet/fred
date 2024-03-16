@@ -176,8 +176,8 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		super(client);
 		this.node = n;
 		this.core = core;
-		this.stats = n.nodeStats;
-		this.peers = n.peers;
+		this.stats = n.getNodeStats();
+		this.peers = n.getPeers();
 	    REF_LINK = HTMLNode.link(path()+"myref.fref").setReadOnly();
 	    REFTEXT_LINK = HTMLNode.link(path()+"myref.txt").setReadOnly();
 	}
@@ -263,7 +263,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			if(advancedMode) {
 
 				/* node status values */
-				long nodeUptimeSeconds = SECONDS.convert(now - node.startupTime, MILLISECONDS);
+				long nodeUptimeSeconds = SECONDS.convert(now - node.getStartupTime(), MILLISECONDS);
 				int bwlimitDelayTime = (int) stats.getBwlimitDelayTime();
 				int nodeAveragePingTime = (int) stats.getNodeAveragePingTime();
 				int networkSizeEstimateSession = stats.getDarknetSizeEstimate(-1);
@@ -472,7 +472,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 
 				double totalSelectionRate = 0.0;
 				//calculate the total selection rate using all peers, not just the peers for the current mode,
-				PeerNodeStatus[] allPeerNodeStatuses = node.peers.getPeerNodeStatuses(true);
+				PeerNodeStatus[] allPeerNodeStatuses = node.getPeers().getPeerNodeStatuses(true);
 				for(PeerNodeStatus status : allPeerNodeStatuses) {
 					totalSelectionRate += status.getSelectionRate();
 				}
@@ -630,7 +630,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				privateComment = request.getPartAsStringFailsafe("peerPrivateNote", 250).trim();
 
 			if (Boolean.parseBoolean(request.getPartAsStringFailsafe("peers-offers-files", 5))) {
-				File[] files = core.node.runDir().file("peers-offers").listFiles();
+				File[] files = core.getNode().runDir().file("peers-offers").listFiles();
 				if (files != null && files.length > 0) {
 					StringBuilder peersOffersFilesContent = new StringBuilder();
 					for (final File file : files) {
@@ -643,7 +643,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 					reftext = peersOffersFilesContent.toString();
 				}
 
-				node.config.get("node").set("peersOffersDismissed", true);
+				node.getConfig().get("node").set("peersOffersDismissed", true);
 			}
 			
 			String trustS = request.getPartAsStringFailsafe("trust", 10);

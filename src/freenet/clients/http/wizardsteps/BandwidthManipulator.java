@@ -64,7 +64,7 @@ public abstract class BandwidthManipulator {
 
 	protected BandwidthLimit getCurrentBandwidthLimitsOrNull() {
 		if (!config.get("node").getOption("outputBandwidthLimit").isDefault()) {
-			return new BandwidthLimit(core.node.getInputBandwidthLimit(), core.node.getOutputBandwidthLimit(), "bandwidthCurrent", false);
+			return new BandwidthLimit(core.getNode().getInputBandwidthLimit(), core.getNode().getOutputBandwidthLimit(), "bandwidthCurrent", false);
 		}
 		return null;
 	}

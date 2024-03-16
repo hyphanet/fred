@@ -91,7 +91,7 @@ public class OpennetPeerNode extends PeerNode {
 				opennetNodeAddedReason = null;
 			}
 		}
-		if(now - node.usm.getStartedTime() < OpennetManager.DROP_STARTUP_DELAY)
+		if(now - node.getUSM().getStartedTime() < OpennetManager.DROP_STARTUP_DELAY)
 			return NOT_DROP_REASON.TOO_LOW_UPTIME; // Give them time to connect after we startup
 		if(!ignoreDisconnect) {
 		synchronized(this) {
@@ -179,9 +179,9 @@ public class OpennetPeerNode extends PeerNode {
 		// FIXME remove, paranoia
 		if(uptime < HOURS.toMillis(1))
 			return false;
-		NodeUpdateManager updater = node.nodeUpdater;
+		NodeUpdateManager updater = node.getNodeUpdater();
 		if(updater == null) return true; // Not going to UOM.
-		UpdateOverMandatoryManager uom = updater.uom;
+		UpdateOverMandatoryManager uom = updater.getUpdateOverMandatory();
 		if(uom == null) return true; // Not going to UOM
 		if(uptime > HOURS.toMillis(2)) {
 			// UOM transfers can take ages, but there has to be some limit...
@@ -198,7 +198,7 @@ public class OpennetPeerNode extends PeerNode {
 	@Override
 	protected void onConnect() {
 		super.onConnect();
-		opennet.crypto.socket.getAddressTracker().setPresumedGuiltyAt(System.currentTimeMillis() + HOURS.toMillis(1));
+		opennet.getCrypto().getSocket().getAddressTracker().setPresumedGuiltyAt(System.currentTimeMillis() + HOURS.toMillis(1));
 	}
 	
 	private boolean wasDropped;
@@ -278,7 +278,7 @@ public class OpennetPeerNode extends PeerNode {
             return LinkLengthClass.SHORT; // FIXME add unknown to enum? Would need more complex error handling...
         }
         // FIXME OPTIMISE This should not change since we don't swap on opennet.
-        if(Location.distance(this, opennet.node.getLocation()) > OpennetManager.LONG_DISTANCE)
+        if(Location.distance(this, opennet.getNode().getLocation()) > OpennetManager.LONG_DISTANCE)
             return LinkLengthClass.LONG;
         else
             return LinkLengthClass.SHORT;
@@ -296,7 +296,7 @@ public class OpennetPeerNode extends PeerNode {
 
     @Override
     protected void writePeers() {
-        node.peers.writePeers(true);
+        node.getPeers().writePeers(true);
     }
 
 }

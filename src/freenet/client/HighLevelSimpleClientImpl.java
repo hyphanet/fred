@@ -97,14 +97,14 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		this.core = node;
 		this.priorityClass = priorityClass;
 		bucketFactory = bf;
-		this.persistentFileTracker = node.persistentTempBucketFactory;
+		this.persistentFileTracker = node.getPersistentTempBucketFactory();
 		random = r;
 		this.eventProducer = new SimpleEventProducer();
 		eventProducer.addEventListener(new EventLogger(LogLevel.MINOR, false));
 		curMaxLength = Long.MAX_VALUE;
 		curMaxTempLength = Long.MAX_VALUE;
 		curMaxMetadataLength = 1024 * 1024;
-		this.persistentBucketFactory = node.persistentTempBucketFactory;
+		this.persistentBucketFactory = node.getPersistentTempBucketFactory();
 		this.realTimeFlag = realTimeFlag;
 	}
 
@@ -148,7 +148,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		FetchWaiter fw = new FetchWaiter(this);
 		ClientGetter get = new ClientGetter(fw, uri, context, priorityClass, null, null, null);
 		try {
-			core.clientContext.start(get);
+			core.getClientContext().start(get);
 		} catch (PersistenceDisabledException e) {
 			// Impossible
 		}
@@ -165,7 +165,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		FetchWaiter fw = new FetchWaiter(this);
 		ClientGetter get = new ClientGetter(fw, FreenetURI.EMPTY_CHK_URI, context, priorityClass, null, null, initialMetadata);
 		try {
-			core.clientContext.start(get);
+			core.getClientContext().start(get);
 		} catch (PersistenceDisabledException e) {
 			// Impossible
 		}
@@ -184,7 +184,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		FetchContext context = getFetchContext(overrideMaxSize);
 		ClientGetter get = new ClientGetter(fw, uri, context, priorityClass, null, null, null);
 		try {
-			core.clientContext.start(get);
+			core.getClientContext().start(get);
 		} catch (PersistenceDisabledException e) {
 			// Impossible
 		}
@@ -211,7 +211,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		if(uri == null) throw new NullPointerException();
 		ClientGetter get = new ClientGetter(callback, uri, fctx, prio, null, null, null);
 		try {
-			core.clientContext.start(get);
+			core.getClientContext().start(get);
 		} catch (PersistenceDisabledException e) {
 			// Impossible
 		}
@@ -223,7 +223,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		if(initialMetadata == null) throw new NullPointerException();
 		ClientGetter get = new ClientGetter(callback, FreenetURI.EMPTY_CHK_URI, fctx, prio, null, null, initialMetadata);
 		try {
-			core.clientContext.start(get);
+			core.getClientContext().start(get);
 		} catch (PersistenceDisabledException e) {
 			// Impossible
 		}
@@ -259,9 +259,9 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		PutWaiter pw = new PutWaiter(this);
 		ClientPutter put = new ClientPutter(pw, insert.getData(), insert.desiredURI, insert.clientMetadata,
 				ctx, priority,
-				isMetadata, filenameHint, false, core.clientContext, forceCryptoKey, -1);
+				isMetadata, filenameHint, false, core.getClientContext(), forceCryptoKey, -1);
 		try {
-			core.clientContext.start(put);
+			core.getClientContext().start(put);
 		} catch (PersistenceDisabledException e) {
 			// Impossible
 		}
@@ -277,9 +277,9 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	public ClientPutter insert(InsertBlock insert, String filenameHint, boolean isMetadata, InsertContext ctx, ClientPutCallback cb, short priority) throws InsertException {
 		ClientPutter put = new ClientPutter(cb, insert.getData(), insert.desiredURI, insert.clientMetadata,
 				ctx, priority,
-				isMetadata, filenameHint, false, core.clientContext, null, -1);
+				isMetadata, filenameHint, false, core.getClientContext(), null, -1);
 		try {
-			core.clientContext.start(put);
+			core.getClientContext().start(put);
 		} catch (PersistenceDisabledException e) {
 			// Impossible
 		}
@@ -321,12 +321,12 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		PutWaiter pw = new PutWaiter(this);
 		DefaultManifestPutter putter;
         try {
-            putter = new DefaultManifestPutter(pw, BaseManifestPutter.bucketsByNameToManifestEntries(bucketsByName), priorityClass, insertURI, defaultName, getInsertContext(true), false, forceCryptoKey, core.clientContext);
+            putter = new DefaultManifestPutter(pw, BaseManifestPutter.bucketsByNameToManifestEntries(bucketsByName), priorityClass, insertURI, defaultName, getInsertContext(true), false, forceCryptoKey, core.getClientContext());
         } catch (TooManyFilesInsertException e1) {
             throw new InsertException(InsertExceptionMode.TOO_MANY_FILES);
         }
 		try {
-			core.clientContext.start(putter);
+			core.getClientContext().start(putter);
 		} catch (PersistenceDisabledException e) {
 			// Impossible
 		}
@@ -419,12 +419,12 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		core.getTicker().queueTimedJob(new Runnable() {
 			@Override
 			public void run() {
-				get.cancel(core.clientContext);
+				get.cancel(core.getClientContext());
 			}
 
 		}, timeout);
 		try {
-			core.clientContext.start(get);
+			core.getClientContext().start(get);
 		} catch (FetchException e) {
 			// Ignore
 		} catch (PersistenceDisabledException e) {

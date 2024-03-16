@@ -497,15 +497,15 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 				});
 				if(req.localRequestOnly)
 					try {
-						core.node.store(b, false, req.canWriteClientCache, true, false);
+						core.getNode().store(b, false, req.canWriteClientCache, true, false);
 					} catch (KeyCollisionException e) {
 						LowLevelPutException failed = new LowLevelPutException(LowLevelPutException.COLLISION);
-						KeyBlock collided = core.node.fetch(k.getNodeKey(), true, req.canWriteClientCache, false, false, null);
+						KeyBlock collided = core.getNode().fetch(k.getNodeKey(), true, req.canWriteClientCache, false, false, null);
 						if(collided == null) {
 							Logger.error(this, "Collided but no key?!");
 							// Could be a race condition.
 							try {
-								core.node.store(b, false, req.canWriteClientCache, true, false);
+								core.getNode().store(b, false, req.canWriteClientCache, true, false);
 							} catch (KeyCollisionException e2) {
 								Logger.error(this, "Collided but no key and still collided!");
 								throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, "Collided, can't find block, but still collides!", e);

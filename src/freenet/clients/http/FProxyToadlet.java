@@ -128,7 +128,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		client.setMaxLength(MAX_LENGTH_NO_PROGRESS);
 		client.setMaxIntermediateLength(MAX_LENGTH_NO_PROGRESS);
 		this.core = core;
-		this.context = core.clientContext;
+		this.context = core.getClientContext();
 		fetchTracker = tracker;
 	}
 
@@ -305,8 +305,8 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 
 	private static void addDownloadOptions(ToadletContext ctx, HTMLNode optionList, FreenetURI key, String mimeType,
 	        boolean disableFiltration, boolean dontShowFilter, NodeClientCore core) {
-		PHYSICAL_THREAT_LEVEL threatLevel = core.node.securityLevels.getPhysicalThreatLevel();
-		NETWORK_THREAT_LEVEL netLevel = core.node.securityLevels.getNetworkThreatLevel();
+		PHYSICAL_THREAT_LEVEL threatLevel = core.getNode().getSecurityLevels().getPhysicalThreatLevel();
+		NETWORK_THREAT_LEVEL netLevel = core.getNode().getSecurityLevels().getNetworkThreatLevel();
 		boolean filterChecked = !(((threatLevel == PHYSICAL_THREAT_LEVEL.LOW &&
 		        netLevel == NETWORK_THREAT_LEVEL.LOW)) || disableFiltration);
 		if((filterChecked) && mimeType != null && !mimeType.equals("application/octet-stream") &&
@@ -633,7 +633,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 
 				@Override
 				public void onFinishedPage() {
-					core.node.executor.execute(new Runnable() {
+					core.getNode().getExecutor().execute(new Runnable() {
 
 						@Override
 						public void run() {
@@ -921,7 +921,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				PluginInfoWrapper keyUtil;
 				if((e.mode == FetchExceptionMode.NOT_IN_ARCHIVE || e.mode == FetchExceptionMode.NOT_ENOUGH_PATH_COMPONENTS)) {
 					// first look for the newest version
-					if ((keyUtil = core.node.pluginManager.getPluginInfo("plugins.KeyUtils.KeyUtilsPlugin")) != null) {
+					if ((keyUtil = core.getNode().getPluginManager().getPluginInfo("plugins.KeyUtils.KeyUtilsPlugin")) != null) {
 						option = optionList.addChild("li");
 						if (keyUtil.getPluginLongVersion() < 5010)
 							NodeL10n.getBase().addL10nSubstitution(option, "FProxyToadlet.openWithKeyExplorer", new String[] { "link" }, new HTMLNode[] { HTMLNode.link("/KeyUtils/?automf=true&key=" + key.toString()) });
@@ -930,7 +930,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 							option = optionList.addChild("li");
 							NodeL10n.getBase().addL10nSubstitution(option, "FProxyToadlet.openWithSiteExplorer", new String[] { "link" }, new HTMLNode[] { HTMLNode.link("/KeyUtils/Site?key=" + key.toString()) });
 						}
-					} else if ((keyUtil = core.node.pluginManager.getPluginInfo("plugins.KeyExplorer.KeyExplorer")) != null) {
+					} else if ((keyUtil = core.getNode().getPluginManager().getPluginInfo("plugins.KeyExplorer.KeyExplorer")) != null) {
 						option = optionList.addChild("li");
 						if (keyUtil.getPluginLongVersion() > 4999)
 							NodeL10n.getBase().addL10nSubstitution(option, "FProxyToadlet.openWithKeyExplorer", new String[] { "link" }, new HTMLNode[] { HTMLNode.link("/KeyExplorer/?automf=true&key=" + key.toString())});
@@ -939,7 +939,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 					}
 				}
 				if(filterException != null) {
-					if((mime.equals("application/x-freenet-index")) && (core.node.pluginManager.isPluginLoaded("plugins.ThawIndexBrowser.ThawIndexBrowser"))) {
+					if((mime.equals("application/x-freenet-index")) && (core.getNode().getPluginManager().isPluginLoaded("plugins.ThawIndexBrowser.ThawIndexBrowser"))) {
 						option = optionList.addChild("li");
 						NodeL10n.getBase().addL10nSubstitution(option, "FProxyToadlet.openAsThawIndex", new String[] { "link" }, new HTMLNode[] { HTMLNode.link("/plugins/plugins.ThawIndexBrowser.ThawIndexBrowser/?key=" + key.toString())});
 					}
@@ -990,7 +990,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 
 	private String getSchemeHostAndPort(ToadletContext ctx) {
 		// retrieve config from froxy
-		SubConfig fProxyConfig = core.node.config.get("fproxy");
+		SubConfig fProxyConfig = core.getNode().getConfig().get("fproxy");
 
 		Option<?> fProxyPort = fProxyConfig.getOption("port");
 		Option<?> fProxyBindTo = fProxyConfig.getOption("bindTo");
@@ -1115,9 +1115,9 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		HighLevelSimpleClient client = core.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS, true, true);
 
 		random = new byte[32];
-		core.random.nextBytes(random);
+		core.getRandom().nextBytes(random);
 
-		FProxyFetchTracker fetchTracker = new FProxyFetchTracker(core.clientContext, client.getFetchContext(),
+		FProxyFetchTracker fetchTracker = new FProxyFetchTracker(core.getClientContext(), client.getFetchContext(),
 				new RequestClientBuilder().realTime().build());
 
 
@@ -1183,7 +1183,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		server.register(seclevels, "FProxyToadlet.categoryConfig", "/seclevels/", true,
 		        "FProxyToadlet.seclevelsTitle", "FProxyToadlet.seclevels", true, null);
 
-		if(node.pluginManager.isEnabled()) {
+		if(node.getPluginManager().isEnabled()) {
 		    PproxyToadlet pproxy = new PproxyToadlet(client, node);
 		    server.register(pproxy, "FProxyToadlet.categoryConfig", "/plugins/", true, "FProxyToadlet.pluginsTitle",
 		            "FProxyToadlet.plugins", true, null);
@@ -1223,7 +1223,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		server.register(opennetToadlet, "FProxyToadlet.categoryStatus", "/strangers/", true,
 		        "FProxyToadlet.opennetTitle", "FProxyToadlet.opennet", true, opennetToadlet);
 
-		ChatForumsToadlet chatForumsToadlet = new ChatForumsToadlet(client, node.pluginManager);
+		ChatForumsToadlet chatForumsToadlet = new ChatForumsToadlet(client, node.getPluginManager());
 		server.register(chatForumsToadlet, "FProxyToadlet.categoryChat", "/chat/", true,
 		        "FProxyToadlet.chatForumsTitle", "FProxyToadlet.chatForums", true, chatForumsToadlet);
 

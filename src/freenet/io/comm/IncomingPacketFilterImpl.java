@@ -57,8 +57,8 @@ public class IncomingPacketFilterImpl implements IncomingPacketFilter {
 	@Override
 	public DECODED process(byte[] buf, int offset, int length, Peer peer, long now) {
 		if(logMINOR) Logger.minor(this, "Packet length "+length+" from "+peer);
-		node.random.acceptTimerEntropy(fnpTimingSource, 0.25);
-		PeerNode opn = node.peers.getByPeer(peer, mangler);
+		node.getRandom().acceptTimerEntropy(fnpTimingSource, 0.25);
+		PeerNode opn = node.getPeers().getByPeer(peer, mangler);
 
 		if(opn != null) {
 			if(opn.handleReceivedPacket(buf, offset, length, now, peer)) {

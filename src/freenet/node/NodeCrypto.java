@@ -42,30 +42,107 @@ public class NodeCrypto {
 	/** Length of a node identity */
 	public static final int IDENTITY_LENGTH = 32;
 	final Node node;
+
+	/**
+	 * @deprecated Use {@link #isOpennet()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	final boolean isOpennet;
 	final RandomSource random;
-	/** The object which handles our specific UDP port, pulls messages from it, feeds them to the packet mangler for decryption etc */
+
+	/**
+	 * The object which handles our specific UDP port, pulls messages from it, feeds them to the packet mangler for decryption etc
+	 * @deprecated Use {@link #getSocket()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	final UdpSocketHandler socket;
+
+	/**
+	 * @deprecated Use {@link #getPacketMangler()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public FNPPacketMangler packetMangler;
+
+	/**
+	 * @deprecated Use {@link #getPortNumber()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	// FIXME: abstract out address stuff? Possibly to something like NodeReference?
 	final int portNumber;
-	/** @see PeerNode.identity */
+
+	/**
+	 * @see PeerNode#identity
+	 * @deprecated Use {@link #getMyIdentity()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	byte[] myIdentity;
-	/** Hash of identity. Used as setup key. */
+
+	/**
+	 * Hash of identity. Used as setup key.
+	 * @deprecated Use {@link #getIdentityHash()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	byte[] identityHash;
-	/** Hash of hash of identity i.e. hash of setup key. */
+
+	/**
+	 * Hash of hash of identity i.e. hash of setup key.
+	 * @deprecated Use {@link #getIdentityHashHash()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	byte[] identityHashHash;
 	/** Nonce used to generate ?secureid= for fproxy etc */
 	byte[] clientNonce;
 	/** My ECDSA/P256 keypair and context */
 	private ECDSA ecdsaP256;
+
+	/**
+	 * @deprecated Use {@link #getEcdsaPubKeyHash()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	byte[] ecdsaPubKeyHash;
-	/** My ARK SSK private key */
+
+	/**
+	 * My ARK SSK private key
+	 * @deprecated Use {@link #getMyARK()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	InsertableClientSSK myARK;
-	/** My ARK sequence number */
+	/**
+	 * My ARK sequence number
+	 * @deprecated Use {@link #getMyARKNumber()} and {@link #setMyARKNumber(long)} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	long myARKNumber;
+
+	/**
+	 * @deprecated Use {@link #getConfig()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	final NodeCryptoConfig config;
+
+	/**
+	 * @deprecated Use {@link #getDetector()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	final NodeIPPortDetector detector;
+
+	/**
+	 * @deprecated Use {@link #getAnonSetupCipher()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	final BlockCipher anonSetupCipher;
 
 	// Noderef related
@@ -84,7 +161,7 @@ public class NodeCrypto {
 
 		this.node = node;
 		this.config = config;
-		random = node.random;
+		random = node.getRandom();
 		this.isOpennet = isOpennet;
 
 		config.starting(this);
@@ -104,7 +181,7 @@ public class NodeCrypto {
 			for(int i=0;i<200000;i++) {
 				int portNo = 1024 + random.nextInt(65535-1024);
 				try {
-					u = new UdpSocketHandler(portNo, bindto.getAddress(), node, startupTime, getTitle(portNo), node.collector);
+					u = new UdpSocketHandler(portNo, bindto.getAddress(), node, startupTime, getTitle(portNo), node.getCollector());
 					port = u.getPortNumber();
 					break;
 				} catch (Exception e) {
@@ -118,7 +195,7 @@ public class NodeCrypto {
 				throw new NodeInitException(NodeInitException.EXIT_NO_AVAILABLE_UDP_PORTS, "Could not find an available UDP port number for FNP (none specified)");
 		} else {
 			try {
-				u = new UdpSocketHandler(port, bindto.getAddress(), node, startupTime, getTitle(port), node.collector);
+				u = new UdpSocketHandler(port, bindto.getAddress(), node, startupTime, getTitle(port), node.getCollector());
 			} catch (Exception e) {
 				Logger.error(this, "Caught "+e, e);
 				System.err.println(e);
@@ -137,7 +214,7 @@ public class NodeCrypto {
 
 		packetMangler = new FNPPacketMangler(node, this, socket);
 
-		detector = new NodeIPPortDetector(node, node.ipDetector, this, enableARKs);
+		detector = new NodeIPPortDetector(node, node.getIpDetector(), this, enableARKs);
 
 		anonSetupCipher = new Rijndael(256,256);
 
@@ -239,7 +316,7 @@ public class NodeCrypto {
 			}
 		} else {
 			clientNonce = new byte[32];
-			node.random.nextBytes(clientNonce);
+			node.getRandom().nextBytes(clientNonce);
 		}
 
 	}
@@ -253,9 +330,9 @@ public class NodeCrypto {
 		myARK = InsertableClientSSK.createRandom(random, "ark");
 		myARKNumber = 0;
 		clientNonce = new byte[32];
-		node.random.nextBytes(clientNonce);
+		node.getRandom().nextBytes(clientNonce);
 		myIdentity = new byte[IDENTITY_LENGTH];
-		node.random.nextBytes(myIdentity);
+		node.getRandom().nextBytes(myIdentity);
 		identityHash = SHA256.digest(myIdentity);
 		identityHashHash = SHA256.digest(identityHash);
 		anonSetupCipher.initialize(identityHash);
@@ -306,7 +383,7 @@ public class NodeCrypto {
 		if(!(forARK || forSetup || forAnonInitiator)) {
 		    // We *do* need the location on noderefs exchanged via path folding and announcement.
 		    // This is necessary so we can take the location into account in OpennetManager.wantPeer().
-		    fs.put("location", node.lm.getLocation());
+		    fs.put("location", node.getLocationManager().getLocation());
 		}
 		fs.putSingle("version", Version.getVersionString()); // Keep, vital that peer know our version. For example, some types may be sent in different formats to different node versions (e.g. Peer).
 		if(!forAnonInitiator)
@@ -456,11 +533,11 @@ public class NodeCrypto {
 	}
 
 	public PeerNode[] getPeerNodes() {
-		if(node.peers == null) return null;
+		if(node.getPeers() == null) return null;
 		if(isOpennet)
-			return node.peers.getOpennetAndSeedServerPeers();
+			return node.getPeers().getOpennetAndSeedServerPeers();
 		else
-			return node.peers.getDarknetPeers();
+			return node.getPeers().getDarknetPeers();
 	}
 
 	public boolean allowConnection(PeerNode pn, FreenetInetAddress addr) {
@@ -468,7 +545,7 @@ public class NodeCrypto {
     		// Disallow multiple connections to the same address
 			// TODO: this is inadequate for IPv6, should be replaced by
 			// check for "same /64 subnet" [configurable] instead of exact match
-    		if(node.peers.anyConnectedPeerHasAddress(addr, pn) && !detector.includes(addr)
+    		if(node.getPeers().anyConnectedPeerHasAddress(addr, pn) && !detector.includes(addr)
     				&& addr.isRealInternetAddress(false, false, false)) {
     			Logger.normal(this, "Not sending handshake packets to "+addr+" for "+pn+" : Same IP address as another node");
     			return false;
@@ -486,7 +563,7 @@ public class NodeCrypto {
 			FreenetInetAddress address) {
 		if(detector.includes(address)) return;
 		if(!address.isRealInternetAddress(false, false, false)) return;
-		ArrayList<PeerNode> possibleMatches = node.peers.getAllConnectedByAddress(address, true);
+		ArrayList<PeerNode> possibleMatches = node.getPeers().getAllConnectedByAddress(address, true);
 		if(possibleMatches == null) return;
 		for(PeerNode pn : possibleMatches) {
 			if(pn == peerNode) continue;
@@ -503,7 +580,7 @@ public class NodeCrypto {
 					Logger.error(this, "Dropping peer "+pn+" because don't want connection due to others on the same IP address!");
 					System.out.println("Disconnecting permanently from your friend \""+((DarknetPeerNode)pn).getName()+"\" because your friend \""+((DarknetPeerNode)peerNode).getName()+"\" is using the same IP address "+address+"!");
 				}
-				node.peers.disconnectAndRemove(pn, true, true, pn.isOpennet());
+				node.getPeers().disconnectAndRemove(pn, true, true, pn.isOpennet());
 			}
 		}
 	}
@@ -517,7 +594,7 @@ public class NodeCrypto {
 
 	public PeerNode[] getAnonSetupPeerNodes() {
 		ArrayList<PeerNode> v = new ArrayList<PeerNode>();
-		for(PeerNode pn: node.peers.myPeers()) {
+		for(PeerNode pn: node.getPeers().myPeers()) {
 			if(pn.handshakeUnknownInitiator() && pn.getOutgoingMangler() == packetMangler)
 				v.add(pn);
 		}
@@ -553,6 +630,58 @@ public class NodeCrypto {
 	
 	public boolean wantAnonAuthChangeIP() {
 		return node.wantAnonAuthChangeIP(isOpennet);
+	}
+
+	public FNPPacketMangler getPacketMangler() {
+		return packetMangler;
+	}
+
+	public boolean isOpennet() {
+		return isOpennet;
+	}
+
+	public UdpSocketHandler getSocket() {
+		return socket;
+	}
+
+	public int getPortNumber() {
+		return portNumber;
+	}
+
+	public byte[] getMyIdentity() {
+		return myIdentity;
+	}
+
+	public byte[] getIdentityHash() {
+		return identityHash;
+	}
+
+	public byte[] getIdentityHashHash() {
+		return identityHashHash;
+	}
+
+	public byte[] getEcdsaPubKeyHash() {
+		return ecdsaPubKeyHash;
+	}
+
+	public InsertableClientSSK getMyARK() {
+		return myARK;
+	}
+
+	public long getMyARKNumber() {
+		return myARKNumber;
+	}
+
+	public void setMyARKNumber(long myARKNumber) {
+		this.myARKNumber = myARKNumber;
+	}
+
+	public NodeCryptoConfig getConfig() {
+		return config;
+	}
+
+	public NodeIPPortDetector getDetector() {
+		return detector;
 	}
 
 }

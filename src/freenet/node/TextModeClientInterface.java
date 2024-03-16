@@ -94,7 +94,7 @@ public class TextModeClientInterface implements Runnable {
 
     public TextModeClientInterface(TextModeClientInterfaceServer server, InputStream in, OutputStream out) {
     	this.n = server.n;
-    	this.core = server.n.clientCore;
+    	this.core = server.n.getClientCore();
     	this.r = server.r;
         client = core.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS, true, false);
     	this.downloadsDir = server.downloadsDir;
@@ -105,7 +105,7 @@ public class TextModeClientInterface implements Runnable {
 
     public TextModeClientInterface(Node n, NodeClientCore core, HighLevelSimpleClient c, File downloadDir, InputStream in, OutputStream out) {
     	this.n = n;
-    	this.r = n.random;
+    	this.r = n.getRandom();
     	this.core = core;
     	this.client = c;
     	this.downloadsDir = downloadDir;
@@ -209,7 +209,7 @@ public class TextModeClientInterface implements Runnable {
         sb.append("ANNOUNCE[:<location>] - announce to the specified location\r\n");
         if(n.isUsingWrapper())
         	sb.append("RESTART - restart the program\r\n");
-        if(core != null && core.directTMCI != this) {
+        if(core != null && core.getDirectTMCI() != this) {
           sb.append("QUIT - close the socket\r\n");
         }
         if(Node.isTestnetEnabled()) {
@@ -315,7 +315,7 @@ public class TextModeClientInterface implements Runnable {
 	        		FetchWaiter fw = new FetchWaiter((RequestClient)client);
 	        		ClientGetter get = new ClientGetter(fw, uri, context, RequestStarter.INTERACTIVE_PRIORITY_CLASS, null, null, null);
 	        		get.setMetaSnoop(new DumperSnoopMetadata());
-	            	get.start(n.clientCore.clientContext);
+	            	get.start(n.getClientCore().getClientContext());
 					FetchResult result = fw.waitForCompletion();
 					ClientMetadata cm = result.getMetadata();
 	                outsb.append("Content MIME type: ").append(cm.getMIMEType());
@@ -423,7 +423,7 @@ public class TextModeClientInterface implements Runnable {
     } else if(uline.startsWith("UPDATE")) {
     	outsb.append("starting the update process");
     	// FIXME run on separate thread
-    	n.ticker.queueTimedJob(new Runnable() {
+    	n.getTicker().queueTimedJob(new Runnable() {
     		@Override
     		public void run() {
     		    freenet.support.Logger.OSThread.logPID(this);
@@ -489,7 +489,7 @@ public class TextModeClientInterface implements Runnable {
 		w.write(sb.toString());
 		w.flush();
 		n.getNodeStarter().restart();
-	} else if(uline.startsWith("QUIT") && (core.directTMCI == this)) {
+	} else if(uline.startsWith("QUIT") && (core.getDirectTMCI() == this)) {
 		StringBuilder sb = new StringBuilder();
 		sb.append("QUIT command not available in console mode.\r\n");
 		w.write(sb.toString());
@@ -935,16 +935,16 @@ public class TextModeClientInterface implements Runnable {
         } else if(uline.startsWith("PLUGLOAD")) {
         	if(uline.startsWith("PLUGLOAD:O:")) {
         		String name = line.substring("PLUGLOAD:O:".length()).trim();
-        		n.pluginManager.startPluginOfficial(name, true);
+        		n.getPluginManager().startPluginOfficial(name, true);
         	} else if(uline.startsWith("PLUGLOAD:F:")) {
         		String name = line.substring("PLUGLOAD:F:".length()).trim();
-        		n.pluginManager.startPluginFile(name, true);
+        		n.getPluginManager().startPluginFile(name, true);
         	} else if(uline.startsWith("PLUGLOAD:U:")) {
         		String name = line.substring("PLUGLOAD:U:".length()).trim();
-        		n.pluginManager.startPluginURL(name, true);
+        		n.getPluginManager().startPluginURL(name, true);
         	} else if(uline.startsWith("PLUGLOAD:K:")) {
         		String name = line.substring("PLUGLOAD:K:".length()).trim();
-        		n.pluginManager.startPluginFreenet(name, true);
+        		n.getPluginManager().startPluginFreenet(name, true);
         	} else {
         		outsb.append("  PLUGLOAD:O: pluginName         - Load official plugin from freenetproject.org\r\n");
         		outsb.append("  PLUGLOAD:F: file://<filename>  - Load plugin from file\r\n");
@@ -952,9 +952,9 @@ public class TextModeClientInterface implements Runnable {
         		outsb.append("  PLUGLOAD:K: freenet key        - Load plugin from freenet uri\r\n");
         	}
         } else if(uline.startsWith("PLUGLIST")) {
-        	outsb.append(n.pluginManager.dumpPlugins());
+        	outsb.append(n.getPluginManager().dumpPlugins());
         } else if(uline.startsWith("PLUGKILL:")) {
-        	n.pluginManager.killPlugin(line.substring("PLUGKILL:".length()).trim(), MINUTES.toMillis(1), false);
+        	n.getPluginManager().killPlugin(line.substring("PLUGKILL:".length()).trim(), MINUTES.toMillis(1), false);
         } else if(uline.startsWith("ANNOUNCE")) {
         	OpennetManager om = n.getOpennet();
         	if(om == null) {
@@ -966,7 +966,7 @@ public class TextModeClientInterface implements Runnable {
         	if(uline.charAt(0) == ':') {
         		target = Double.parseDouble(uline.substring(1));
         	} else {
-        		target = n.random.nextDouble();
+        		target = n.getRandom().nextDouble();
         	}
         	om.announce(target, new AnnouncementCallback() {
         		private void write(String msg) {
@@ -1169,9 +1169,9 @@ public class TextModeClientInterface implements Runnable {
 		    Logger.error(this, "Did not parse: "+e1, e1);
 		    return;
         }
-        if(n.peers.addPeer(pn))
+        if(n.getPeers().addPeer(pn))
             System.out.println("Added peer: "+pn);
-        n.peers.writePeersDarknetUrgent();
+        n.getPeers().writePeersDarknetUrgent();
     }
 
 	/**
@@ -1179,7 +1179,7 @@ public class TextModeClientInterface implements Runnable {
 	 * Report peer success as boolean
 	 */
 	private boolean disablePeer(String nodeIdentifier) {
-		for(DarknetPeerNode pn: n.peers.getDarknetPeers())
+		for(DarknetPeerNode pn: n.getPeers().getDarknetPeers())
 		{
 			Peer peer = pn.getPeer();
 			String nodeIpAndPort = "";
@@ -1201,7 +1201,7 @@ public class TextModeClientInterface implements Runnable {
 	 * Report peer success as boolean
 	 */
 	private boolean enablePeer(String nodeIdentifier) {
-		for(DarknetPeerNode pn: n.peers.getDarknetPeers())
+		for(DarknetPeerNode pn: n.getPeers().getDarknetPeers())
 		{
 			Peer peer = pn.getPeer();
 			String nodeIpAndPort = "";
@@ -1223,7 +1223,7 @@ public class TextModeClientInterface implements Runnable {
      * Report peer existence as boolean
      */
     private boolean havePeer(String nodeIdentifier) {
-    	for(DarknetPeerNode pn: n.peers.getDarknetPeers())
+    	for(DarknetPeerNode pn: n.getPeers().getDarknetPeers())
     	{
     		Peer peer = pn.getPeer();
     		String nodeIpAndPort = "";
@@ -1246,7 +1246,7 @@ public class TextModeClientInterface implements Runnable {
      */
     private boolean removePeer(String nodeIdentifier) {
     	System.out.println("Removing peer from node for: "+nodeIdentifier);
-    	for(DarknetPeerNode pn: n.peers.getDarknetPeers())
+    	for(DarknetPeerNode pn: n.getPeers().getDarknetPeers())
     	{
     		Peer peer = pn.getPeer();
     		String nodeIpAndPort = "";

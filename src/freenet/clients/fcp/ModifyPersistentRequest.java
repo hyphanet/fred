@@ -76,7 +76,7 @@ public class ModifyPersistentRequest extends FCPMessage {
 		ClientRequest req = handler.getRebootRequest(global, handler, identifier);
 		if(req == null) {
 		    try {
-                node.clientCore.clientContext.jobRunner.queue(new PersistentJob() {
+                node.getClientCore().getClientContext().jobRunner.queue(new PersistentJob() {
                     
                     @Override
                     public boolean run(ClientContext context) {
@@ -87,7 +87,7 @@ public class ModifyPersistentRequest extends FCPMessage {
                             handler.send(msg);
                             return false;
                         } else {
-                            req.modifyRequest(clientToken, priorityClass, handler.server);
+                            req.modifyRequest(clientToken, priorityClass, handler.getServer());
                         }
                         return true;
                     }
@@ -98,7 +98,7 @@ public class ModifyPersistentRequest extends FCPMessage {
                 handler.send(msg);
             }
 		} else {
-			req.modifyRequest(clientToken, priorityClass, node.clientCore.getFCPServer());
+			req.modifyRequest(clientToken, priorityClass, node.getClientCore().getFCPServer());
 		}
 	}
 

@@ -99,7 +99,7 @@ public class PluginManager {
 		// config
 
 		this.node = node;
-		this.core = node.clientCore;
+		this.core = node.getClientCore();
 
 		if(logMINOR)
 			Logger.minor(this, "Starting Plugin Manager");
@@ -111,9 +111,9 @@ public class PluginManager {
 
 		// callback executor
 		executor = new SerialExecutor(PriorityLevel.NORM_PRIORITY.value);
-		executor.start(node.executor, "PM callback executor");
+		executor.start(node.getExecutor(), "PM callback executor");
 
-        SubConfig pmconfig = node.config.createSubConfig("pluginmanager");
+        SubConfig pmconfig = node.getConfig().createSubConfig("pluginmanager");
         pmconfig.register("enabled", true, 0, true, true, "PluginManager.enabled", "PluginManager.enabledLong", new BooleanCallback() {
 
             @Override
@@ -174,7 +174,7 @@ public class PluginManager {
 
 		pmconfig.finishedInitialization();
 
-		fproxyTheme = THEME.themeFromName(node.config.get("fproxy").getString("css"));
+		fproxyTheme = THEME.themeFromName(node.getConfig().get("fproxy").getString("css"));
 		selfinstance = this;
 	}
 
@@ -402,8 +402,8 @@ public class PluginManager {
 			PluginLoadFailedUserAlert newAlert =
 				new PluginLoadFailedUserAlert(filename, pdl.isOfficialPluginLoader(), stillTrying, e);
 			PluginLoadFailedUserAlert oldAlert = loadedPlugins.replaceUserAlert(filename, newAlert);
-			core.alerts.register(newAlert);
-			core.alerts.unregister(oldAlert);
+			core.getAlerts().register(newAlert);
+			core.getAlerts().unregister(oldAlert);
 		} catch (UnsupportedClassVersionError e) {
 			Logger.error(this, "Could not load plugin " + filename + " : " + e,
 					e);
@@ -414,8 +414,8 @@ public class PluginManager {
 			PluginLoadFailedUserAlert newAlert =
 				new PluginLoadFailedUserAlert(filename, pdl.isOfficialPluginLoader(), false, l10n("pluginReqNewerJVMTitle", "name", filename));
 			PluginLoadFailedUserAlert oldAlert = loadedPlugins.replaceUserAlert(filename, newAlert);
-			core.alerts.register(newAlert);
-			core.alerts.unregister(oldAlert);
+			core.getAlerts().register(newAlert);
+			core.getAlerts().unregister(oldAlert);
 		} catch (Throwable e) {
 			Logger.error(this, "Could not load plugin " + filename + " : " + e, e);
 			System.err.println("Could not load plugin " + filename + " : " + e);
@@ -425,8 +425,8 @@ public class PluginManager {
 			PluginLoadFailedUserAlert newAlert =
 				new PluginLoadFailedUserAlert(filename, pdl.isOfficialPluginLoader(), false, e);
 			PluginLoadFailedUserAlert oldAlert = loadedPlugins.replaceUserAlert(filename, newAlert);
-			core.alerts.register(newAlert);
-			core.alerts.unregister(oldAlert);
+			core.getAlerts().register(newAlert);
+			core.getAlerts().unregister(oldAlert);
 		} finally {
 			loadedPlugins.removeStartingPlugin(pluginProgress);
 		}
@@ -436,7 +436,7 @@ public class PluginManager {
 				core.storeConfig();
 		}
 		if(pi != null)
-			node.nodeUpdater.startPluginUpdater(filename);
+			node.getNodeUpdater().startPluginUpdater(filename);
 		return pi;
 	}
 
@@ -492,7 +492,7 @@ public class PluginManager {
 		@Override
 		public void onDismiss() {
 			loadedPlugins.removeFailedPlugin(filename);
-			node.executor.execute(new Runnable() {
+			node.getExecutor().execute(new Runnable() {
 
 				@Override
 				public void run() {
@@ -531,7 +531,7 @@ public class PluginManager {
 
 				if(!stillTrying) {
 					HTMLNode reloadForm = div.addChild("form", new String[] { "action", "method" }, new String[] { "/plugins/", "post" });
-					reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.clientCore.formPassword });
+					reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.getClientCore().getFormPassword() });
 					reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "plugin-name", filename });
 					reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit-official", l10n("officialPluginLoadFailedTryAgainFreenet") });
 				}
@@ -569,7 +569,7 @@ public class PluginManager {
 		public boolean isValid() {
 			boolean success = loadedPlugins.isFailedPlugin(filename);
 			if(!success) {
-				core.alerts.unregister(this);
+				core.getAlerts().unregister(this);
 			}
 			return success;
 		}
@@ -606,7 +606,7 @@ public class PluginManager {
 			// malicious plugins could try to hijack node config
 			// pages, to ill effect. Let's avoid that.
 			boolean pluginIsTryingToHijackNodeConfig = false;
-			for(SubConfig subconfig : node.config.getConfigs()) {
+			for(SubConfig subconfig : node.getConfig().getConfigs()) {
 				if(pi.getPluginClassName().equals(subconfig.getPrefix())) {
 					pluginIsTryingToHijackNodeConfig = true;
 					break;
@@ -621,11 +621,11 @@ public class PluginManager {
 		}
 
 		if(pi.isIPDetectorPlugin())
-			node.ipDetector.registerIPDetectorPlugin((FredPluginIPDetector) plug);
+			node.getIpDetector().registerIPDetectorPlugin((FredPluginIPDetector) plug);
 		if(pi.isPortForwardPlugin())
-			node.ipDetector.registerPortForwardPlugin((FredPluginPortForward) plug);
+			node.getIpDetector().registerPortForwardPlugin((FredPluginPortForward) plug);
 		if(pi.isBandwidthIndicator())
-			node.ipDetector.registerBandwidthIndicatorPlugin((FredPluginBandwidthIndicator) plug);
+			node.getIpDetector().registerBandwidthIndicatorPlugin((FredPluginBandwidthIndicator) plug);
 	}
 
 	public void cancelRunningLoads(String filename, PluginProgress exceptFor) {
@@ -1016,7 +1016,12 @@ public class PluginManager {
 	 * must not be taken in any other circumstance. */
 	private final Object pluginLoadSyncObject = new Object();
 
-	/** All plugin updates are on a single request client. */
+	/**
+	 * All plugin updates are on a single request client.
+	 * @deprecated Use {@link #getSingleUpdaterRequestClient()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final RequestClient singleUpdaterRequestClient = new RequestClientBuilder().build();
 
 	public File getPluginFilename(String pluginName) {
@@ -1571,13 +1576,13 @@ public class PluginManager {
 			core.getToadletContainer().unregister(wrapper.getConfigToadlet());
 		}
 		if(wrapper.isIPDetectorPlugin())
-			node.ipDetector.unregisterIPDetectorPlugin((FredPluginIPDetector)plug);
+			node.getIpDetector().unregisterIPDetectorPlugin((FredPluginIPDetector)plug);
 		if(wrapper.isPortForwardPlugin())
-			node.ipDetector.unregisterPortForwardPlugin((FredPluginPortForward)plug);
+			node.getIpDetector().unregisterPortForwardPlugin((FredPluginPortForward)plug);
 		if(wrapper.isBandwidthIndicator())
-			node.ipDetector.unregisterBandwidthIndicatorPlugin((FredPluginBandwidthIndicator)plug);
+			node.getIpDetector().unregisterBandwidthIndicatorPlugin((FredPluginBandwidthIndicator)plug);
 		if(!reloading)
-			node.nodeUpdater.stopPluginUpdater(wrapper.getFilename());
+			node.getNodeUpdater().stopPluginUpdater(wrapper.getFilename());
 	}
 
     public boolean isEnabled() {
@@ -1680,6 +1685,10 @@ public class PluginManager {
 			}
 			return false;
 		}
+	}
+
+	public RequestClient getSingleUpdaterRequestClient() {
+		return singleUpdaterRequestClient;
 	}
 
 }
