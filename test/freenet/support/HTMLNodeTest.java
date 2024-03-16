@@ -676,7 +676,7 @@ public class HTMLNodeTest {
 		sb.append(aAttributeName + "=");
 		sb.append("\""+aAttributeValue+"\">");
 		String indenting = indent ? "\n\t" : "";
-		if(!aContent.equals(""))
+		if(!aContent.isEmpty())
 			sb.append(indenting + aContent);
 		sb.append(indenting + ("</"+aName+">").toLowerCase());
 		if(indent) sb.append(indenting);
