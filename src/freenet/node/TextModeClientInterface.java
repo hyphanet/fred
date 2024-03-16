@@ -272,7 +272,10 @@ public class TextModeClientInterface implements Runnable {
 					// Look for escape codes
 					if(b == '\n') continue;
 					if(b == '\r') continue;
-					if(b < 32) evil = true;
+					if (b < 32) {
+						evil = true;
+						break;
+					}
 				}
 				if(evil) {
 					System.err.println("Data may contain escape codes which could cause the terminal to run arbitrary commands! Save it to a file if you must with GETFILE:");
@@ -332,7 +335,10 @@ public class TextModeClientInterface implements Runnable {
 						// Look for escape codes
 						if(b == '\n') continue;
 						if(b == '\r') continue;
-						if(b < 32) evil = true;
+						if (b < 32) {
+							evil = true;
+							break;
+						}
 					}
 					if(evil) {
 						System.err.println("Data may contain escape codes which could cause the terminal to run arbitrary commands! Save it to a file if you must with GETFILE:");

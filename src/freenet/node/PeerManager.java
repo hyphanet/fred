@@ -392,8 +392,10 @@ public class PeerManager {
 		boolean isInPeers = false;
 		synchronized(this) {
 			for(PeerNode myPeer: myPeers) {
-				if(myPeer == pn)
+				if (myPeer == pn) {
 					isInPeers = true;
+					break;
+				}
 			}
 			if(pn instanceof DarknetPeerNode)
 				((DarknetPeerNode) pn).removeExtraPeerDataDir();
@@ -459,8 +461,10 @@ public class PeerManager {
 		synchronized(this) {
 			boolean isInPeers = false;
 			for(PeerNode connectedPeer: connectedPeers) {
-				if(connectedPeer == pn)
+				if (connectedPeer == pn) {
 					isInPeers = true;
+					break;
+				}
 			}
 			if(!isInPeers)
 				return false;

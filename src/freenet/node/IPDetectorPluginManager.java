@@ -66,7 +66,10 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			String url = ExternalLinkToadlet.escape(HTMLEncoder.encode(l10n("portForwardHelpURL")));
 			boolean maybeForwarded = true;
 			for(int portNotForwarded: portsNotForwarded) {
-				if(portNotForwarded < 0) maybeForwarded = false;
+				if (portNotForwarded < 0) {
+					maybeForwarded = false;
+					break;
+				}
 			}
 			String keySuffix = maybeForwarded ? "MaybeForwarded" : "NotForwarded";
 			if(portsNotForwarded.length == 1) {
@@ -112,7 +115,10 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			prefix += " ";
 			boolean maybeForwarded = true;
 			for(int portNotForwarded: portsNotForwarded) {
-				if(portNotForwarded < 0) maybeForwarded = false;
+				if (portNotForwarded < 0) {
+					maybeForwarded = false;
+					break;
+				}
 			}
 			String keySuffix = maybeForwarded ? "MaybeForwarded" : "NotForwarded";
 			if(portsNotForwarded.length == 1) {
@@ -131,7 +137,10 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			String url = l10n("portForwardHelpURL");
 			boolean maybeForwarded = true;
 			for(int portNotForwarded: portsNotForwarded) {
-				if(portNotForwarded < 0) maybeForwarded = false;
+				if (portNotForwarded < 0) {
+					maybeForwarded = false;
+					break;
+				}
 			}
 			String keySuffix = maybeForwarded ? "MaybeForwarded" : "NotForwarded";
 			if(portsNotForwarded.length == 1) {
