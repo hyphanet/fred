@@ -655,7 +655,6 @@ public class Node implements TimeSkewDetectorCallback {
 	private int inputBandwidthLimit;
 	private long amountOfDataToCheckCompressionRatio;
 	private int minimumCompressionPercentage;
-	private int maxTimeForSingleCompressor;
 	private boolean connectionSpeedDetection;
 	boolean inputLimitDefault;
 	final boolean enableARKs;
@@ -1627,7 +1626,7 @@ public class Node implements TimeSkewDetectorCallback {
 			public void set(Integer minimumCompressionPercentage) {
 				synchronized(Node.this) {
 					if (minimumCompressionPercentage < 0 || minimumCompressionPercentage > 100) {
-						Logger.normal(Node.class, "Wrong minimum compression percentage" + minimumCompressionPercentage);
+						Logger.normal(Node.class, "Wrong minimum compression percentage: must be between 0 and 100, but is " + minimumCompressionPercentage);
 						return;
 					}
 
@@ -1638,22 +1637,9 @@ public class Node implements TimeSkewDetectorCallback {
 
 		minimumCompressionPercentage = nodeConfig.getInt("minimumCompressionPercentage");
 
-		nodeConfig.register("maxTimeForSingleCompressor", "20m", sortOrder++,
-				true, true, "Node.maxTimeForSingleCompressor",
-				"Node.maxTimeForSingleCompressorLong", new IntCallback() {
-			@Override
-			public Integer get() {
-						 return maxTimeForSingleCompressor;
-					 }
-			@Override
-			public void set(Integer maxTimeForSingleCompressor) {
-				synchronized(Node.this) {
-					Node.this.maxTimeForSingleCompressor = maxTimeForSingleCompressor;
-				}
-			}
-		}, Dimension.DURATION);
+		// max time for single compressor makes the insert compression CPU dependent, so it should not have been used.
+		nodeConfig.registerIgnoredOption("maxTimeForSingleCompressor");
 
-		maxTimeForSingleCompressor = nodeConfig.getInt("maxTimeForSingleCompressor");
 
 		nodeConfig.register("connectionSpeedDetection", true, sortOrder++,
 			true, true, "Node.connectionSpeedDetection",
