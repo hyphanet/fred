@@ -10,7 +10,7 @@ import freenet.config.NodeNeedRestartException;
 
 public class BooleanCallbackTest {
 
-  boolean theValue = false;
+  private boolean theValue = false;
 
   @Test
   public void canCreateBooleanCallbackFromLambdas()
