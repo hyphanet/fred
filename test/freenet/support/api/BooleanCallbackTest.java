@@ -20,6 +20,7 @@ public class BooleanCallbackTest {
 
     assertThat(theValue, Matchers.is(true));
   }
+
   @Test
   public void canThrowInvalidConfigValueException()
       throws NodeNeedRestartException, InvalidConfigValueException {
@@ -27,8 +28,8 @@ public class BooleanCallbackTest {
       throw new InvalidConfigValueException("invalid");
     });
     assertThrows(InvalidConfigValueException.class, () -> callback.set(true));
-
   }
+
   @Test
   public void canThrowNodeNeedRestartException()
       throws NodeNeedRestartException, InvalidConfigValueException {
