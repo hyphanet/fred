@@ -58,7 +58,7 @@ public class NodeIPPortDetector {
 	 */
 	FreenetInetAddress[] detectPrimaryIPAddress() {
 		FreenetInetAddress addr = crypto.getBindTo();
-		if(addr.isRealInternetAddress(false, true, false)) {
+		if(addr.isRealInternetAddress(false, true, ipDetector.allowBindToLocalhost)) {
 			// Binding to a real internet address => don't want us to use the others, most likely
 			// he is on a multi-homed box where only one IP can be used for Freenet.
 			return new FreenetInetAddress[] { addr };
