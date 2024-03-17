@@ -5,9 +5,6 @@ import static org.junit.Assert.assertThrows;
 
 import org.hamcrest.Matchers;
 import org.junit.Test;
-
-import junit.framework.TestCase;
-
 import freenet.config.InvalidConfigValueException;
 import freenet.config.NodeNeedRestartException;
 
