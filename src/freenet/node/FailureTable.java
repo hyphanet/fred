@@ -71,7 +71,7 @@ public class FailureTable {
 	static final int MAX_ENTRIES = 20*1000;
 	/** Maximum number of offers to track */
 	static final int MAX_OFFERS = 10*1000;
-	/** Terminate a request if there was a DNF on the same key less than 10 minutes ago.
+	/** Terminate a request if there was a DNF on the same key less than this time ago.
 	 * Maximum time for any FailureTable i.e. for this period after a DNF, we will avoid the node that 
 	 * DNFed. */
 	static final long REJECT_TIME = MINUTES.toMillis(3);
