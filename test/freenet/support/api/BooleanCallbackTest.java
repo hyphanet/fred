@@ -37,7 +37,18 @@ public class BooleanCallbackTest {
       throw new NodeNeedRestartException("needs restart");
     });
     assertThrows(NodeNeedRestartException.class, () -> callback.set(true));
+  }
 
+  @Test
+  public void getGivesTheSetVariable()
+      throws NodeNeedRestartException, InvalidConfigValueException {
+    BooleanCallback callback = BooleanCallback.from(() -> theValue, (value -> {theValue = value;}));
+    callback.set(true);
+    boolean trueValue = callback.get();
+    callback.set(false);
+    boolean falseValue = callback.get();;
+    assertThat(trueValue, Matchers.is(true));
+    assertThat(falseValue, Matchers.is(false));
   }
 
 }
