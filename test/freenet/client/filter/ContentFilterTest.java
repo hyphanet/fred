@@ -18,6 +18,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.junit.Test;
 
 import freenet.client.filter.ContentFilter.FilterStatus;
@@ -204,6 +205,10 @@ public class ContentFilterTest {
         assertEquals(DELETED_BASE_HREF, htmlFilter(BAD_BASE_HREF4));
         assertEquals(DELETED_BASE_HREF, htmlFilter(BAD_BASE_HREF5));
 
+    }
+
+    @Test
+    public void testM3UPlayerAddition() throws Exception {
 		// m3u filter is added when there is a video or audio tag
 		for (String content : HTML_MEDIA_TAG_COMBINATIONS) {
 			String expected = HTML_START_TO_BODY
@@ -213,7 +218,11 @@ public class ContentFilterTest {
 			String unparsed = HTML_START_TO_BODY
 					+ content
 					+ HTML_BODY_END;
+			// m3u filter is added
 			assertEquals(expected, htmlFilter(unparsed));
+			// ensure that that’s a script tag
+			String expectedStart = HTML_START_TO_BODY + content + "<script";
+			MatcherAssert.assertThat(htmlFilter(unparsed), Matchers.startsWith(expectedStart));
 		}
 	}
 
