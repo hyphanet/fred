@@ -197,12 +197,12 @@ public class ContentFilterTest {
         assertEquals(SPAN_WITH_STYLE, htmlFilter(SPAN_WITH_STYLE));
         assertEquals(HTML5_TAGS, htmlFilter(HTML5_TAGS));
 
-		assertEquals(BASE_HREF, htmlFilter(BASE_HREF));
-		assertEquals(DELETED_BASE_HREF, htmlFilter(BAD_BASE_HREF));
-		assertEquals(DELETED_BASE_HREF, htmlFilter(BAD_BASE_HREF2));
-		assertEquals(DELETED_BASE_HREF, htmlFilter(BAD_BASE_HREF3));
-		assertEquals(DELETED_BASE_HREF, htmlFilter(BAD_BASE_HREF4));
-		assertEquals(DELETED_BASE_HREF, htmlFilter(BAD_BASE_HREF5));
+        assertEquals(BASE_HREF, htmlFilter(BASE_HREF));
+        assertEquals(DELETED_BASE_HREF, htmlFilter(BAD_BASE_HREF));
+        assertEquals(DELETED_BASE_HREF, htmlFilter(BAD_BASE_HREF2));
+        assertEquals(DELETED_BASE_HREF, htmlFilter(BAD_BASE_HREF3));
+        assertEquals(DELETED_BASE_HREF, htmlFilter(BAD_BASE_HREF4));
+        assertEquals(DELETED_BASE_HREF, htmlFilter(BAD_BASE_HREF5));
 
 		// m3u filter is added when there is a video or audio tag
 		for (String content : HTML_MEDIA_TAG_COMBINATIONS) {
