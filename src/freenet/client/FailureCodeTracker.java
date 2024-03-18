@@ -50,7 +50,7 @@ public class FailureCodeTracker implements Cloneable, Serializable {
 			int num = Integer.parseInt(name);
 			int count = Integer.parseInt(f.get("Count"));
 			if(count < 0) throw new IllegalArgumentException("Count < 0");
-			map.put(Integer.valueOf(num), count);
+			map.put(num, count);
 			total += count;
 		}
 	}

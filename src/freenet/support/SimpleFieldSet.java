@@ -1299,7 +1299,7 @@ public class SimpleFieldSet {
 		double[] ret = new double[strings.length];
 		for(int i=0;i<strings.length;i++) {
 			try {
-				ret[i] = Double.valueOf(strings[i]);
+				ret[i] = Double.parseDouble(strings[i]);
 			} catch(NumberFormatException e) {
 				Logger.error(this, "Cannot parse "+strings[i]+" : "+e,e);
 				return null;
@@ -1315,7 +1315,7 @@ public class SimpleFieldSet {
 		float[] ret = new float[strings.length];
 		for(int i=0;i<strings.length;i++) {
 			try {
-				ret[i] = Float.valueOf(strings[i]);
+				ret[i] = Float.parseFloat(strings[i]);
 			} catch(NumberFormatException e) {
 				Logger.error(this, "Cannot parse "+strings[i]+" : "+e,e);
 				return null;
@@ -1331,7 +1331,7 @@ public class SimpleFieldSet {
         boolean[] ret = new boolean[strings.length];
         for(int i=0;i<strings.length;i++) {
             try {
-                ret[i] = Boolean.valueOf(strings[i]);
+                ret[i] = Boolean.parseBoolean(strings[i]);
             } catch(NumberFormatException e) {
                 Logger.error(this, "Cannot parse "+strings[i]+" : "+e,e);
                 return null;

@@ -432,7 +432,7 @@ public class USKManager {
 			Long l = latestKnownGoodByClearUSK.get(clear);
 			if(logMINOR) Logger.minor(this, "Old known good: "+l);
 			if((l == null) || (number > l.longValue())) {
-				l = Long.valueOf(number);
+				l = number;
 				latestKnownGoodByClearUSK.put(clear, l);
 				if(logMINOR) Logger.minor(this, "Put "+number);
 			} else
@@ -441,7 +441,7 @@ public class USKManager {
 			l = latestSlotByClearUSK.get(clear);
 			if(logMINOR) Logger.minor(this, "Old slot: "+l);
 			if((l == null) || (number > l.longValue())) {
-				l = Long.valueOf(number);
+				l = number;
 				latestSlotByClearUSK.put(clear, l);
 				if(logMINOR) Logger.minor(this, "Put "+number);
 				newSlot = true;
@@ -472,7 +472,7 @@ public class USKManager {
 			Long l = latestSlotByClearUSK.get(clear);
 			if(logMINOR) Logger.minor(this, "Old slot: "+l);
 			if((l == null) || (number > l.longValue())) {
-				l = Long.valueOf(number);
+				l = number;
 				latestSlotByClearUSK.put(clear, l);
 				if(logMINOR) Logger.minor(this, "Put "+number);
 			} else
