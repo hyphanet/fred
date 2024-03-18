@@ -1394,15 +1394,15 @@ public class StatisticsToadlet extends Toadlet {
 		for(int i=0; i<locations.length; i++){
 			location = locations[i];
 			locationTime = timestamps[i];
-			age = now - locationTime.longValue();
+			age = now - locationTime;
 			if( age > MAX_CIRCLE_AGE_THRESHOLD ) {
 				age = MAX_CIRCLE_AGE_THRESHOLD;
 			}
 			strength = 1 - ((double) age / MAX_CIRCLE_AGE_THRESHOLD );
-			histogramIndex = (int) (Math.floor(location.doubleValue() * HISTOGRAM_LENGTH));
+			histogramIndex = (int) (Math.floor(location * HISTOGRAM_LENGTH));
 			histogram[histogramIndex]++;
 			
-			nodeCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(location.doubleValue(), false, strength), "connected" }, "x");
+			nodeCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(location, false, strength), "connected" }, "x");
 		}
 		nodeCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(myLocation, true, 1.0), "me" }, "x");
 		//

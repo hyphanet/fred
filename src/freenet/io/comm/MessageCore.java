@@ -618,7 +618,7 @@ public class MessageCore {
 				if (messageCount == null) {
 					messageCounts.put(messageName, 1);
 				} else {
-					messageCount = messageCount.intValue() + 1;
+					messageCount = messageCount + 1;
 					messageCounts.put(messageName, messageCount );
 				}
 			}

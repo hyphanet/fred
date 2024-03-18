@@ -472,7 +472,7 @@ public class DarknetPeerNode extends PeerNode {
 			synchronized(extraPeerDataFileNumbers) {
 				extraPeerDataFileNumbers.add(fileNumber);
 			}
-			readResult = readExtraPeerDataFile(extraPeerDataFile, fileNumber.intValue());
+			readResult = readExtraPeerDataFile(extraPeerDataFile, fileNumber);
 			if(!readResult) {
 				gotError = true;
 			}
@@ -733,7 +733,7 @@ public class DarknetPeerNode extends PeerNode {
 			localFileNumbers = extraPeerDataFileNumbers.toArray(new Integer[extraPeerDataFileNumbers.size()]);
 		}
 		for (Integer localFileNumber : localFileNumbers) {
-			deleteExtraPeerDataFile(localFileNumber.intValue());
+			deleteExtraPeerDataFile(localFileNumber);
 		}
 		extraPeerDataPeerDir.delete();
 	}
@@ -826,7 +826,7 @@ public class DarknetPeerNode extends PeerNode {
 		}
 		Arrays.sort(localFileNumbers);
 		for (Integer localFileNumber : localFileNumbers) {
-			rereadExtraPeerDataFile(localFileNumber.intValue());
+			rereadExtraPeerDataFile(localFileNumber);
 		}
 	}
 

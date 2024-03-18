@@ -72,7 +72,7 @@ public class DefaultMIMETypes {
 				Short s = mimeTypesByExtension.get(ext);
 				if(s != null) {
 					// No big deal
-					Logger.normal(DefaultMIMETypes.class, "Extension "+ext+" assigned to "+byNumber(s.shortValue())+" in preference to "+number+ ':' +type);
+					Logger.normal(DefaultMIMETypes.class, "Extension "+ext+" assigned to "+byNumber(s)+" in preference to "+number+ ':' +type);
 				} else {
 					// If only one, make it primary
 					if((outExtension == null) && (extensions.length == 1))
@@ -119,7 +119,7 @@ public class DefaultMIMETypes {
 	 */
 	public synchronized static short byName(String s) {
 		Short x = mimeTypesByName.get(s);
-		if(x != null) return x.shortValue();
+		if(x != null) return x;
 		else return -1;
 	}
 	

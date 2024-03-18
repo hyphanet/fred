@@ -503,7 +503,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 								//i now points to the proper location (equal, insertion point, or end-of-list)
 								//maybe better called "reverseGroup"?
 								List<PeerNodeStatus> peerGroup;
-								if (i<max && locations.get(i).doubleValue()==location) {
+								if (i<max && locations.get(i) ==location) {
 									peerGroup=peerGroups.get(i);
 								} else {
 									peerGroup=new ArrayList<PeerNodeStatus>();

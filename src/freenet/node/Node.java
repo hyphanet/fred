@@ -4287,7 +4287,7 @@ public class Node implements TimeSkewDetectorCallback {
 	 * Handle a received node to node message
 	 */
 	public void receivedNodeToNodeMessage(Message m, PeerNode src) {
-		int type = ((Integer) m.getObject(DMT.NODE_TO_NODE_MESSAGE_TYPE)).intValue();
+		int type = (Integer) m.getObject(DMT.NODE_TO_NODE_MESSAGE_TYPE);
 		ShortBuffer messageData = (ShortBuffer) m.getObject(DMT.NODE_TO_NODE_MESSAGE_DATA);
 		receivedNodeToNodeMessage(src, type, messageData, false);
 	}

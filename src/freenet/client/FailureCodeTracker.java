@@ -192,7 +192,7 @@ public class FailureCodeTracker implements Cloneable, Serializable {
 		for (Map.Entry<Integer, Integer> e : map.entrySet()) {
 			Integer k = e.getKey();
 			Integer item = e.getValue();
-			int code = k.intValue();
+			int code = k;
 			// prefix.num.Description=<code description>
 			// prefix.num.Count=<count>
 			if(verbose)
@@ -219,7 +219,7 @@ public class FailureCodeTracker implements Cloneable, Serializable {
     }
 
 	public synchronized int getFirstCode() {
-		return ((Integer) map.keySet().toArray()[0]).intValue();
+		return (Integer) map.keySet().toArray()[0];
 	}
 
 	public synchronized boolean isFatal(boolean insert) {
