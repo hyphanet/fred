@@ -139,7 +139,7 @@ public abstract class LoggerHook extends Logger {
 		ArrayList<DetailedThreshold> stuff = new ArrayList<DetailedThreshold>();
 		while (st.hasMoreTokens()) {
 			String token = st.nextToken();
-			if (token.length() == 0)
+			if (token.isEmpty())
 				continue;
 			int x = token.indexOf(':');
 			if (x < 0)

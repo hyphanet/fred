@@ -104,7 +104,7 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 			FreenetURI uu = new FreenetURI(u);
 			// Client is allowed to put a slash at the end if it wants to, but this is discouraged.
 			String[] meta = uu.getAllMetaStrings();
-			if(meta != null && meta.length == 1 && meta[0].length() == 0)
+			if(meta != null && meta.length == 1 && meta[0].isEmpty())
 				uu = uu.setMetaString(null);
 			uri = uu;
 		} catch (MalformedURLException e) {

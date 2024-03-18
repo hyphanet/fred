@@ -266,9 +266,9 @@ public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
 
         private Map<String, Object> toModel() {
             HashMap<String, Object> model = new HashMap<>();
-            model.put("knowSomeone", knowSomeone.length() > 0 ? "checked" : "");
-            model.put("connectToStrangers", connectToStrangers.length() > 0 ? "checked" : "");
-            model.put("haveMonthlyLimit", haveMonthlyLimit.length() > 0 ? "checked" : "");
+            model.put("knowSomeone", !knowSomeone.isEmpty() ? "checked" : "");
+            model.put("connectToStrangers", !connectToStrangers.isEmpty() ? "checked" : "");
+            model.put("haveMonthlyLimit", !haveMonthlyLimit.isEmpty() ? "checked" : "");
             model.put("downloadLimit", downloadLimit);
             model.put("uploadLimit", uploadLimit);
             model.put("bandwidthMonthlyLimit", bandwidthMonthlyLimit);
@@ -276,7 +276,7 @@ public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
             model.put("storageLimit", storageLimit);
             model.put("minStorageLimit", minStorageLimit);
             if (!isPasswordAlreadySet) {
-                model.put("setPassword", setPassword.length() > 0 ? "checked" : "");
+                model.put("setPassword", !setPassword.isEmpty() ? "checked" : "");
             }
             model.put("isPasswordAlreadySet", isPasswordAlreadySet);
 

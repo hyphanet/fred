@@ -31,7 +31,7 @@ public class IntervalPusherManager {
 			}
 			
 			// If there are more elements, it reschedules
-			if (elements.size() > 0) {
+			if (!elements.isEmpty()) {
 				ticker.queueTimedJob(this, "Stats refresher", REFRESH_PERIOD, false, true);
 			}
 		}
@@ -61,7 +61,7 @@ public class IntervalPusherManager {
 	 */
 	public void registerUpdateableElement(BaseUpdateableElement element) {
 		boolean needsStart = false;
-		if (elements.size() == 0) {
+		if (elements.isEmpty()) {
 			needsStart = true;
 		}
 		elements.add(element);

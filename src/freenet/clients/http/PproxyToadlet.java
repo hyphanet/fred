@@ -81,7 +81,7 @@ public class PproxyToadlet extends Toadlet {
 
 		final PluginManager pm = node.getPluginManager();
 
-		if(path.length()>0)
+		if(!path.isEmpty())
 		{
 			// Plugins handle their own formPassword checking.
 			try
@@ -183,7 +183,7 @@ public class PproxyToadlet extends Toadlet {
 				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 				return;
 			}
-			if (request.getPartAsStringFailsafe("unloadconfirm", MAX_PLUGIN_NAME_LENGTH).length() > 0) {
+			if (!request.getPartAsStringFailsafe("unloadconfirm", MAX_PLUGIN_NAME_LENGTH).isEmpty()) {
 				String pluginThreadName = request.getPartAsStringFailsafe("unloadconfirm", MAX_PLUGIN_NAME_LENGTH);
 				String pluginSpecification = getPluginSpecification(pm, pluginThreadName);
 				pm.killPlugin(pluginThreadName, MAX_THREADED_UNLOAD_WAIT_TIME, false);
@@ -204,7 +204,7 @@ public class PproxyToadlet extends Toadlet {
 				infoboxContent.addChild("a", "href", "/plugins/", l10n("returnToPluginPage"));
 				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 				return;
-			}if (request.getPartAsStringFailsafe("unload", MAX_PLUGIN_NAME_LENGTH).length() > 0) {
+			}if (!request.getPartAsStringFailsafe("unload", MAX_PLUGIN_NAME_LENGTH).isEmpty()) {
 				PageNode page = pageMaker.getPageNode(l10n("plugins"), ctx);
 				HTMLNode pageNode = page.outer;
 				HTMLNode contentNode = page.content;
@@ -224,7 +224,7 @@ public class PproxyToadlet extends Toadlet {
 				tempNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.cancel") });
 				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 				return;
-			} else if (request.getPartAsStringFailsafe("reload", MAX_PLUGIN_NAME_LENGTH).length() > 0) {
+			} else if (!request.getPartAsStringFailsafe("reload", MAX_PLUGIN_NAME_LENGTH).isEmpty()) {
 				PageNode page = pageMaker.getPageNode(l10n("plugins"), ctx);
 				HTMLNode pageNode = page.outer;
 				HTMLNode contentNode = page.content;
@@ -246,7 +246,7 @@ public class PproxyToadlet extends Toadlet {
 				
 				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 				return;
-			} else if (request.getPartAsStringFailsafe("update", MAX_PLUGIN_NAME_LENGTH).length() > 0) {
+			} else if (!request.getPartAsStringFailsafe("update", MAX_PLUGIN_NAME_LENGTH).isEmpty()) {
 				// Deploy the plugin update
 				final String pluginFilename = request.getPartAsStringFailsafe("update", MAX_PLUGIN_NAME_LENGTH);
 
@@ -261,7 +261,7 @@ public class PproxyToadlet extends Toadlet {
 				}
 				return;
 				
-			}else if (request.getPartAsStringFailsafe("reloadconfirm", MAX_PLUGIN_NAME_LENGTH).length() > 0) {
+			}else if (!request.getPartAsStringFailsafe("reloadconfirm", MAX_PLUGIN_NAME_LENGTH).isEmpty()) {
 				boolean purge = request.isPartSet("purge");
 				String pluginThreadName = request.getPartAsStringFailsafe("reloadconfirm", MAX_PLUGIN_NAME_LENGTH);
 				final String fn = getPluginSpecification(pm, pluginThreadName);

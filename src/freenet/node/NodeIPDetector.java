@@ -440,7 +440,7 @@ public class NodeIPDetector {
 			public void set(String val) throws InvalidConfigValueException {
 				boolean hadValidAddressOverride = hasValidAddressOverride();
 				// FIXME do we need to tell anyone?
-				if(val.length() == 0) {
+				if(val.isEmpty()) {
 					// Set to null
 					overrideIPAddressString = val;
 					overrideIPAddress = null;
@@ -473,7 +473,7 @@ public class NodeIPDetector {
 		
 		hasValidAddressOverride = true;
 		overrideIPAddressString = nodeConfig.getString("ipAddressOverride");
-		if(overrideIPAddressString.length() == 0)
+		if(overrideIPAddressString.isEmpty())
 			overrideIPAddress = null;
 		else {
 			try {
@@ -506,7 +506,7 @@ public class NodeIPDetector {
 			
 			@Override
 			public void set(String val) throws InvalidConfigValueException {
-				if(val.length() == 0) {
+				if(val.isEmpty()) {
 					return;
 				}
 				if(overrideIPAddress != null) return;
@@ -520,7 +520,7 @@ public class NodeIPDetector {
 		});
 		
 		String ipHintString = nodeConfig.getString("tempIPAddressHint");
-		if(ipHintString.length() > 0) {
+		if(!ipHintString.isEmpty()) {
 			try {
 				oldIPAddress = new FreenetInetAddress(ipHintString, false);
 			} catch (UnknownHostException e) {

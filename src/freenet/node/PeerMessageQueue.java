@@ -384,7 +384,7 @@ public class PeerMessageQueue {
 			} else {
 				if(nonEmptyItemsWithID != null) {
 					for(Items items : nonEmptyItemsWithID) {
-						if(items.items.size() == 0) continue;
+						if(items.items.isEmpty()) continue;
 						if(items.timeLastSent > 0) {
 							t = Math.min(t, items.timeLastSent + timeout);
 							if(t <= stopIfBeforeTime) return t;
@@ -701,7 +701,7 @@ public class PeerMessageQueue {
 			}
 			if(nonEmptyItemsWithID != null) {
 				for(Items items : nonEmptyItemsWithID) {
-					if(items.items.size() == 0) continue;
+					if(items.items.isEmpty()) continue;
 					return false;
 				}
 			}

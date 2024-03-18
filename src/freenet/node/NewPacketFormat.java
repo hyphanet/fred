@@ -169,7 +169,7 @@ public class NewPacketFormat implements PacketFormat {
 		
 		boolean dontAck = false;
 		boolean wakeUp = false;
-		if(packet.getError() || (packet.getFragments().size() == 0)) {
+		if(packet.getError() || (packet.getFragments().isEmpty())) {
 			if(logMINOR) Logger.minor(this, "Not acking because " + (packet.getError() ? "error" : "no fragments"));
 			dontAck = true;
 		}
@@ -192,7 +192,7 @@ public class NewPacketFormat implements PacketFormat {
 				lossyMessages.add(msg);
 			}
 			// Handle them *before* the rest.
-			if(logMINOR && lossyMessages.size() > 0) Logger.minor(this, "Successfully parsed "+lossyMessages.size()+" lossy packet messages");
+			if(logMINOR && !lossyMessages.isEmpty()) Logger.minor(this, "Successfully parsed "+lossyMessages.size()+" lossy packet messages");
 			for(Message msg : lossyMessages)
 				pn.handleMessage(msg);
 		}
@@ -538,7 +538,7 @@ public class NewPacketFormat implements PacketFormat {
 		
 		packet.onSent(data.length, pn);
 
-		if(packet.getFragments().size() > 0) {
+		if(!packet.getFragments().isEmpty()) {
 			keyContext.sent(packet.getSequenceNumber(), packet.getLength());
 		}
 
@@ -548,13 +548,13 @@ public class NewPacketFormat implements PacketFormat {
 		if(pn.shouldThrottle()) {
 			pn.sentThrottledBytes(data.length);
 		}
-		if(packet.getFragments().size() == 0) {
+		if(packet.getFragments().isEmpty()) {
 			pn.onNotificationOnlyPacketSent(data.length);
 		}
 		
 		synchronized(this) {
 			if(timeLastSentPacket < now) timeLastSentPacket = now;
-			if(packet.getFragments().size() > 0) {
+			if(!packet.getFragments().isEmpty()) {
 				if(timeLastSentPayload < now) timeLastSentPayload = now;
 			}
 		}
@@ -894,7 +894,7 @@ addOldLoop:			for(Map<Integer, MessageWrapper> started : startedByPrio) {
 			Logger.debug(this, "Sending packet length "+packet.getLength()+" for "+this);
 		}
 
-		if(packet.getFragments().size() > 0) {
+		if(!packet.getFragments().isEmpty()) {
 			keyContext.sent(sentPacket, seqNum, packet.getLength());
 		}
 

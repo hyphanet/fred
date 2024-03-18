@@ -756,7 +756,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessBuf
 		} while(shouldContinue);
 
 		if(toMigrate == null) return false;
-		if(toMigrate.size() > 0) {
+		if(!toMigrate.isEmpty()) {
 			if(logMINOR)
 				Logger.minor(this, "We are going to migrate " + toMigrate.size() + " RAMBuckets");
 			for(Migratable tmpBucket : toMigrate) {

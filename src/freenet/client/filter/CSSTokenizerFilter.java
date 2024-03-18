@@ -1825,7 +1825,7 @@ class CSSTokenizerFilter {
 						"HTMLelementVerifier length of attSelectionParts="+
 						attSelectionParts.length);
 
-				if(attSelectionParts[0].length()==0)
+				if(attSelectionParts[0].isEmpty())
 					return null;
 				else {
 					char c=attSelectionParts[0].charAt(0);
@@ -2163,7 +2163,7 @@ class CSSTokenizerFilter {
 							valid = false;
 						} else {
 						ArrayList<String> medias = commaListFromIdentifiers(parts, 1);
-						if(medias != null && medias.size() > 0) {
+						if(medias != null && !medias.isEmpty()) {
 							for(i=0;i<medias.size();i++) {
 								if(!FilterUtils.isMedia(medias.get(i))) {
 									// Unrecognised media, don't pass it.
@@ -2172,7 +2172,7 @@ class CSSTokenizerFilter {
 								}
 							}
 						}
-						if(medias != null && medias.size() > 0) {
+						if(medias != null && !medias.isEmpty()) {
 							filteredTokens.append(braceSpace);
 							filteredTokens.append("@media ");
 							boolean first = true;
@@ -3543,7 +3543,7 @@ class CSSTokenizerFilter {
 
 				if(logDEBUG) Logger.debug(CSSTokenizerFilter.class, "whitespace stripped: "+strippedOrig+" decoded "+decodedToken);
 
-				if(strippedOrig.length() == 0) return null;
+				if(strippedOrig.isEmpty()) return null;
 
 				if(strippedOrig.length() > 2) {
 					char c = strippedOrig.charAt(0);
@@ -3586,7 +3586,7 @@ class CSSTokenizerFilter {
 				decodedToken.setLength(decodedToken.length()-(strippedOrig.length()-i-1));
 				strippedOrig = strippedOrig.substring(0, i+1);
 
-				if(strippedOrig.length() == 0) return null;
+				if(strippedOrig.isEmpty()) return null;
 
 				return new ParsedAttr(origToken.toString(), decodedToken.toString(), dontLikeOrigToken);
 			} else return null;
@@ -3617,7 +3617,7 @@ class CSSTokenizerFilter {
 				decodedToken.setLength(decodedToken.length()-(strippedOrig.length()-i-1));
 				strippedOrig = strippedOrig.substring(0, i+1);
 
-				if(strippedOrig.length() == 0) return null;
+				if(strippedOrig.isEmpty()) return null;
 
 				String[] split = FilterUtils.removeWhiteSpace(strippedOrig.split(","),false);
 				if(split.length == 0 || (plural && split.length > 3) || ((!plural) && split.length > 2) || (plural && split.length < 2))
@@ -4218,9 +4218,9 @@ class CSSTokenizerFilter {
 						}
 						String firstPart=expression.substring(0,i);
 						String secondPart=expression.substring(firstIndex,expression.length());
-						if(secondPart.length() > 0 && secondPart.charAt(0) == ' ') {
+						if(!secondPart.isEmpty() && secondPart.charAt(0) == ' ') {
 							secondPart = secondPart.substring(1);
-						} else if(secondPart.length() > 0) {
+						} else if(!secondPart.isEmpty()) {
 							throw new IllegalStateException("Don't know what to do with char after <>[]: "+secondPart.charAt(0));
 						}
 						if(logDEBUG) Logger.debug(this, "9in < firstPart="+firstPart+" secondPart="+secondPart+" tokensCanBeGivenLowerLimit="+tokensCanBeGivenLowerLimit+" tokensCanBeGivenUpperLimit="+tokensCanBeGivenUpperLimit);
@@ -4266,7 +4266,7 @@ class CSSTokenizerFilter {
 			String firstPart = "";
 			int lastB = -1;
 			// Check for invalid patterns.
-			assert(expression.length() != 0);
+			assert(!expression.isEmpty());
 			assert(expression.charAt(expression.length()-1) != 'b');
 			assert(expression.charAt(0) != 'b');
 
@@ -4275,7 +4275,7 @@ class CSSTokenizerFilter {
 			for (int i = 0; i <= expression.length(); i++) {
 				if(i == expression.length() || expression.charAt(i)=='b') {
 					if(!firstPart.isEmpty()) {
-						if(ignoredParts.length() == 0) {
+						if(ignoredParts.isEmpty()) {
 							ignoredParts = firstPart;
 						} else {
 							ignoredParts = ignoredParts+"b"+firstPart;
@@ -4296,7 +4296,7 @@ class CSSTokenizerFilter {
 			// list we do not want that potential false positive and so here we are
 			// forcing the verifier to take at least one word.
 			int maxLoops = words.length;
-			while (maxLoops-- > 0 && propertyVerifierList.size() != 0) {
+			while (maxLoops-- > 0 && !propertyVerifierList.isEmpty()) {
 				for(int i = words.length; i > 0; i--) {
 					ParsedWord[] tokensToVerify = Arrays.copyOf(words, i);
 					boolean tokenConsumed = false;
@@ -4459,7 +4459,7 @@ class CSSTokenizerFilter {
 			String secondPart = "";
 			int lastA = -1;
 			// Check for invalid patterns.
-			assert(expression.length() != 0);
+			assert(!expression.isEmpty());
 			assert(expression.charAt(expression.length()-1) != 'a');
 			assert(expression.charAt(0) != 'a');
 			for(int i=0;i<=expression.length();i++)
@@ -4467,7 +4467,7 @@ class CSSTokenizerFilter {
 				if(i == expression.length() || expression.charAt(i)=='a')
 				{
 					if(!firstPart.isEmpty()) {
-						if(ignoredParts.length() == 0)
+						if(ignoredParts.isEmpty())
 							ignoredParts = firstPart;
 						else
 							ignoredParts = ignoredParts+"a"+firstPart;

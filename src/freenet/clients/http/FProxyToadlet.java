@@ -660,7 +660,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		// No point passing ?force= across a redirect, since the key will change.
 		// However, there is every point in passing ?forcedownload.
 		if(httprequest.isParameterSet("forcedownload")) {
-			if(override.length() == 0) override = "?forcedownload";
+			if(override.isEmpty()) override = "?forcedownload";
 			else override = override+"&forcedownload";
 		}
 
@@ -1048,7 +1048,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		sb.append("/");
 		sb.append(uri.toASCIIString());
 		char c = '?';
-		if(requestedMimeType != null && requestedMimeType.length() != 0) {
+		if(requestedMimeType != null && !requestedMimeType.isEmpty()) {
 			sb.append(c).append("type=").append(URLEncoder.encode(requestedMimeType,false)); c = '&';
 		}
 		if(maxSize > 0 && appendMaxSize) {
@@ -1079,7 +1079,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				HTTPRequest req = new HTTPRequestImpl(refererURI, "GET");
 				String type = req.getParam("type");
 				referer = "/" + furi.toString();
-				if(type != null && type.length() > 0)
+				if(type != null && !type.isEmpty())
 					referer += "?type=" + type;
 			} catch (MalformedURLException e) {
 				referer = "/";
@@ -1314,7 +1314,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			result[0] = Long.parseLong(range[0]);
 			if (result[0] < 0)
 				throw new HTTPRangeException("Negative 'from' value");
-			if (range[1].trim().length() > 0) {
+			if (!range[1].trim().isEmpty()) {
 				result[1] = Long.parseLong(range[1]);
 				if (result[1] <= result[0])
 					throw new HTTPRangeException("'from' value must be less then 'to' value");
