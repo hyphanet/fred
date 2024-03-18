@@ -95,18 +95,18 @@ public class HMACTest {
       long t1 = System.currentTimeMillis();
       for (int i = 0; i < ITERATIONS; i++) {
         byte[] r1 = HMAC_legacy.macWithSHA256(knownKey, plaintext, 32);
-        for (int j = 0; j < r1.length; j++) {
-          count += r1[j];
-        }
+		  for (byte b : r1) {
+			  count += b;
+		  }
       }
       long legacyLength = System.currentTimeMillis() - t1;
 
       t1 = System.currentTimeMillis();
       for (int i = 0; i < ITERATIONS; i++) {
         byte[] r1 = HMAC.macWithSHA256(knownKey, plaintext);
-        for (int j = 0; j < r1.length; j++) {
-          count += r1[j];
-        }
+		  for (byte b : r1) {
+			  count += b;
+		  }
       }
       long currentLength = System.currentTimeMillis() - t1;
 
@@ -118,9 +118,9 @@ public class HMACTest {
         hmac.init(kp);
         hmac.update(plaintext, 0, plaintext.length);
         hmac.doFinal(r1, 0);
-        for (int j = 0; j < r1.length; j++) {
-          count += r1[j];
-        }
+		  for (byte b : r1) {
+			  count += b;
+		  }
       }
       long BCLength = System.currentTimeMillis() - t1;
       System.out.println("Legacy HMAC took " + TimeUtil.formatTime(legacyLength, 6, true));

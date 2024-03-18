@@ -94,16 +94,15 @@ public class FProxyFetchTracker implements Runnable {
 		synchronized (fetchers) {
 			Object[] check = fetchers.getArray(key);
 			if(check != null) {
-				for(int i=0;i<check.length;i++) {
-					FProxyFetchInProgress progress = (FProxyFetchInProgress) check[i];
-					if((progress.maxSize == maxSize && progress.notFinishedOrFatallyFinished())
-							|| progress.hasData()){
-						if(logMINOR) Logger.minor(this, "Found "+progress);
-						if(fctx != null && !progress.fetchContextEquivalent(fctx)) continue;
-						if(logMINOR) Logger.minor(this, "Using "+progress);
+				for (Object o : check) {
+					FProxyFetchInProgress progress = (FProxyFetchInProgress) o;
+					if ((progress.maxSize == maxSize && progress.notFinishedOrFatallyFinished())
+							|| progress.hasData()) {
+						if (logMINOR) Logger.minor(this, "Found " + progress);
+						if (fctx != null && !progress.fetchContextEquivalent(fctx)) continue;
+						if (logMINOR) Logger.minor(this, "Using " + progress);
 						return progress;
-					} else
-						if(logMINOR) Logger.minor(this, "Skipping "+progress);
+					} else if (logMINOR) Logger.minor(this, "Skipping " + progress);
 				}
 			}
 		}

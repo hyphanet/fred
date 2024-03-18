@@ -433,8 +433,8 @@ public class ToadletContextImpl implements ToadletContext {
 			String key = e.nextElement();
 			Object[] list = mvt.getArray(key);
 			key = fixKey(key);
-			for(int i=0;i<list.length;i++) {
-				String val = (String) list[i];
+			for (Object o : list) {
+				String val = (String) o;
 				buf.append(key);
 				buf.append(": ");
 				buf.append(val);

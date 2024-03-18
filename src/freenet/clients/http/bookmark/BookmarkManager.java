@@ -137,22 +137,22 @@ public class BookmarkManager implements RequestClient {
 			List<BookmarkItem> items = MAIN_CATEGORY.getAllItems();
 			boolean matched = false;
 			boolean updated = false;
-			for(int i = 0; i < items.size(); i++) {
-				if(!"USK".equals(items.get(i).getKeyType()))
+			for (BookmarkItem bookmarkItem : items) {
+				if (!"USK".equals(bookmarkItem.getKeyType()))
 					continue;
 
 				try {
-					FreenetURI furi = new FreenetURI(items.get(i).getKey());
+					FreenetURI furi = new FreenetURI(bookmarkItem.getKey());
 					USK usk = USK.create(furi);
 
-					if(usk.equals(key, false)) {
-						if(logMINOR) Logger.minor(this, "Updating bookmark for "+furi+" to edition "+edition);
+					if (usk.equals(key, false)) {
+						if (logMINOR) Logger.minor(this, "Updating bookmark for " + furi + " to edition " + edition);
 						matched = true;
-						BookmarkItem item = items.get(i);
+						BookmarkItem item = bookmarkItem;
 						updated |= item.setEdition(edition, node);
 						// We may have bookmarked the same site twice, so continue the search.
 					}
-				} catch(MalformedURLException mue) {
+				} catch (MalformedURLException mue) {
 				}
 			}
 			if(updated) {

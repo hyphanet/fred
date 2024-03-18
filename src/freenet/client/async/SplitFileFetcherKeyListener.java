@@ -247,11 +247,11 @@ public class SplitFileFetcherKeyListener implements KeyListener {
     public boolean probablyWantKey(Key key, byte[] saltedKey) {
         if(filter.checkFilter(saltedKey)) {
             byte[] salted = localSaltKey(key);
-            for(int i=0;i<segmentFilters.length;i++) {
-                if(segmentFilters[i].checkFilter(salted)) {
-                    return true;
-                }
-            }
+			for (BinaryBloomFilter segmentFilter : segmentFilters) {
+				if (segmentFilter.checkFilter(salted)) {
+					return true;
+				}
+			}
         }
         return false;
     }

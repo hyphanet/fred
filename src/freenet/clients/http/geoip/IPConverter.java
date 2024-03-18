@@ -285,8 +285,8 @@ public class IPConverter {
 		if(split.length != 4) throw new NumberFormatException();
 		long num = 0;
 		long coef = (256 << 16);
-		for (int i = 0; i < split.length; i++) {
-			long modulo = Integer.parseInt(split[i]) % 256;
+		for (String s : split) {
+			long modulo = Integer.parseInt(s) % 256;
 			num += (modulo * coef);
 			coef >>= 8;
 		}
@@ -412,10 +412,10 @@ public class IPConverter {
 		long result = 0;
 		if (code.length != 5)
 			throw new IPConverterParseException();
-		for (int i = 0; i < code.length; i++) {
-			if (code[i] < (byte)32 || base85inv[code[i] - 32] < (byte)0)
+		for (byte b : code) {
+			if (b < (byte) 32 || base85inv[b - 32] < (byte) 0)
 				throw new IPConverterParseException();
-			result = (result * base) + base85inv[code[i] - 32];
+			result = (result * base) + base85inv[b - 32];
 		}
 		return result;
 	}

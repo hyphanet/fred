@@ -332,8 +332,7 @@ public class USKManager {
 				@Override
 				public void run() {
 					if(cancelled != null) {
-						for(int i=0;i<cancelled.size();i++) {
-							USKFetcher fetcher = cancelled.get(i);
+						for (USKFetcher fetcher : cancelled) {
 							fetcher.cancel(USKManager.this.context);
 						}
 					}

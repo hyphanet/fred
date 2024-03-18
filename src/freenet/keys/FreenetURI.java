@@ -131,8 +131,7 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 		if(docName != null)
 			x ^= docName.hashCode();
 		if(metaStr != null)
-			for(int i = 0; i < metaStr.length; i++)
-				x ^= metaStr[i].hashCode();
+			for (String s : metaStr) x ^= s.hashCode();
 		if(routingKey != null)
 			x ^= Fields.hashCode(routingKey);
 		if(cryptoKey != null)
@@ -370,10 +369,10 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 		URI = URI.substring(atchar + 1);
 
 		boolean validKeyType = false;
-		for(int i = 0; i < VALID_KEY_TYPES.length; i++) {
-			if (_keyType.equals(VALID_KEY_TYPES[i])) {
+		for (String type : VALID_KEY_TYPES) {
+			if (_keyType.equals(type)) {
 				validKeyType = true;
-				_keyType = VALID_KEY_TYPES[i];
+				_keyType = type;
 				break;
 			}
 		}
@@ -786,8 +785,8 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 			b.append(suggestedEdition);
 		}
 		if(metaStr != null)
-			for(int i = 0; i < metaStr.length; i++) {
-				b.append('/').append(URLEncoder.encode(metaStr[i], "/", pureAscii));
+			for (String s : metaStr) {
+				b.append('/').append(URLEncoder.encode(s, "/", pureAscii));
 			}
 		return b.toString();
 	}
@@ -812,8 +811,8 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 			b.append(suggestedEdition);
 		}
 		if(metaStr != null)
-			for(int i = 0; i < metaStr.length; i++) {
-				b.append('/').append(URLEncoder.encode(metaStr[i], "/", false, " "));
+			for (String s : metaStr) {
+				b.append('/').append(URLEncoder.encode(s, "/", false, " "));
 			}
 		return b.toString();
 	}
@@ -835,8 +834,7 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 	public ArrayList<String> listMetaStrings() {
 		if(metaStr != null) {
 			ArrayList<String> l = new ArrayList<String>(metaStr.length);
-			for(int i = 0; i < metaStr.length; i++)
-				l.add(metaStr[i]);
+			for (String s : metaStr) l.add(s);
 			return l;
 		} else return new ArrayList<String>(0);
 	}
@@ -972,8 +970,7 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 			dos.writeUTF(docName);
 		if(metaStr != null) {
 			dos.writeInt(metaStr.length);
-			for(int i = 0; i < metaStr.length; i++)
-				dos.writeUTF(metaStr[i]);
+			for (String s : metaStr) dos.writeUTF(s);
 		} else
 			dos.writeInt(0);
 	}

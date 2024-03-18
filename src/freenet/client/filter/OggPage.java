@@ -245,10 +245,10 @@ public class OggPage {
 		array[24] = 0;
 		array[25] = 0;
 		int crc_reg = 0;
-		for(int i=0;i<array.length;i++) {
+		for (byte b : array) {
 			/*Ugly, no? This line was taken from jorbis, which, I'd bet money, adapted it to java from libogg,
 			 * which in turn took it from http://www.ross.net/crc/download/crc_v3.txt */
-			crc_reg=(crc_reg<<8) ^ crc_lookup[((crc_reg>>>24) & 0xff) ^ (array[i] & 0xff)];
+			crc_reg = (crc_reg << 8) ^ crc_lookup[((crc_reg >>> 24) & 0xff) ^ (b & 0xff)];
 		}
 		return new byte[] { (byte)crc_reg,
 				(byte) (crc_reg>>>8),

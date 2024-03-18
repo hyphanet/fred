@@ -30,8 +30,7 @@ public class SimpleEventProducer implements ClientEventProducer, Serializable {
     /** Create a new SimpleEventProducer with the given listeners. */
     public SimpleEventProducer(ClientEventListener[] cela) {
         this();
-        for (int i = 0; i < cela.length; i++)
-            addEventListener(cela[i]);
+		for (ClientEventListener clientEventListener : cela) addEventListener(clientEventListener);
     }
 
     @Override
@@ -83,8 +82,7 @@ public class SimpleEventProducer implements ClientEventProducer, Serializable {
 
     /** Adds all listeners in the given array. */
     public synchronized void addEventListeners(ClientEventListener[] cela) {
-        for (int i = 0; i < cela.length; i++)
-            addEventListener(cela[i]);
+		for (ClientEventListener clientEventListener : cela) addEventListener(clientEventListener);
     }
 
 }

@@ -141,8 +141,7 @@ public class TempBucketTest {
 			bucket.migrateToDisk();
 			byte[] readTo = new byte[16];
 			assertTrue(is.read(readTo, 0, 16) == 16);
-			for(int i=0;i<readTo.length;i++)
-				assertTrue(readTo[i] == 0);
+			for (byte b : readTo) assertTrue(b == 0);
 			is.close();
 			os.close();
 		}

@@ -189,8 +189,8 @@ public class DATASTORE_SIZE implements Step {
 		long freeSpace = storeDir.getUsableSpace();
 		File[] files = storeDir.listFiles();
 
-		for (int i = 0; i < files.length; i++) {
-			freeSpace += files[i].length();
+		for (File file : files) {
+			freeSpace += file.length();
 		}
 
 		if (freeSpace < maxSize) {

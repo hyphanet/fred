@@ -923,8 +923,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 
 	private void finishCancelBefore(List<USKAttempt> v, ClientContext context) {
 		if(v != null) {
-			for(int i=0;i<v.size();i++) {
-				USKAttempt att = v.get(i);
+			for (USKAttempt att : v) {
 				att.cancel(context);
 			}
 		}

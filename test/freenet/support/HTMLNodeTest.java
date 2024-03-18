@@ -533,12 +533,12 @@ public class HTMLNodeTest {
 	public void testGenerate_fromHTMLNode_textareaDivA() {
 		HTMLNode methodHTMLNode;
 		String[] nodeNamesArray = {"textarea","div","a"};
-		for(int i=0;i<nodeNamesArray.length;i++) {
-			boolean newlines = new HTMLNode("a").newlineOpen(nodeNamesArray[i]);
-			methodHTMLNode = new HTMLNode(nodeNamesArray[i],
-					SAMPLE_OKAY_ATTRIBUTE_NAME,SAMPLE_ATTRIBUTE_VALUE);
-			assertEquals(generateFullNodeOutput(nodeNamesArray[i], 
-					SAMPLE_OKAY_ATTRIBUTE_NAME,SAMPLE_ATTRIBUTE_VALUE,"", newlines),
+		for (String s : nodeNamesArray) {
+			boolean newlines = new HTMLNode("a").newlineOpen(s);
+			methodHTMLNode = new HTMLNode(s,
+					SAMPLE_OKAY_ATTRIBUTE_NAME, SAMPLE_ATTRIBUTE_VALUE);
+			assertEquals(generateFullNodeOutput(s,
+							SAMPLE_OKAY_ATTRIBUTE_NAME, SAMPLE_ATTRIBUTE_VALUE, "", newlines),
 					methodHTMLNode.generate());
 		}	
 	}
@@ -557,27 +557,27 @@ public class HTMLNodeTest {
 		HTMLNode methodChildNode = new HTMLNode(SAMPLE_OKAY_NODE_NAME_NON_EMPTY,
 				SAMPLE_OKAY_ATTRIBUTE_NAME,SAMPLE_ATTRIBUTE_VALUE,
 				SAMPLE_NODE_CONTENT);
-		for(int i=0;i<nodeNamesArray.length;i++) {
-			methodHTMLNode = new HTMLNode(nodeNamesArray[i],
-					SAMPLE_OKAY_ATTRIBUTE_NAME,SAMPLE_ATTRIBUTE_VALUE,
+		for (String s : nodeNamesArray) {
+			methodHTMLNode = new HTMLNode(s,
+					SAMPLE_OKAY_ATTRIBUTE_NAME, SAMPLE_ATTRIBUTE_VALUE,
 					SAMPLE_NODE_CONTENT);
 			methodHTMLNode.addChild(methodChildNode);
-			
-			assertEquals(("<"+nodeNamesArray[i]+" ").toLowerCase() + 
-					SAMPLE_OKAY_ATTRIBUTE_NAME + "=" +
-					 "\""+SAMPLE_ATTRIBUTE_VALUE+"\">\n" +
-					 // FIXME why is this using 2 tabs? I don't understand ...
-					 "\t\t"+SAMPLE_NODE_CONTENT +
-					 
-					 //child
-					 generateFullNodeOutput(SAMPLE_OKAY_NODE_NAME_NON_EMPTY,
-							 SAMPLE_OKAY_ATTRIBUTE_NAME, SAMPLE_ATTRIBUTE_VALUE, 
-								SAMPLE_NODE_CONTENT) +
-					 "\n\t"+
-					 ("</"+nodeNamesArray[i]+">\n").toLowerCase()
-					 +"\t",
-					 
-					 methodHTMLNode.generate());
+
+			assertEquals(("<" + s + " ").toLowerCase() +
+							SAMPLE_OKAY_ATTRIBUTE_NAME + "=" +
+							"\"" + SAMPLE_ATTRIBUTE_VALUE + "\">\n" +
+							// FIXME why is this using 2 tabs? I don't understand ...
+							"\t\t" + SAMPLE_NODE_CONTENT +
+
+							//child
+							generateFullNodeOutput(SAMPLE_OKAY_NODE_NAME_NON_EMPTY,
+									SAMPLE_OKAY_ATTRIBUTE_NAME, SAMPLE_ATTRIBUTE_VALUE,
+									SAMPLE_NODE_CONTENT) +
+							"\n\t" +
+							("</" + s + ">\n").toLowerCase()
+							+ "\t",
+
+					methodHTMLNode.generate());
 		}
 	}
 	

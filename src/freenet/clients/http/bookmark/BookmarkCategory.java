@@ -114,13 +114,13 @@ public class BookmarkCategory extends Bookmark {
         List<BookmarkCategory> subCategories = getSubCategories();
         prefix += this.name + "/";
 
-        for (int i = 0; i < items.size(); i++) {
-            strings.add(prefix + items.get(i).toString());
-        }
+		for (BookmarkItem item : items) {
+			strings.add(prefix + item.toString());
+		}
 
-        for (int i = 0; i < subCategories.size(); i++) {
-            strings.addAll(subCategories.get(i).toStrings(prefix));
-        }
+		for (BookmarkCategory subCategory : subCategories) {
+			strings.addAll(subCategory.toStrings(prefix));
+		}
 
         return strings;
 
