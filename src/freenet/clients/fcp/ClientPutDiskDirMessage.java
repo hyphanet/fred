@@ -90,29 +90,29 @@ public class ClientPutDiskDirMessage extends ClientPutDirMessage {
     	File filelist[] = thisdir.listFiles();
     	if(filelist == null)
     		throw new MessageInvalidException(ProtocolErrorMessage.FILE_NOT_FOUND, "No such directory!", identifier, global);
-    	for(int i = 0 ; i < filelist.length ; i++) {
-    		if(filelist[i].isHidden() && !includeHiddenFiles) continue;
-                //   Skip unreadable files and dirs
-		//   Skip files nonexistent (dangling symlinks) - check last
-	        if (filelist[i].canRead() && filelist[i].exists()) {
-	        	if (filelist[i].isFile()) {
-	        		File f = filelist[i];
-	        		
-	        		FileBucket bucket = new FileBucket(f, true, false, false, false);
-	        		
-	        		ret.put(f.getName(), new ManifestElement(f.getName(), prefix + f.getName(), bucket, DefaultMIMETypes.guessMIMEType(f.getName(), true), f.length()));
-	        	} else if(filelist[i].isDirectory()) {
-	        		HashMap<String, Object> subdir = makeBucketsByName(new File(thisdir, filelist[i].getName()), prefix
-					        + filelist[i].getName() + '/');
-	        		ret.put(filelist[i].getName(), subdir);
-	        	} else if(!allowUnreadableFiles) {
-	        		throw new MessageInvalidException(ProtocolErrorMessage.FILE_NOT_FOUND, "Not directory and not file: "+filelist[i], identifier, global);
-	        	}
-	        } else {
-	        	if(!allowUnreadableFiles)
-	        		throw new MessageInvalidException(ProtocolErrorMessage.FILE_NOT_FOUND, "Not readable or doesn't exist: "+filelist[i], identifier, global);
-	        }
-    	}
+		for (File file : filelist) {
+			if (file.isHidden() && !includeHiddenFiles) continue;
+			//   Skip unreadable files and dirs
+			//   Skip files nonexistent (dangling symlinks) - check last
+			if (file.canRead() && file.exists()) {
+				if (file.isFile()) {
+					File f = file;
+
+					FileBucket bucket = new FileBucket(f, true, false, false, false);
+
+					ret.put(f.getName(), new ManifestElement(f.getName(), prefix + f.getName(), bucket, DefaultMIMETypes.guessMIMEType(f.getName(), true), f.length()));
+				} else if (file.isDirectory()) {
+					HashMap<String, Object> subdir = makeBucketsByName(new File(thisdir, file.getName()), prefix
+							+ file.getName() + '/');
+					ret.put(file.getName(), subdir);
+				} else if (!allowUnreadableFiles) {
+					throw new MessageInvalidException(ProtocolErrorMessage.FILE_NOT_FOUND, "Not directory and not file: " + file, identifier, global);
+				}
+			} else {
+				if (!allowUnreadableFiles)
+					throw new MessageInvalidException(ProtocolErrorMessage.FILE_NOT_FOUND, "Not readable or doesn't exist: " + file, identifier, global);
+			}
+		}
     	return ret;
 	}
 

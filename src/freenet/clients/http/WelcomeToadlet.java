@@ -74,48 +74,47 @@ public class WelcomeToadlet extends Toadlet {
         if (!items.isEmpty()) {
             // FIXME CSS noborder ...
             HTMLNode table = list.addChild("li").addChild("table", new String[]{"border", "style"}, new String[]{"0", "border: none"});
-            for (int i = 0; i < items.size(); i++) {
-                BookmarkItem item = items.get(i);
-                HTMLNode row = table.addChild("tr");
-                HTMLNode cell = row.addChild("td", "style", "border: none;");
-                if (item.hasAnActivelink() && !noActiveLinks) {
-                    String initialKey = item.getKey();
-                    String key = '/' + initialKey + (initialKey.endsWith("/") ? "" : "/") + "activelink.png";
-                    cell.addChild("div", "style", "height: 36px; width: 108px;").addChild("a", "href", '/' + item.getKey()).addChild("img", new String[]{"src", "alt", "style", "title"},
-                            new String[]{ key, "activelink", "height: 36px; width: 108px", item.getDescription()});
-                } else {
-                    cell.addChild("#", " ");
-                }
-                cell = row.addChild("td", "style", "border: none");
-                
-                boolean updated = item.hasUpdated(); // We use it twice so copy for thread safety
-                String linkClass = updated ? "bookmark-title-updated" : "bookmark-title";
-                cell.addChild(
-                    "a",
-                    new String[]{"href", "title", "class"},
-                    new String[]{'/' + item.getKey(), item.getDescription(), linkClass},
-                    item.getVisibleName());
-                
-                String explain = item.getShortDescription();
-                if(explain != null && !explain.isEmpty()) {
-                	cell.addChild("#", " (");
-                	cell.addChild("#", explain);
-                	cell.addChild("#", ")");
-                }
+			for (BookmarkItem item : items) {
+				HTMLNode row = table.addChild("tr");
+				HTMLNode cell = row.addChild("td", "style", "border: none;");
+				if (item.hasAnActivelink() && !noActiveLinks) {
+					String initialKey = item.getKey();
+					String key = '/' + initialKey + (initialKey.endsWith("/") ? "" : "/") + "activelink.png";
+					cell.addChild("div", "style", "height: 36px; width: 108px;").addChild("a", "href", '/' + item.getKey()).addChild("img", new String[]{"src", "alt", "style", "title"},
+							new String[]{key, "activelink", "height: 36px; width: 108px", item.getDescription()});
+				} else {
+					cell.addChild("#", " ");
+				}
+				cell = row.addChild("td", "style", "border: none");
 
-                if (updated) {
-                    cell = row.addChild("td", "style", "border: none");
-                    cell.addChild(node.getClientCore().getAlerts().renderDismissButton(
-                        item.getUserAlert(), path() + "#" + BOOKMARKS_ANCHOR));
-                }
-            }
+				boolean updated = item.hasUpdated(); // We use it twice so copy for thread safety
+				String linkClass = updated ? "bookmark-title-updated" : "bookmark-title";
+				cell.addChild(
+						"a",
+						new String[]{"href", "title", "class"},
+						new String[]{'/' + item.getKey(), item.getDescription(), linkClass},
+						item.getVisibleName());
+
+				String explain = item.getShortDescription();
+				if (explain != null && !explain.isEmpty()) {
+					cell.addChild("#", " (");
+					cell.addChild("#", explain);
+					cell.addChild("#", ")");
+				}
+
+				if (updated) {
+					cell = row.addChild("td", "style", "border: none");
+					cell.addChild(node.getClientCore().getAlerts().renderDismissButton(
+							item.getUserAlert(), path() + "#" + BOOKMARKS_ANCHOR));
+				}
+			}
         }
 
         List<BookmarkCategory> cats = cat.getSubCategories();
-        for (int i = 0; i < cats.size(); i++) {
-            list.addChild("li", "class", "cat", cats.get(i).getVisibleName());
-            addCategoryToList(cats.get(i), list.addChild("li").addChild("ul"), noActiveLinks, ctx);
-        }
+		for (BookmarkCategory bookmarkCategory : cats) {
+			list.addChild("li", "class", "cat", bookmarkCategory.getVisibleName());
+			addCategoryToList(bookmarkCategory, list.addChild("li").addChild("ul"), noActiveLinks, ctx);
+		}
     }
     
     public boolean allowPOSTWithoutPassword() {

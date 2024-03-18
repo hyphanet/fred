@@ -119,8 +119,8 @@ public final class BinaryBlobWriter {
 			}
 			Bucket out = _bf.makeBucket(-1);
 			getSnapshot(out, mark);
-			for (int i=0,n=_buckets.size(); i<n;i++) {
-				_buckets.get(i).free();
+			for (Bucket bucket : _buckets) {
+				bucket.free();
 			}
 			if (mark) {
 				out.setReadOnly();
@@ -156,9 +156,9 @@ public final class BinaryBlobWriter {
 		}
 		OutputStream out = bucket.getOutputStream();
 		try {
-		for (int i=0,n=_buckets.size(); i<n;i++) {
-			BucketTools.copyTo(_buckets.get(i), out, -1);
-		}
+			for (Bucket value : _buckets) {
+				BucketTools.copyTo(value, out, -1);
+			}
 		if (addEndmarker) {
 			DataOutputStream dout = new DataOutputStream(out);
 			BinaryBlob.writeEndBlob(dout);
