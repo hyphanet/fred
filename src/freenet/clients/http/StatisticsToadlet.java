@@ -1347,8 +1347,8 @@ public class StatisticsToadlet extends Toadlet {
 	
 	private int simpleHistogramDivisor(int[] a) {
 		int max = 1;
-		for (int i = 0; i < a.length; i++) {
-			if (a[i] > max) max = a[i];
+		for (int j : a) {
+			if (j > max) max = j;
 		}
 		return max;
 	}
@@ -1533,26 +1533,26 @@ public class StatisticsToadlet extends Toadlet {
 		double peerLocation;
 		int histogramIndex;
 		int peerCount = peerNodeStatuses.length;
-		for (int peerIndex = 0; peerIndex < peerCount; peerIndex++) {
-			peerNodeStatus = peerNodeStatuses[peerIndex];
+		for (PeerNodeStatus nodeStatus : peerNodeStatuses) {
+			peerNodeStatus = nodeStatus;
 			peerLocation = peerNodeStatus.getLocation();
-			if(!peerNodeStatus.isSearchable()) continue;
+			if (!peerNodeStatus.isSearchable()) continue;
 			if (!Location.isValid(peerLocation)) continue;
-			double[] foafLocations=peerNodeStatus.getPeersLocation();
-			if (foafLocations!=null && peerNodeStatus.isRoutable()) {
+			double[] foafLocations = peerNodeStatus.getPeersLocation();
+			if (foafLocations != null && peerNodeStatus.isRoutable()) {
 				for (double foafLocation : foafLocations) {
 					//one grey dot for each "Friend-of-a-friend"
-					peerCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(foafLocation, false, 0.9), "disconnected" }, ".");
+					peerCircleInfoboxContent.addChild("span", new String[]{"style", "class"}, new String[]{generatePeerCircleStyleString(foafLocation, false, 0.9), "disconnected"}, ".");
 				}
 			}
-			histogramIndex = (int)(peerLocation * HISTOGRAM_LENGTH);
+			histogramIndex = (int) (peerLocation * HISTOGRAM_LENGTH);
 			histogramIndex %= HISTOGRAM_LENGTH; // Map (unlikely) location 1.0 to 0.0
 			if (peerNodeStatus.isConnected()) {
 				histogramConnected[histogramIndex]++;
 			} else {
 				histogramDisconnected[histogramIndex]++;
 			}
-			peerCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(peerLocation, false, (1.0 - peerNodeStatus.getPReject())), ((peerNodeStatus.isConnected())?"connected":"disconnected") }, ((peerNodeStatus.isOpennet())?"o":"x"));
+			peerCircleInfoboxContent.addChild("span", new String[]{"style", "class"}, new String[]{generatePeerCircleStyleString(peerLocation, false, (1.0 - peerNodeStatus.getPReject())), ((peerNodeStatus.isConnected()) ? "connected" : "disconnected")}, ((peerNodeStatus.isOpennet()) ? "o" : "x"));
 		}
 		peerCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(myLocation, true, 1.0), "me" }, "x");
 		//

@@ -444,9 +444,9 @@ public class HTTPRequestImpl implements HTTPRequest {
 
 		// try parsing all values and put the valid Integers in a new list
 		List<Integer> intValueList = new ArrayList<Integer>();
-		for (int i = 0; i < valueList.size(); i++) {
+		for (String s : valueList) {
 			try {
-				intValueList.add(Integer.valueOf(valueList.get(i)));
+				intValueList.add(Integer.valueOf(s));
 			} catch (Exception e) {
 				// ignore invalid parameter values
 			}
@@ -548,17 +548,17 @@ public class HTTPRequestImpl implements HTTPRequest {
 							continue;
 						String[] valueparts = lineparts[1].split(";");
 
-						for(int i = 0; i < valueparts.length; i++) {
-							String[] subparts = valueparts[i].split("=");
-							if(subparts.length != 2)
+						for (String valuepart : valueparts) {
+							String[] subparts = valuepart.split("=");
+							if (subparts.length != 2)
 								continue;
 							String fieldname = subparts[0].trim();
 							String value = subparts[1].trim();
-							if(value.startsWith("\"") && value.endsWith("\""))
+							if (value.startsWith("\"") && value.endsWith("\""))
 								value = value.substring(1, value.length() - 1);
-							if(fieldname.equalsIgnoreCase("name"))
+							if (fieldname.equalsIgnoreCase("name"))
 								name = value;
-							else if(fieldname.equalsIgnoreCase("filename"))
+							else if (fieldname.equalsIgnoreCase("filename"))
 								filename = value;
 						}
 					}

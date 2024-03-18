@@ -50,8 +50,7 @@ public class LRUQueueTest {
 	private LRUQueue<Object> createSampleQueue(int size) {
 		LRUQueue<Object> methodLRUQueue = new LRUQueue<Object>();
 		Object[] sampleObjects = createSampleObjects(size);
-		for (int i=0;i<sampleObjects.length;i++)
-			methodLRUQueue.push(sampleObjects[i]);
+		for (Object sampleObject : sampleObjects) methodLRUQueue.push(sampleObject);
 		return methodLRUQueue;
 	}
 	
@@ -62,8 +61,8 @@ public class LRUQueueTest {
 	 * @return true if there is at least one reference to the object
 	 */
 	private boolean isPresent(Object[] anArray, Object aElementToSearch) {
-		for(int i=0; i<anArray.length; i++)
-			if (anArray[i].equals(aElementToSearch))
+		for (Object o : anArray)
+			if (o.equals(aElementToSearch))
 				return true;
 		return false;
 	}
@@ -170,11 +169,9 @@ public class LRUQueueTest {
 		LRUQueue<Object> methodLRUQueue = new LRUQueue<Object>();
 		Object[] sampleObjects = createSampleObjects(sampleElemsNumber);
 		//pushing objects
-		for (int i=0; i<sampleObjects.length; i++)		
-			methodLRUQueue.push(sampleObjects[i]);
+		for (Object object : sampleObjects) methodLRUQueue.push(object);
 		//getting objects
-		for (int i=0; i<sampleObjects.length; i++)		
-			assertEquals(sampleObjects[i],methodLRUQueue.pop());
+		for (Object sampleObject : sampleObjects) assertEquals(sampleObject, methodLRUQueue.pop());
 		//the queue must be empty
 		assertNull(methodLRUQueue.pop());				
 	}
@@ -210,8 +207,7 @@ public class LRUQueueTest {
 	public void testRemove() {
 		LRUQueue<Object> methodLRUQueue = new LRUQueue<Object>();
 		Object[] sampleObjects = createSampleObjects(sampleElemsNumber);
-		for (int i=0;i<sampleObjects.length;i++)
-			methodLRUQueue.push(sampleObjects[i]);
+		for (Object sampleObject : sampleObjects) methodLRUQueue.push(sampleObject);
 		//removing all objects in the opposite way used by pop() method
 		for(int i=sampleObjects.length-1;i>=0;i--) {
 			assertTrue(methodLRUQueue.remove(sampleObjects[i]));
@@ -268,8 +264,7 @@ public class LRUQueueTest {
 		Object[] sampleObjects = createSampleObjects(sampleElemsNumber);
 		LRUQueue<Object> methodLRUQueue = new LRUQueue<Object>();
 		//pushing objects
-		for (int i=0; i<sampleObjects.length; i++)
-			methodLRUQueue.push(sampleObjects[i]);
+		for (Object sampleObject : sampleObjects) methodLRUQueue.push(sampleObject);
 		Enumeration<Object> methodEnumeration = methodLRUQueue.elements();
 		int j=0;
 		while(methodEnumeration.hasMoreElements()) {			
@@ -288,14 +283,12 @@ public class LRUQueueTest {
 		Object[] sampleObjects = createSampleObjects(sampleElemsNumber);
 		
 		//pushing objects
-		for (int i=0; i<sampleObjects.length; i++)
-			methodLRUQueue.push(sampleObjects[i]);
+		for (Object object : sampleObjects) methodLRUQueue.push(object);
 		
 		Object[] resultingArray = methodLRUQueue.toArray();
 		
-		assertEquals(sampleObjects.length, resultingArray.length);		
-		for(int i=0;i<sampleObjects.length;i++)
-			assertTrue(isPresent(resultingArray, sampleObjects[i]));
+		assertEquals(sampleObjects.length, resultingArray.length);
+		for (Object sampleObject : sampleObjects) assertTrue(isPresent(resultingArray, sampleObject));
 	}
 
 	/**
@@ -307,15 +300,13 @@ public class LRUQueueTest {
 		Object[] sampleObjects = createSampleObjects(sampleElemsNumber);
 
 		// pushing objects
-		for (int i = 0; i < sampleObjects.length; i++)
-			methodLRUQueue.push(sampleObjects[i]);
+		for (Object object : sampleObjects) methodLRUQueue.push(object);
 		
 		Object[] resultingArray = new Object[sampleObjects.length];
 		methodLRUQueue.toArray(resultingArray);
 
-		assertEquals(sampleObjects.length, resultingArray.length);		
-		for (int i = 0; i < sampleObjects.length; i++)
-			assertTrue(isPresent(resultingArray, sampleObjects[i]));
+		assertEquals(sampleObjects.length, resultingArray.length);
+		for (Object sampleObject : sampleObjects) assertTrue(isPresent(resultingArray, sampleObject));
 	}
 
 	/**
@@ -327,8 +318,7 @@ public class LRUQueueTest {
 		Object[] sampleObjects = createSampleObjects(sampleElemsNumber);
 
 		// pushing objects
-		for (int i = 0; i < sampleObjects.length; i++)
-			methodLRUQueue.push(sampleObjects[i]);
+		for (Object sampleObject : sampleObjects) methodLRUQueue.push(sampleObject);
 
 		Object[] resultingArray = methodLRUQueue.toArrayOrdered();
 
@@ -346,8 +336,7 @@ public class LRUQueueTest {
 		Object[] sampleObjects = createSampleObjects(sampleElemsNumber);
 
 		// pushing objects
-		for (int i = 0; i < sampleObjects.length; i++)
-			methodLRUQueue.push(sampleObjects[i]);
+		for (Object sampleObject : sampleObjects) methodLRUQueue.push(sampleObject);
 
 		Object[] resultingArray = new Object[sampleObjects.length];
 		methodLRUQueue.toArrayOrdered(resultingArray);

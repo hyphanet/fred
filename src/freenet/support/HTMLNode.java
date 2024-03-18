@@ -354,8 +354,7 @@ public class HTMLNode implements XMLCharacterClasses, Cloneable {
 		if (!"#".equals(name)) {
 			return name;
 		}
-		for (int childIndex = 0, childCount = children.size(); childIndex < childCount; childIndex++) {
-			HTMLNode childNode = children.get(childIndex);
+		for (HTMLNode childNode : children) {
 			String tag = childNode.getFirstTag();
 			if (tag != null) {
 				return tag;
@@ -379,9 +378,8 @@ public class HTMLNode implements XMLCharacterClasses, Cloneable {
 				HTMLEncoder.encodeToBuffer(content, tagBuffer);
 				return tagBuffer;
 			}
-			
-			for(int childIndex = 0, childCount = children.size(); childIndex < childCount; childIndex++) {
-				HTMLNode childNode = children.get(childIndex);
+
+			for (HTMLNode childNode : children) {
 				childNode.generate(tagBuffer);
 			}
 			return tagBuffer;
@@ -421,9 +419,8 @@ public class HTMLNode implements XMLCharacterClasses, Cloneable {
 				tagBuffer.append('\n');
 				tagBuffer.append(indentString(indentDepth+1));
 			}
-			for (int childIndex = 0, childCount = children.size(); childIndex < childCount; childIndex++) {
-				HTMLNode childNode = children.get(childIndex);
-				childNode.generate(tagBuffer,indentDepth+1);
+			for (HTMLNode childNode : children) {
+				childNode.generate(tagBuffer, indentDepth + 1);
 			}
 		}
 		/* add a closing tag */
@@ -444,8 +441,7 @@ public class HTMLNode implements XMLCharacterClasses, Cloneable {
 			return content;
 		}
 		StringBuilder tagBuffer=new StringBuilder();
-		for(int childIndex = 0, childCount = children.size(); childIndex < childCount; childIndex++) {
-			HTMLNode childNode = children.get(childIndex);
+		for (HTMLNode childNode : children) {
 			childNode.generate(tagBuffer);
 		}
 		return tagBuffer.toString();

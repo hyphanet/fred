@@ -1047,22 +1047,22 @@ public class TextModeClientInterface implements Runnable {
     	File filelist[] = thisdir.listFiles();
     	if(filelist == null)
     		throw new IllegalArgumentException("No such directory");
-    	for(int i = 0 ; i < filelist.length ; i++) {
-                //   Skip unreadable files and dirs
-		//   Skip files nonexistant (dangling symlinks) - check last
-	        if (filelist[i].canRead() && filelist[i].exists()) {
-    		if (filelist[i].isFile()) {
-    			File f = filelist[i];
+		for (File file : filelist) {
+			//   Skip unreadable files and dirs
+			//   Skip files nonexistant (dangling symlinks) - check last
+			if (file.canRead() && file.exists()) {
+				if (file.isFile()) {
+					File f = file;
 
-    			FileBucket bucket = new FileBucket(f, true, false, false, false);
+					FileBucket bucket = new FileBucket(f, true, false, false, false);
 
-    			ret.put(f.getName(), bucket);
-    		} else if(filelist[i].isDirectory()) {
-    			HashMap<String, Object> subdir = makeBucketsByName(directory + filelist[i].getName());
-    			ret.put(filelist[i].getName(), subdir);
-    		}
+					ret.put(f.getName(), bucket);
+				} else if (file.isDirectory()) {
+					HashMap<String, Object> subdir = makeBucketsByName(directory + file.getName());
+					ret.put(file.getName(), subdir);
+				}
+			}
 		}
-    	}
     	return ret;
 	}
 
