@@ -201,7 +201,7 @@ public class SimpleFieldSet {
 				Logger.error(this, "No end marker");
 				break;
 			}
-			if ((line.isEmpty())) continue; // ignore
+			if (line.isEmpty()) continue; // ignore
 			firstLine = false;
 
 			char first = line.charAt(0);
@@ -221,7 +221,7 @@ public class SimpleFieldSet {
 					// Mapping
 					String before = line.substring(0, index).trim();
 					String after = line.substring(index+1);
-					if((!after.isEmpty()) && after.charAt(0) == '=' && allowBase64) {
+					if(!after.isEmpty() && after.charAt(0) == '=' && allowBase64) {
 						try {
 							after = after.substring(1);
 							after = after.replaceAll("\\s", "");

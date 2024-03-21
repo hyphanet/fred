@@ -662,7 +662,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 						if (pc.writeStyleScriptWithTag) {
 							pc.writeStyleScriptWithTag = false;
 							String style = pc.currentStyleScriptChunk;
-							if ((style == null) || (style.isEmpty()))
+							if ((style == null) || style.isEmpty())
 								pc.writeAfterTag.append("<!-- "+l10n("deletedUnknownStyle")+" -->");
 							else
 								w.write(style);
@@ -2647,8 +2647,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			if (type != null) {
 				String[] typesplit = splitType(type);
 				type = typesplit[0];
-				if ((typesplit[1] != null) && (!typesplit[1].isEmpty()))
+				if ((typesplit[1] != null) && !typesplit[1].isEmpty()) {
 					charset = typesplit[1];
+				}
 				if(logDEBUG)
 					Logger.debug(
 							this,
@@ -3066,7 +3067,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 							throwFilterException(l10n("invalidMetaType"));
 					} else if (
 						http_equiv.equalsIgnoreCase("Content-Language")) {
-						if(content.matches("((?>[a-zA-Z0-9]*)(?>-[A-Za-z0-9]*)*(?>,\\s*)?)*") && (!content.trim().isEmpty())) {
+						if(content.matches("((?>[a-zA-Z0-9]*)(?>-[A-Za-z0-9]*)*(?>,\\s*)?)*") && !content.trim().isEmpty()) {
 							hn.put("http-equiv", "Content-Language");
 							hn.put("content", content);
 						}
@@ -3339,7 +3340,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				throw e;
 		}
 		String s = w.toString();
-		if ((s == null) || (s.isEmpty()))
+		if ((s == null) || s.isEmpty())
 			return null;
 		//		Core.logger.log(SaferFilter.class, "Style now: " + s, LogLevel.DEBUG);
 		if(logMINOR) Logger.minor(HTMLFilter.class, "Style finally: " + s);
@@ -3454,7 +3455,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		if(logMINOR)
 			Logger.minor(HTMLFilter.class, "Sanitizing URI: "+suri+" ( override type "+overrideType +" override charset "+overrideCharset+" ) inline="+inline, new Exception("debug"));
 		boolean addMaybe = false;
-		if((overrideCharset != null) && (!overrideCharset.isEmpty()))
+		if((overrideCharset != null) && !overrideCharset.isEmpty())
 			overrideType += "; charset="+overrideCharset;
 		else if(maybeCharset != null)
 			addMaybe = true;

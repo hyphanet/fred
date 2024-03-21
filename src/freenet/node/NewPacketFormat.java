@@ -169,7 +169,7 @@ public class NewPacketFormat implements PacketFormat {
 		
 		boolean dontAck = false;
 		boolean wakeUp = false;
-		if(packet.getError() || (packet.getFragments().isEmpty())) {
+		if(packet.getError() || packet.getFragments().isEmpty()) {
 			if(logMINOR) Logger.minor(this, "Not acking because " + (packet.getError() ? "error" : "no fragments"));
 			dontAck = true;
 		}

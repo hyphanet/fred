@@ -1001,7 +1001,7 @@ public class PluginManager {
 	}
 
 	public OfficialPluginDescription isOfficialPlugin(String name) {
-		if((name == null) || (name.trim().isEmpty()))
+		if((name == null) || name.trim().isEmpty())
 			return null;
 		List<OfficialPluginDescription> availablePlugins = findAvailablePlugins();
 		for(OfficialPluginDescription desc : availablePlugins) {

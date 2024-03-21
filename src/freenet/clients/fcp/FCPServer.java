@@ -909,7 +909,7 @@ public class FCPServer implements Runnable, DownloadCache {
 
 	private File makeReturnFilename(FreenetURI uri, String expectedMimeType, File downloadsDir) {
 		String ext;
-		if((expectedMimeType != null) && (!expectedMimeType.isEmpty()) &&
+		if((expectedMimeType != null) && !expectedMimeType.isEmpty() &&
 				!expectedMimeType.equals(DefaultMIMETypes.DEFAULT_MIME_TYPE)) {
 			ext = DefaultMIMETypes.getExtension(expectedMimeType);
 		} else ext = null;

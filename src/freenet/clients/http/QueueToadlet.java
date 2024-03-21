@@ -229,7 +229,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				}
 			}
 
-			if(request.isPartSet("delete_request") && (!request.getPartAsStringFailsafe("delete_request", 128).isEmpty())) {
+			if(request.isPartSet("delete_request") && !request.getPartAsStringFailsafe("delete_request", 128).isEmpty()) {
 				// Confirm box
 				PageNode page = ctx.getPageMaker().getPageNode(l10n("confirmDeleteTitle"), ctx);
 				HTMLNode inner = page.content;
@@ -285,7 +285,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 
 				this.writeHTMLReply(ctx, 200, "OK", page.outer.generate());
 				return;
-			} else if(request.isPartSet("remove_request") && (!request.getPartAsStringFailsafe("remove_request", 128).isEmpty())) {
+			} else if(request.isPartSet("remove_request") && !request.getPartAsStringFailsafe("remove_request", 128).isEmpty()) {
 				// Remove all requested (i.e. selected) requests from the queue, regardless of
 				// their status
 				// FIXME optimise into a single database job.
@@ -314,7 +314,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				}
 				writePermanentRedirect(ctx, "Done", path());
 				return;
-			} else if(request.isPartSet("remove_finished_uploads_request") && (!request.getPartAsStringFailsafe("remove_finished_uploads_request", 128).isEmpty())) {
+			} else if(request.isPartSet("remove_finished_uploads_request") && !request.getPartAsStringFailsafe("remove_finished_uploads_request", 128).isEmpty()) {
 				// Remove all finished single-file uploads
 				String identifier = "";
 				try {
@@ -343,7 +343,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				writePermanentRedirect(ctx, "Done", path());
 				return;
 				
-			} else if(request.isPartSet("remove_finished_downloads_request") && (!request.getPartAsStringFailsafe("remove_finished_downloads_request", 128).isEmpty())) {
+			} else if(request.isPartSet("remove_finished_downloads_request") && !request.getPartAsStringFailsafe("remove_finished_downloads_request", 128).isEmpty()) {
 				// Remove all finished downloads
 				String identifier = "";
 				try {
@@ -372,7 +372,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				writePermanentRedirect(ctx, "Done", path());
 				return;
 			}
-			else if(request.isPartSet("restart_request") && (!request.getPartAsStringFailsafe("restart_request", 128).isEmpty())) {
+			else if(request.isPartSet("restart_request") && !request.getPartAsStringFailsafe("restart_request", 128).isEmpty()) {
 				boolean disableFilterData = request.isPartSet("disableFilterData");
 				
 				
@@ -392,7 +392,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				}
 				writePermanentRedirect(ctx, "Done", path());
 				return;
-			} else if(request.isPartSet("panic") && (!request.getPartAsStringFailsafe("panic", 128).isEmpty())) {
+			} else if(request.isPartSet("panic") && !request.getPartAsStringFailsafe("panic", 128).isEmpty()) {
 				if(SimpleToadletServer.noConfirmPanic) {
 					core.getNode().killMasterKeysFile();
 					core.getNode().panic();
@@ -403,7 +403,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					sendConfirmPanicPage(ctx);
 					return;
 				}
-			} else if(request.isPartSet("confirmpanic") && (!request.getPartAsStringFailsafe("confirmpanic", 128).isEmpty())) {
+			} else if(request.isPartSet("confirmpanic") && !request.getPartAsStringFailsafe("confirmpanic", 128).isEmpty()) {
 				core.getNode().killMasterKeysFile();
 				core.getNode().panic();
 				sendPanicingPage(ctx);
@@ -456,7 +456,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			} else if(request.isPartSet("bulkDownloads")) {
 				String bulkDownloadsAsString = request.getPartAsStringFailsafe("bulkDownloads", 262144);
 				String[] keys = bulkDownloadsAsString.split("\n");
-				if((bulkDownloadsAsString.isEmpty()) || (keys.length < 1)) {
+				if(bulkDownloadsAsString.isEmpty() || (keys.length < 1)) {
 					writePermanentRedirect(ctx, "Done", path());
 					return;
 				}

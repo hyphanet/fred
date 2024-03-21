@@ -54,7 +54,7 @@ public class ClientMetadata implements Cloneable, Serializable {
 	/** Get the document MIME type. Will always be a valid MIME type, unless there
 	 * has been an error; if it is unknown, will return application/octet-stream. */
 	public String getMIMEType() {
-		if((mimeType == null) || (mimeType.isEmpty()))
+		if((mimeType == null) || mimeType.isEmpty())
 			return DefaultMIMETypes.DEFAULT_MIME_TYPE;
 		return mimeType;
 	}
@@ -70,7 +70,7 @@ public class ClientMetadata implements Cloneable, Serializable {
 
 	/** Is there no MIME type? */
 	public boolean isTrivial() {
-		return ((mimeType == null) || mimeType.isEmpty());
+		return (mimeType == null) || mimeType.isEmpty();
 	}
 	
 	@Override
