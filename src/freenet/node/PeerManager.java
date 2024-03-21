@@ -1789,11 +1789,9 @@ public class PeerManager {
 	
 	public void changePeerNodeStatus(PeerNode peerNode, int oldPeerNodeStatus,
 			int peerNodeStatus, boolean noLog) {
-		Integer newStatus = peerNodeStatus;
-		Integer oldStatus = oldPeerNodeStatus;
-		this.allPeersStatuses.changePeerNodeStatus(peerNode, oldStatus, newStatus, noLog);
+		this.allPeersStatuses.changePeerNodeStatus(peerNode, oldPeerNodeStatus, peerNodeStatus, noLog);
 		if(!peerNode.isOpennet())
-			this.darknetPeersStatuses.changePeerNodeStatus(peerNode, oldStatus, newStatus, noLog);
+			this.darknetPeersStatuses.changePeerNodeStatus(peerNode, oldPeerNodeStatus, peerNodeStatus, noLog);
 		node.getExecutor().execute(new Runnable() {
 
 			@Override
@@ -1808,10 +1806,9 @@ public class PeerManager {
 	 * Add a PeerNode status to the map. Used internally when a peer is added.
 	 */
 	private void addPeerNodeStatus(int pnStatus, PeerNode peerNode, boolean noLog) {
-		Integer peerNodeStatus = pnStatus;
-		this.allPeersStatuses.addStatus(peerNodeStatus, peerNode, noLog);
+		this.allPeersStatuses.addStatus(pnStatus, peerNode, noLog);
 		if(!peerNode.isOpennet())
-			this.darknetPeersStatuses.addStatus(peerNodeStatus, peerNode, noLog);
+			this.darknetPeersStatuses.addStatus(pnStatus, peerNode, noLog);
 	}
 
 	/**
@@ -1830,10 +1827,9 @@ public class PeerManager {
 	 * @param isInPeers If true, complain if the node is not in the peers list; if false, complain if it is.
 	 */
 	private void removePeerNodeStatus(int pnStatus, PeerNode peerNode, boolean noLog) {
-		Integer peerNodeStatus = pnStatus;
-		this.allPeersStatuses.removeStatus(peerNodeStatus, peerNode, noLog);
+		this.allPeersStatuses.removeStatus(pnStatus, peerNode, noLog);
 		if(!peerNode.isOpennet())
-			this.darknetPeersStatuses.removeStatus(peerNodeStatus, peerNode, noLog);
+			this.darknetPeersStatuses.removeStatus(pnStatus, peerNode, noLog);
 	}
 
 	/**
