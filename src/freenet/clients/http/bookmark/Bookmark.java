@@ -18,7 +18,7 @@ public abstract class Bookmark {
 	}
 
 	protected void setName(String s) {
-		name = (!s.isEmpty() ? s : NodeL10n.getBase().getString("Bookmark.noName"));
+		name = (s.length() > 0 ? s : NodeL10n.getBase().getString("Bookmark.noName"));
 	}
 
 	@Override
