@@ -70,7 +70,7 @@ public class ClientMetadata implements Cloneable, Serializable {
 
 	/** Is there no MIME type? */
 	public boolean isTrivial() {
-		return (mimeType == null) || mimeType.isEmpty();
+		return ((mimeType == null) || mimeType.isEmpty());
 	}
 	
 	@Override
