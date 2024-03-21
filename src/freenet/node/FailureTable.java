@@ -71,15 +71,15 @@ public class FailureTable {
 	static final int MAX_ENTRIES = 20*1000;
 	/** Maximum number of offers to track */
 	static final int MAX_OFFERS = 10*1000;
-	/** Terminate a request if there was a DNF on the same key less than 10 minutes ago.
+	/** Terminate a request if there was a DNF on the same key less than this time ago.
 	 * Maximum time for any FailureTable i.e. for this period after a DNF, we will avoid the node that 
 	 * DNFed. */
-	static final long REJECT_TIME = MINUTES.toMillis(10);
+	static final long REJECT_TIME = MINUTES.toMillis(3);
 	/** Maximum time for a RecentlyFailed. I.e. until this period expires, we take a request into account
 	 * when deciding whether we have recently failed to this peer. If we get a DNF, we use this figure.
 	 * If we get a RF, we use what it tells us, which can be less than this. Most other failures use
 	 * shorter periods. */
-	static final long RECENTLY_FAILED_TIME = MINUTES.toMillis(30);
+	static final long RECENTLY_FAILED_TIME = MINUTES.toMillis(5);
 	/** After 1 hour we forget about an entry completely */
 	static final long MAX_LIFETIME = MINUTES.toMillis(60);
 	/** Offers expire after 10 minutes */
