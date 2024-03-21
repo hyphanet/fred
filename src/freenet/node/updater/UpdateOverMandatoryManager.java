@@ -1665,7 +1665,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 	public boolean isFetchingMain() {
 		synchronized(this) {
-			return nodesSendingMainJar.size() > 0;
+			return !nodesSendingMainJar.isEmpty();
 		}
 	}
 
@@ -1906,7 +1906,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 					return false;
 				}
 				synchronized(this) {
-					if(peersFailed.size() != 0) {
+					if(!peersFailed.isEmpty()) {
 						System.out.println("UOM trying peers which have failed downloads for "+saveTo.getName()+" because nowhere else to go ...");
 						peersFailed.clear();
 						tryEverything = true;

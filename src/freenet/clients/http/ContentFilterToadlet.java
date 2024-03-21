@@ -216,7 +216,7 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
             Bucket bucket;
             if (localFile) {
             	filename = request.getPartAsStringFailsafe("filename", QueueToadlet.MAX_FILENAME_LENGTH);
-	            if (mimeType.length() == 0) {
+	            if (mimeType.isEmpty()) {
 	                mimeType = DefaultMIMETypes.guessMIMEType(filename, false);
 	            }
 	            File file = new File(filename);
@@ -227,12 +227,12 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
                     throw new BadRequestException("filename");
                 }
                 filename = file.getFilename();
-                if (mimeType.length() == 0) {
+                if (mimeType.isEmpty()) {
                     mimeType = file.getContentType();
                 }
                 bucket = file.getData();
             }
-            if (filename.length() == 0) {
+            if (filename.isEmpty()) {
                 throw new BadRequestException("filename");
             }
             String resultFilename = makeResultFilename(filename, mimeType);

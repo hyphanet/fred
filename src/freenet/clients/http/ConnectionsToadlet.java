@@ -669,7 +669,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			}
 			
 			StringBuilder ref = null;
-			if (urltext.length() > 0) {
+			if (!urltext.isEmpty()) {
 				// fetch reference from a URL
 				BufferedReader in = null;
 				try {
@@ -687,7 +687,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				} finally {
 					Closer.close(in);
 				}
-			} else if (reftext.length() > 0) {
+			} else if (!reftext.isEmpty()) {
 				// read from post data or file upload
 				// this slightly scary looking regexp chops any extra characters off the beginning or ends of lines and removes extra line breaks
 				ref = new StringBuilder(reftext.replaceAll(".*?((?:[\\w,\\.]+\\=[^\r\n]+?)|(?:End))[ \\t]*(?:\\r?\\n)+", "$1\n"));

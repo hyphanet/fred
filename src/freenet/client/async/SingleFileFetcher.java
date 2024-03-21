@@ -350,7 +350,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					return;
 				}
 			}
-			if(metaStrings.size() == 0) {
+			if(metaStrings.isEmpty()) {
 				if(metadata.hasTopData()) {
 					if((metadata.topSize > ctx.maxOutputLength) ||
 							(metadata.topCompressedSize > ctx.maxTempLength)) {
@@ -654,7 +654,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				}
 
 				String mimeType = clientMetadata.getMIMETypeNoParams();
-				if(mimeType != null && ArchiveManager.ARCHIVE_TYPE.isUsableArchiveType(mimeType) && metaStrings.size() > 0) {
+				if(mimeType != null && ArchiveManager.ARCHIVE_TYPE.isUsableArchiveType(mimeType) && !metaStrings.isEmpty()) {
 					// Looks like an implicit archive, handle as such
 					metadata.setArchiveManifest();
 					// Pick up MIME type from inside archive
@@ -729,7 +729,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				clientMetadata.mergeNoOverwrite(metadata.getClientMetadata()); // even splitfiles can have mime types!
 
 				String mimeType = clientMetadata.getMIMETypeNoParams();
-				if(mimeType != null && ArchiveManager.ARCHIVE_TYPE.isUsableArchiveType(mimeType) && metaStrings.size() > 0) {
+				if(mimeType != null && ArchiveManager.ARCHIVE_TYPE.isUsableArchiveType(mimeType) && !metaStrings.isEmpty()) {
 					// Looks like an implicit archive, handle as such
 					metadata.setArchiveManifest();
 					// Pick up MIME type from inside archive

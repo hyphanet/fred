@@ -1584,7 +1584,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
     public static void flatten(HashMap<String,Object> manifestElements, List<ManifestElement> v, String prefix) {
         for(Map.Entry<String,Object> entry: manifestElements.entrySet()) {
             String name = entry.getKey();
-            String fullName = prefix.length() == 0 ? name : prefix+ '/' +name;
+            String fullName = prefix.isEmpty() ? name : prefix+ '/' +name;
             Object o = entry.getValue();
             if(o instanceof HashMap) {
                 flatten(Metadata.forceMap(o), v, fullName);

@@ -20,7 +20,7 @@ public class StringArrOption extends Option<String[]> {
 		
 	@Override
 	public String[] parseString(String val) throws InvalidConfigValueException {
-		if(val.length() == 0) return new String[0];
+		if(val.isEmpty()) return new String[0];
 		String[] out = val.split(delimiter);
 
 		try {
@@ -51,7 +51,7 @@ public class StringArrOption extends Option<String[]> {
 		StringBuilder sb = new StringBuilder();
 		for (int i = 0 ; i < arr.length ; i++) {
 			String val = arr[i];
-			if(val.length() == 0)
+			if(val.isEmpty())
 				sb.append(":").append(delimiter);
 			else
 				sb.append(URLEncoder.encode(arr[i],false)).append(delimiter);

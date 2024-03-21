@@ -323,7 +323,7 @@ public class ElementInfo {
 	 */
 	public static boolean isValidName(String name)
 	{
-		if(name.length()==0)
+		if(name.isEmpty())
 		{
 			return false;
 		}
@@ -351,7 +351,7 @@ public class ElementInfo {
 	
 	public static boolean isValidIdentifier(String name)
 	{
-		if(name.length()==0)
+		if(name.isEmpty())
 		{
 			return false;
 		}

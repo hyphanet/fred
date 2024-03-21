@@ -38,7 +38,7 @@ public class LoadPlugin extends FCPMessage {
 		if(pluginURL == null)
 			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Must contain a PluginURL field", identifier, false);
 		String type = fs.get("URLType");
-		if ((type != null) && (type.trim().length() > 0))
+		if ((type != null) && !type.trim().isEmpty())
 			urlType = type.trim();
 		else
 			urlType = null;

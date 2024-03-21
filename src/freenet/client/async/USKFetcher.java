@@ -2076,7 +2076,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				c = entry.getValue().checkStore(l);
 				if(c != null) checkers.add(c);
 			}
-			if(checkers.size() > 0)
+			if(!checkers.isEmpty())
 				return new USKStoreChecker(checkers);
 			else return null;
 		}

@@ -1025,7 +1025,7 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 			s = FileUtil.sanitize(s);
 			if(logMINOR)
 				Logger.minor(this, "Sanitized name " + i + " = " + s);
-			if(s.length() > 0) {
+			if(!s.isEmpty()) {
 				if(out.length() > 0)
 					out.append('-');
 				out.append(s);

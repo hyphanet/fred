@@ -244,7 +244,7 @@ public class IPAddressDetector implements Runnable {
 			Logger.debug(
 				this,
 				"onGetAddresses found " + addrs.size() + " potential addresses)");
-		if (addrs.size() == 0) {
+		if (addrs.isEmpty()) {
 			Logger.error(this, "No addresses found!");
 			lastAddressList = null;
 			return;

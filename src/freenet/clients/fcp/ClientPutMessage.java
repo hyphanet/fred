@@ -232,7 +232,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 		if(fnam != null && fnam.indexOf('/') > -1) {
 			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "TargetFilename must not contain slashes", identifier, global);
 		}
-		if(fnam != null && fnam.length() == 0) {
+		if(fnam != null && fnam.isEmpty()) {
 			fnam = null; // Deliberate override to tell us not to create one.
 		}
 		if(uri.getRoutingKey() == null && !uri.isKSK())

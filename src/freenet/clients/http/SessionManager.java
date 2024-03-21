@@ -94,7 +94,7 @@ public final class SessionManager {
 	 * @param myCookieNamespace The name of the client application which uses this cookie. Must not be empty. Must be latin letters and numbers only.
 	 */
 	public SessionManager(String myCookieNamespace) {
-		if(myCookieNamespace.length() == 0)
+		if(myCookieNamespace.isEmpty())
 			throw new IllegalArgumentException("You must specify a cookie namespace or use the constructor " +
 					"which allows specification of a cookie path.");
 		

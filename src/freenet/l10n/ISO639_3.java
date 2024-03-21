@@ -216,7 +216,7 @@ public final class ISO639_3 {
 		
 			for(String line = br.readLine(); line != null; line = br.readLine()) {
 				line = line.trim();
-				if(line.length() == 0)
+				if(line.isEmpty())
 					continue;
 				
 				final String[] tokens = line.split("[\t]");

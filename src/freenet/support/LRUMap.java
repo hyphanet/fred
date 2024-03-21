@@ -88,7 +88,7 @@ public class LRUMap<K, V> {
      *  @return Least recently pushed key.
      */
     public final synchronized K popKey() {
-        if ( list.size() > 0 ) {
+        if (!list.isEmpty()) {
 			return hash.remove(list.pop().obj).obj;
         } else {
             return null;
@@ -99,7 +99,7 @@ public class LRUMap<K, V> {
      * @return Least recently pushed value.
      */
     public final synchronized V popValue() {
-        if ( list.size() > 0 ) {
+        if (!list.isEmpty()) {
 			return hash.remove(list.pop().obj).value;
         } else {
             return null;
@@ -107,7 +107,7 @@ public class LRUMap<K, V> {
     }
     
 	public final synchronized V peekValue() {
-        if ( list.size() > 0 ) {
+        if (!list.isEmpty()) {
 			return hash.get(list.tail().obj).value;
         } else {
             return null;
@@ -115,7 +115,7 @@ public class LRUMap<K, V> {
 	}
 
 	public final synchronized K peekKey() {
-        if ( list.size() > 0 ) {
+        if (!list.isEmpty()) {
 			return hash.get(list.tail().obj).obj;
         } else {
             return null;

@@ -224,8 +224,8 @@ public class PushDataManager {
 		if (logMINOR) {
 			Logger.minor(this, "Polling for notification:" + requestId);
 		}
-		while (awaitingNotifications.get(requestId) != null && awaitingNotifications.get(requestId).size() == 0 || // No notifications 
-				(awaitingNotifications.get(requestId) != null && awaitingNotifications.get(requestId).size() != 0 && isFirstKeepaliveReceived.containsKey(awaitingNotifications.get(requestId).get(0).requestId)==false)) { // Not asked us yet
+		while (awaitingNotifications.get(requestId) != null && awaitingNotifications.get(requestId).isEmpty() || // No notifications
+				(awaitingNotifications.get(requestId) != null && !awaitingNotifications.get(requestId).isEmpty() && isFirstKeepaliveReceived.containsKey(awaitingNotifications.get(requestId).get(0).requestId)==false)) { // Not asked us yet
 			try {
 				wait();
 			} catch (InterruptedException ie) {
@@ -269,12 +269,12 @@ public class PushDataManager {
 		for (BaseUpdateableElement element : new ArrayList<BaseUpdateableElement>(pages.get(requestId))) {
 			pages.get(requestId).remove(element);
 			// FIXME why can't we just unconditionally remove(requestId) at the end?
-			if (pages.get(requestId).size() == 0) {
+			if (pages.get(requestId).isEmpty()) {
 				pages.remove(requestId);
 			}
 			String id = element.getUpdaterId(requestId);
 			elements.get(id).remove(requestId);
-			if (elements.get(id).size() == 0) {
+			if (elements.get(id).isEmpty()) {
 				elements.remove(id);
 			}
 			element.dispose();
@@ -354,7 +354,7 @@ public class PushDataManager {
 						isKeepaliveReceived.put(entry.getKey(), false);
 					}
 				}
-				if (isKeepaliveReceived.size() != 0) {
+				if (!isKeepaliveReceived.isEmpty()) {
 					if (logMINOR) {
 						Logger.minor(this, "Cleaner is queued(2) time:" + System.currentTimeMillis());
 					}

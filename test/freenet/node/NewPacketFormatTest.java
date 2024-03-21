@@ -246,7 +246,7 @@ public class NewPacketFormatTest {
 
 		Thread.sleep(PacketSender.MAX_COALESCING_DELAY*2);
 		NPFPacket packet1 = sender.createPacket(512, senderQueue, senderKey, false);
-		assert(packet1.getLossyMessages().size() == 0);
+		assert(packet1.getLossyMessages().isEmpty());
 		assert(packet1.getFragments().size() == 2);
 		synchronized(gotMessage) {
 			assert(!gotMessage.value);

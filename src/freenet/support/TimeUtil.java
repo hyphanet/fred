@@ -145,7 +145,7 @@ public class TimeUtil {
 
         long millis = 0;
         for (String term : terms) {
-            if (term.length() == 0) continue;
+            if (term.isEmpty()) continue;
 
             char measure = term.charAt(term.length() - 1);
             switch(measure){

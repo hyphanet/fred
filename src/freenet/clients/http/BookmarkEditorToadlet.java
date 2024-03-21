@@ -80,7 +80,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 			String itemPath = URLEncoder.encode(path + item.getName(), false);
 			HTMLNode li = new HTMLNode("li", "class", "item", item.getVisibleName());
             String explain = item.getShortDescription();
-            if(explain != null && explain.length() > 0) {
+            if(explain != null && !explain.isEmpty()) {
             	li.addChild("#", " (");
             	li.addChild("#", explain);
             	li.addChild("#", ")");
@@ -181,7 +181,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 		HTMLNode pageNode = page.outer;
 		HTMLNode content = page.content;
 		String originalBookmark = req.getParam("bookmark");
-		if(req.getParam("action").length() > 0 && originalBookmark.length() > 0) {
+		if(!req.getParam("action").isEmpty() && !originalBookmark.isEmpty()) {
 			String action = req.getParam("action");
 			String bookmarkPath;
 			try {

@@ -129,7 +129,7 @@ public class Announcer {
 		synchronized(this) {
 			if(now - timeAddedSeeds < MIN_ADDED_SEEDS_INTERVAL) return;
 			timeAddedSeeds = now;
-			if(seeds.size() == 0) {
+			if(seeds.isEmpty()) {
 				registerEvent(STATUS_NO_SEEDNODES);
         /*
          * Developers might run nodes in empty directories instead of one made by an installer.

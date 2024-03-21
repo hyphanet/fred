@@ -127,13 +127,13 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 	}
 	
 	public synchronized boolean addPluginToadletSymlink(String linkfrom){
-		if (toadletLinks.size() < 1)
+		if (toadletLinks.isEmpty())
 			toadletLinks = new HashSet<String>();
 		return toadletLinks.add(linkfrom);
 	}
 	
 	public synchronized boolean removePluginToadletSymlink(String linkfrom){
-		if (toadletLinks.size() < 1)
+		if (toadletLinks.isEmpty())
 			return false;
 		return toadletLinks.remove(linkfrom);
 	}

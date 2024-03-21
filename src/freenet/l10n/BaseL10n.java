@@ -774,7 +774,7 @@ public class BaseL10n {
 		int x;
 		while(!value.isEmpty() && (x = value.indexOf("${")) != -1) {
 			String before = value.substring(0, x);
-			if(before.length() > 0)
+			if(!before.isEmpty())
 				node.addChild("#", before);
 			value = value.substring(x);
 			int y = value.indexOf('}');

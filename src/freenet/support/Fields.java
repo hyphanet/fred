@@ -268,7 +268,7 @@ public abstract class Fields {
 	public static long dateTime(String date)
 		throws NumberFormatException {
 
-		if(date.length() == 0)
+		if(date.isEmpty())
 			throw new NumberFormatException("Date time empty");
 
 		if((date.charAt(0) == '-') || (date.charAt(0) == '+')) {
@@ -908,7 +908,7 @@ public abstract class Fields {
 		StringBuilder r = new StringBuilder(str.length());
 		for (String line : str.split("\n")) {
 			line = line.trim();
-			if (line.length() == 0) continue;
+			if (line.isEmpty()) continue;
 
 			r.append(line);
 			r.append('\n');

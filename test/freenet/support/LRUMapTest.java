@@ -244,7 +244,7 @@ public class LRUMapTest {
 	public void testSize() {
 		LRUMap<Object, Object> methodLRUht = new LRUMap<Object, Object>();
 		Object[][] sampleObjects = createSampleKeyVal(sampleElemsNumber);
-		assertTrue(methodLRUht.size()==0);
+		assertTrue(methodLRUht.isEmpty());
 		//pushing objects
 		for (int i=0; i<sampleObjects.length; i++) {		
 			methodLRUht.push(sampleObjects[i][0],sampleObjects[i][1]);

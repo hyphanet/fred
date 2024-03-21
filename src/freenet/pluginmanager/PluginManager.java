@@ -363,7 +363,7 @@ public class PluginManager {
 
 	private PluginInfoWrapper realStartPlugin(final PluginDownLoader<?> pdl, final String filename, final boolean store, boolean alwaysDownload) {
 	    if (!enabled) throw new IllegalStateException("Plugins disabled");
-		if(filename.trim().length() == 0)
+		if(filename.trim().isEmpty())
 			return null;
 		final PluginProgress pluginProgress = new PluginProgress(filename, pdl);
 		loadedPlugins.addStartingPlugin(pluginProgress);
@@ -1001,7 +1001,7 @@ public class PluginManager {
 	}
 
 	public OfficialPluginDescription isOfficialPlugin(String name) {
-		if((name == null) || (name.trim().length() == 0))
+		if((name == null) || name.trim().isEmpty())
 			return null;
 		List<OfficialPluginDescription> availablePlugins = findAvailablePlugins();
 		for(OfficialPluginDescription desc : availablePlugins) {

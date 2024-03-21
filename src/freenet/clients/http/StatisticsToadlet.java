@@ -126,7 +126,7 @@ public class StatisticsToadlet extends Toadlet {
 		
 		final String requestPath = request.getPath().substring(path().length());
 
-		if (requestPath.length() > 0) {
+		if (!requestPath.isEmpty()) {
 			if(requestPath.equals("requesters.html") || requestPath.equals("/requesters.html")) {
 				showRequesters(request, ctx);
 				return;

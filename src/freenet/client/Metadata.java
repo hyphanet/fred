@@ -1317,7 +1317,7 @@ public class Metadata implements Cloneable, Serializable {
     	HashMap<String, Metadata> docs = new HashMap<String, Metadata>();
 		for (Map.Entry<String, Metadata> entry: manifestEntries.entrySet()) {
         	String st = entry.getKey();
-        	if (st.length()>0)
+        	if (!st.isEmpty())
         		docs.put(st, entry.getValue());
         }
         return docs;

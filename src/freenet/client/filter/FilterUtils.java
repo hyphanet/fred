@@ -103,7 +103,7 @@ public class FilterUtils {
 	{
 		String lengthValue=null;
 		value=value.trim();
-		if (value.length() == 0) {
+		if (value.isEmpty()) {
 			return false;
 		}
 		if (isSVG) {

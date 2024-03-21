@@ -274,7 +274,7 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 			}
 		}
 
-		if (path.length() == 0) {
+		if (path.isEmpty()) {
 			if (lastSuccessful != null && lastSuccessful.isDirectory() && allowedDir(lastSuccessful)) {
 				path = lastSuccessful.getAbsolutePath();
 			} else {

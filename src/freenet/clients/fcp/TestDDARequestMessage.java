@@ -32,7 +32,7 @@ public class TestDDARequestMessage extends FCPMessage {
 		identifier = fs.get(DIRECTORY);
 		if(identifier == null)
 			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No Directory given!", null, false);
-		if(identifier.length() == 0)
+		if(identifier.isEmpty())
 			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "The specified Directory can't be empty!", null, false);
 		
 		wantRead = fs.getBoolean(WANT_READ, false);

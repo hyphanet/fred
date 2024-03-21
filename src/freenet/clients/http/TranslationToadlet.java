@@ -248,7 +248,7 @@ public class TranslationToadlet extends Toadlet {
 		
 		boolean toTranslateOnly = request.isPartSet("toTranslateOnly");
 		
-		if(request.getPartAsStringFailsafe("translation_update", 32).length() > 0){
+		if(!request.getPartAsStringFailsafe("translation_update", 32).isEmpty()){
 			String key = request.getPartAsStringFailsafe("key", 256);
 			this.base.setOverride(key, new String(BucketTools.toByteArray(request.getPart("trans")), StandardCharsets.UTF_8).trim());
 			
@@ -267,7 +267,7 @@ public class TranslationToadlet extends Toadlet {
 			
 			redirectTo(ctx, TOADLET_URL+"?translation_updated="+key+ (toTranslateOnly ? "&toTranslateOnly" : ""));
 			return;
-		} else if(request.getPartAsStringFailsafe("remove_confirmed", 32).length() > 0) {
+		} else if(!request.getPartAsStringFailsafe("remove_confirmed", 32).isEmpty()) {
 			String key = request.getPartAsStringFailsafe("remove_confirm", 256).trim();
 			this.base.setOverride(key, "");
 			

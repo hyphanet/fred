@@ -3021,7 +3021,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 				node.getNodeStats().reportRoutingBackoff(reason, x, realTime);
 				if(logMINOR) {
 					String reasonWrapper = "";
-					if(0 < reason.length())
+					if(!reason.isEmpty())
 						reasonWrapper = " because of '" + reason + '\'';
 					Logger.minor(this, "Backing off" + reasonWrapper + ": routingBackoffLength=" + routingBackoffLength + ", until " + x + "ms on " + peer);
 				}
@@ -3103,7 +3103,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 				node.getNodeStats().reportTransferBackoff(reason, x, realTime);
 				if(logMINOR) {
 					String reasonWrapper = "";
-					if(0 < reason.length())
+					if(!reason.isEmpty())
 						reasonWrapper = " because of '" + reason + '\'';
 					Logger.minor(this, "Backing off (transfer)" + reasonWrapper + ": transferBackoffLength=" + transferBackoffLength + ", until " + x + "ms on " + peer);
 				}

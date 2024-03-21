@@ -67,7 +67,7 @@ public class LRUQueue<T> {
      *  @return Least recently pushed Object.
      */
 	public final synchronized T pop() {
-        if ( list.size() > 0 ) {
+        if (!list.isEmpty()) {
 			return hash.remove(list.pop().obj).obj;
         } else {
             return null;
