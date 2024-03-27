@@ -846,8 +846,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 	private boolean handleRoutedRejected(Message m) {
 		if(!node.enableRoutedPing()) return true;
 		long id = m.getLong(DMT.UID);
-		Long lid = id;
-		RoutedContext rc = routedContexts.get(lid);
+		RoutedContext rc = routedContexts.get(id);
 		if(rc == null) {
 			// Gah
 			Logger.error(this, "Unrecognized FNPRoutedRejected");
