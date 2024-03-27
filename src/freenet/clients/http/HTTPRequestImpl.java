@@ -876,7 +876,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 	@Override
 	public boolean isIncognito() {
 		if(isParameterSet("incognito"))
-			return Boolean.valueOf(getParam("incognito"));
+			return Boolean.parseBoolean(getParam("incognito"));
 		return false;
 	}
 

@@ -100,7 +100,7 @@ public class BANDWIDTH_MONTHLY extends BandwidthManipulator implements Step {
 		// Target for an error page.
 		StringBuilder target = new StringBuilder(FirstTimeWizardToadlet.WIZARD_STEP.BANDWIDTH_MONTHLY.name()).append("&parseTarget=");
 		try {
-			GBPerMonth = Double.valueOf(capTo);
+			GBPerMonth = Double.parseDouble(capTo);
 			bytesPerMonth = Math.round(GBPerMonth * DatastoreUtil.oneGiB);
 		} catch (NumberFormatException e) {
 			target.append(URLEncoder.encode(capTo, true));

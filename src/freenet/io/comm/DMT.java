@@ -1609,7 +1609,7 @@ public class DMT {
 	
 	public static Message createFNPBestRoutesNotTaken(Double[] doubles) {
 		double[] locs = new double[doubles.length];
-		for(int i=0;i<locs.length;i++) locs[i] = doubles[i].doubleValue();
+		for(int i=0;i<locs.length;i++) locs[i] = doubles[i];
 		return createFNPBestRoutesNotTaken(locs);
 	}
 	

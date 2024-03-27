@@ -99,7 +99,7 @@ public class TimeUtilTest {
 		};
 		for(int i = 0; i < valAndExpected.length; i++) {
 			methodLong = Long.valueOf(valAndExpected[i][0]);
-			assertEquals(TimeUtil.formatTime(methodLong.longValue()),
+			assertEquals(TimeUtil.formatTime(methodLong),
 					valAndExpected[i][1]); }	
 	}
 	
