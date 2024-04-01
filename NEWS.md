@@ -5,6 +5,74 @@ next:
 
 1498:
 
+- check that m3u-filter-tag starts with <script and test in own method
+- add m3u-player insertion test: is added at end of body
+- Remove duplication of value in documentation
+- Reduce recently failed and data not found wait times
+- also make accepting localhost in NodeIPPortDetector configurable
+- Add description of allowBindToLocalhost — thanks to s7r!
+- Provide static methods for simpler boolean config creation
+- Make allowBindToLocalhost configurable
+- allow 127.0.0.1 in bindTo
+- [CI] Update actions, fix actions cache
+- 🐛 Fix JarClassLoaderTest to work with newer Java versions
+- ♻️ add and use getters and setters for access to node fields
+- Java 21 fix: int used as return type but Integer required
+- break early when condition is met
+- Use switch statements
+- Use Math.min and Math.max
+- Remove unnecessary semicolons
+- Replace indexOf with .contains()
+- Change more string comparisons into .isEmpty() checks
+- Capitalize L in literal longs
+- Fix some spelling and typos
+- ✅ Add test for Global flag in GetFailed message
+- Apply sanity check for size
+- Add missing Global flag to GetFailed FCP message. Thanks to oishii!
+- Improve Log message for wrong minimum percentage
+- Remove time-dependence of compressor selection
+- Fix links to mailing lists and IRC in CONTRIBUTING.md — thanks to Juiceman!
+- Only link indexes via the index of indexes.
+- tabify CSSTokenizerFilter
+- Remove redundancy in CSS Filter
+- Add test that would catch too lax filtering
+- Add tests for ^= $= and *=
+- Fix: checked only the first char of the key part of CSS selectors
+- Add CSS test for ~ and simplify the implementation
+- Support CSS pseudo-element checked
+- Support CSS the attribute selectors ^= $= *=
+- Support CSS Combinators > + and ~
+- Extract helper methods for review by Bombe
+- Add test around zero for review by Bombe
+- Extend comment for review: last must match most frequently
+- Also remove the NativeBigInteger part of HashTest
+- Increase max transparent passthrough to 200MiB links in m3u-lists.
+- Add negative tests for the healing decision supplier
+- Add test for healing in Darknet mode
+- Remove no longer needed imports
+- Pass precise Suppliers to the HealingDecision instead of the node.
+- Extract HealingDecisionSupplier — thanks to Bombes review!
+- Do not divide 0-1 by MAX_VALUE — thanks to Bombe for the review!
+- Remove hash generation to native big integer to reduce dependencies.
+- Harmonize New wizard with old wizard
+- Increase default bandwidth to 160KiB upload, when detection fails
+- Check the HashCode before equals. This saves ~20% method-runtime.
+- Call the match function with all arguments directly.
+- Re-order or’ed MessageFilters so the most likely is checked first
+- Change string comparison into a .isEmpty() check
+-  Remove security lowering kludge.
+- Fix bug limiting MTU to 1280
+- Add text further describing IPv6 limitations.
+- Disable activelink for Index of Indexes (workaround, because it fails)
+- Add high-impact-tasks to bookmarks
+- specialize healing to keys close to the node
+- remove special casing of freenet: keys in WelcomeToadlet, because FreenetURI supports that already
+- Update Debian package to Version 1498
+- Update KeepAlive to commit 86e47a101f26fd1d3be0437681a043aa4ae3f22c
+- restore checked exception in the FileLoggerHook.logString() method signature
+- improve method deprecation guidelines in MasterKeys and DatabaseKey
+- Replace OffsetDateTime with LocalDate in CurrentTimeUTC
+- improve date object construction in CurrentTimeUTC.get()
 - Support Schema hypha[net]
 - Update Sharesite to 0.5.1
 - Deprecated custom datetime handling class CurrentTimeUTC
