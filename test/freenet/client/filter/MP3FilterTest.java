@@ -108,7 +108,7 @@ public class MP3FilterTest {
 
         try (
             InputStream inStream = input.getInputStream();
-            OutputStream outStream = output.getOutputStream();
+            OutputStream outStream = output.getOutputStream()
         ) {
             filter.readFilter(inStream, outStream, "", null, null, null);
         } catch (Exception e) {

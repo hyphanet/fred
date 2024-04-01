@@ -113,38 +113,42 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		}
 
 		protected int customCompare(PeerNodeStatus firstNode, PeerNodeStatus secondNode, String sortBy2) {
-			if(sortBy.equals("address")){
-				return firstNode.getPeerAddress().compareToIgnoreCase(secondNode.getPeerAddress());
-			}else if(sortBy.equals("location")){
-				return compareLocations(firstNode, secondNode);
-			}else if(sortBy.equals("version")){
-				return Version.getArbitraryBuildNumber(firstNode.getVersion(), -1) - Version.getArbitraryBuildNumber(secondNode.getVersion(), -1);
-			}else if(sortBy.equals("backoffRT")){
-				return Double.compare(firstNode.getBackedOffPercent(true), secondNode.getBackedOffPercent(true));
-			}else if(sortBy.equals("backoffBulk")){
-				return Double.compare(firstNode.getBackedOffPercent(false), secondNode.getBackedOffPercent(false));
-			}else if(sortBy.equals(("overload_p"))){
-				return Double.compare(firstNode.getPReject(), secondNode.getPReject());
-			}else if(sortBy.equals(("idle"))){
-				return compareLongs(firstNode.getTimeLastConnectionCompleted(), secondNode.getTimeLastConnectionCompleted());
-			}else if(sortBy.equals("time_routable")){
-				return Double.compare(firstNode.getPercentTimeRoutableConnection(), secondNode.getPercentTimeRoutableConnection());
-			}else if(sortBy.equals("total_traffic")){
-				long total1 = firstNode.getTotalInputBytes()+firstNode.getTotalOutputBytes();
-				long total2 = secondNode.getTotalInputBytes()+secondNode.getTotalOutputBytes();
-				return compareLongs(total1, total2);
-				}else if(sortBy.equals("total_traffic_since_startup")){
-					long total1 = firstNode.getTotalInputSinceStartup()+firstNode.getTotalOutputSinceStartup();
-					long total2 = secondNode.getTotalInputSinceStartup()+secondNode.getTotalOutputSinceStartup();
+			switch (sortBy) {
+				case "address":
+					return firstNode.getPeerAddress().compareToIgnoreCase(secondNode.getPeerAddress());
+				case "location":
+					return compareLocations(firstNode, secondNode);
+				case "version":
+					return Version.getArbitraryBuildNumber(firstNode.getVersion(), -1) - Version.getArbitraryBuildNumber(secondNode.getVersion(), -1);
+				case "backoffRT":
+					return Double.compare(firstNode.getBackedOffPercent(true), secondNode.getBackedOffPercent(true));
+				case "backoffBulk":
+					return Double.compare(firstNode.getBackedOffPercent(false), secondNode.getBackedOffPercent(false));
+				case "overload_p":
+					return Double.compare(firstNode.getPReject(), secondNode.getPReject());
+				case "idle":
+					return compareLongs(firstNode.getTimeLastConnectionCompleted(), secondNode.getTimeLastConnectionCompleted());
+				case "time_routable":
+					return Double.compare(firstNode.getPercentTimeRoutableConnection(), secondNode.getPercentTimeRoutableConnection());
+				case "total_traffic": {
+					long total1 = firstNode.getTotalInputBytes() + firstNode.getTotalOutputBytes();
+					long total2 = secondNode.getTotalInputBytes() + secondNode.getTotalOutputBytes();
 					return compareLongs(total1, total2);
-			}else if(sortBy.equals("selection_percentage")){
-				return Double.compare(firstNode.getSelectionRate(), secondNode.getSelectionRate());
-			}else if(sortBy.equals("time_delta")){
-				return compareLongs(firstNode.getClockDelta(), secondNode.getClockDelta());
-			}else if(sortBy.equals(("uptime"))){
-				return compareInts(firstNode.getReportedUptimePercentage(), secondNode.getReportedUptimePercentage());
-			}else
-				return 0;
+				}
+				case "total_traffic_since_startup": {
+					long total1 = firstNode.getTotalInputSinceStartup() + firstNode.getTotalOutputSinceStartup();
+					long total2 = secondNode.getTotalInputSinceStartup() + secondNode.getTotalOutputSinceStartup();
+					return compareLongs(total1, total2);
+				}
+				case "selection_percentage":
+					return Double.compare(firstNode.getSelectionRate(), secondNode.getSelectionRate());
+				case "time_delta":
+					return compareLongs(firstNode.getClockDelta(), secondNode.getClockDelta());
+				case "uptime":
+					return compareInts(firstNode.getReportedUptimePercentage(), secondNode.getReportedUptimePercentage());
+				default:
+					return 0;
+			}
 		}
 
 		private int compareLocations(PeerNodeStatus firstNode, PeerNodeStatus secondNode) {
@@ -172,8 +176,8 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		super(client);
 		this.node = n;
 		this.core = core;
-		this.stats = n.nodeStats;
-		this.peers = n.peers;
+		this.stats = n.getNodeStats();
+		this.peers = n.getPeers();
 	    REF_LINK = HTMLNode.link(path()+"myref.fref").setReadOnly();
 	    REFTEXT_LINK = HTMLNode.link(path()+"myref.txt").setReadOnly();
 	}
@@ -259,7 +263,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			if(advancedMode) {
 
 				/* node status values */
-				long nodeUptimeSeconds = SECONDS.convert(now - node.startupTime, MILLISECONDS);
+				long nodeUptimeSeconds = SECONDS.convert(now - node.getStartupTime(), MILLISECONDS);
 				int bwlimitDelayTime = (int) stats.getBwlimitDelayTime();
 				int nodeAveragePingTime = (int) stats.getNodeAveragePingTime();
 				int networkSizeEstimateSession = stats.getDarknetSizeEstimate(-1);
@@ -468,7 +472,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 
 				double totalSelectionRate = 0.0;
 				//calculate the total selection rate using all peers, not just the peers for the current mode,
-				PeerNodeStatus[] allPeerNodeStatuses = node.peers.getPeerNodeStatuses(true);
+				PeerNodeStatus[] allPeerNodeStatuses = node.getPeers().getPeerNodeStatuses(true);
 				for(PeerNodeStatus status : allPeerNodeStatuses) {
 					totalSelectionRate += status.getSelectionRate();
 				}
@@ -626,7 +630,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				privateComment = request.getPartAsStringFailsafe("peerPrivateNote", 250).trim();
 
 			if (Boolean.parseBoolean(request.getPartAsStringFailsafe("peers-offers-files", 5))) {
-				File[] files = core.node.runDir().file("peers-offers").listFiles();
+				File[] files = core.getNode().runDir().file("peers-offers").listFiles();
 				if (files != null && files.length > 0) {
 					StringBuilder peersOffersFilesContent = new StringBuilder();
 					for (final File file : files) {
@@ -639,17 +643,17 @@ public abstract class ConnectionsToadlet extends Toadlet {
 					reftext = peersOffersFilesContent.toString();
 				}
 
-				node.config.get("node").set("peersOffersDismissed", true);
+				node.getConfig().get("node").set("peersOffersDismissed", true);
 			}
 			
 			String trustS = request.getPartAsStringFailsafe("trust", 10);
 			FRIEND_TRUST trust = null;
-			if(trustS != null && !trustS.equals(""))
+			if(trustS != null && !trustS.isEmpty())
 				trust = FRIEND_TRUST.valueOf(trustS);
 			
 			String visibilityS = request.getPartAsStringFailsafe("visibility", 10);
 			FRIEND_VISIBILITY visibility = null;
-			if(visibilityS != null && !visibilityS.equals(""))
+			if(visibilityS != null && !visibilityS.isEmpty())
 				visibility = FRIEND_VISIBILITY.valueOf(visibilityS);
 			
 			if(trust == null && !isOpennet()) {

@@ -9,7 +9,7 @@ package freenet.io.comm;
 public interface AsyncMessageCallback {
     
     /** Called when the packet actually leaves the node.
-     * This DOES NOT MEAN that it has been successfully recieved
+     * This DOES NOT MEAN that it has been successfully received
      * by the partner node (on a lossy transport).
      */
     public void sent();

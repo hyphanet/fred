@@ -6,6 +6,7 @@ package freenet.l10n;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Hashtable;
 import java.util.Map;
@@ -65,13 +66,19 @@ public final class ISO639_3 {
 			Special;
 			
 			private static Scope fromTabFile(String abbreviation) {
-				if(abbreviation.equals("I")) return Scope.Individual;
-				else if(abbreviation.equals("M")) return Scope.Macrolanguage;
-				else if(abbreviation.equals("S")) return Scope.Special;
-				else throw new IllegalArgumentException("Unknown scope abbreviation: " + abbreviation);
+				switch (abbreviation) {
+					case "I":
+						return Scope.Individual;
+					case "M":
+						return Scope.Macrolanguage;
+					case "S":
+						return Scope.Special;
+					default:
+						throw new IllegalArgumentException("Unknown scope abbreviation: " + abbreviation);
+				}
 			}
-		};
-		
+		}
+
 		/**
 		 * The scope of the language, never null.
 		 */
@@ -86,13 +93,22 @@ public final class ISO639_3 {
 			Special;
 			
 			private static Type fromTabFile(String abbreviation) {
-				if(abbreviation.equals("A")) return Type.Ancient;
-				else if(abbreviation.equals("C")) return Type.Constructed;
-				else if(abbreviation.equals("E")) return Type.Extinct;
-				else if(abbreviation.equals("H")) return Type.Historical;
-				else if(abbreviation.equals("L")) return Type.Living;
-				else if(abbreviation.equals("S")) return Type.Special;
-				else throw new IllegalArgumentException("Unknwon type abbreviation: " + abbreviation); 
+				switch (abbreviation) {
+					case "A":
+						return Type.Ancient;
+					case "C":
+						return Type.Constructed;
+					case "E":
+						return Type.Extinct;
+					case "H":
+						return Type.Historical;
+					case "L":
+						return Type.Living;
+					case "S":
+						return Type.Special;
+					default:
+						throw new IllegalArgumentException("Unknwon type abbreviation: " + abbreviation);
+				}
 			}
 		}
 		
@@ -180,7 +196,7 @@ public final class ISO639_3 {
 			if (in == null)
 				throw new RuntimeException("Could not open the language codes resource");
 			
-			isr = new InputStreamReader(in, "UTF-8");
+			isr = new InputStreamReader(in, StandardCharsets.UTF_8);
 			br = new BufferedReader(isr);
 			
 			{

@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 
 import freenet.support.SimpleFieldSet;
 
@@ -37,7 +38,7 @@ public class MergeSFS {
 		} else {
 			os = new FileOutputStream(f1);
 		}
-		Writer w = new BufferedWriter(new OutputStreamWriter(os, "UTF-8"));
+		Writer w = new BufferedWriter(new OutputStreamWriter(os, StandardCharsets.UTF_8));
 		fs1.writeToOrdered(w);
 		w.flush();
 	}

@@ -2,7 +2,7 @@ package freenet.node;
 
 import org.bouncycastle.util.Arrays;
 
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.Random;
 
 import freenet.crypt.AEADCryptBucket;
@@ -11,13 +11,24 @@ import freenet.crypt.RandomSource;
 import freenet.support.api.Bucket;
 
 public class DatabaseKey {
+
+    private static final byte[] PLUGIN = "PLUGIN".getBytes(StandardCharsets.UTF_8);
+    private static final byte[] CLIENT_LAYER = "CLIENT".getBytes(StandardCharsets.UTF_8);
     
     private final byte[] databaseKey;
-    private final Random random;
-    
-    DatabaseKey(byte[] key, Random random) {
+
+    /**
+     * @param key    key material bytes
+     * @param unused randomness source object. Note: this parameter is not used in this object.
+     * @deprecated use other constructor {@link #DatabaseKey(byte[])}
+     */
+    @Deprecated
+    DatabaseKey(byte[] key, Random unused) {
+        this(key);
+    }
+
+    DatabaseKey(byte[] key) {
         this.databaseKey = Arrays.copyOf(key, key.length);
-        this.random = random;
     }
     
     public Bucket createEncryptedBucketForClientLayer(Bucket underlying) {
@@ -27,7 +38,7 @@ public class DatabaseKey {
     public static DatabaseKey createRandom(RandomSource random) {
         byte[] databaseKey = new byte[32];
         random.nextBytes(databaseKey);
-        return new DatabaseKey(databaseKey, random);
+        return new DatabaseKey(databaseKey);
     }
 
     /** Key Derivation Function for plugin stores: Use the database key as an HMAC key to an HMAC 
@@ -36,19 +47,15 @@ public class DatabaseKey {
      * @return An encryption key, as byte[].
      */
     public byte[] getPluginStoreKey(String storeIdentifier) {
-        try {
-            byte[] id = storeIdentifier.getBytes("UTF-8");
-            byte[] full = new byte[databaseKey.length+PLUGIN.length+id.length];
-            int x = 0;
-            System.arraycopy(databaseKey, 0, full, 0, databaseKey.length);
-            x += databaseKey.length;
-            System.arraycopy(PLUGIN, 0, full, x, PLUGIN.length);
-            x += PLUGIN.length;
-            System.arraycopy(id, 0, full, x, id.length);
-            return HMAC.macWithSHA256(databaseKey, full);
-        } catch (UnsupportedEncodingException e) {
-            throw new Error(e);
-        }
+        byte[] id = storeIdentifier.getBytes(StandardCharsets.UTF_8);
+        byte[] full = new byte[databaseKey.length+PLUGIN.length+id.length];
+        int x = 0;
+        System.arraycopy(databaseKey, 0, full, 0, databaseKey.length);
+        x += databaseKey.length;
+        System.arraycopy(PLUGIN, 0, full, x, PLUGIN.length);
+        x += PLUGIN.length;
+        System.arraycopy(id, 0, full, x, id.length);
+        return HMAC.macWithSHA256(databaseKey, full);
     }
     
     /** Key Derivation Function for client.dat: Use the database key as an HMAC key to an HMAC 
@@ -62,18 +69,6 @@ public class DatabaseKey {
         x += databaseKey.length;
         System.arraycopy(CLIENT_LAYER, 0, full, x, CLIENT_LAYER.length);
         return HMAC.macWithSHA256(databaseKey, full);
-    }
-    
-    private static final byte[] PLUGIN;
-    private static final byte[] CLIENT_LAYER;
-    
-    static {
-        try {
-            PLUGIN = "PLUGIN".getBytes("UTF-8");
-            CLIENT_LAYER = "CLIENT".getBytes("UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            throw new Error(e);
-        }
     }
 
     @Override

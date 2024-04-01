@@ -59,7 +59,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 
 	public RevocationChecker(NodeUpdateManager manager, File blobFile) {
 		this.manager = manager;
-		core = manager.node.clientCore;
+		core = manager.getNode().getClientCore();
 		this.revocationDNFCounter = 0;
 		this.blobFile = blobFile;
 		this.logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
@@ -90,7 +90,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 			try {
 				BucketTools.copy(new FileBucket(blobFile, true, false, false, true), bucket);
 				// Allow to free if bogus.
-				manager.uom.processRevocationBlob(bucket, "disk", true);
+				manager.getUpdateOverMandatory().processRevocationBlob(bucket, "disk", true);
 			} catch (IOException e) {
 				Logger.error(this, "Failed to read old revocation blob: "+e, e);
 				System.err.println("We may have downloaded an old revocation blob before restarting but it cannot be read: "+e);
@@ -139,7 +139,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 					if(logMINOR) Logger.minor(this, "fetcher="+revocationGetter);
 					if(revocationGetter != null && logMINOR) Logger.minor(this, "revocation fetcher: cancelled="+revocationGetter.isCancelled()+", finished="+revocationGetter.isFinished());
 					// Client startup may not have completed yet.
-					manager.node.clientCore.getPersistentTempDir().mkdirs();
+					manager.getNode().getClientCore().getPersistentTempDir().mkdirs();
 					cg = revocationGetter = new ClientGetter(this, 
 							manager.getRevocationURI(), ctxRevocation, 
 							aggressive ? RequestStarter.MAXIMUM_PRIORITY_CLASS : RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, 
@@ -148,9 +148,9 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 				}
 			}
 			if(toCancel != null)
-				toCancel.cancel(core.clientContext);
+				toCancel.cancel(core.getClientContext());
 			if(cg != null) {
-				core.clientContext.start(cg);
+				core.getClientContext().start(cg);
 				if(logMINOR) Logger.minor(this, "Started revocation fetcher");
 			}
 			return wasRunning;
@@ -316,7 +316,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 			if(errorCode == FetchExceptionMode.RECENTLY_FAILED) {
 				// Try again in 1 second.
 				// This ensures we don't constantly start them, fail them, and start them again.
-				this.manager.node.ticker.queueTimedJob(new Runnable() {
+				this.manager.getNode().getTicker().queueTimedJob(new Runnable() {
 
 					@Override
 					public void run() {
@@ -337,7 +337,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 
 	public void kill() {
 		if(revocationGetter != null)
-			revocationGetter.cancel(core.clientContext);
+			revocationGetter.cancel(core.getClientContext());
 	}
 
 	public long getBlobSize() {

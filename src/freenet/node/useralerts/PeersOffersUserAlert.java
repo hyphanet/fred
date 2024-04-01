@@ -36,7 +36,7 @@ public class PeersOffersUserAlert extends AbstractUserAlert {
                     }
                 }
             }
-            node.clientCore.alerts.register(new PeersOffersUserAlert(node, frefFiles.toString()));
+            node.getClientCore().getAlerts().register(new PeersOffersUserAlert(node, frefFiles.toString()));
         }
     }
 
@@ -55,7 +55,7 @@ public class PeersOffersUserAlert extends AbstractUserAlert {
                 new String[] {"/friends/", "post"});
         form.addChild("input",
                 new String[] {"type", "name", "value"},
-                new String[] {"hidden", "formPassword", node.clientCore.formPassword});
+                new String[] {"hidden", "formPassword", node.getClientCore().getFormPassword()});
         form.addChild("input",
                 new String[] {"type", "name", "value"},
                 new String[] {"hidden", "peers-offers-files", "true"});
@@ -78,7 +78,7 @@ public class PeersOffersUserAlert extends AbstractUserAlert {
     @Override
     public void onDismiss() {
         try {
-            node.config.get("node").set("peersOffersDismissed", true);
+            node.getConfig().get("node").set("peersOffersDismissed", true);
         } catch (InvalidConfigValueException | NodeNeedRestartException e) {
             if (Logger.shouldLog(Logger.LogLevel.MINOR, this))
                 Logger.minor(this, e.getLocalizedMessage());

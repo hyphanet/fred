@@ -223,8 +223,7 @@ public class PaddedRandomAccessBucket implements RandomAccessBucket, Serializabl
             long max = size - counter;
             int ret = in.available();
             if(max < ret) ret = (int)max;
-            if(ret < 0) return 0;
-            return ret;
+            return Math.max(ret, 0);
         }
         
     }

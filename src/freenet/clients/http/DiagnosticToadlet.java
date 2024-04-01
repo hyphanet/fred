@@ -69,8 +69,8 @@ public class DiagnosticToadlet extends Toadlet {
 		this.node = n;
 		this.core = core;
 		this.fcp = fcp;
-		stats = node.nodeStats;
-		peers = node.peers;
+		stats = node.getNodeStats();
+		peers = node.getPeers();
 		/* copied from NodeL10n constructor. */
 		baseL10n = new BaseL10n("freenet/l10n/", "freenet.l10n.${lang}.properties", new File(".").getPath()+File.separator+"freenet.l10n.${lang}.override.properties", BaseL10n.LANGUAGE.ENGLISH);
 	}
@@ -79,9 +79,9 @@ public class DiagnosticToadlet extends Toadlet {
         if(!ctx.checkFullAccess(this))
             return;
 
-		node.clientCore.bandwidthStatsPutter.updateData(node);
+		node.getClientCore().getBandwidthStatsPutter().updateData(node);
 
-		final SubConfig nodeConfig = node.config.get("node");
+		final SubConfig nodeConfig = node.getConfig().get("node");
 
 		StringBuilder textBuilder = new StringBuilder();
 
@@ -160,7 +160,7 @@ public class DiagnosticToadlet extends Toadlet {
 
 		// drawActivity
 		textBuilder.append("Activity:\n");
-		RequestTracker tracker = node.tracker;
+		RequestTracker tracker = node.getTracker();
 		int numLocalCHKInserts = tracker.getNumLocalCHKInserts();
 		int numRemoteCHKInserts = tracker.getNumRemoteCHKInserts();
 		int numLocalSSKInserts = tracker.getNumLocalSSKInserts();
@@ -285,23 +285,23 @@ public class DiagnosticToadlet extends Toadlet {
 
 		// drawBandwidth
 		textBuilder.append("Bandwidth:\n");
-		long[] total = node.collector.getTotalIO();
+		long[] total = node.getCollector().getTotalIO();
 		if(total[0] == 0 || total[1] == 0)
 			textBuilder.append("bandwidth error\n");
 		else  {
 			final long now = System.currentTimeMillis();
-			final long nodeUptimeSeconds = (now - node.startupTime) / 1000;
+			final long nodeUptimeSeconds = (now - node.getStartupTime()) / 1000;
 			long total_output_rate = (total[0]) / nodeUptimeSeconds;
 			long total_input_rate = (total[1]) / nodeUptimeSeconds;
 			long totalPayload = node.getTotalPayloadSent();
 			long total_payload_rate = totalPayload / nodeUptimeSeconds;
-			if(node.clientCore == null) throw new NullPointerException();
-			BandwidthStatsContainer stats = node.clientCore.bandwidthStatsPutter.getLatestBWData();
+			if(node.getClientCore() == null) throw new NullPointerException();
+			BandwidthStatsContainer stats = node.getClientCore().getBandwidthStatsPutter().getLatestBWData();
 			if(stats == null) throw new NullPointerException();
 			long overall_total_out = stats.totalBytesOut;
 			long overall_total_in = stats.totalBytesIn;
 			int percent = (int) (100 * totalPayload / total[0]);
-			long[] rate = node.nodeStats.getNodeIOStats();
+			long[] rate = node.getNodeStats().getNodeIOStats();
 			long delta = (rate[5] - rate[2]) / 1000;
 			if(delta > 0) {
 				long output_rate = (rate[3] - rate[0]) / delta;
@@ -319,30 +319,30 @@ public class DiagnosticToadlet extends Toadlet {
 			textBuilder.append(l10n("payloadOutput", new String[] { "total", "rate", "percent" }, new String[] { SizeUtil.formatSize(totalPayload, true), SizeUtil.formatSize(total_payload_rate, true), Integer.toString(percent) } )).append("\n");
 			textBuilder.append(l10n("totalInput", new String[] { "total" }, new String[] { SizeUtil.formatSize(overall_total_in, true) })).append("\n");
 			textBuilder.append(l10n("totalOutput", new String[] { "total" }, new String[] { SizeUtil.formatSize(overall_total_out, true) } )).append("\n");
-			long totalBytesSentCHKRequests = node.nodeStats.getCHKRequestTotalBytesSent();
-			long totalBytesSentSSKRequests = node.nodeStats.getSSKRequestTotalBytesSent();
-			long totalBytesSentCHKInserts = node.nodeStats.getCHKInsertTotalBytesSent();
-			long totalBytesSentSSKInserts = node.nodeStats.getSSKInsertTotalBytesSent();
-			long totalBytesSentOfferedKeys = node.nodeStats.getOfferedKeysTotalBytesSent();
-			long totalBytesSendOffers = node.nodeStats.getOffersSentBytesSent();
-			long totalBytesSentSwapOutput = node.nodeStats.getSwappingTotalBytesSent();
-			long totalBytesSentAuth = node.nodeStats.getTotalAuthBytesSent();
-			long totalBytesSentAckOnly = node.nodeStats.getNotificationOnlyPacketsSentBytes();
-			long totalBytesSentResends = node.nodeStats.getResendBytesSent();
-			long totalBytesSentUOM = node.nodeStats.getUOMBytesSent();
-			long totalBytesSentAnnounce = node.nodeStats.getAnnounceBytesSent();
-			long totalBytesSentAnnouncePayload = node.nodeStats.getAnnounceBytesPayloadSent();
-			long totalBytesSentRoutingStatus = node.nodeStats.getRoutingStatusBytes();
-			long totalBytesSentNetworkColoring = node.nodeStats.getNetworkColoringSentBytes();
-			long totalBytesSentPing = node.nodeStats.getPingSentBytes();
-			long totalBytesSentProbeRequest = node.nodeStats.getProbeRequestSentBytes();
-			long totalBytesSentRouted = node.nodeStats.getRoutedMessageSentBytes();
-			long totalBytesSentDisconn = node.nodeStats.getDisconnBytesSent();
-			long totalBytesSentInitial = node.nodeStats.getInitialMessagesBytesSent();
-			long totalBytesSentChangedIP = node.nodeStats.getChangedIPBytesSent();
-			long totalBytesSentNodeToNode = node.nodeStats.getNodeToNodeBytesSent();
-			long totalBytesSentAllocationNotices = node.nodeStats.getAllocationNoticesBytesSent();
-			long totalBytesSentFOAF = node.nodeStats.getFOAFBytesSent();
+			long totalBytesSentCHKRequests = node.getNodeStats().getCHKRequestTotalBytesSent();
+			long totalBytesSentSSKRequests = node.getNodeStats().getSSKRequestTotalBytesSent();
+			long totalBytesSentCHKInserts = node.getNodeStats().getCHKInsertTotalBytesSent();
+			long totalBytesSentSSKInserts = node.getNodeStats().getSSKInsertTotalBytesSent();
+			long totalBytesSentOfferedKeys = node.getNodeStats().getOfferedKeysTotalBytesSent();
+			long totalBytesSendOffers = node.getNodeStats().getOffersSentBytesSent();
+			long totalBytesSentSwapOutput = node.getNodeStats().getSwappingTotalBytesSent();
+			long totalBytesSentAuth = node.getNodeStats().getTotalAuthBytesSent();
+			long totalBytesSentAckOnly = node.getNodeStats().getNotificationOnlyPacketsSentBytes();
+			long totalBytesSentResends = node.getNodeStats().getResendBytesSent();
+			long totalBytesSentUOM = node.getNodeStats().getUOMBytesSent();
+			long totalBytesSentAnnounce = node.getNodeStats().getAnnounceBytesSent();
+			long totalBytesSentAnnouncePayload = node.getNodeStats().getAnnounceBytesPayloadSent();
+			long totalBytesSentRoutingStatus = node.getNodeStats().getRoutingStatusBytes();
+			long totalBytesSentNetworkColoring = node.getNodeStats().getNetworkColoringSentBytes();
+			long totalBytesSentPing = node.getNodeStats().getPingSentBytes();
+			long totalBytesSentProbeRequest = node.getNodeStats().getProbeRequestSentBytes();
+			long totalBytesSentRouted = node.getNodeStats().getRoutedMessageSentBytes();
+			long totalBytesSentDisconn = node.getNodeStats().getDisconnBytesSent();
+			long totalBytesSentInitial = node.getNodeStats().getInitialMessagesBytesSent();
+			long totalBytesSentChangedIP = node.getNodeStats().getChangedIPBytesSent();
+			long totalBytesSentNodeToNode = node.getNodeStats().getNodeToNodeBytesSent();
+			long totalBytesSentAllocationNotices = node.getNodeStats().getAllocationNoticesBytesSent();
+			long totalBytesSentFOAF = node.getNodeStats().getFOAFBytesSent();
 			long totalBytesSentRemaining = total[0] - 
 				(totalPayload + totalBytesSentCHKRequests + totalBytesSentSSKRequests +
 				totalBytesSentCHKInserts + totalBytesSentSSKInserts +
@@ -368,7 +368,7 @@ public class DiagnosticToadlet extends Toadlet {
 			textBuilder.append(l10n("foafBytes", "total", SizeUtil.formatSize(totalBytesSentFOAF, true))).append("\n");
 			textBuilder.append(l10n("unaccountedBytes", new String[] { "total", "percent" },
 					new String[] { SizeUtil.formatSize(totalBytesSentRemaining, true), Integer.toString((int)(totalBytesSentRemaining*100 / total[0])) })).append("\n");
-			double sentOverheadPerSecond = node.nodeStats.getSentOverheadPerSecond();
+			double sentOverheadPerSecond = node.getNodeStats().getSentOverheadPerSecond();
 			textBuilder.append(l10n("totalOverhead", new String[] { "rate", "percent" },
 					new String[] { SizeUtil.formatSize((long)sentOverheadPerSecond), Integer.toString((int)((100 * sentOverheadPerSecond) / total_output_rate)) })).append("\n");
 		}
@@ -376,7 +376,7 @@ public class DiagnosticToadlet extends Toadlet {
 
 		// showStartingPlugins
 		textBuilder.append("Plugins:\n");
-		PluginManager pm = node.pluginManager;
+		PluginManager pm = node.getPluginManager();
 		if (!pm.getPlugins().isEmpty()) {
 			textBuilder.append(baseL10n.getString("PluginToadlet.pluginListTitle")).append("\n");
 			for(PluginInfoWrapper pi: pm.getPlugins()) {

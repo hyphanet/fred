@@ -608,7 +608,7 @@ public class BlockTransmitter {
 		
 		try {
 			synchronized(_prb) {
-				_unsent = _prb.addListener(myListener = new PartiallyReceivedBlock.PacketReceivedListener() {;
+				_unsent = _prb.addListener(myListener = new PartiallyReceivedBlock.PacketReceivedListener() {
 
 					@Override
 					public void packetReceived(int packetNo) {
@@ -758,8 +758,8 @@ public class BlockTransmitter {
 			}
 		}
 
-	};
-	
+	}
+
 	private int blockSendsPending = 0;
 	
 	private long lastSentPacket = -1;

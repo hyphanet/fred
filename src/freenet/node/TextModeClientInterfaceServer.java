@@ -39,17 +39,17 @@ public class TextModeClientInterfaceServer implements Runnable {
 
     TextModeClientInterfaceServer(Node node, NodeClientCore core, int port, String bindTo, String allowedHosts) throws IOException {
     	this.n = node;
-    	this.core = n.clientCore;
-        this.r = n.random;
+    	this.core = n.getClientCore();
+        this.r = n.getRandom();
         this.downloadsDir = core.getDownloadsDir();
         this.port=port;
         this.bindTo=bindTo;
         this.allowedHosts = allowedHosts;
         this.isEnabled=true;
         if(ssl) {
-        	networkInterface = SSLNetworkInterface.create(port, bindTo, allowedHosts, n.executor, true);
+        	networkInterface = SSLNetworkInterface.create(port, bindTo, allowedHosts, n.getExecutor(), true);
         } else {
-        	networkInterface = NetworkInterface.create(port, bindTo, allowedHosts, n.executor, true);
+        	networkInterface = NetworkInterface.create(port, bindTo, allowedHosts, n.getExecutor(), true);
         }
     }
 
@@ -57,7 +57,7 @@ public class TextModeClientInterfaceServer implements Runnable {
 		Logger.normal(core, "TMCI started on "+networkInterface.getAllowedHosts()+ ':' +port);
 		System.out.println("TMCI started on "+networkInterface.getAllowedHosts()+ ':' +port);
 
-		n.executor.execute(this, "Text mode client interface");
+		n.getExecutor().execute(this, "Text mode client interface");
     }
 
 	public static TextModeClientInterfaceServer maybeCreate(Node node, NodeClientCore core, Config config) throws IOException {
@@ -89,7 +89,7 @@ public class TextModeClientInterfaceServer implements Runnable {
 	        HighLevelSimpleClient client = core.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS, true, false);
 			TextModeClientInterface directTMCI =
 				new TextModeClientInterface(node, core, client, core.getDownloadsDir(), System.in, System.out);
-			node.executor.execute(directTMCI, "Direct text mode interface");
+			node.getExecutor().execute(directTMCI, "Direct text mode interface");
 			core.setDirectTMCI(directTMCI);
 		}
 
@@ -293,7 +293,7 @@ public class TextModeClientInterfaceServer implements Runnable {
     				TextModeClientInterface tmci =
 					new TextModeClientInterface(this, in, out);
 
-    				n.executor.execute(tmci, "Text mode client interface handler for "+s.getPort());
+    				n.getExecutor().execute(tmci, "Text mode client interface handler for "+s.getPort());
     			} catch (SocketException e){
     				Logger.error(this, "Socket error : "+e, e);
     			} catch (IOException e) {

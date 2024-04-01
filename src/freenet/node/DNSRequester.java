@@ -38,7 +38,7 @@ public class DNSRequester implements Runnable {
     void start() {
     	Logger.normal(this, "Starting DNSRequester");
     	System.out.println("Starting DNSRequester");
-    	node.executor.execute(this, "DNSRequester thread for "+node.getDarknetPortNumber());
+    	node.getExecutor().execute(this, "DNSRequester thread for "+node.getDarknetPortNumber());
     }
 
     @Override
@@ -54,7 +54,7 @@ public class DNSRequester implements Runnable {
     }
 
     private void realRun() {
-        PeerNode[] nodes = node.peers.myPeers();
+        PeerNode[] nodes = node.getPeers().myPeers();
         long now = System.currentTimeMillis();
         if((now - lastLogTime) > 1000) {
         	if(logMINOR)

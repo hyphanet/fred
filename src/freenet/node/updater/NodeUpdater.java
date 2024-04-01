@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
+import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -69,10 +70,10 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 	NodeUpdater(NodeUpdateManager manager, FreenetURI URI, int current, int min, int max, String blobFilenamePrefix) {
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		this.manager = manager;
-		this.node = manager.node;
+		this.node = manager.getNode();
 		this.URI = URI.setSuggestedEdition(Version.buildNumber() + 1);
-		this.ticker = node.ticker;
-		this.core = node.clientCore;
+		this.ticker = node.getTicker();
+		this.core = node.getClientCore();
 		this.currentVersion = current;
 		this.availableVersion = -1;
 		this.isRunning = true;
@@ -93,7 +94,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 		try {
 			// because of UoM, this version is actually worth having as well
 			USK myUsk = USK.create(URI.setSuggestedEdition(currentVersion));
-			core.uskManager.subscribe(myUsk, this, true, getRequestClient());
+			core.getUskManager().subscribe(myUsk, this, true, getRequestClient());
 		} catch(MalformedURLException e) {
 			Logger.error(this, "The auto-update URI isn't valid and can't be used");
 			manager.blow("The auto-update URI isn't valid and can't be used", true);
@@ -105,7 +106,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 		if(oldBlob.exists()) {
 			File temp;
 			try {
-				temp = File.createTempFile(blobFilenamePrefix + availableVersion + "-", ".fblob.tmp", manager.node.clientCore.getPersistentTempDir());
+				temp = File.createTempFile(blobFilenamePrefix + availableVersion + "-", ".fblob.tmp", manager.getNode().getClientCore().getPersistentTempDir());
 			} catch (IOException e) {
 				Logger.error(this, "Unable to process old blob: "+e, e);
 				return;
@@ -114,7 +115,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 				FreenetURI uri = URI.setSuggestedEdition(currentVersion);
 				uri = uri.sskForUSK();
 				try {
-					manager.uom.processMainJarBlob(temp, null, currentVersion, uri);
+					manager.getUpdateOverMandatory().processMainJarBlob(temp, null, currentVersion, uri);
 				} catch (Throwable t) {
 					// Don't disrupt startup.
 					Logger.error(this, "Unable to process old blob, caught "+t, t);
@@ -213,7 +214,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 					if(availableVersion > currentVersion)
 						System.err.println("Starting " + jarName() + " fetch for " + availableVersion);
 					tempBlobFile =
-						File.createTempFile(blobFilenamePrefix + availableVersion + "-", ".fblob.tmp", manager.node.clientCore.getPersistentTempDir());
+						File.createTempFile(blobFilenamePrefix + availableVersion + "-", ".fblob.tmp", manager.getNode().getClientCore().getPersistentTempDir());
 					FreenetURI uri = URI.setSuggestedEdition(availableVersion);
 					uri = uri.sskForUSK();
 					cg = new ClientGetter(this,  
@@ -231,7 +232,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 		}
 		if(toStart != null)
 			try {
-				node.clientCore.clientContext.start(toStart);
+				node.getClientCore().getClientContext().start(toStart);
 			} catch(FetchException e) {
 				Logger.error(this, "Error while starting the fetching: " + e, e);
 				synchronized(this) {
@@ -241,11 +242,11 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 				// Impossible
 			}
 		if(cancelled != null)
-			cancelled.cancel(core.clientContext);
+			cancelled.cancel(core.getClientContext());
 	}
 
 	final File getBlobFile(int availableVersion) {
-		return new File(node.clientCore.getPersistentTempDir(), blobFilenamePrefix + availableVersion + ".fblob");
+		return new File(node.getClientCore().getPersistentTempDir(), blobFilenamePrefix + availableVersion + ".fblob");
 	}
 	
 	RandomAccessBucket getBlobBucket(int availableVersion) {
@@ -278,7 +279,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 				System.err.println("Cannot update: result either null or empty for " + availableVersion);
 				// Try again
 				if(result == null || result.asBucket() == null || availableVersion > fetchedVersion)
-					node.ticker.queueTimedJob(new Runnable() {
+					node.getTicker().queueTimedJob(new Runnable() {
 
 						@Override
 						public void run() {
@@ -341,7 +342,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 						DataInputStream dis = new DataInputStream(zis);
 						dis.readFully(buf);
 						ByteArrayInputStream bais = new ByteArrayInputStream(buf);
-						InputStreamReader isr = new InputStreamReader(bais, "UTF-8");
+						InputStreamReader isr = new InputStreamReader(bais, StandardCharsets.UTF_8);
 						BufferedReader br = new BufferedReader(isr);
 						String line;
 						while((line = br.readLine()) != null) {
@@ -489,11 +490,11 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 			synchronized(this) {
 				isRunning = false;
 				USK myUsk = USK.create(URI.setSuggestedEdition(currentVersion));
-				core.uskManager.unsubscribe(myUsk, this);
+				core.getUskManager().unsubscribe(myUsk, this);
 				c = cg;
 				cg = null;
 			}
-			c.cancel(core.clientContext);
+			c.cancel(core.getClientContext());
 		} catch(Exception e) {
 			Logger.minor(this, "Cannot kill NodeUpdater", e);
 		}

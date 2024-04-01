@@ -101,7 +101,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 			FCPConnectionHandler handler, short priorityClass, Persistence persistence, String clientToken, boolean global,
 			boolean getCHKOnly, boolean dontCompress, boolean localRequestOnly, int maxRetries, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, String compressorDescriptor, int extraInsertsSingleBlock, int extraInsertsSplitfileHeader, boolean realTimeFlag, InsertContext.CompatibilityMode compatibilityMode, boolean ignoreUSKDatehints, FCPServer server) throws MalformedURLException {
 		super(uri, identifier, verbosity, charset, handler, priorityClass, persistence, realTimeFlag, clientToken, global);
-		ctx = server.core.clientContext.getDefaultPersistentInsertContext();
+		ctx = server.getCore().getClientContext().getDefaultPersistentInsertContext();
         ctx.getCHKOnly = getCHKOnly;
 		ctx.dontCompress = dontCompress;
 		ctx.eventProducer.addEventListener(this);
@@ -126,7 +126,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 
 	static FreenetURI checkEmptySSK(FreenetURI uri, String filename, ClientContext context) {
 		if("SSK".equals(uri.getKeyType()) && uri.getDocName() == null && uri.getRoutingKey() == null) {
-			if(filename == null || filename.equals("")) filename = "key";
+			if(filename == null || filename.isEmpty()) filename = "key";
 			// SSK@ = use a random SSK.
 	    	InsertableClientSSK key = InsertableClientSSK.createRandom(context.random, "");
 	    	return key.getInsertURI().setDocName(filename);
@@ -139,7 +139,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 			FCPConnectionHandler handler, PersistentRequestClient client, short priorityClass, Persistence persistence, String clientToken,
 			boolean global, boolean getCHKOnly, boolean dontCompress, int maxRetries, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, boolean localRequestOnly, int extraInsertsSingleBlock, int extraInsertsSplitfileHeader, boolean realTimeFlag, String compressorDescriptor, InsertContext.CompatibilityMode compatMode, boolean ignoreUSKDatehints, NodeClientCore core) throws MalformedURLException {
 		super(uri, identifier, verbosity, charset, handler, client, priorityClass, persistence, realTimeFlag, clientToken, global);
-		ctx = core.clientContext.getDefaultPersistentInsertContext();
+		ctx = core.getClientContext().getDefaultPersistentInsertContext();
         ctx.getCHKOnly = getCHKOnly;
 		ctx.dontCompress = dontCompress;
 		ctx.eventProducer.addEventListener(this);
@@ -358,7 +358,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 			Logger.error(this, "Trying to send null message on "+this, new Exception("error"));
 		} else {
 			if(persistence == Persistence.CONNECTION && handler == null)
-				handler = origHandler.outputHandler;
+				handler = origHandler.getOutputHandler();
 			if(handler != null)
 				handler.queue(FCPMessage.withListRequestIdentifier(msg, listRequestIdentifier));
 			else
@@ -372,7 +372,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 			msg = new URIGeneratedMessage(generatedURI, identifier, isGlobalQueue());
 		}
 		if(persistence == Persistence.CONNECTION && handler == null)
-			handler = origHandler.outputHandler;
+			handler = origHandler.getOutputHandler();
 		if(handler != null)
 			handler.queue(FCPMessage.withListRequestIdentifier(msg, listRequestIdentifier));
 		else
@@ -387,7 +387,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 	private void trySendGeneratedMetadataMessage(Bucket metadata, FCPConnectionOutputHandler handler, String listRequestIdentifier) {
 		FCPMessage msg = FCPMessage.withListRequestIdentifier(new GeneratedMetadataMessage(identifier, global, metadata), listRequestIdentifier);
 		if(persistence == Persistence.CONNECTION && handler == null)
-			handler = origHandler.outputHandler;
+			handler = origHandler.getOutputHandler();
 		if(handler != null)
 			handler.queue(msg);
 		else
@@ -407,7 +407,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 	            progressMessage = msg;
 	    }
 		if(persistence == Persistence.CONNECTION && handler == null)
-			handler = origHandler.outputHandler;
+			handler = origHandler.getOutputHandler();
 		if(handler != null)
 			handler.queue(msg);
 		else

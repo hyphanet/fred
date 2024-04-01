@@ -43,7 +43,7 @@ public class StaticToadlet extends Toadlet {
 		}
 		
 		// be very strict about what characters we allow in the path, since
-		if (!path.matches("^[A-Za-z0-9\\._\\/\\-]*$") || (path.indexOf("..") != -1)) {
+		if (!path.matches("^[A-Za-z0-9\\._\\/\\-]*$") || path.contains("..")) {
 			this.sendErrorPage(ctx, 404, l10n("pathNotFoundTitle"), l10n("pathInvalidChars"));
 			return;
 		}

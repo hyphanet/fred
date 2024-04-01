@@ -194,7 +194,7 @@ public class NativeThread extends Thread {
 			throw new IllegalStateException("You're trying to set a thread priority" +
 				" above the current value!! It's not possible if you aren't root" +
 				" and shouldn't ever occur in our code. (asked="+prio+':'+linuxPriority+" currentMax="+
-				+currentPriority+':'+NATIVE_PRIORITY_BASE+") SHOUDLN'T HAPPEN, please report!");
+				currentPriority+':'+NATIVE_PRIORITY_BASE+") SHOULD NOT HAPPEN, please report!");
 		Logger.minor(this, "Setting native priority to "+linuxPriority+" (base="+NATIVE_PRIORITY_BASE+") for "+this);
 		return (LinuxNativeThread.setpriority(0, 0, linuxPriority) > -1 ? true : false);
 	}
@@ -208,7 +208,7 @@ public class NativeThread extends Thread {
 	}
 	
 	public static String normalizeName(String name) {
-		if(name.indexOf(" for ") != -1)
+		if(name.contains(" for "))
 			name = name.substring(0, name.indexOf(" for "));
 		if(name.indexOf('@') != -1)
 			name = name.substring(0, name.indexOf('@'));

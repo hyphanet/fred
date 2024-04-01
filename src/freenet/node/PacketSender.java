@@ -82,7 +82,7 @@ public class PacketSender implements Runnable {
 
 	private void schedulePeriodicJob() {
 		
-		node.ticker.queueTimedJob(new Runnable() {
+		node.getTicker().queueTimedJob(new Runnable() {
 
 			@Override
 			public void run() {
@@ -91,7 +91,7 @@ public class PacketSender implements Runnable {
 					if (logMINOR)
 						Logger.minor(PacketSender.class,
 								"Starting shedulePeriodicJob() at " + now);
-					PeerManager pm = node.peers;
+					PeerManager pm = node.getPeers();
 					pm.maybeLogPeerNodeStatusSummary(now);
 					pm.maybeUpdateOldestNeverConnectedDarknetPeerAge(now);
 					stats.maybeUpdatePeerManagerUserAlertStats(now);
@@ -103,7 +103,7 @@ public class PacketSender implements Runnable {
 								"Finished running shedulePeriodicJob() at "
 										+ System.currentTimeMillis());
 				} finally {
-					node.ticker.queueTimedJob(this, 1000);
+					node.getTicker().queueTimedJob(this, 1000);
 				}
 			}
 		}, 1000);
@@ -150,7 +150,7 @@ public class PacketSender implements Runnable {
                 PeerManager pm;
 		PeerNode[] nodes;
 
-        pm = node.peers;
+        pm = node.getPeers();
         nodes = pm.myPeers();
 
 		long nextActionTime = Long.MAX_VALUE;
@@ -158,12 +158,12 @@ public class PacketSender implements Runnable {
 
 		final boolean canSendThrottled;
 
-		int MAX_PACKET_SIZE = node.darknetCrypto.socket.getMaxPacketSize();
-		long count = node.outputThrottle.getCount();
+		int MAX_PACKET_SIZE = node.getDarknetCrypto().getSocket().getMaxPacketSize();
+		long count = node.getOutputThrottle().getCount();
 		if(count > MAX_PACKET_SIZE)
 			canSendThrottled = true;
 		else {
-			long canSendAt = node.outputThrottle.getNanosPerTick() * (MAX_PACKET_SIZE - count);
+			long canSendAt = node.getOutputThrottle().getNanosPerTick() * (MAX_PACKET_SIZE - count);
 			canSendAt = MILLISECONDS.convert(canSendAt + MILLISECONDS.toNanos(1) - 1, NANOSECONDS);
 			if(logMINOR)
 				Logger.minor(this, "Can send throttled packets in "+canSendAt+"ms");
@@ -205,7 +205,7 @@ public class PacketSender implements Runnable {
 			pn.maybeOnConnect();
 			if(pn.shouldDisconnectAndRemoveNow() && !pn.isDisconnecting()) {
 				// Might as well do it properly.
-				node.peers.disconnectAndRemove(pn, true, true, false);
+				node.getPeers().disconnectAndRemove(pn, true, true, false);
 			}
 
 			if(pn.isConnected()) {
@@ -227,7 +227,7 @@ public class PacketSender implements Runnable {
 					// Do it properly.
 					// There appears to be connectivity from them to us but not from us to them.
 					// So it is helpful for them to know that we are disconnecting.
-					node.peers.disconnect(pn, true, true, false, true, false, SECONDS.toMillis(5));
+					node.getPeers().disconnect(pn, true, true, false, true, false, SECONDS.toMillis(5));
 					continue;
 				} else if(pn.isRoutable() && pn.noLongerRoutable()) {
 					/*
@@ -453,7 +453,7 @@ public class PacketSender implements Runnable {
 		// MAX_COALESCING_DELAYms maximum sleep time - same as the maximum coalescing delay
 		sleepTime = Math.min(sleepTime, MAX_COALESCING_DELAY);
 
-		if(now - node.startupTime > MINUTES.toMillis(5))
+		if(now - node.getStartupTime() > MINUTES.toMillis(5))
 			if(now - lastReceivedPacketFromAnyNode > Node.ALARM_TIME) {
 				Logger.error(this, "Have not received any packets from any node in last " + SECONDS.convert(Node.ALARM_TIME, MILLISECONDS) + " seconds");
 				lastReportedNoPackets = now;

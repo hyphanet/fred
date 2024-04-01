@@ -26,8 +26,8 @@ public final class FCPPluginMessage {
          *  plugin is running inside the node, it can probably do whatever it wants. We're
          *  nevertheless shipping this information to you as it is available anyway. */
         ACCESS_DIRECT
-    };
-    
+    }
+
     /**
      * The permissions of the client which sent the messages. Null for server-to-client and
      * outgoing messages.<br>

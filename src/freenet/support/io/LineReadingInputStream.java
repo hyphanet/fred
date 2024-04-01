@@ -7,6 +7,7 @@ import java.io.EOFException;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 import freenet.support.HexUtil;
@@ -46,7 +47,7 @@ public class LineReadingInputStream extends FilterInputStream implements LineRea
 			if(x < 0) {
 				if(ctr == 0)
 					return null;
-				return new String(buf, 0, ctr, utf ? "UTF-8" : "ISO-8859-1");
+				return new String(buf, 0, ctr, utf ? StandardCharsets.UTF_8 : StandardCharsets.ISO_8859_1);
 			}
 			if(x == 0) {
 				// Don't busy-loop. Probably a socket closed or something.
@@ -60,14 +61,14 @@ public class LineReadingInputStream extends FilterInputStream implements LineRea
 					String toReturn = "";
 					if(ctr != 0) {
 						boolean removeCR = (buf[ctr - 1] == '\r');
-						toReturn = new String(buf, 0, (removeCR ? ctr - 1 : ctr), utf ? "UTF-8" : "ISO-8859-1");
+						toReturn = new String(buf, 0, (removeCR ? ctr - 1 : ctr), utf ? StandardCharsets.UTF_8 : StandardCharsets.ISO_8859_1);
 					}
 					reset();
 					skip(ctr + 1);
 					return toReturn;
 				}
 				if(ctr >= maxLength)
-					throw new TooLongException("We reached maxLength="+maxLength+ " parsing\n "+HexUtil.bytesToHex(buf, 0, ctr) + "\n" + new String(buf, 0, ctr, utf ? "UTF-8" : "ISO-8859-1"));
+					throw new TooLongException("We reached maxLength="+maxLength+ " parsing\n "+HexUtil.bytesToHex(buf, 0, ctr) + "\n" + new String(buf, 0, ctr, utf ? StandardCharsets.UTF_8 : StandardCharsets.ISO_8859_1));
 			}
 			if((buf.length < maxLength) && (buf.length - ctr < bufferSize)) {
 				byte[] newBuf = new byte[Math.min(buf.length * 2, maxLength)];
@@ -87,7 +88,7 @@ public class LineReadingInputStream extends FilterInputStream implements LineRea
 			if(x == -1) {
 				if(ctr == 0)
 					return null;
-				return new String(buf, 0, ctr, utf ? "UTF-8" : "ISO-8859-1");
+				return new String(buf, 0, ctr, utf ? StandardCharsets.UTF_8 : StandardCharsets.ISO_8859_1);
 			}
 			// REDFLAG this is definitely safe with the above charsets, it may not be safe with some wierd ones.
 			if(x == '\n') {
@@ -95,10 +96,10 @@ public class LineReadingInputStream extends FilterInputStream implements LineRea
 					return "";
 				if(buf[ctr - 1] == '\r')
 					ctr--;
-				return new String(buf, 0, ctr, utf ? "UTF-8" : "ISO-8859-1");
+				return new String(buf, 0, ctr, utf ? StandardCharsets.UTF_8 : StandardCharsets.ISO_8859_1);
 			}
 			if(ctr >= maxLength)
-					throw new TooLongException("We reached maxLength="+maxLength+ " parsing\n "+HexUtil.bytesToHex(buf, 0, ctr) + "\n" + new String(buf, 0, ctr, utf ? "UTF-8" : "ISO-8859-1"));
+					throw new TooLongException("We reached maxLength="+maxLength+ " parsing\n "+HexUtil.bytesToHex(buf, 0, ctr) + "\n" + new String(buf, 0, ctr, utf ? StandardCharsets.UTF_8 : StandardCharsets.ISO_8859_1));
 			if(ctr >= buf.length) {
 				buf = Arrays.copyOf(buf, Math.min(buf.length * 2, maxLength));
 			}

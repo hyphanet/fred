@@ -16,7 +16,6 @@ import freenet.node.RequestClient;
 import freenet.node.SendableRequest;
 import freenet.node.useralerts.SimpleUserAlert;
 import freenet.node.useralerts.UserAlert;
-import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.io.ResumeFailedException;
@@ -125,10 +124,12 @@ public abstract class ClientRequester implements Serializable, ClientRequestSche
 	protected int totalBlocks;
 	/** Number of blocks we have successfully completed a fetch/put for. */
 	protected int successfulBlocks;
-    /**
-     * ATTENTION: This may be null for very old databases.
-     * @see #getLatestSuccess() Explanation of the content and especially the default value. */
-    protected Date latestSuccess = CurrentTimeUTC.get();
+	/**
+	 * ATTENTION: This may be null for very old databases.
+	 *
+	 * @see #getLatestSuccess() Explanation of the content and especially the default value.
+	 */
+	protected Date latestSuccess = new Date();
 	/** Number of blocks which have failed. */
 	protected int failedBlocks;
 	/** Number of blocks which have failed fatally. */
@@ -174,8 +175,8 @@ public abstract class ClientRequester implements Serializable, ClientRequestSche
 	protected synchronized void resetBlocks() {
 		totalBlocks = 0;
 		successfulBlocks = 0;
-        // See ClientRequester.getLatestSuccess() for why this defaults to current time.
-        latestSuccess = CurrentTimeUTC.get();
+		// See ClientRequester.getLatestSuccess() for why this defaults to current time.
+		latestSuccess = new Date();
 		failedBlocks = 0;
 		fatallyFailedBlocks = 0;
         latestFailure = null;
@@ -242,7 +243,7 @@ public abstract class ClientRequester implements Serializable, ClientRequestSche
 		synchronized(this) {
 			if(cancelled) return;
 			successfulBlocks++;
-            latestSuccess = CurrentTimeUTC.get();
+			latestSuccess = new Date();
 		}
 		if(dontNotify) return;
 		notifyClients(context);
@@ -254,7 +255,7 @@ public abstract class ClientRequester implements Serializable, ClientRequestSche
     public void failedBlock(boolean dontNotify, ClientContext context) {
         synchronized(this) {
             failedBlocks++;
-            latestFailure = CurrentTimeUTC.get();
+            latestFailure = new Date();
         }
         if(!dontNotify)
             notifyClients(context);
@@ -269,7 +270,7 @@ public abstract class ClientRequester implements Serializable, ClientRequestSche
 	public void fatallyFailedBlock(ClientContext context) {
 		synchronized(this) {
 			fatallyFailedBlocks++;
-            latestFailure = CurrentTimeUTC.get();
+			latestFailure = new Date();
 		}
 		notifyClients(context);
 	}
@@ -331,8 +332,8 @@ public abstract class ClientRequester implements Serializable, ClientRequestSche
 		this.minSuccessBlocks = 0;
 		this.sentToNetwork = false;
 		this.successfulBlocks = 0;
-        // See ClientRequester.getLatestSuccess() for why this defaults to current time.
-        this.latestSuccess = CurrentTimeUTC.get();
+		// See ClientRequester.getLatestSuccess() for why this defaults to current time.
+		this.latestSuccess = new Date();
 		this.totalBlocks = 0;
 	}
 

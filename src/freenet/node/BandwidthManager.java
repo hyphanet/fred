@@ -27,12 +27,12 @@ public class BandwidthManager {
         /* offer upgrade of the connection speed on upgrade, if auto-detected
          * speed is much higher than the set speed, or even better: if the
          * detected speed increased significantly since the last offer. */
-        node.ticker.queueTimedJob(new Runnable() {
+        node.getTicker().queueTimedJob(new Runnable() {
             @Override
             public void run() {
                 try {
-                    FredPluginBandwidthIndicator bandwidthIndicator = node.ipDetector.getBandwidthIndicator();
-                    if (!node.config.get("node").getBoolean("connectionSpeedDetection") ||
+                    FredPluginBandwidthIndicator bandwidthIndicator = node.getIpDetector().getBandwidthIndicator();
+                    if (!node.getConfig().get("node").getBoolean("connectionSpeedDetection") ||
                             bandwidthIndicator == null) {
                         return;
                     }
@@ -40,8 +40,8 @@ public class BandwidthManager {
                     int detectedInputBandwidth = bandwidthIndicator.getDownstreamMaxBitRate() / 8;
                     int detectedOutputBandwidth = bandwidthIndicator.getUpstramMaxBitRate() / 8;
 
-                    int currentInputBandwidth = node.config.get("node").getInt("inputBandwidthLimit");
-                    int currentOutputBandwidth = node.config.get("node").getInt("outputBandwidthLimit");
+                    int currentInputBandwidth = node.getConfig().get("node").getInt("inputBandwidthLimit");
+                    int currentOutputBandwidth = node.getConfig().get("node").getInt("outputBandwidthLimit");
 
                     if (detectedInputBandwidth > currentInputBandwidth * 3 &&
                             detectedInputBandwidth > lastOfferedInputBandwidth * 3 ||
@@ -57,7 +57,7 @@ public class BandwidthManager {
                     Logger.minor(this, e.getMessage());
                     throw e;
                 } finally {
-                    node.ticker.queueTimedJob(this, HOURS.toMillis(DELAY_HOURS));
+                    node.getTicker().queueTimedJob(this, HOURS.toMillis(DELAY_HOURS));
                 }
             }
         }, HOURS.toMillis(DELAY_HOURS));

@@ -327,8 +327,8 @@ public class ClientPutMessage extends DataCarryingMessage {
 	@Override
 	RandomAccessBucket createBucket(BucketFactory bf, long length, FCPServer server) throws IOException, PersistenceDisabledException {
 		if(persistence == Persistence.FOREVER) {
-		    if(server.core.killedDatabase()) throw new PersistenceDisabledException();
-			return server.core.persistentTempBucketFactory.makeBucket(length);
+		    if(server.getCore().killedDatabase()) throw new PersistenceDisabledException();
+			return server.getCore().getPersistentTempBucketFactory().makeBucket(length);
 		} else {
 			return super.createBucket(bf, length, server);
 		}

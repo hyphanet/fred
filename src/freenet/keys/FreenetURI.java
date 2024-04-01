@@ -326,7 +326,7 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 	}
 
 	// Strip http(s):// and (web+|ext+)freenet: prefix
-	protected final static Pattern URI_PREFIX = Pattern.compile("^(https?://[^/]+/+)?(((ext|web)\\+)?freenet:)?");
+	protected final static Pattern URI_PREFIX = Pattern.compile("^(https?://[^/]+/+)?(((ext|web)\\+)?(freenet|hyphanet|hypha):)?");
 
 	public FreenetURI(String URI) throws MalformedURLException {
 		this(URI, false);
@@ -940,16 +940,21 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 	 * @throws IOException If an error occurred while writing the key.
 	 */
 	private void writeFullBinaryKey(DataOutputStream dos) throws IOException {
-		if(keyType.equals("CHK"))
-			dos.writeByte(CHK);
-		else if(keyType.equals("SSK"))
-			dos.writeByte(SSK);
-		else if(keyType.equals("KSK"))
-			dos.writeByte(KSK);
-		else if(keyType.equals("USK"))
-			throw new MalformedURLException("Cannot write USKs as binary keys");
-		else
-			throw new MalformedURLException("Cannot write key of type " + keyType + " - do not know how");
+		switch (keyType) {
+			case "CHK":
+				dos.writeByte(CHK);
+				break;
+			case "SSK":
+				dos.writeByte(SSK);
+				break;
+			case "KSK":
+				dos.writeByte(KSK);
+				break;
+			case "USK":
+				throw new MalformedURLException("Cannot write USKs as binary keys");
+			default:
+				throw new MalformedURLException("Cannot write key of type " + keyType + " - do not know how");
+		}
 		if(!keyType.equals("KSK")) {
 			if(routingKey.length != 32)
 				throw new MalformedURLException("Routing key must be of length 32");
@@ -1003,7 +1008,7 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 		}
 		if(metaStr != null)
 			for(String s : metaStr) {
-				if(s == null || s.equals("")) {
+				if(s == null || s.isEmpty()) {
 					if(logMINOR)
 						Logger.minor(this, "metaString \"" + s + "\": was null or empty");
 					continue;

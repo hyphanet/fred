@@ -71,15 +71,15 @@ public class FailureTable {
 	static final int MAX_ENTRIES = 20*1000;
 	/** Maximum number of offers to track */
 	static final int MAX_OFFERS = 10*1000;
-	/** Terminate a request if there was a DNF on the same key less than 10 minutes ago.
+	/** Terminate a request if there was a DNF on the same key less than this time ago.
 	 * Maximum time for any FailureTable i.e. for this period after a DNF, we will avoid the node that 
 	 * DNFed. */
-	static final long REJECT_TIME = MINUTES.toMillis(10);
+	static final long REJECT_TIME = MINUTES.toMillis(3);
 	/** Maximum time for a RecentlyFailed. I.e. until this period expires, we take a request into account
 	 * when deciding whether we have recently failed to this peer. If we get a DNF, we use this figure.
 	 * If we get a RF, we use what it tells us, which can be less than this. Most other failures use
 	 * shorter periods. */
-	static final long RECENTLY_FAILED_TIME = MINUTES.toMillis(30);
+	static final long RECENTLY_FAILED_TIME = MINUTES.toMillis(5);
 	/** After 1 hour we forget about an entry completely */
 	static final long MAX_LIFETIME = MINUTES.toMillis(60);
 	/** Offers expire after 10 minutes */
@@ -94,13 +94,13 @@ public class FailureTable {
 		blockOfferListByKey = LRUMap.createSafeMap();
 		this.node = node;
 		offerAuthenticatorKey = new byte[32];
-		node.random.nextBytes(offerAuthenticatorKey);
+		node.getRandom().nextBytes(offerAuthenticatorKey);
 		offerExecutor = new SerialExecutor(NativeThread.HIGH_PRIORITY);
-		node.ticker.queueTimedJob(new FailureTableCleaner(), CLEANUP_PERIOD);
+		node.getTicker().queueTimedJob(new FailureTableCleaner(), CLEANUP_PERIOD);
 	}
 	
 	public void start() {
-		offerExecutor.start(node.executor, "FailureTable offers executor for "+node.getDarknetPortNumber());
+		offerExecutor.start(node.getExecutor(), "FailureTable offers executor for "+node.getDarknetPortNumber());
 	}
 	
 	/**
@@ -123,7 +123,7 @@ public class FailureTable {
 				Logger.error(this, "Bogus timeout "+rfTimeout, new Exception("error"));
 			rfTimeout = Math.max(Math.min(RECENTLY_FAILED_TIME, rfTimeout), 0);
 		}
-		if(!(node.enableULPRDataPropagation || node.enablePerNodeFailureTables)) return;
+		if(!(node.isEnableULPRDataPropagation() || node.isEnablePerNodeFailureTables())) return;
 		long now = System.currentTimeMillis();
 		FailureTableEntry entry;
 		synchronized(this) {
@@ -158,7 +158,7 @@ public class FailureTable {
 				Logger.error(this, "Bogus timeout "+rfTimeout, new Exception("error"));
 			rfTimeout = Math.max(Math.min(RECENTLY_FAILED_TIME, rfTimeout), 0);
 		}
-		if(!(node.enableULPRDataPropagation || node.enablePerNodeFailureTables)) return;
+		if(!(node.isEnableULPRDataPropagation() || node.isEnablePerNodeFailureTables())) return;
 		long now = System.currentTimeMillis();
 		FailureTableEntry entry;
 		synchronized(this) {
@@ -233,7 +233,7 @@ public class FailureTable {
 				if(offers.length > 1) return;
 				blockOfferListByKey.removeKey(entry.key);
 			}
-			node.clientCore.dequeueOfferedKey(entry.key);
+			node.getClientCore().dequeueOfferedKey(entry.key);
 		}
 
 		public void addOffer(BlockOffer offer) {
@@ -287,8 +287,8 @@ public class FailureTable {
 	 */
 	public void onFound(KeyBlock block) {
 		if(logMINOR) Logger.minor(this, "Found "+block.getKey());
-		if(!(node.enableULPRDataPropagation || node.enablePerNodeFailureTables)) {
-			if(logMINOR) Logger.minor(this, "Ignoring onFound because enable ULPR = "+node.enableULPRDataPropagation+" and enable failure tables = "+node.enablePerNodeFailureTables);
+		if(!(node.isEnableULPRDataPropagation() || node.isEnablePerNodeFailureTables())) {
+			if(logMINOR) Logger.minor(this, "Ignoring onFound because enable ULPR = "+node.isEnableULPRDataPropagation()+" and enable failure tables = "+node.isEnablePerNodeFailureTables());
 			return;
 		}
 		Key key = block.getKey();
@@ -306,7 +306,7 @@ public class FailureTable {
 			entriesByKey.removeKey(key);
 		}
 		if(logMINOR) Logger.minor(this, "Offering key");
-		if(!node.enableULPRDataPropagation) return;
+		if(!node.isEnableULPRDataPropagation()) return;
 		entry.offer();
 	}
 	
@@ -322,7 +322,7 @@ public class FailureTable {
 	 * @param authenticator 
 	 */
 	void onOffer(final Key key, final PeerNode peer, final byte[] authenticator) {
-		if(!node.enableULPRDataPropagation) return;
+		if(!node.isEnableULPRDataPropagation()) return;
 		if(logMINOR)
 			Logger.minor(this, "Offered key "+key+" by peer "+peer);
 		FailureTableEntry entry;
@@ -440,7 +440,7 @@ public class FailureTable {
 		// For the same reason that priorities are not safe?
 		// But do it at low priorities?
 		// Offers mostly happen for SSKs anyway ... reconsider?
-		node.clientCore.queueOfferedKey(key, false);
+		node.getClientCore().queueOfferedKey(key, false);
 	}
 
 	private void trimOffersList(long now) {
@@ -506,7 +506,7 @@ public class FailureTable {
 			
 			source.sendAsync(headers, null, senderCounter);
 			
-			node.executor.execute(new PrioRunnable() {
+			node.getExecutor().execute(new PrioRunnable() {
 
 				@Override
 				public int getPriority() {
@@ -546,7 +546,7 @@ public class FailureTable {
         	PartiallyReceivedBlock prb =
         		new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE, block.getRawData());
         	final BlockTransmitter bt =
-        		new BlockTransmitter(node.usm, node.getTicker(), source, uid, prb, senderCounter, BlockTransmitter.NEVER_CASCADE,
+        		new BlockTransmitter(node.getUSM(), node.getTicker(), source, uid, prb, senderCounter, BlockTransmitter.NEVER_CASCADE,
         				new BlockTransmitterCompletion() {
 
 					@Override
@@ -554,8 +554,8 @@ public class FailureTable {
 						tag.unlockHandler();
 					}
 					
-				}, realTimeFlag, node.nodeStats);
-        	node.executor.execute(new PrioRunnable() {
+				}, realTimeFlag, node.getNodeStats());
+        	node.getExecutor().execute(new PrioRunnable() {
 
 				@Override
 				public int getPriority() {
@@ -577,18 +577,18 @@ public class FailureTable {
 
 		@Override
 		public void receivedBytes(int x) {
-			node.nodeStats.offeredKeysSenderReceivedBytes(x);
+			node.getNodeStats().offeredKeysSenderReceivedBytes(x);
 		}
 
 		@Override
 		public void sentBytes(int x) {
-			node.nodeStats.offeredKeysSenderSentBytes(x);
+			node.getNodeStats().offeredKeysSenderSentBytes(x);
 		}
 
 		@Override
 		public void sentPayload(int x) {
 			node.sentPayload(x);
-			node.nodeStats.offeredKeysSenderSentBytes(-x);
+			node.getNodeStats().offeredKeysSenderSentBytes(-x);
 		}
 		
 	}
@@ -623,10 +623,10 @@ public class FailureTable {
 				throw new IllegalStateException("Last offer not dealt with");
 			}
 			if(!recentOffers.isEmpty()) {
-				return lastOffer = ListUtils.removeRandomBySwapLastSimple(node.random, recentOffers);
+				return lastOffer = ListUtils.removeRandomBySwapLastSimple(node.getRandom(), recentOffers);
 			}
 			if(!expiredOffers.isEmpty()) {
-				return lastOffer = ListUtils.removeRandomBySwapLastSimple(node.random, expiredOffers);
+				return lastOffer = ListUtils.removeRandomBySwapLastSimple(node.getRandom(), expiredOffers);
 			}
 			// No more offers.
 			return null;
@@ -661,7 +661,7 @@ public class FailureTable {
 	}
 
 	public OfferList getOffers(Key key) {
-		if(!node.enableULPRDataPropagation) return null;
+		if(!node.isEnableULPRDataPropagation()) return null;
 		BlockOfferList bl;
 		synchronized(blockOfferListByKey) {
 			bl = blockOfferListByKey.get(key);
@@ -672,12 +672,12 @@ public class FailureTable {
 
 	/** Called when a node disconnects */
 	public void onDisconnect(final PeerNode pn) {
-		if(!(node.enableULPRDataPropagation || node.enablePerNodeFailureTables)) return;
+		if(!(node.isEnableULPRDataPropagation() || node.isEnablePerNodeFailureTables())) return;
 		// FIXME do something (off thread if expensive)
 	}
 
 	public TimedOutNodesList getTimedOutNodesList(Key key) {
-		if(!node.enablePerNodeFailureTables) return null;
+		if(!node.isEnablePerNodeFailureTables()) return null;
 		synchronized(this) {
 			return entriesByKey.get(key);
 		}
@@ -692,7 +692,7 @@ public class FailureTable {
 			} catch (Throwable t) {
 				Logger.error(this, "FailureTableCleaner caught "+t, t);
 			} finally {
-				node.ticker.queueTimedJob(this, CLEANUP_PERIOD);
+				node.getTicker().queueTimedJob(this, CLEANUP_PERIOD);
 			}
 		}
 

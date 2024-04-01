@@ -14,7 +14,7 @@ import freenet.support.Logger.LogLevel;
 
 public class FlacPacketFilter  implements CodecPacketFilter {
 	boolean streamValid = true;
-	enum State {UNINITIALIZED, STREAMINFO_FOUND, METADATA_FOUND};
+	enum State {UNINITIALIZED, STREAMINFO_FOUND, METADATA_FOUND}
 	State currentState = State.UNINITIALIZED;
 
 	int minimumBlockSize;

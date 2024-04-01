@@ -7,7 +7,6 @@ import freenet.client.events.SplitfileProgressEvent;
 import freenet.clients.fcp.ClientRequest.Persistence;
 import freenet.keys.FreenetURI;
 import freenet.l10n.NodeL10n;
-import freenet.support.CurrentTimeUTC;
 
 /** The status of a request. Cached copy i.e. can be accessed outside the database thread
  * even for a persistent request.
@@ -41,7 +40,7 @@ public abstract class RequestStatus implements Cloneable {
 	/** The download or upload has finished.
 	 * @param success Did it succeed? */
 	synchronized void setFinished(boolean success) {
-		this.latestSuccess = CurrentTimeUTC.get();
+		this.latestSuccess = new Date();
 		this.hasFinished = true;
 		this.hasSucceeded = success;
 		this.hasStarted = true;
@@ -50,7 +49,7 @@ public abstract class RequestStatus implements Cloneable {
 	
 	synchronized void restart(boolean started) {
 		// See ClientRequester.getLatestSuccess() for why this defaults to current time.
-		this.latestSuccess = CurrentTimeUTC.get();
+		this.latestSuccess = new Date();
 		this.hasFinished = false;
 		this.hasSucceeded = false;
 		this.hasStarted = started;

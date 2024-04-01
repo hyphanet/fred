@@ -224,7 +224,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
             	Logger.minor(this, "Received "+m1);
             if ((m1 != null) && m1.getSpec().equals(DMT.sendAborted)) {
 				String desc=m1.getString(DMT.DESCRIPTION);
-				if (desc.indexOf("Upstream")<0)
+				if (!desc.contains("Upstream"))
 					desc="Upstream transmit error: "+desc;
 				_prb.abort(m1.getInt(DMT.REASON), desc, false);
 				synchronized(BlockReceiver.this) {
@@ -484,7 +484,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 		MessageFilter mfPacketTransmit = MessageFilter.create().setTimeout(timeout).setType(DMT.packetTransmit).setField(DMT.UID, _uid).setSource(_sender);
 		MessageFilter mfAllSent = MessageFilter.create().setTimeout(timeout).setType(DMT.allSent).setField(DMT.UID, _uid).setSource(_sender);
 		MessageFilter mfSendAborted = MessageFilter.create().setTimeout(timeout).setType(DMT.sendAborted).setField(DMT.UID, _uid).setSource(_sender);
-		return mfPacketTransmit.or(mfAllSent.or(mfSendAborted));
+		return mfSendAborted.or(mfAllSent.or(mfPacketTransmit));
 	}
 
 	PartiallyReceivedBlock.PacketReceivedListener myListener;
@@ -494,7 +494,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 		this.callback = callback;
 		synchronized(_prb) {
 			try {
-				_prb.addListener(myListener = new PartiallyReceivedBlock.PacketReceivedListener() {;
+				_prb.addListener(myListener = new PartiallyReceivedBlock.PacketReceivedListener() {
 
 					@Override
 					public void packetReceived(int packetNo) {
@@ -550,7 +550,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 	
 	/**
 	 * Used to discard leftover messages, usually just packetTransmit and allSent.
-	 * allSent, is quite common, as the receive() routine usually quits immeadiately on receiving all packets.
+	 * allSent, is quite common, as the receive() routine usually quits immediately on receiving all packets.
 	 * packetTransmit is less common, when receive() requested what it thought was a missing packet, only reordered.
 	 */
 	@Override

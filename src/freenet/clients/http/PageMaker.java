@@ -383,7 +383,7 @@ public final class PageMaker {
 		if (renderParameters.isRenderStatus() && fullAccess) {
 			final HTMLNode statusBarDiv = pageDiv.addChild("div", "id", "statusbar-container").addChild("div", "id", "statusbar");
 
-			 if (node != null && node.clientCore != null) {
+			 if (node != null && node.getClientCore() != null) {
 				 final HTMLNode alerts = ctx.getAlertManager().createSummary(true);
 				 if (alerts != null) {
 					 statusBarDiv.addChild(alerts).addAttribute("id", "statusbar-alerts");
@@ -394,7 +394,7 @@ public final class PageMaker {
 
 			statusBarDiv.addChild("div", "id", "statusbar-language").addChild("a", "href", "/config/node#l10n", NodeL10n.getBase().getSelectedLanguage().fullName);
 
-			if (node.clientCore != null && ctx != null && renderParameters.isRenderModeSwitch()) {
+			if (node.getClientCore() != null && ctx != null && renderParameters.isRenderModeSwitch()) {
 				boolean isAdvancedMode = ctx.isAdvancedModeEnabled();
 				String uri = ctx.getUri().getQuery();
 				Map<String, List<String>> parameters = HTTPRequestImpl.parseUriParameters(uri, true);
@@ -409,28 +409,28 @@ public final class PageMaker {
 				switchMode.addChild("a", "href", "?" + HTTPRequestImpl.createQueryString(parameters, false), isAdvancedMode ? NodeL10n.getBase().getString("StatusBar.switchToSimpleMode") : NodeL10n.getBase().getString("StatusBar.switchToAdvancedMode"));
 			}
 
-			if (node != null && node.clientCore != null) {
+			if (node != null && node.getClientCore() != null) {
 				statusBarDiv.addChild("div", "class", "separator", "\u00a0");
 				final HTMLNode secLevels = statusBarDiv.addChild("div", "id", "statusbar-seclevels", NodeL10n.getBase().getString("SecurityLevels.statusBarPrefix"));
 
-				final HTMLNode network = secLevels.addChild("a", "href", "/seclevels/", SecurityLevels.localisedName(node.securityLevels.getNetworkThreatLevel()) + "\u00a0");
+				final HTMLNode network = secLevels.addChild("a", "href", "/seclevels/", SecurityLevels.localisedName(node.getSecurityLevels().getNetworkThreatLevel()) + "\u00a0");
 				network.addAttribute("title", NodeL10n.getBase().getString("SecurityLevels.networkThreatLevelShort"));
-				network.addAttribute("class", node.securityLevels.getNetworkThreatLevel().toString().toLowerCase());
+				network.addAttribute("class", node.getSecurityLevels().getNetworkThreatLevel().toString().toLowerCase());
 
-				final HTMLNode physical = secLevels.addChild("a", "href", "/seclevels/", SecurityLevels.localisedName(node.securityLevels.getPhysicalThreatLevel()));
+				final HTMLNode physical = secLevels.addChild("a", "href", "/seclevels/", SecurityLevels.localisedName(node.getSecurityLevels().getPhysicalThreatLevel()));
 				physical.addAttribute("title", NodeL10n.getBase().getString("SecurityLevels.physicalThreatLevelShort"));
-				physical.addAttribute("class", node.securityLevels.getPhysicalThreatLevel().toString().toLowerCase());
+				physical.addAttribute("class", node.getSecurityLevels().getPhysicalThreatLevel().toString().toLowerCase());
 
 				statusBarDiv.addChild("div", "class", "separator", "\u00a0");
 
-				final int connectedPeers = node.peers.countConnectedPeers();
+				final int connectedPeers = node.getPeers().countConnectedPeers();
 				int darknetTotal = 0;
-				for(DarknetPeerNode n : node.peers.getDarknetPeers()) {
+				for(DarknetPeerNode n : node.getPeers().getDarknetPeers()) {
 					if(n == null) continue;
 					if(n.isDisabled()) continue;
 					darknetTotal++;
 				}
-				final int connectedDarknetPeers = node.peers.countConnectedDarknetPeers();
+				final int connectedDarknetPeers = node.getPeers().countConnectedDarknetPeers();
 				final int totalPeers = (node.getOpennet() == null) ? (darknetTotal > 0 ? darknetTotal : Integer.MAX_VALUE) : node.getOpennet().getNumberOfConnectedPeersToAimIncludingDarknet();
 				final double connectedRatio = ((double)connectedPeers) / (double)totalPeers;
 				final String additionalClass;
@@ -464,7 +464,7 @@ public final class PageMaker {
 						Math.min(100,Math.floor(100*connectedRatio)) + "%;" });
 
 				progressBar.addChild("div", new String[] { "class", "title" }, new String[] { "progress_fraction_finalized", NodeL10n.getBase().getString("StatusBar.connectedPeers", new String[]{"X", "Y"},
-						new String[]{Integer.toString(node.peers.countConnectedDarknetPeers()), Integer.toString(node.peers.countConnectedOpennetPeers())}) },
+						new String[]{Integer.toString(node.getPeers().countConnectedDarknetPeers()), Integer.toString(node.getPeers().countConnectedOpennetPeers())}) },
 						Integer.toString(connectedPeers) + ((totalPeers != Integer.MAX_VALUE) ? " / " + Integer.toString(totalPeers) : ""));
 			}
 		}

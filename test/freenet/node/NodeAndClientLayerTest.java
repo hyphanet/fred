@@ -70,7 +70,7 @@ public class NodeAndClientLayerTest extends NodeAndClientLayerTestBase {
         Node node = NodeStarter.createTestNode(params);
         node.start(false);
         HighLevelSimpleClient client = 
-                node.clientCore.makeClient((short)0, false, false);
+                node.getClientCore().makeClient((short)0, false, false);
         InsertContext ictx = client.getInsertContext(true);
         ictx.localRequestOnly = true;
         FreenetURI uri = 

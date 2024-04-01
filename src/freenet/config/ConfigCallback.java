@@ -4,6 +4,7 @@
 package freenet.config;
 
 public abstract class ConfigCallback<T> {
+
 	/**
 	 * Get the current, used value of the config variable.
 	 */

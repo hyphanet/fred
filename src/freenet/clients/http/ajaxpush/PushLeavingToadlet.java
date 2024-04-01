@@ -31,7 +31,7 @@ public class PushLeavingToadlet extends Toadlet {
 
 	public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		String requestId = req.getParam("requestId");
-		boolean deleted = ((SimpleToadletServer) ctx.getContainer()).pushDataManager.leaving(requestId);
+		boolean deleted = ((SimpleToadletServer) ctx.getContainer()).getPushDataManager().leaving(requestId);
 		if (logMINOR) {
 			Logger.minor(this, "Page leaving. requestid:" + requestId + " deleted:" + deleted);
 		}

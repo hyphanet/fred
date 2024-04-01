@@ -11,7 +11,7 @@ public abstract class FlacPacket extends CodecPacket {
 
 class FlacMetadataBlock extends FlacPacket {
 	enum BlockType {STREAMINFO, PADDING, APPLICATION, SEEKTABLE, VORBIS_COMMENT,
-		CUESHEET, PICTURE, UNKNOWN, INVALID};
+		CUESHEET, PICTURE, UNKNOWN, INVALID}
 	private FlacMetadataBlockHeader header = new FlacMetadataBlockHeader();
 
 	FlacMetadataBlock(int header, byte[] payload) {

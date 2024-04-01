@@ -11,7 +11,7 @@ import freenet.support.Logger;
 
 public class URISanitizer {
 
-	public enum Options { NOMETASTRINGS, SSKFORUSK };
+	public enum Options { NOMETASTRINGS, SSKFORUSK }
 
 	public static FreenetURI sanitizeURI(String key, Options... options) throws MalformedURLException {
 		return sanitizeURI(null, key, false, options);
