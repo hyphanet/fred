@@ -31,19 +31,19 @@ Move Library plugin to advanced plugins because new users tend to get lost with 
 🔥 Remove option that to load plugins from central server — thanks to Bombe! This was an unnecessary privacy risk, since we’re already bundling essential plugins with the installer.
 
 - Fixes:
+- Thanks to Bombe all our tests work again on Java 21!
 🐛 Fix JarClassLoader’s ability to work with ServiceLoader — thanks to Bombe!
 gzip: replace test workaround by fixing the output of the compressor — thanks to Bombe for the SingleOffsetReplacingOutputStream!
 fix: invalid max store size showed bytes with GiB suffix
-Apply Java 21 fixes.
-Fix bug limiting MTU to 1280
+Fix bug limiting MTU to 1280 where not needed
 
 - Bookmarks:
 Add high-impact-tasks to bookmarks
-Disable activelink for Index of Indexes (workaround, because it fails)
-bookmarks: Add Opennet SeedNodes stats site
-Reorder starting bookmarks: FFS → clean spider → Index of Indexes
-Re-order default software bookmarks by ease of use from fproxy
 Add generate media site to the default bookmarks
+Add Opennet SeedNodes stats site
+Reorder starting bookmarks: FFS → clean spider → Index of Indexes
+Reorder default software bookmarks by ease of use from fproxy
+Disable activelink for Index of Indexes (workaround, because it fails)
 
 - Optimize networking and transfer layer:
 break early when condition is met
