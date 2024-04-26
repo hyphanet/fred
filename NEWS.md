@@ -18,7 +18,7 @@ Remove time-dependence of compressor selection. This caused
 non-determinism for inserts and could cause keys to be
 non-reproducible.
 improve date object construction in CurrentTimeUTC.get()
-Support Schema hypha[net]
+Support Schema hypha[net] to simplify writing browser extensions that forward hypha://-links to Hyphanet.
 polish: show datastore size warning with GiB suffix
 Remove hash generation to native big integer to reduce dependencies. This had come in when merging an old pull request and added a new dependency without need.
 
