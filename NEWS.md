@@ -5,106 +5,94 @@ next:
 
 1498:
 
-- check that m3u-filter-tag starts with <script and test in own method
-- add m3u-player insertion test: is added at end of body
-- Remove duplication of value in documentation
-- Reduce recently failed and data not found wait times
-- also make accepting localhost in NodeIPPortDetector configurable
-- Add description of allowBindToLocalhost — thanks to s7r!
-- Provide static methods for simpler boolean config creation
-- Make allowBindToLocalhost configurable
-- allow 127.0.0.1 in bindTo
-- [CI] Update actions, fix actions cache
-- 🐛 Fix JarClassLoaderTest to work with newer Java versions
-- ♻️ add and use getters and setters for access to node fields
-- Java 21 fix: int used as return type but Integer required
-- break early when condition is met
-- Use switch statements
-- Use Math.min and Math.max
-- Remove unnecessary semicolons
-- Replace indexOf with .contains()
-- Change more string comparisons into .isEmpty() checks
-- Capitalize L in literal longs
-- Fix some spelling and typos
-- ✅ Add test for Global flag in GetFailed message
-- Apply sanity check for size
-- Add missing Global flag to GetFailed FCP message. Thanks to oishii!
-- Improve Log message for wrong minimum percentage
-- Remove time-dependence of compressor selection
-- Fix links to mailing lists and IRC in CONTRIBUTING.md — thanks to Juiceman!
-- Only link indexes via the index of indexes.
-- tabify CSSTokenizerFilter
-- Remove redundancy in CSS Filter
-- Add test that would catch too lax filtering
-- Add tests for ^= $= and *=
-- Fix: checked only the first char of the key part of CSS selectors
-- Add CSS test for ~ and simplify the implementation
-- Support CSS pseudo-element checked
-- Support CSS the attribute selectors ^= $= *=
-- Support CSS Combinators > + and ~
-- Extract helper methods for review by Bombe
-- Add test around zero for review by Bombe
-- Extend comment for review: last must match most frequently
-- Also remove the NativeBigInteger part of HashTest
-- Increase max transparent passthrough to 200MiB links in m3u-lists.
-- Add negative tests for the healing decision supplier
-- Add test for healing in Darknet mode
-- Remove no longer needed imports
-- Pass precise Suppliers to the HealingDecision instead of the node.
-- Extract HealingDecisionSupplier — thanks to Bombes review!
-- Do not divide 0-1 by MAX_VALUE — thanks to Bombe for the review!
-- Remove hash generation to native big integer to reduce dependencies.
-- Harmonize New wizard with old wizard
-- Increase default bandwidth to 160KiB upload, when detection fails
-- Check the HashCode before equals. This saves ~20% method-runtime.
-- Call the match function with all arguments directly.
-- Re-order or’ed MessageFilters so the most likely is checked first
-- Change string comparison into a .isEmpty() check
--  Remove security lowering kludge.
-- Fix bug limiting MTU to 1280
-- Add text further describing IPv6 limitations.
-- Disable activelink for Index of Indexes (workaround, because it fails)
-- Add high-impact-tasks to bookmarks
-- specialize healing to keys close to the node
-- remove special casing of freenet: keys in WelcomeToadlet, because FreenetURI supports that already
-- Update Debian package to Version 1498
-- Update KeepAlive to commit 86e47a101f26fd1d3be0437681a043aa4ae3f22c
-- restore checked exception in the FileLoggerHook.logString() method signature
-- improve method deprecation guidelines in MasterKeys and DatabaseKey
-- Replace OffsetDateTime with LocalDate in CurrentTimeUTC
-- improve date object construction in CurrentTimeUTC.get()
-- Support Schema hypha[net]
-- Update Sharesite to 0.5.1
-- Deprecated custom datetime handling class CurrentTimeUTC
-- ⚠ The Windows installer is currently not signed!
-- Shorten description of sharesite freesite for english
-- gzip: replace test workaround by fixing the output of the compressor — thanks to Bombe for the SingleOffsetReplacingOutputStream!
-- replace GregorianCalendar with java.time.OffsetDateTime in CurrentTimeUTC — thanks to Veniamin Fernandes
-- CSS: Support word-wrap: anywhere and CSS selector focus-within.
-- Move UPnP2 to normal plugins. It does not seem broken, but UPnP does
-- Move Library plugin to advanced plugins because new users tend to get lost with it
-- html-filter: allow summary and details html element. Thanks to naejadu
-- 💄 Add a bit of styling to the plugin list (for winterfacey) — thanks to Bombe
-- 🔥 Remove option that to load plugins from central server — thanks to Bombe!
-- fix: invalid max store size showed bytes with GiB suffix
-- polish: show datastore size warning with GiB suffix
-- Refine ClientRequestSelectorTest, PersistentJobRunnerImplTest, SplitFileFetcherStorageTest, and SplitFileInserterStorageTest — thanks to Veniamin Fernandes
-- Change deprecated jcenter() maven repo to mavenCentral() — thanks to Veniamin Fernandes
-- 🐛 Fix JarClassLoader’s ability to work with ServiceLoader — thanks to Bombe!
-- refactor the browser warning wizard page
-- fix the flag size of nepal — thanks to Percept0r@NYZkOs7eQ…!
-- Switch swiss flag to civil and state ensign — thanks to Percept0r@NY
-- bookmarks: Add Opennet SeedNodes stats site
-- Reorder starting bookmarks: FFS → clean spider → Index of Indexes
-- Re-order default software bookmarks by ease of use from fproxy
-- Add generate media site to the default bookmarks
-- Show the noderef in basic-mode: it is now robust enough
-- Added tests for PebbleUtils — thanks to Bombe!
-- 🐛 Fix NPE when subsets are not initialized — thanks to Bombe
-- reduce logging for too many excluded sub-arrays thanks to Hiina
-- disable setting for new-load-management (NLM broke nodes)
-- add utility to disable a config option, thanks to Bombe
-- merge debian package as default build action thanks to DC*/desyncr! This resolves one of our high impact tasks.
+- misc:
+add m3u-player insertion test: is added at end of body
+[CI] Update actions, fix actions cache
+🐛 Fix JarClassLoaderTest to work with newer Java versions
+♻️ add and use getters and setters for access to node fields
+Increase max transparent passthrough to 200MiB links in m3u-lists.
+Remove time-dependence of compressor selection. This caused
+non-determinism for inserts and could cause keys to be
+non-reproducible.
+Update Debian package to Version 1498
+improve date object construction in CurrentTimeUTC.get()
+Support Schema hypha[net]
+polish: show datastore size warning with GiB suffix
+merge debian package as default build action thanks to DC*/desyncr! This resolves one of our high impact tasks.
+Remove hash generation to native big integer to reduce dependencies. This had come in when merging an old pull request and added a new dependency without need.
+
+- Plugins:
+Update KeepAlive to commit 86e47a101f26fd1d3be0437681a043aa4ae3f22c
+Update Sharesite to 0.5.1
+Move UPnP2 to normal plugins. It does not seem broken, but UPnP does
+Move Library plugin to advanced plugins because new users tend to get lost with it
+💄 Add a bit of styling to the plugin list (for winterfacey) — thanks to Bombe
+🔥 Remove option that to load plugins from central server — thanks to Bombe!
+
+- Fixes:
+🐛 Fix JarClassLoader’s ability to work with ServiceLoader — thanks to Bombe!
+gzip: replace test workaround by fixing the output of the compressor — thanks to Bombe for the SingleOffsetReplacingOutputStream!
+fix: invalid max store size showed bytes with GiB suffix
+Apply Java 21 fixes.
+Fix bug limiting MTU to 1280
+
+- Bookmarks:
+Add high-impact-tasks to bookmarks
+Disable activelink for Index of Indexes (workaround, because it fails)
+bookmarks: Add Opennet SeedNodes stats site
+Reorder starting bookmarks: FFS → clean spider → Index of Indexes
+Re-order default software bookmarks by ease of use from fproxy
+Add generate media site to the default bookmarks
+
+
+- Optimize networking and transfer layer:
+break early when condition is met
+Check the HashCode before equals. This saves ~20% method-runtime.
+Re-order or’ed MessageFilters so the most likely is checked first
+specialize healing to keys close to the node
+fix healing decision: do not divide 0-1 by MAX_VALUE — thanks to Bombe for the review!
+
+- Constants:
+Reduce recently failed and data not found wait times
+Show the noderef in basic-mode: it is now robust enough
+
+- Configuration
+accepting localhost in NodeIPPortDetector and allowBindToLocalhost configurable — thanks to s7r!
+Provide static methods for simpler boolean config creation
+Increase default bandwidth to 160KiB upload, when detection fails
+disable setting for new-load-management (NLM broke nodes)
+add utility to disable a config option, thanks to Bombe
+
+- Filters:
+CSS: Add test that would catch too lax filtering
+Add tests for ^= $= and *=
+Fix: checked only the first char of the key part of CSS selectors
+Add CSS test for ~ and simplify the implementation
+Support CSS pseudo-element checked
+Support CSS the attribute selectors ^= $= *=
+Support CSS Combinators > + and ~
+CSS: Support word-wrap: anywhere and CSS selector focus-within.
+html-filter: allow summary and details html element. Thanks to naejadu
+
+
+- Polish:
+Replace indexOf with .contains()
+Change more string comparisons into .isEmpty() checks
+Capitalize L in literal longs
+Add missing Global flag to GetFailed FCP message. Thanks to oishii and Bombe!
+Fix links to mailing lists and IRC in CONTRIBUTING.md — thanks to Juiceman!
+Deprecated custom datetime handling class CurrentTimeUTC
+replace GregorianCalendar with java.time.OffsetDateTime in CurrentTimeUTC — thanks to Veniamin Fernandes
+Refine ClientRequestSelectorTest, PersistentJobRunnerImplTest, SplitFileFetcherStorageTest, and SplitFileInserterStorageTest — thanks to Veniamin Fernandes
+Change deprecated jcenter() maven repo to mavenCentral() — thanks to Veniamin Fernandes
+Added tests for PebbleUtils — thanks to Bombe!
+🐛 Fix NPE when subsets are not initialized — thanks to Bombe
+reduce logging for too many excluded sub-arrays thanks to Hiina
+fix the flag size of nepal — thanks to Percept0r@NYZkOs7eQ…!
+Switch swiss flag to civil and state ensign — thanks to Percept0r@NY
+
+Also thanks to Bombe for many careful reviews!
+
 
 
 1497:
