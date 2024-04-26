@@ -64,15 +64,13 @@ disable setting for new-load-management (NLM broke nodes)
 add utility to disable a config option, thanks to Bombe
 
 - Filters:
-CSS: Add test that would catch too lax filtering
-Add tests for ^= $= and *=
-Fix: checked only the first char of the key part of CSS selectors
-Add CSS test for ~ and simplify the implementation
-Support CSS pseudo-element checked
-Support CSS the attribute selectors ^= $= *=
-Support CSS Combinators > + and ~
+CSS: Fix: checked only the first char of the key part of CSS selectors, Add test that would catch too lax filtering.
+CSS: Support pseudo-element checked. This enables limited interactivity via CSS.
+CSS: Support the attribute selectors ^= $= *=, Add tests.
+CSS: Support Combinators > + and ~, add test for ~ and simplify the implementation
 CSS: Support word-wrap: anywhere and CSS selector focus-within.
-html-filter: allow summary and details html element. Thanks to naejadu
+HTML: allow summary and details html element. Thanks to naejadu
+HTML: accept <meta name="Viewport" ...>, thanks to torusrxxx
 
 - Polish:
 Replace indexOf with .contains()
