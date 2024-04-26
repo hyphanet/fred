@@ -31,7 +31,7 @@ Move Library plugin to advanced plugins because new users tend to get lost with 
 🔥 Remove option that to load plugins from central server — thanks to Bombe! This was an unnecessary privacy risk, since we’re already bundling essential plugins with the installer.
 
 - Fixes:
-- Thanks to Bombe all our tests work again on Java 21!
+Thanks to Bombe all our tests work again on Java 21!
 🐛 Fix JarClassLoader’s ability to work with ServiceLoader — thanks to Bombe!
 gzip: replace test workaround by fixing the output of the compressor — thanks to Bombe for the SingleOffsetReplacingOutputStream!
 fix: invalid max store size showed bytes with GiB suffix
