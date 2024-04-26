@@ -5,6 +5,9 @@ next:
 
 1498:
 
+- high impact tasks:
+merge debian package as default build action thanks to DC*/desyncr! This resolves one of our high impact tasks.
+
 - misc:
 add m3u-player insertion test: is added at end of body
 [CI] Update actions, fix actions cache
@@ -14,11 +17,9 @@ Increase max transparent passthrough to 200MiB links in m3u-lists.
 Remove time-dependence of compressor selection. This caused
 non-determinism for inserts and could cause keys to be
 non-reproducible.
-Update Debian package to Version 1498
 improve date object construction in CurrentTimeUTC.get()
 Support Schema hypha[net]
 polish: show datastore size warning with GiB suffix
-merge debian package as default build action thanks to DC*/desyncr! This resolves one of our high impact tasks.
 Remove hash generation to native big integer to reduce dependencies. This had come in when merging an old pull request and added a new dependency without need.
 
 - Plugins:
@@ -27,7 +28,7 @@ Update Sharesite to 0.5.1
 Move UPnP2 to normal plugins. It does not seem broken, but UPnP does
 Move Library plugin to advanced plugins because new users tend to get lost with it
 💄 Add a bit of styling to the plugin list (for winterfacey) — thanks to Bombe
-🔥 Remove option that to load plugins from central server — thanks to Bombe!
+🔥 Remove option that to load plugins from central server — thanks to Bombe! This was an unnecessary privacy risk, since we’re already bundling essential plugins with the installer.
 
 - Fixes:
 🐛 Fix JarClassLoader’s ability to work with ServiceLoader — thanks to Bombe!
@@ -43,7 +44,6 @@ bookmarks: Add Opennet SeedNodes stats site
 Reorder starting bookmarks: FFS → clean spider → Index of Indexes
 Re-order default software bookmarks by ease of use from fproxy
 Add generate media site to the default bookmarks
-
 
 - Optimize networking and transfer layer:
 break early when condition is met
@@ -74,7 +74,6 @@ Support CSS Combinators > + and ~
 CSS: Support word-wrap: anywhere and CSS selector focus-within.
 html-filter: allow summary and details html element. Thanks to naejadu
 
-
 - Polish:
 Replace indexOf with .contains()
 Change more string comparisons into .isEmpty() checks
@@ -92,7 +91,6 @@ fix the flag size of nepal — thanks to Percept0r@NYZkOs7eQ…!
 Switch swiss flag to civil and state ensign — thanks to Percept0r@NY
 
 Also thanks to Bombe for many careful reviews!
-
 
 
 1497:
