@@ -12,6 +12,7 @@ providing an official Debian package. Additionally it optimizes the
 networking and data transfer core and provides many improvements for
 website authors and user experience.
 
+
 Starting with this release, Freenet / Hyphanet has an official Debian
 package built automatically via github actions. This was the most
 important [high-impact-task][] and the last release blocker of version
@@ -29,6 +30,7 @@ other applications.
 Another step towards this is accepting the Schema hypha[net] to
 simplify writing browser extensions that forward hypha:-links to
 Hyphanet.
+
 
 The networking layer was optimized significantly. Searching packet
 types is often stopped early and common or cheaper checks are done
@@ -50,6 +52,7 @@ close to the nodes location — and it reduces the network load of
 healing, because the specialized healing inserts need fewer hops to
 reach the optimal storage location in the network.
 
+
 In addition to these changes deep down, there are a number of directly
 visible improvements.
 
@@ -64,6 +67,7 @@ to download plugins from the clearnet and by adding better styling.
 Downloading from the clearnet was an unnecessary privacy risk since
 we’ve been bundling essential plugins with the installer for a few
 years now.
+
 
 The noderef for friend-to-friend connections is shown in simple mode
 again, because it is robust enough with the changes in recent years.
@@ -80,7 +84,8 @@ When bandwidth detection fails, the upload bandwidth now defaults to
 testing setup which could still be active in old nodes, but it would
 break connectivity nowadays.
 
-The default bookmarks now include the Opennet SeedNodes statistics,
+
+The default bookmarks include the Opennet SeedNodes statistics,
 the generate media site to create decentralized streaming sites, and
 the high-impact-tasks. The bookmarks are also re-ordered to be a
 better match for newcomers. Starting category: first steps, clean
@@ -104,6 +109,7 @@ segments of up to 200MiB.
 And using `-1` as version in a USK now properly finds version `0`, if
 this is the only existing version.
 
+
 There were a number of Java 21 fixes, including all our tests (thanks
 to Bombe!), and improvement to the github actions (thanks to
 AHOHNMYC).
@@ -120,6 +126,7 @@ Time-dependence of compressor selection was removed. This caused
 non-determinism for inserts and could cause keys to be
 non-reproducible on systems with faster or slower network.
 
+
 And finally the new [exe signing workflow][] we built to fulfill the
 requirements of SignPath, our new windows installer signing provider
 for the upcoming releases, runs the [verify-build script][] on every
@@ -132,6 +139,7 @@ because the jar MANIFEST defines among other info the exact java
 version used to compile it, and the java version available differs by
 distribution and time, so it would get harder over time to verify the
 build.
+
 
 A special thanks goes to Bombe for many careful reviews!
 
