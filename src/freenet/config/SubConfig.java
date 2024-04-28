@@ -152,6 +152,21 @@ public class SubConfig implements Comparable<SubConfig> {
 		register(new StringArrOption(this, optionName, defaultValue, sortOrder, expert, forceWrite, shortDesc, longDesc, cb));
 	}
 
+	/**
+	 * Registers an option that cannot be used.
+	 * <p>
+	 * It is not listed, it is not exported, it is not persisted, it doesn’t
+	 * have a value, you cannot change the value. It only exists so that
+	 * Fred doesn’t log an error message if this particular option is used in
+	 * a config file.
+	 *
+	 * @param optionName The name of the option to ignore
+	 * @see PersistentConfig#finishedInit()
+	 */
+	public void registerIgnoredOption(String optionName) {
+		config.onRegister(this, new IgnoredOption(optionName));
+	}
+
 	public int getInt(String optionName) {
 		IntOption o;
 		synchronized(this) {
@@ -382,6 +397,33 @@ public class SubConfig implements Comparable<SubConfig> {
 			if(fs == null) return null;
 			return fs.get(prefix + SimpleFieldSet.MULTI_LEVEL_CHAR + name);
 		} else return null;
+	}
+
+	private class IgnoredOption extends Option<Void> {
+
+		public IgnoredOption(String optionName) {
+			super(SubConfig.this, optionName, new ConfigCallback<Void>() {
+				@Override
+				public Void get() {
+					return null;
+				}
+
+				@Override
+				public void set(Void value) {
+				}
+			}, -1, false, false, null, null, null);
+		}
+
+		@Override
+		protected Void parseString(String val) {
+			return null;
+		}
+
+		@Override
+		protected String toString(Void val) {
+			return null;
+		}
+
 	}
 
 }

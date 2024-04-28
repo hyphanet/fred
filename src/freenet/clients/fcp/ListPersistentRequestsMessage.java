@@ -84,8 +84,8 @@ public class ListPersistentRequestsMessage extends FCPMessage {
 			return false;
 		}
 		
-	};
-	
+	}
+
 	public static abstract class TransientListJob extends ListJob implements Runnable {
 
 		final ClientContext context;
@@ -138,13 +138,13 @@ public class ListPersistentRequestsMessage extends FCPMessage {
 		
 		PersistentRequestClient rebootClient = handler.getRebootClient();
 
-		TransientListJob job = new TransientListJob(rebootClient, handler.outputHandler, node.clientCore.clientContext, identifier) {
+		TransientListJob job = new TransientListJob(rebootClient, handler.getOutputHandler(), node.getClientCore().getClientContext(), identifier) {
 
 			@Override
 			void complete(ClientContext context) {
 				
 				if(handler.getRebootClient().watchGlobal) {
-					PersistentRequestClient globalRebootClient = handler.server.globalRebootClient;
+					PersistentRequestClient globalRebootClient = handler.getServer().getGlobalRebootClient();
 
 					TransientListJob job = new TransientListJob(globalRebootClient, outputHandler, context, listRequestIdentifier) {
 
@@ -173,7 +173,7 @@ public class ListPersistentRequestsMessage extends FCPMessage {
                         			@Override
                         			void complete(ClientContext context) {
                         				if(handler.getRebootClient().watchGlobal) {
-                        					PersistentRequestClient globalForeverClient = handler.server.globalForeverClient;
+                        					PersistentRequestClient globalForeverClient = handler.getServer().getGlobalForeverClient();
                         					PersistentListJob job = new PersistentListJob(globalForeverClient, outputHandler, context, listRequestIdentifier) {
 
                         						@Override

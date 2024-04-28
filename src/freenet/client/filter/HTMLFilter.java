@@ -242,7 +242,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 							if(textAllowed) {
 								saveText(b, currentTag, w, this);
 							} else {
-								if(!b.toString().trim().equals(""))
+								if(!b.toString().trim().isEmpty())
 									throwFilterException(l10n("textBeforeHTML"));
 							}
 							break;
@@ -294,7 +294,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 								if(textAllowed) {
 									saveText(b, currentTag, w, this);
 								} else {
-									if(!b.toString().trim().equals(""))
+									if(!b.toString().trim().isEmpty())
 										throwFilterException(l10n("textBeforeHTML"));
 								}
 								b.setLength(0);
@@ -316,7 +316,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 								if(textAllowed) {
 									saveText(b, currentTag, w, this);
 								} else {
-									if(!b.toString().trim().equals(""))
+									if(!b.toString().trim().isEmpty())
 										throwFilterException(l10n("textBeforeHTML"));
 								}
 
@@ -454,7 +454,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 								if(textAllowed) {
 									saveText(b, currentTag, w, this);
 								} else {
-									if(!b.toString().trim().equals(""))
+									if(!b.toString().trim().isEmpty())
 										throwFilterException(l10n("textBeforeHTML"));
 								}
 								balt.setLength(0);
@@ -993,7 +993,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				"article",
 				"section",
 				"hgroup",
-				"wbr"};
+				"wbr",
+				"summary",
+				"details"};
 		for (String x: group2)
 			allowedTagsVerifiers.put(
 				x,
@@ -3004,6 +3006,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					} else if (name.equalsIgnoreCase("Description")) {
 						hn.put("name", name);
 						hn.put("content", content);
+					} else if (name.equalsIgnoreCase("Viewport")) {
+						hn.put("name", name);
+						hn.put("content", content);
 					}
 				} else if ((http_equiv != null) && (name == null)) {
 					if (http_equiv.equalsIgnoreCase("Expires")) {
@@ -3064,7 +3069,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 							throwFilterException(l10n("invalidMetaType"));
 					} else if (
 						http_equiv.equalsIgnoreCase("Content-Language")) {
-						if(content.matches("((?>[a-zA-Z0-9]*)(?>-[A-Za-z0-9]*)*(?>,\\s*)?)*") && (!content.trim().equals(""))) {
+						if(content.matches("((?>[a-zA-Z0-9]*)(?>-[A-Za-z0-9]*)*(?>,\\s*)?)*") && (!content.trim().isEmpty())) {
 							hn.put("http-equiv", "Content-Language");
 							hn.put("content", content);
 						}

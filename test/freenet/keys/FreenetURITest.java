@@ -4,6 +4,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 import java.net.MalformedURLException;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 import org.junit.Test;
 
@@ -12,6 +14,7 @@ public class FreenetURITest {
 	private static final String WANNA_USK_1 = "USK@5hH~39FtjA7A9~VXWtBKI~prUDTuJZURudDG0xFn3KA,GDgRGt5f6xqbmo-WraQtU54x4H~871Sho9Hz6hC-0RA,AQACAAE/Search/17/index_d51.xml";
 	private static final String WANNA_SSK_1 = "SSK@5hH~39FtjA7A9~VXWtBKI~prUDTuJZURudDG0xFn3KA,GDgRGt5f6xqbmo-WraQtU54x4H~871Sho9Hz6hC-0RA,AQACAAE/Search-17/index_d51.xml";
 	private static final String WANNA_CHK_1 = "CHK@DTCDUmnkKFlrJi9UlDDVqXlktsIXvAJ~ZTseyx5cAZs,PmA2rLgWZKVyMXxSn-ZihSskPYDTY19uhrMwqDV-~Sk,AAICAAI/index_d51.xml";
+	private static final String KSK_EXAMPLE = "KSK@gpl.txt";
 
 	@Test
 	public void testSskForUSK() throws MalformedURLException {
@@ -135,5 +138,28 @@ public class FreenetURITest {
 	public void internedUskIsPreserved() throws MalformedURLException {
 		FreenetURI uri1 = new FreenetURI(WANNA_USK_1);
 		assertEquals(uri1.toString(), uri1.intern().toString());
+	}
+
+	@Test
+	public void addedValidSchemaPrefixesAreIgnored() throws MalformedURLException {
+		for (String prefix : Arrays.asList(
+				"freenet",
+				"web+freenet",
+				"ext+freenet",
+				"hypha",
+				"hyphanet",
+				"web+hypha",
+				"web+hyphanet",
+				"ext+hypha",
+				"ext+hyphanet")) {
+			FreenetURI uri = new FreenetURI(prefix + ":" + WANNA_USK_1);
+			assertEquals(uri.toString(), WANNA_USK_1);
+			uri = new FreenetURI(prefix + ":" + WANNA_SSK_1);
+			assertEquals(uri.toString(), WANNA_SSK_1);
+			uri = new FreenetURI(prefix + ":" + WANNA_CHK_1);
+			assertEquals(uri.toString(), WANNA_CHK_1);
+			uri = new FreenetURI(prefix + ":" + KSK_EXAMPLE);
+			assertEquals(uri.toString(), KSK_EXAMPLE);
+		}
 	}
 }

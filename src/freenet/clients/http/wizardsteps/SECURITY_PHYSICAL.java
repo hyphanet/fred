@@ -82,7 +82,7 @@ public class SECURITY_PHYSICAL implements Step {
 			input.addChild("#", ": ");
 			NodeL10n.getBase().addL10nSubstitution(input, "SecurityLevels.physicalThreatLevel.choice."+level, new String[] { "bold" }, new HTMLNode[] { HTMLNode.STRONG });
 			if(level == SecurityLevels.PHYSICAL_THREAT_LEVEL.HIGH &&
-			        core.node.securityLevels.getPhysicalThreatLevel() != level) {
+			        core.getNode().getSecurityLevels().getPhysicalThreatLevel() != level) {
 				// Add password form on high security if not already at high security.
 				HTMLNode p = div.addChild("p");
 				p.addChild("label", "for", "passwordBox", WizardL10n.l10nSec("setPasswordLabel")+":");
@@ -178,10 +178,10 @@ public class SECURITY_PHYSICAL implements Step {
 			return true;
 		} else if (error.equals("corrupt")) {
 			//Password file corrupt
-			SecurityLevelsToadlet.sendPasswordFileCorruptedPageInner(helper, core.node.getMasterPasswordFile().getPath());
+			SecurityLevelsToadlet.sendPasswordFileCorruptedPageInner(helper, core.getNode().getMasterPasswordFile().getPath());
 			return true;
 		} else if (error.equals("delete")) {
-			SecurityLevelsToadlet.sendCantDeleteMasterKeysFileInner(helper, core.node.getMasterPasswordFile().getPath(), newThreatLevel.name());
+			SecurityLevelsToadlet.sendCantDeleteMasterKeysFileInner(helper, core.getNode().getMasterPasswordFile().getPath(), newThreatLevel.name());
 			return true;
 		}
 
@@ -190,7 +190,7 @@ public class SECURITY_PHYSICAL implements Step {
 	}
 
 	public SecurityLevels.PHYSICAL_THREAT_LEVEL getCurrentLevel() {
-		return core.node.securityLevels.getPhysicalThreatLevel();
+		return core.getNode().getSecurityLevels().getPhysicalThreatLevel();
 	}
 
 	@Override
@@ -202,7 +202,7 @@ public class SECURITY_PHYSICAL implements Step {
 		final boolean passwordsDoNotMatch = !pass.equals(confirmPass);
 
 		String physicalThreatLevel = request.getPartAsStringFailsafe("security-levels.physicalThreatLevel", 128);
-		SecurityLevels.PHYSICAL_THREAT_LEVEL oldThreatLevel = core.node.securityLevels.getPhysicalThreatLevel();
+		SecurityLevels.PHYSICAL_THREAT_LEVEL oldThreatLevel = core.getNode().getSecurityLevels().getPhysicalThreatLevel();
 		SecurityLevels.PHYSICAL_THREAT_LEVEL newThreatLevel = SecurityLevels.parsePhysicalThreatLevel(physicalThreatLevel);
 		if (FirstTimeWizardToadlet.shouldLogMinor()) {
 			Logger.minor(this, "Old threat level: " + oldThreatLevel + " new threat level: " + newThreatLevel);
@@ -226,9 +226,9 @@ public class SECURITY_PHYSICAL implements Step {
 				try {
 					if(oldThreatLevel == SecurityLevels.PHYSICAL_THREAT_LEVEL.NORMAL ||
 					        oldThreatLevel == SecurityLevels.PHYSICAL_THREAT_LEVEL.LOW) {
-						core.node.changeMasterPassword("", pass, true);
+						core.getNode().changeMasterPassword("", pass, true);
 					} else {
-						core.node.setMasterPassword(pass, true);
+						core.getNode().setMasterPassword(pass, true);
 					}
 				} catch (Node.AlreadySetPasswordException e) {
 					// Do nothing, already set a password.
@@ -245,12 +245,12 @@ public class SECURITY_PHYSICAL implements Step {
 			if (passwordIsBlank) {
 				//Prompt for the old password, which is needed to decrypt
 				return promptPassword(newThreatLevel, PASSWORD_PROMPT.DECRYPT_BLANK);
-			} else if (core.node.getMasterPasswordFile().exists()) {
+			} else if (core.getNode().getMasterPasswordFile().exists()) {
 				//Old password for decryption specified.
 				try {
-					core.node.changeMasterPassword(pass, "", true);
+					core.getNode().changeMasterPassword(pass, "", true);
 				} catch (IOException e) {
-					if(!core.node.getMasterPasswordFile().exists()) {
+					if(!core.getNode().getMasterPasswordFile().exists()) {
 						// Ok.
 						System.out.println("Master password file no longer exists, assuming this is deliberate");
 					} else {
@@ -271,7 +271,7 @@ public class SECURITY_PHYSICAL implements Step {
 		//Maximum threat level: remove master keys file.
 		if (newThreatLevel == SecurityLevels.PHYSICAL_THREAT_LEVEL.MAXIMUM) {
 			try {
-				core.node.killMasterKeysFile();
+				core.getNode().killMasterKeysFile();
 			} catch (IOException e) {
 				return FirstTimeWizardToadlet.WIZARD_STEP.SECURITY_PHYSICAL+
 				        "&error=delete&newThreatLevel="+newThreatLevel.name();
@@ -297,15 +297,15 @@ public class SECURITY_PHYSICAL implements Step {
 	}
 
 	public void setThreatLevel(SecurityLevels.PHYSICAL_THREAT_LEVEL newThreatLevel, SecurityLevels.PHYSICAL_THREAT_LEVEL oldThreatLevel) throws IOException {
-		core.node.securityLevels.setThreatLevel(newThreatLevel);
+		core.getNode().getSecurityLevels().setThreatLevel(newThreatLevel);
 		core.storeConfig();
 		try {
-			core.node.lateSetupDatabase(null);
+			core.getNode().lateSetupDatabase(null);
 		} catch (MasterKeysWrongPasswordException e) {
 			// Ignore, impossible???
 			System.err.println("Failed starting up database while switching physical security level to "+newThreatLevel+" from "+oldThreatLevel+" : wrong password - this is impossible, it should have been handled by the other cases, suggest you remove master.keys");
 		} catch (MasterKeysFileSizeException e) {
-			System.err.println("Failed starting up database while switching physical security level to "+newThreatLevel+" from "+oldThreatLevel+" : "+core.node.getMasterPasswordFile()+" is too " + e.sizeToString());
+			System.err.println("Failed starting up database while switching physical security level to "+newThreatLevel+" from "+oldThreatLevel+" : "+core.getNode().getMasterPasswordFile()+" is too " + e.sizeToString());
 		}
 	}
 

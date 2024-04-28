@@ -11,9 +11,9 @@ start with:
   List only bugs filed against this repository by selecting "Freenet" in the
   "Project" drop-down in the upper right. Do any of these look interesting?
 * Check the [projects](https://wiki.freenetproject.org/Projects) page.
-* Ask the [development mailing list](https://emu.freenetproject.org/cgi-bin/mailman/listinfo/devl)
-  or join us in [IRC](https://freenetproject.org/irc.html) - `#freenet` on
-  `chat.freenode.net`.
+* Ask the [development mailing list](https://freenetproject.org/pages/help.html#mailing-lists)
+  or join us in [IRC](https://web.libera.chat/?nick=Rabbit|?#freenet) - `#freenet` on
+  `irc.libera.chat`.
 
 # Code review
 
@@ -23,8 +23,7 @@ against the `next` branch. It's usually a good idea to work on a topic / feature
 branch that starts at `next` and is specific to the pull request. Once you have
 submitted a pull request, people will start reviewing it and providing feedback.
 If you don't hear anything for a while feel free to bring it to the attention of
-people in [IRC](https://freenetproject.org/irc.html) or the [mailing
-list](https://emu.freenetproject.org/cgi-bin/mailman/listinfo/devl) - we may
+people in [IRC](https://www.hyphanet.org/pages/help.html#chat-with-us) or the [mailing list](https://www.hyphanet.org/pages/help.html#mailing-lists) - we may
 have missed it.
 
 Code review helps improve code quality, ensures that multiple people know the
@@ -37,8 +36,8 @@ producing software that is readable, correct, and sufficiently efficient.
 Breaking API creates an immense amount of work for developers of other projects,
 so it is *not* something to be done lightly. If you feel you must make a change
 that breaks API and cannot maintain backwards compatibility, please first raise
-the issue with the community - the [mailing list](https://emu.freenetproject.org/cgi-bin/mailman/listinfo/devl)
-and [IRC](https://freenetproject.org/irc.html) are good places to contact us.
+the issue with the community - the [mailing list](https://www.hyphanet.org/pages/help.html#mailing-lists)
+and [IRC](https://www.hyphanet.org/pages/help.html#chat-with-us) are good places to contact us.
 
 Changing dependencies must be accompanied with changes in every
 installer and updates to `dependencies.properties` and existing

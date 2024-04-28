@@ -85,13 +85,15 @@ public class FileInsertWizardToadlet extends Toadlet implements LinkEnabledCallb
 		HTMLNode insertBox = infobox.outer;
 		HTMLNode insertContent = infobox.content;
 		insertContent.addChild("p", l10n("insertIntro"));
-		NETWORK_THREAT_LEVEL seclevel = core.node.securityLevels.getNetworkThreatLevel();
+		NETWORK_THREAT_LEVEL seclevel = core.getNode().getSecurityLevels().getNetworkThreatLevel();
 		HTMLNode insertForm = ctx.addFormChild(insertContent, QueueToadlet.PATH_UPLOADS, "queueInsertForm");
+		boolean preselectSsk = (!rememberedLastTime && seclevel != NETWORK_THREAT_LEVEL.LOW)
+				|| (rememberedLastTime && !wasCanonicalLastTime)
+				|| seclevel == NETWORK_THREAT_LEVEL.MAXIMUM;
 		HTMLNode input = insertForm.addChild("input",
 		        new String[] { "type", "name", "value", "id" },
 		        new String[] { "radio", "keytype", "CHK", "keytypeChk" });
-		if ((!rememberedLastTime && seclevel == NETWORK_THREAT_LEVEL.LOW) ||
-		        (rememberedLastTime && wasCanonicalLastTime && seclevel != NETWORK_THREAT_LEVEL.MAXIMUM)) {
+		if (!preselectSsk) {
 			input.addAttribute("checked", "checked");
 		}
 		insertForm.addChild("label",
@@ -105,7 +107,7 @@ public class FileInsertWizardToadlet extends Toadlet implements LinkEnabledCallb
 		input = insertForm.addChild("input",
 		        new String[] { "type", "name", "value", "id" },
 		        new String[] { "radio", "keytype", "SSK", "keytypeSsk" });
-		if (seclevel == NETWORK_THREAT_LEVEL.MAXIMUM || (rememberedLastTime && !wasCanonicalLastTime)) {
+		if (preselectSsk) {
 			input.addAttribute("checked", "checked");
 		}
 		insertForm.addChild("label",

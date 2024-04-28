@@ -63,7 +63,7 @@ public class NodeCryptoConfig {
 			public Integer get() {
 				synchronized(NodeCryptoConfig.class) {
 					if(crypto != null)
-						portNumber = crypto.portNumber;
+						portNumber = crypto.getPortNumber();
 					return portNumber;
 				}
 			}
@@ -240,18 +240,6 @@ public class NodeCryptoConfig {
 		});
 		
 		paddDataPackets = config.getBoolean("paddDataPackets");
-		securityLevels.addNetworkThreatLevelListener(new SecurityLevelListener<NETWORK_THREAT_LEVEL>() {
-
-			@Override
-			public void onChange(NETWORK_THREAT_LEVEL oldLevel, NETWORK_THREAT_LEVEL newLevel) {
-				// Might be useful for nodes which are running with a tight bandwidth quota to minimize the overhead,
-				// so turn it off for LOW. Otherwise is sensible.
-				if(newLevel == NETWORK_THREAT_LEVEL.LOW)
-					paddDataPackets = false;
-				if(oldLevel == NETWORK_THREAT_LEVEL.LOW)
-					paddDataPackets = true;
-			}
-		});
 	}
 
 	/** The number of config options i.e. the amount to increment sortOrder by */

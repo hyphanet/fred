@@ -26,11 +26,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Enumeration;
+import java.util.NoSuchElementException;
 import java.util.jar.Attributes;
+import java.util.jar.Attributes.Name;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
-import java.util.jar.Attributes.Name;
 import java.util.zip.ZipEntry;
 
 import freenet.support.io.FileUtil;
@@ -170,7 +172,43 @@ public class JarClassLoader extends ClassLoader implements Closeable {
 		}
 		return null;
 	}
-	
+
+	@Override
+	protected Enumeration<URL> findResources(String name) {
+		return new Enumeration<URL>() {
+			private final Enumeration<JarEntry> jarFileEntries = tempJarFile.entries();
+			private URL nextElement = null;
+
+			@Override
+			public boolean hasMoreElements() {
+				if (nextElement != null) {
+					return true;
+				}
+				while ((nextElement == null) && jarFileEntries.hasMoreElements()) {
+					JarEntry jarEntry = jarFileEntries.nextElement();
+					if (jarEntry.getName().equals(name)) {
+						try {
+							nextElement = new URL("jar:" + new File(tempJarFile.getName()).toURI().toURL() + "!/" + name);
+						} catch (MalformedURLException e) {
+							/* ignore. */
+						}
+					}
+				}
+				return nextElement != null;
+			}
+
+			@Override
+			public URL nextElement() {
+				if (!hasMoreElements()) {
+					throw new NoSuchElementException();
+				}
+				URL elementToReturn = nextElement;
+				nextElement = null;
+				return elementToReturn;
+			}
+		};
+	}
+
 	/**
 	 * {@inheritDoc}
 	 * <p>

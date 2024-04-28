@@ -66,7 +66,10 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			String url = ExternalLinkToadlet.escape(HTMLEncoder.encode(l10n("portForwardHelpURL")));
 			boolean maybeForwarded = true;
 			for(int portNotForwarded: portsNotForwarded) {
-				if(portNotForwarded < 0) maybeForwarded = false;
+				if (portNotForwarded < 0) {
+					maybeForwarded = false;
+					break;
+				}
 			}
 			String keySuffix = maybeForwarded ? "MaybeForwarded" : "NotForwarded";
 			if(portsNotForwarded.length == 1) {
@@ -112,7 +115,10 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			prefix += " ";
 			boolean maybeForwarded = true;
 			for(int portNotForwarded: portsNotForwarded) {
-				if(portNotForwarded < 0) maybeForwarded = false;
+				if (portNotForwarded < 0) {
+					maybeForwarded = false;
+					break;
+				}
 			}
 			String keySuffix = maybeForwarded ? "MaybeForwarded" : "NotForwarded";
 			if(portsNotForwarded.length == 1) {
@@ -131,7 +137,10 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			String url = l10n("portForwardHelpURL");
 			boolean maybeForwarded = true;
 			for(int portNotForwarded: portsNotForwarded) {
-				if(portNotForwarded < 0) maybeForwarded = false;
+				if (portNotForwarded < 0) {
+					maybeForwarded = false;
+					break;
+				}
 			}
 			String keySuffix = maybeForwarded ? "MaybeForwarded" : "NotForwarded";
 			if(portsNotForwarded.length == 1) {
@@ -310,8 +319,8 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 	 */
 	public int[] getUDPPortsNotForwarded() {
 		OpennetManager om = node.getOpennet();
-		Status darknetStatus = (node.peers.anyDarknetPeers() ? node.darknetCrypto.getDetectedConnectivityStatus() : AddressTracker.Status.DONT_KNOW);
-		Status opennetStatus = om == null ? Status.DONT_KNOW : om.crypto.getDetectedConnectivityStatus();
+		Status darknetStatus = (node.getPeers().anyDarknetPeers() ? node.getDarknetCrypto().getDetectedConnectivityStatus() : AddressTracker.Status.DONT_KNOW);
+		Status opennetStatus = om == null ? Status.DONT_KNOW : om.getCrypto().getDetectedConnectivityStatus();
 		if(om == null || opennetStatus.ordinal() >= AddressTracker.Status.DONT_KNOW.ordinal()) {
 			if(darknetStatus.ordinal() >= AddressTracker.Status.DONT_KNOW.ordinal()) {
 				return new int[] { };
@@ -320,10 +329,10 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			}
 		} else {
 			if(darknetStatus.ordinal() >= AddressTracker.Status.DONT_KNOW.ordinal()) {
-				return new int[] { (opennetStatus.ordinal() < AddressTracker.Status.MAYBE_NATED.ordinal() ? -1 : 1 ) * om.crypto.portNumber };
+				return new int[] { (opennetStatus.ordinal() < AddressTracker.Status.MAYBE_NATED.ordinal() ? -1 : 1 ) * om.getCrypto().getPortNumber() };
 			} else {
 				return new int[] { ((darknetStatus.ordinal() < AddressTracker.Status.MAYBE_NATED.ordinal()) ? -1 : 1 ) * node.getDarknetPortNumber(), 
-						(opennetStatus.ordinal() < AddressTracker.Status.MAYBE_NATED.ordinal() ? -1 : 1 ) * om.crypto.portNumber };
+						(opennetStatus.ordinal() < AddressTracker.Status.MAYBE_NATED.ordinal() ? -1 : 1 ) * om.getCrypto().getPortNumber() };
 			}
 		}
 	}
@@ -344,8 +353,8 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 	 * is one, and if it is necessary to do so. */
 	void start() {
 		// Cannot be initialized until UserAlertManager has been created.
-		proxyAlert = new ProxyUserAlert(node.clientCore.alerts, false);
-		node.clientCore.alerts.register(portForwardAlert);
+		proxyAlert = new ProxyUserAlert(node.getClientCore().getAlerts(), false);
+		node.getClientCore().getAlerts().register(portForwardAlert);
 		started = true;
 		tryMaybeRun();
 	}
@@ -453,7 +462,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 		if(logMINOR) Logger.minor(this, "Maybe running IP detection plugins", new Exception("debug"));
 		PeerNode[] peers = node.getPeerNodes();
 		PeerNode[] conns = node.getConnectedPeers();
-		int peerCount = node.peers.countValidPeers();
+		int peerCount = node.getPeers().countValidPeers();
 		FreenetInetAddress[] nodeAddrs = detector.getPrimaryIPAddress(true);
 		long now = System.currentTimeMillis();
 		synchronized(this) {
@@ -690,7 +699,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 				if(runners.containsKey(plugin)) continue;
 				DetectorRunner d = new DetectorRunner(plugin);
 				runners.put(plugin, d);
-				node.executor.execute(d, "Plugin detector runner for "+plugin.getClass());
+				node.getExecutor().execute(d, "Plugin detector runner for "+plugin.getClass());
 			}
 		}
 	}
@@ -704,7 +713,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 		}
 
 		public void kill() {
-			node.pluginManager.killPlugin((FredPlugin)plugin, 0);
+			node.getPluginManager().killPlugin((FredPlugin)plugin, 0);
 		}
 
 		@Override
@@ -846,7 +855,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 								new SimpleUserAlert(false, l10n("noConnectivityTitle"), l10n("noConnectivity"), l10n("noConnectivityShort"), UserAlert.ERROR);
 					}
 					if(toRegister != null)
-						node.clientCore.alerts.register(toRegister);
+						node.getClientCore().getAlerts().register(toRegister);
 				} else {
 					UserAlert toKill;
 					synchronized(this) {
@@ -854,7 +863,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 						noConnectivityAlert = null;
 					}
 					if(toKill != null)
-						node.clientCore.alerts.unregister(toKill);
+						node.getClientCore().getAlerts().unregister(toKill);
 				}
 			} finally {
 				boolean finished;
@@ -910,7 +919,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			plugins = portForwardPlugins;
 		}
 		for(final FredPluginPortForward plugin: plugins) {
-			node.executor.execute(new Runnable() {
+			node.getExecutor().execute(new Runnable() {
 
 				@Override
 				public void run() {
@@ -945,7 +954,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			// Not much more we can do / want to do for now
 			// FIXME use status.externalPort.
 		}
-		node.executor.execute(new Runnable() {
+		node.getExecutor().execute(new Runnable() {
 			@Override
 			public void run() {
 				maybeRun();
@@ -958,18 +967,18 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 	}
 
 	public void addConnectionTypeBox(HTMLNode contentNode) {
-		if(node.clientCore == null) return;
-		if(node.clientCore.alerts == null) return;
+		if(node.getClientCore() == null) return;
+		if(node.getClientCore().getAlerts() == null) return;
 		if(proxyAlert == null) {
 			Logger.error(this, "start() not called yet?", new Exception("debug"));
 			return;
 		}
 		if(proxyAlert.isValid())
-			contentNode.addChild(node.clientCore.alerts.renderAlert(proxyAlert));
+			contentNode.addChild(node.getClientCore().getAlerts().renderAlert(proxyAlert));
 	}
 
 	public boolean hasJSTUN() {
-		return node.pluginManager.isPluginLoadedOrLoadingOrWantLoad("JSTUN");
+		return node.getPluginManager().isPluginLoadedOrLoadingOrWantLoad("JSTUN");
 	}
 	
 }

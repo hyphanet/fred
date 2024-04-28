@@ -8,6 +8,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Map;
 
@@ -50,7 +51,7 @@ public class M3UFilter implements ContentDataFilter {
         { (byte)'\r' };
     static final int MAX_URI_LENGTH = 16384;
     static final String badUriReplacement = "#bad-uri-removed";
-    private final long MAX_LENGTH_NO_PROGRESS = (100*1024*1024 * 11) / 10; // 100MiB: playlists are a different usecase, and we want to allow transparent pass-through for most files accessed via a playlist, likely through an external palyer. See FProxyToadlet.MAX_LENGTH_NO_PROGRESS for the default. This value must be synchronized with the test data!
+    private final long MAX_LENGTH_NO_PROGRESS = (200L*1024*1024 * 11) / 10; // 200MiB: playlists are a different usecase, and we want to allow transparent pass-through for most files accessed via a playlist, likely through an external palyer. See FProxyToadlet.MAX_LENGTH_NO_PROGRESS for the default. This value must be synchronized with the test data!
     // TODO: Add parsing of ext-comments to allow for gapless playback.
     // static final int COMMENT_EXT_SIZE = 4;
     // static final byte[] COMMENT_EXT_START =
@@ -106,7 +107,7 @@ public class M3UFilter implements ContentDataFilter {
                         if (fileIndex <= MAX_URI_LENGTH) {
                             boolean lineIsEmpty = fileIndex == 0;
                             if (!lineIsEmpty) {
-                                String uriold = new String(fileUri, 0, fileIndex, "UTF-8");
+                                String uriold = new String(fileUri, 0, fileIndex, StandardCharsets.UTF_8);
                                 // System.out.println(uriold);
                                 // clean up the URL: allow sub-m3us and mp3/ogg/flac (what we can filter)
                                 String filtered;
@@ -156,9 +157,9 @@ public class M3UFilter implements ContentDataFilter {
                                     filtered = badUriReplacement;
                                 }
                                 try {
-                                    dos.write(filtered.getBytes("UTF-8"));
+                                    dos.write(filtered.getBytes(StandardCharsets.UTF_8));
                                 } catch (Exception e) {
-                                    dos.write(badUriReplacement.getBytes("UTF-8"));
+                                    dos.write(badUriReplacement.getBytes(StandardCharsets.UTF_8));
                                 }
                             }
                             // write the newline if we're not at EOF

@@ -41,18 +41,20 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 	
 		@Override
 		protected int customCompare(PeerNodeStatus firstNode, PeerNodeStatus secondNode, String sortBy) {
-			if(sortBy.equals("name")) {
-				return ((DarknetPeerNodeStatus)firstNode).getName().compareToIgnoreCase(((DarknetPeerNodeStatus)secondNode).getName());
-			}else if(sortBy.equals("privnote")){
-				return ((DarknetPeerNodeStatus)firstNode).getPrivateDarknetCommentNote().compareToIgnoreCase(((DarknetPeerNodeStatus)secondNode).getPrivateDarknetCommentNote());
-			} else if(sortBy.equals("trust")){
-				return ((DarknetPeerNodeStatus)firstNode).getTrustLevel().compareTo(((DarknetPeerNodeStatus)secondNode).getTrustLevel());
-			} else if(sortBy.equals("visibility")){
-				int ret = ((DarknetPeerNodeStatus)firstNode).getOurVisibility().compareTo(((DarknetPeerNodeStatus)secondNode).getOurVisibility());
-				if(ret != 0) return ret;
-				return ((DarknetPeerNodeStatus)firstNode).getTheirVisibility().compareTo(((DarknetPeerNodeStatus)secondNode).getTheirVisibility());
-			} else
-				return super.customCompare(firstNode, secondNode, sortBy);
+			switch (sortBy) {
+				case "name":
+					return ((DarknetPeerNodeStatus) firstNode).getName().compareToIgnoreCase(((DarknetPeerNodeStatus) secondNode).getName());
+				case "privnote":
+					return ((DarknetPeerNodeStatus) firstNode).getPrivateDarknetCommentNote().compareToIgnoreCase(((DarknetPeerNodeStatus) secondNode).getPrivateDarknetCommentNote());
+				case "trust":
+					return ((DarknetPeerNodeStatus) firstNode).getTrustLevel().compareTo(((DarknetPeerNodeStatus) secondNode).getTrustLevel());
+				case "visibility":
+					int ret = ((DarknetPeerNodeStatus) firstNode).getOurVisibility().compareTo(((DarknetPeerNodeStatus) secondNode).getOurVisibility());
+					if (ret != 0) return ret;
+					return ((DarknetPeerNodeStatus) firstNode).getTheirVisibility().compareTo(((DarknetPeerNodeStatus) secondNode).getTheirVisibility());
+				default:
+					return super.customCompare(firstNode, secondNode, sortBy);
+			}
 		}
 		
 		/** Default comparison, after taking into account status */
@@ -131,7 +133,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 
 	@Override
 	protected PeerNodeStatus[] getPeerNodeStatuses(boolean noHeavy) {
-		return node.peers.getDarknetPeerNodeStatuses(noHeavy);
+		return node.getPeers().getDarknetPeerNodeStatuses(noHeavy);
 	}
 
 	@Override

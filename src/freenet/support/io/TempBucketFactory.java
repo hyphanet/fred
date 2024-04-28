@@ -96,8 +96,8 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessBuf
 
         boolean migrateToDisk() throws IOException;
 	    
-	};
-	
+	}
+
 	public class TempBucket implements Bucket, Migratable, RandomAccessBucket {
 		/** The underlying bucket itself */
 		private RandomAccessBucket currentBucket;

@@ -48,11 +48,11 @@ public class AddressIdentifier {
 	}
 	
 	public enum AddressType {
-		OTHER, IPv4, IPv6;
+		OTHER, IPv4, IPv6
 	}
 
 	/**
-	 * Tries to detemine the address type of the given address.
+	 * Tries to determine the address type of the given address.
 	 * 
 	 * REDFLAG: IPv6 percent scope ID's could cause problems with URI's.
 	 * Should not be exploitable as we don't do anything important with 
@@ -71,7 +71,7 @@ public class AddressIdentifier {
 	}
 
 	/**
-	 * Tries to detemine the address type of the given address.
+	 * Tries to determine the address type of the given address.
 	 * 
 	 * @param address
 	 *            The address to determine the type of

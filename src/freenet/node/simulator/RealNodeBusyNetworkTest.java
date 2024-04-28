@@ -3,36 +3,23 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.simulator;
 
-import static java.util.concurrent.TimeUnit.DAYS;
-
-import java.io.File;
-import java.io.UnsupportedEncodingException;
-
 import freenet.client.HighLevelSimpleClient;
 import freenet.crypt.DummyRandomSource;
-import freenet.io.comm.PeerParseException;
-import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.keys.CHKBlock;
-import freenet.keys.CHKDecodeException;
-import freenet.keys.CHKEncodeException;
-import freenet.keys.CHKVerifyException;
 import freenet.keys.ClientCHK;
 import freenet.keys.ClientCHKBlock;
-import freenet.node.FSParseException;
 import freenet.node.Node;
-import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
 import freenet.node.RequestStarter;
-import freenet.support.Executor;
-import freenet.support.Fields;
-import freenet.support.HexUtil;
-import freenet.support.Logger;
+import freenet.support.*;
 import freenet.support.Logger.LogLevel;
-import freenet.support.LoggerHook.InvalidThresholdException;
-import freenet.support.PooledExecutor;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
-import freenet.support.compress.InvalidCompressionCodecException;
 import freenet.support.io.FileUtil;
+
+import java.io.File;
+import java.nio.charset.StandardCharsets;
+
+import static java.util.concurrent.TimeUnit.DAYS;
 
 /**
  * Test a busy, bandwidth limited network. Hopefully this should reveal any serious problems with
@@ -56,14 +43,13 @@ public class RealNodeBusyNetworkTest extends RealNodeRoutingTest {
     static final boolean FORK_ON_CACHEABLE = false;
     static final boolean REAL_TIME_FLAG = false;
 
-    static final int TARGET_SUCCESSES = 20;
     //static final int NUMBER_OF_NODES = 50;
     //static final short MAX_HTL = 10;
 
     static final int DARKNET_PORT_BASE = 5008;
     static final int DARKNET_PORT_END = DARKNET_PORT_BASE + NUMBER_OF_NODES;
 
-    public static void main(String[] args) throws FSParseException, PeerParseException, CHKEncodeException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException, InterruptedException, UnsupportedEncodingException, CHKVerifyException, CHKDecodeException, InvalidCompressionCodecException {
+    public static void main(String[] args) throws Exception {
         String name = "realNodeRequestInsertTest";
         File wd = new File(name);
         if(!FileUtil.removeAll(wd)) {
@@ -109,7 +95,7 @@ public class RealNodeBusyNetworkTest extends RealNodeRoutingTest {
 
         HighLevelSimpleClient[] clients = new HighLevelSimpleClient[nodes.length];
         for(int i=0;i<clients.length;i++) {
-        	clients[i] = nodes[i].clientCore.makeClient(RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, false, false);
+        	clients[i] = nodes[i].getClientCore().makeClient(RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, false, false);
         }
 
         // Insert 100 keys into random nodes
@@ -122,7 +108,7 @@ public class RealNodeBusyNetworkTest extends RealNodeRoutingTest {
             int node1 = random.nextInt(NUMBER_OF_NODES);
             Node randomNode = nodes[node1];
             String dataString = baseString + i;
-            byte[] data = dataString.getBytes("UTF-8");
+            byte[] data = dataString.getBytes(StandardCharsets.UTF_8);
             ClientCHKBlock b;
             b = ClientCHKBlock.encode(data, false, false, (short)-1, 0, COMPRESSOR_TYPE.DEFAULT_COMPRESSORDESCRIPTOR);
             CHKBlock block = b.getBlock();
@@ -131,12 +117,12 @@ public class RealNodeBusyNetworkTest extends RealNodeRoutingTest {
             byte[] encHeaders = block.getHeaders();
             ClientCHKBlock newBlock = new ClientCHKBlock(encData, encHeaders, chk, true);
             keys[i] = chk;
-            Logger.minor(RealNodeRequestInsertTest.class, "Decoded: "+new String(newBlock.memoryDecode(), "UTF-8"));
+            Logger.minor(RealNodeRequestInsertTest.class, "Decoded: "+new String(newBlock.memoryDecode(), StandardCharsets.UTF_8));
             Logger.normal(RealNodeRequestInsertTest.class,"CHK: "+chk.getURI());
             Logger.minor(RealNodeRequestInsertTest.class,"Headers: "+HexUtil.bytesToHex(block.getHeaders()));
             // Insert it.
 			try {
-				randomNode.clientCore.realPut(block, false, FORK_ON_CACHEABLE, false, false, REAL_TIME_FLAG);
+				randomNode.getClientCore().realPut(block, false, FORK_ON_CACHEABLE, false, false, REAL_TIME_FLAG);
 				Logger.error(RealNodeRequestInsertTest.class, "Inserted to "+node1);
 				Logger.minor(RealNodeRequestInsertTest.class, "Data: "+Fields.hashCode(encData)+", Headers: "+Fields.hashCode(encHeaders));
 			} catch (freenet.node.LowLevelPutException putEx) {
@@ -155,7 +141,7 @@ public class RealNodeBusyNetworkTest extends RealNodeRoutingTest {
         	}
         	long totalRunningRequests = 0;
         	for(int j=0;j<nodes.length;j++) {
-        		totalRunningRequests += nodes[j].clientCore.countQueuedRequests();
+        		totalRunningRequests += nodes[j].getClientCore().countQueuedRequests();
         	}
         	System.err.println("Running requests: "+totalRunningRequests);
         }
@@ -165,7 +151,7 @@ public class RealNodeBusyNetworkTest extends RealNodeRoutingTest {
         while(true) {
         	long totalRunningRequests = 0;
         	for(int i=0;i<nodes.length;i++) {
-        		totalRunningRequests += nodes[i].clientCore.countQueuedRequests();
+        		totalRunningRequests += nodes[i].getClientCore().countQueuedRequests();
         	}
         	System.err.println("Running requests: "+totalRunningRequests);
         	if(totalRunningRequests == 0) break;

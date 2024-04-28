@@ -14,7 +14,7 @@ import freenet.support.Logger;
 public class Config {
 	public static enum RequestType {
 		CURRENT_SETTINGS, DEFAULT_SETTINGS, SORT_ORDER, EXPERT_FLAG, FORCE_WRITE_FLAG, SHORT_DESCRIPTION, LONG_DESCRIPTION, DATA_TYPE
-	};
+	}
 
 	protected final LinkedHashMap<String, SubConfig> configsByPrefix;
 	

@@ -82,7 +82,7 @@ public class ImageElement extends BaseUpdateableElement {
 		init(pushed);
 		if(!pushed) return;
 		// Creates and registers the FetchListener
-		fetchListener = new NotifierFetchListener(((SimpleToadletServer) ctx.getContainer()).pushDataManager, this);
+		fetchListener = new NotifierFetchListener(((SimpleToadletServer) ctx.getContainer()).getPushDataManager(), this);
 		((SimpleToadletServer) ctx.getContainer()).getTicker().queueTimedJob(new Runnable() {
 
 			@Override

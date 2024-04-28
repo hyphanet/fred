@@ -173,7 +173,8 @@ public class SectoredRandomGrabArray<T, C extends RemoveRandomWithObject<T>> imp
 				Logger.error(this, "Slot "+x+" is null for client "+grabClients[x]);
 				excluded++;
 				if(excluded > MAX_EXCLUDED) {
-					Logger.normal(this, "Too many sub-arrays are entirely excluded on "+this+" length = "+grabArrays.length, new Exception("error"));
+					if(logMINOR)
+						Logger.minor(this, "Too many sub-arrays are entirely excluded on "+this+" length = "+grabArrays.length, new Exception("error"));
 					return null;
 				}
 				continue;
@@ -182,14 +183,15 @@ public class SectoredRandomGrabArray<T, C extends RemoveRandomWithObject<T>> imp
 			if(excludeTime > 0) {
 				excluded++;
 				if(excluded > MAX_EXCLUDED) {
-					Logger.normal(this, "Too many sub-arrays are entirely excluded on "+this+" length = "+grabArrays.length, new Exception("error"));
+					if (logMINOR)
+						Logger.minor(this, "Too many sub-arrays are entirely excluded on "+this+" length = "+grabArrays.length, new Exception("error"));
 					return null;
 				}
 				continue;
 			}
 			if(logMINOR)
 				Logger.minor(this, "Picked "+x+" of "+grabArrays.length+" : "+rga+" on "+this);
-			
+
 			RandomGrabArrayItem item = null;
 			RemoveRandomReturn val = rga.removeRandom(excluding, context, now);
 			if(val != null && val.item != null) item = val.item;
@@ -208,7 +210,8 @@ public class SectoredRandomGrabArray<T, C extends RemoveRandomWithObject<T>> imp
 				} else {
 					excluded++;
 					if(excluded > MAX_EXCLUDED) {
-						Logger.normal(this, "Too many sub-arrays are entirely excluded on "+this+" length = "+grabArrays.length, new Exception("error"));
+						if (logMINOR)
+							Logger.minor(this, "Too many sub-arrays are entirely excluded on "+this+" length = "+grabArrays.length, new Exception("error"));
 						return null;
 					}
 				}

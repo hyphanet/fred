@@ -38,14 +38,14 @@ public class MeaningfulNodeNameUserAlert extends AbstractUserAlert {
 
 	@Override
 	public HTMLNode getHTMLText() {
-		SubConfig sc = node.config.get("node");
+		SubConfig sc = node.getConfig().get("node");
 		Option<?> o = sc.getOption("name");
 
 		HTMLNode alertNode = new HTMLNode("div");
 		HTMLNode textNode = alertNode.addChild("div");
 		textNode.addChild("#", l10n("noNodeNick"));
 		HTMLNode formNode = alertNode.addChild("form", new String[] { "action", "method" }, new String[] { "/config/"+sc.getPrefix(), "post" });
-		formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.clientCore.formPassword });
+		formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.getClientCore().getFormPassword() });
 		formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "subconfig", sc.getPrefix() });
 		HTMLNode listNode = formNode.addChild("ul", "class", "config");
 		HTMLNode itemNode = listNode.addChild("li");
@@ -62,6 +62,6 @@ public class MeaningfulNodeNameUserAlert extends AbstractUserAlert {
 
 	@Override
 	public boolean isValid() {
-		return node.peers.anyDarknetPeers();
+		return node.getPeers().anyDarknetPeers();
 	}
 }

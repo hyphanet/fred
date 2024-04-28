@@ -57,11 +57,11 @@ public class NodeAndClientLayerBlobTest extends NodeAndClientLayerTestBase {
         Node node = NodeStarter.createTestNode(params);
         node.start(false);
         HighLevelSimpleClient client = 
-                node.clientCore.makeClient((short)0, false, false);
+                node.getClientCore().makeClient((short)0, false, false);
         // First do an ordinary insert.
         InsertContext ictx = client.getInsertContext(true);
         ictx.localRequestOnly = true;
-        InsertBlock block = generateBlock(random);
+        InsertBlock block = generateBlock(random, false);
         FreenetURI uri = 
                 client.insert(block, "", (short)0, ictx);
         assertEquals(uri.getKeyType(), "SSK");
@@ -73,10 +73,10 @@ public class NodeAndClientLayerBlobTest extends NodeAndClientLayerTestBase {
         assertTrue(BucketTools.equalBuckets(result.asBucket(), block.getData()));
         // Now fetch the blob...
         fw = new FetchWaiter(rc);
-        Bucket blobBucket = node.clientCore.tempBucketFactory.makeBucket(FILE_SIZE*3);
+        Bucket blobBucket = node.getClientCore().getTempBucketFactory().makeBucket(FILE_SIZE*3);
         BinaryBlobWriter bbw = new BinaryBlobWriter(blobBucket);
         ClientGetter getter = new ClientGetter(fw, uri, ctx, (short) 0, null, bbw, false, null, null);
-        getter.start(node.clientCore.clientContext);
+        getter.start(node.getClientCore().getClientContext());
         fw.waitForCompletion();
         assertTrue(blobBucket.size() > 0);
         // Now bootstrap a second node, and fetch using the blob on that node.
@@ -90,7 +90,7 @@ public class NodeAndClientLayerBlobTest extends NodeAndClientLayerTestBase {
         Node node2 = NodeStarter.createTestNode(params);
         node2.start(false);
         HighLevelSimpleClient client2 = 
-                node.clientCore.makeClient((short)0, false, false);
+                node.getClientCore().makeClient((short)0, false, false);
         FetchContext ctx2 = client.getFetchContext(FILE_SIZE*2);
         SimpleBlockSet blocks = new SimpleBlockSet();
         DataInputStream dis = new DataInputStream(blobBucket.getInputStream());

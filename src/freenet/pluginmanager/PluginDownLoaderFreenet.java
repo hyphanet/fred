@@ -72,11 +72,11 @@ public class PluginDownLoaderFreenet extends PluginDownLoader<FreenetURI> {
 					context.maxNonSplitfileRetries = -1;
 					context.maxSplitfileBlockRetries = -1;
 				}
-				FetchWaiter fw = new FetchWaiter(node.nonPersistentClientBulk);
+				FetchWaiter fw = new FetchWaiter(node.getNonPersistentClientBulk());
 
 				get = new ClientGetter(fw, uri, context, PluginManager.PRIO, null, null, null);
 				try {
-					node.clientCore.clientContext.start(get);
+					node.getClientCore().getClientContext().start(get);
 				} catch (PersistenceDisabledException e) {
 					// Impossible
 				}
@@ -112,7 +112,7 @@ public class PluginDownLoaderFreenet extends PluginDownLoader<FreenetURI> {
 	@Override
 	void tryCancel() {
 		if(get != null)
-			get.cancel(node.clientCore.clientContext);
+			get.cancel(node.getClientCore().getClientContext());
 	}
 
 	@Override

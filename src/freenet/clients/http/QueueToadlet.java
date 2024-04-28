@@ -14,10 +14,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -259,7 +259,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 							line.addChild("#", filename);
 						}
 					}
-					if(type != null && !type.equals("")) {
+					if(type != null && !type.isEmpty()) {
 						HTMLNode line = infoList.addChild("li");
 						boolean finalized = request.isPartSet("finalizedType");
 						line.addChild("#", NodeL10n.getBase().getString("FProxyToadlet."+(finalized ? "mimeType" : "expectedMimeType"), new String[] { "mime" }, new String[] { type }));
@@ -394,20 +394,20 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				return;
 			} else if(request.isPartSet("panic") && (request.getPartAsStringFailsafe("panic", 128).length() > 0)) {
 				if(SimpleToadletServer.noConfirmPanic) {
-					core.node.killMasterKeysFile();
-					core.node.panic();
+					core.getNode().killMasterKeysFile();
+					core.getNode().panic();
 					sendPanicingPage(ctx);
-					core.node.finishPanic();
+					core.getNode().finishPanic();
 					return;
 				} else {
 					sendConfirmPanicPage(ctx);
 					return;
 				}
 			} else if(request.isPartSet("confirmpanic") && (request.getPartAsStringFailsafe("confirmpanic", 128).length() > 0)) {
-				core.node.killMasterKeysFile();
-				core.node.panic();
+				core.getNode().killMasterKeysFile();
+				core.getNode().panic();
 				sendPanicingPage(ctx);
-				core.node.finishPanic();
+				core.getNode().finishPanic();
 				return;
 			} else if(request.isPartSet("download")) {
 				// Queue a download
@@ -456,7 +456,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			} else if(request.isPartSet("bulkDownloads")) {
 				String bulkDownloadsAsString = request.getPartAsStringFailsafe("bulkDownloads", 262144);
 				String[] keys = bulkDownloadsAsString.split("\n");
-				if(("".equals(bulkDownloadsAsString)) || (keys.length < 1)) {
+				if((bulkDownloadsAsString.isEmpty()) || (keys.length < 1)) {
 					writePermanentRedirect(ctx, "Done", path());
 					return;
 				}
@@ -575,13 +575,13 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				final String identifier = file.getFilename() + "-fred-" + System.currentTimeMillis();
 				final String compatibilityMode = request.getPartAsStringFailsafe("compatibilityMode", 100);
 				final CompatibilityMode cmode;
-				if(compatibilityMode.equals(""))
+				if(compatibilityMode.isEmpty())
 					cmode = CompatibilityMode.COMPAT_DEFAULT.intern();
 				else
 					cmode = CompatibilityMode.valueOf(compatibilityMode).intern();
 				String s = request.getPartAsStringFailsafe("overrideSplitfileKey", 65);
 				final byte[] overrideSplitfileKey;
-				if(s != null && !s.equals(""))
+				if(s != null && !s.isEmpty())
 					overrideSplitfileKey = HexUtil.hexToBytes(s);
 				else
 					overrideSplitfileKey = null;
@@ -591,11 +591,11 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				else
 					fnam = null;
 				/* copy bucket data */
-				final RandomAccessBucket copiedBucket = core.persistentTempBucketFactory.makeBucket(file.getData().size());
+				final RandomAccessBucket copiedBucket = core.getPersistentTempBucketFactory().makeBucket(file.getData().size());
 				BucketTools.copy(file.getData(), copiedBucket);
 				final CountDownLatch done = new CountDownLatch(1);
 				try {
-					core.clientLayerPersister.queue(new PersistentJob() {
+					core.getClientLayerPersister().queue(new PersistentJob() {
 
 						@Override
 						public String toString() {
@@ -607,7 +607,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 							try {
 							final ClientPut clientPut;
 							try {
-								clientPut = new ClientPut(fcp.getGlobalForeverClient(), insertURI, identifier, Integer.MAX_VALUE, null, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, Persistence.FOREVER, null, false, !compress, -1, UploadFrom.DIRECT, null, file.getContentType(), copiedBucket, null, fnam, false, false, Node.FORK_ON_CACHEABLE_DEFAULT, HighLevelSimpleClientImpl.EXTRA_INSERTS_SINGLE_BLOCK, HighLevelSimpleClientImpl.EXTRA_INSERTS_SPLITFILE_HEADER, false, cmode, overrideSplitfileKey, false, fcp.core);
+								clientPut = new ClientPut(fcp.getGlobalForeverClient(), insertURI, identifier, Integer.MAX_VALUE, null, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, Persistence.FOREVER, null, false, !compress, -1, UploadFrom.DIRECT, null, file.getContentType(), copiedBucket, null, fnam, false, false, Node.FORK_ON_CACHEABLE_DEFAULT, HighLevelSimpleClientImpl.EXTRA_INSERTS_SINGLE_BLOCK, HighLevelSimpleClientImpl.EXTRA_INSERTS_SPLITFILE_HEADER, false, cmode, overrideSplitfileKey, false, fcp.getCore());
 								if(clientPut != null)
 									try {
 										fcp.startBlocking(clientPut, context);
@@ -675,13 +675,13 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				final boolean compress = request.isPartSet("compress");
 				final String compatibilityMode = request.getPartAsStringFailsafe("compatibilityMode", 100);
 				final CompatibilityMode cmode;
-				if(compatibilityMode.equals(""))
+				if(compatibilityMode.isEmpty())
 					cmode = CompatibilityMode.COMPAT_DEFAULT;
 				else
 					cmode = CompatibilityMode.valueOf(compatibilityMode);
 				String s = request.getPartAsStringFailsafe("overrideSplitfileKey", 65);
 				final byte[] overrideSplitfileKey;
-				if(s != null && !s.equals(""))
+				if(s != null && !s.isEmpty())
 					overrideSplitfileKey = HexUtil.hexToBytes(s);
 				else
 					overrideSplitfileKey = null;
@@ -702,7 +702,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					target = file.getName();
 				final CountDownLatch done = new CountDownLatch(1);
 				try {
-					core.clientLayerPersister.queue(new PersistentJob() {
+					core.getClientLayerPersister().queue(new PersistentJob() {
 
 						@Override
 						public String toString() {
@@ -714,7 +714,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 							final ClientPut clientPut;
 							try {
 							try {
-								clientPut = new ClientPut(fcp.getGlobalForeverClient(), furi, identifier, Integer.MAX_VALUE, null, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, Persistence.FOREVER, null, false, !compress, -1, UploadFrom.DISK, file, contentType, new FileBucket(file, true, false, false, false), null, target, false, false, Node.FORK_ON_CACHEABLE_DEFAULT, HighLevelSimpleClientImpl.EXTRA_INSERTS_SINGLE_BLOCK, HighLevelSimpleClientImpl.EXTRA_INSERTS_SPLITFILE_HEADER, false, cmode, overrideSplitfileKey, false, fcp.core);
+								clientPut = new ClientPut(fcp.getGlobalForeverClient(), furi, identifier, Integer.MAX_VALUE, null, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, Persistence.FOREVER, null, false, !compress, -1, UploadFrom.DISK, file, contentType, new FileBucket(file, true, false, false, false), null, target, false, false, Node.FORK_ON_CACHEABLE_DEFAULT, HighLevelSimpleClientImpl.EXTRA_INSERTS_SINGLE_BLOCK, HighLevelSimpleClientImpl.EXTRA_INSERTS_SPLITFILE_HEADER, false, cmode, overrideSplitfileKey, false, fcp.getCore());
 								if(logMINOR) Logger.minor(this, "Started global request to insert "+file+" to CHK@ as "+identifier);
 								if(clientPut != null)
 									try {
@@ -781,7 +781,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				final boolean compress = request.isPartSet("compress");
 				String s = request.getPartAsStringFailsafe("overrideSplitfileKey", 65);
 				final byte[] overrideSplitfileKey;
-				if(s != null && !s.equals(""))
+				if(s != null && !s.isEmpty())
 					overrideSplitfileKey = HexUtil.hexToBytes(s);
 				else
 					overrideSplitfileKey = null;
@@ -797,7 +797,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				}
 				final CountDownLatch done = new CountDownLatch(1);
 				try {
-					core.clientLayerPersister.queue(new PersistentJob() {
+					core.getClientLayerPersister().queue(new PersistentJob() {
 
 						@Override
 						public String toString() {
@@ -809,7 +809,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 							ClientPutDir clientPutDir;
 							try {
 								try {
-									clientPutDir = new ClientPutDir(fcp.getGlobalForeverClient(), furi, identifier, Integer.MAX_VALUE, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, Persistence.FOREVER, null, false, !compress, -1, file, null, false, /* make include hidden files configurable? FIXME */ false, true, false, false, Node.FORK_ON_CACHEABLE_DEFAULT, HighLevelSimpleClientImpl.EXTRA_INSERTS_SINGLE_BLOCK, HighLevelSimpleClientImpl.EXTRA_INSERTS_SPLITFILE_HEADER, false, overrideSplitfileKey, fcp.core);
+									clientPutDir = new ClientPutDir(fcp.getGlobalForeverClient(), furi, identifier, Integer.MAX_VALUE, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, Persistence.FOREVER, null, false, !compress, -1, file, null, false, /* make include hidden files configurable? FIXME */ false, true, false, false, Node.FORK_ON_CACHEABLE_DEFAULT, HighLevelSimpleClientImpl.EXTRA_INSERTS_SINGLE_BLOCK, HighLevelSimpleClientImpl.EXTRA_INSERTS_SPLITFILE_HEADER, false, overrideSplitfileKey, fcp.getCore());
 									if(logMINOR) Logger.minor(this, "Started global request to insert dir "+file+" to "+furi+" as "+identifier);
 									if(clientPutDir != null) {
 										try {
@@ -874,7 +874,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				for(String part : request.getParts()) {
 					if(!part.startsWith("identifier-")) continue;
 					String key = request.getPartAsStringFailsafe("key-"+part.substring("identifier-".length()), MAX_KEY_LENGTH);
-					if(key == null || key.equals("")) {
+					if(key == null || key.isEmpty()) {
 						continue;
 					}
 					form.addChild("#", l10n("key") + ":");
@@ -891,18 +891,18 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					new String[]{"id", "name", "row", "cols"},
 					new String[]{"descB", "description", "3", "70"});
 				form.addChild("br");
-				if (core.node.isFProxyJavascriptEnabled()) {
+				if (core.getNode().isFProxyJavascriptEnabled()) {
 					form.addChild("script", new String[] {"type", "src"}, new String[] {"text/javascript", "/static/js/checkall.js"});
 				}
 				HTMLNode peerTable = form.addChild("table", "class", "darknet_connections");
-				if (core.node.isFProxyJavascriptEnabled()) {
+				if (core.getNode().isFProxyJavascriptEnabled()) {
 					HTMLNode headerRow = peerTable.addChild("tr");
 					headerRow.addChild("th").addChild("input", new String[] { "type", "onclick" }, new String[] { "checkbox", "checkAll(this, 'darknet_connections')" });
 					headerRow.addChild("th", l10n("recommendToFriends"));
 				} else {
 					peerTable.addChild("tr").addChild("th", "colspan", "2", l10n("recommendToFriends"));
 				}
-				for(DarknetPeerNode peer : core.node.getDarknetConnections()) {
+				for(DarknetPeerNode peer : core.getNode().getDarknetConnections()) {
 					HTMLNode peerRow = peerTable.addChild("tr", "class", "darknet_connections_normal");
 					peerRow.addChild("td", "class", "peer-marker").addChild("input",
 						new String[] { "type", "name" }, 
@@ -931,7 +931,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					}
 				}
 				
-				for(DarknetPeerNode peer : core.node.getDarknetConnections()) {
+				for(DarknetPeerNode peer : core.getNode().getDarknetConnections()) {
 					if(request.isPartSet("node_" + peer.hashCode())) {
 						for(FreenetURI furi : uris)
 							peer.sendDownloadFeed(furi, description);
@@ -1021,7 +1021,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 
 	private void sendPersistenceDisabledError(ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		String title = l10n("awaitingPasswordTitle"+(uploads ? "Uploads" : "Downloads"));
-		if(core.node.awaitingPassword()) {
+		if(core.getNode().awaitingPassword()) {
 			PageNode page = ctx.getPageMaker().getPageNode(title, ctx);
 			HTMLNode pageNode = page.outer;
 			HTMLNode contentNode = page.content;
@@ -1036,7 +1036,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			return;
 
 		}
-		if(core.node.isStopping())
+		if(core.getNode().isStopping())
 			sendErrorPage(ctx, 200,
 					l10n("shuttingDownTitle"),
 					l10n("shuttingDown"));
@@ -1045,7 +1045,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					l10n("persistenceBrokenTitle"),
 					l10n("persistenceBroken",
 							new String[]{ "TEMPDIR", "DBFILE" },
-							new String[]{ FileUtil.getCanonicalFile(core.getPersistentTempDir()).toString()+File.separator, core.node.getDatabasePath() }
+							new String[]{ FileUtil.getCanonicalFile(core.getPersistentTempDir()).toString()+File.separator, core.getNode().getDatabasePath() }
 					));
 	}
 
@@ -1073,7 +1073,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 	throws ToadletContextClosedException, IOException, RedirectException {
 
 		// We ensure that we have a FCP server running
-		if(!fcp.enabled){
+		if(!fcp.isEnabled()){
 			writeError(l10n("fcpIsMissing"), l10n("pleaseEnableFCP"), ctx, false, false);
 			return;
 		}
@@ -1113,7 +1113,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			try {
 				RequestStatus[] reqs = fcp.getGlobalRequests();
 				MultiValueTable<String, String> pageHeaders = new MultiValueTable<String, String>();
-				HTMLNode pageNode = handleGetInner(pageMaker, reqs, core.clientContext, request, ctx);
+				HTMLNode pageNode = handleGetInner(pageMaker, reqs, core.getClientContext(), request, ctx);
 				writeHTMLReply(ctx, 200, "OK", pageHeaders, pageNode.generate());
 				return;
 			} catch (PersistenceDisabledException e) {
@@ -1123,7 +1123,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		}
 
 		try {
-			core.clientContext.jobRunner.queue(new PersistentJob() {
+			core.getClientContext().jobRunner.queue(new PersistentJob() {
 
 				@Override
 				public String toString() {
@@ -1136,9 +1136,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					String plainText = null;
 					try {
 						if(count) {
-							long queued = core.requestStarters.chkFetchSchedulerBulk.countPersistentWaitingKeys() + core.requestStarters.chkFetchSchedulerRT.countPersistentWaitingKeys();
+							long queued = core.getRequestStarters().chkFetchSchedulerBulk.countPersistentWaitingKeys() + core.getRequestStarters().chkFetchSchedulerRT.countPersistentWaitingKeys();
 							Logger.minor(this, "Total waiting CHKs: "+queued);
-							long reallyQueued = core.requestStarters.chkFetchSchedulerBulk.countQueuedRequests() + core.requestStarters.chkFetchSchedulerRT.countQueuedRequests();
+							long reallyQueued = core.getRequestStarters().chkFetchSchedulerBulk.countQueuedRequests() + core.getRequestStarters().chkFetchSchedulerRT.countQueuedRequests();
 							Logger.minor(this, "Total queued CHK requests (including transient): "+reallyQueued);
 							PageNode page = pageMaker.getPageNode(l10n("title"), ctx);
 							pageNode = page.outer;
@@ -1367,32 +1367,40 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				if(request.isParameterSet("sortBy")){
 					final String sortBy = request.getParam("sortBy");
 
-					if(sortBy.equals("id")){
-						result = firstRequest.getIdentifier().compareToIgnoreCase(secondRequest.getIdentifier());
-						if(result == 0)
-							result = firstRequest.getIdentifier().compareTo(secondRequest.getIdentifier());
-					}else if(sortBy.equals("size")){
-						result = Fields.compare(firstRequest.getTotalBlocks(), secondRequest.getTotalBlocks());
-					}else if(sortBy.equals("progress")){
-						boolean firstFinalized = firstRequest.isTotalFinalized();
-						boolean secondFinalized = secondRequest.isTotalFinalized();
-						if(firstFinalized && !secondFinalized)
-							result = 1;
-						else if(secondFinalized && !firstFinalized)
-							result = -1;
-						else {
-							double firstProgress = ((double)firstRequest.getFetchedBlocks()) / ((double)firstRequest.getMinBlocks());
-							double secondProgress = ((double)secondRequest.getFetchedBlocks()) / ((double)secondRequest.getMinBlocks());
-							result = Fields.compare(firstProgress, secondProgress);
-						}
-					} else if (sortBy.equals("lastActivity")) {
-			result = Fields.compare(firstRequest.getLastSuccess(),
-						secondRequest.getLastSuccess());
-		    } else if (sortBy.equals("lastFailure")) {
-			result = Fields.compare(firstRequest.getLastFailure(),
-						secondRequest.getLastFailure());
-					}else
-						isSet=false;
+					switch (sortBy) {
+						case "id":
+							result = firstRequest.getIdentifier().compareToIgnoreCase(secondRequest.getIdentifier());
+							if(result == 0)
+								result = firstRequest.getIdentifier().compareTo(secondRequest.getIdentifier());
+							break;
+						case "size":
+							result = Fields.compare(firstRequest.getTotalBlocks(), secondRequest.getTotalBlocks());
+							break;
+						case "progress":
+							boolean firstFinalized = firstRequest.isTotalFinalized();
+							boolean secondFinalized = secondRequest.isTotalFinalized();
+							if(firstFinalized && !secondFinalized)
+								result = 1;
+							else if(secondFinalized && !firstFinalized)
+								result = -1;
+							else {
+								double firstProgress = ((double)firstRequest.getFetchedBlocks()) / ((double)firstRequest.getMinBlocks());
+								double secondProgress = ((double)secondRequest.getFetchedBlocks()) / ((double)secondRequest.getMinBlocks());
+								result = Fields.compare(firstProgress, secondProgress);
+							}
+							break;
+						case "lastActivity":
+							result = Fields.compare(firstRequest.getLastSuccess(),
+									secondRequest.getLastSuccess());
+							break;
+						case "lastFailure":
+							result = Fields.compare(firstRequest.getLastFailure(),
+									secondRequest.getLastFailure());
+							break;
+						default:
+							isSet=false;
+							break;
+					}
 				}else
 					isSet=false;
 
@@ -1995,7 +2003,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			new String[] { "id", "name", "cols", "rows" },
 			new String[] { "bulkDownloads", "bulkDownloads", "120", "8" });
 		downloadForm.addChild("br");
-		PHYSICAL_THREAT_LEVEL threatLevel = core.node.securityLevels.getPhysicalThreatLevel();
+		PHYSICAL_THREAT_LEVEL threatLevel = core.getNode().getSecurityLevels().getPhysicalThreatLevel();
 		//Force downloading to encrypted space if high/maximum threat level or if the user has disabled
 		//downloading to disk.
 		if(threatLevel == PHYSICAL_THREAT_LEVEL.HIGH || threatLevel == PHYSICAL_THREAT_LEVEL.MAXIMUM ||
@@ -2107,7 +2115,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 	}
 	
 	private HTMLNode createRequestTable(PageMaker pageMaker, ToadletContext ctx, List<? extends RequestStatus> requests, QueueColumn[] columns, String[] priorityClasses, boolean advancedModeEnabled, String id, String mimeType, QueueType queueType) {
-		boolean hasFriends = core.node.getDarknetConnections().length > 0;
+		boolean hasFriends = core.getNode().getDarknetConnections().length > 0;
 		long now = System.currentTimeMillis();
 		
 		HTMLNode formDiv = new HTMLNode("div", "class", "request-table-form");
@@ -2364,9 +2372,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 
 	private void loadCompletedIdentifiers() throws PersistenceDisabledException {
 		String dl = uploads ? "uploads" : "downloads";
-		File completedIdentifiersList = core.node.userDir().file("completed.list."+dl);
-		File completedIdentifiersListNew = core.node.userDir().file("completed.list."+dl+".bak");
-		File oldCompletedIdentifiersList = core.node.userDir().file("completed.list");
+		File completedIdentifiersList = core.getNode().userDir().file("completed.list."+dl);
+		File completedIdentifiersListNew = core.getNode().userDir().file("completed.list."+dl+".bak");
+		File oldCompletedIdentifiersList = core.getNode().userDir().file("completed.list");
 		boolean migrated = false;
 		if(!readCompletedIdentifiers(completedIdentifiersList)) {
 			if(!readCompletedIdentifiers(completedIdentifiersListNew)) {
@@ -2376,7 +2384,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		} else
 			oldCompletedIdentifiersList.delete();
 		final boolean writeAnyway = migrated;
-		core.clientContext.jobRunner.queue(new PersistentJob() {
+		core.getClientContext().jobRunner.queue(new PersistentJob() {
 
 			@Override
 			public String toString() {
@@ -2413,7 +2421,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		try {
 			fis = new FileInputStream(file);
 			BufferedInputStream bis = new BufferedInputStream(fis);
-			InputStreamReader isr = new InputStreamReader(bis, "UTF-8");
+			InputStreamReader isr = new InputStreamReader(bis, StandardCharsets.UTF_8);
 			BufferedReader br = new BufferedReader(isr);
 			synchronized(completedRequestIdentifiers) {
 				completedRequestIdentifiers.clear();
@@ -2429,8 +2437,6 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		} catch (FileNotFoundException e) {
 			// Normal
 			return false;
-		} catch (UnsupportedEncodingException e) {
-			throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
 		} catch (IOException e) {
 			Logger.error(this, "Could not read completed identifiers list from "+file);
 			return false;
@@ -2443,14 +2449,14 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		FileOutputStream fos = null;
 		BufferedWriter bw = null;
 		String dl = uploads ? "uploads" : "downloads";
-		File completedIdentifiersList = core.node.userDir().file("completed.list."+dl);
-		File completedIdentifiersListNew = core.node.userDir().file("completed.list."+dl+".bak");
+		File completedIdentifiersList = core.getNode().userDir().file("completed.list."+dl);
+		File completedIdentifiersListNew = core.getNode().userDir().file("completed.list."+dl+".bak");
 		File temp;
 		try {
-			temp = File.createTempFile("completed.list", ".tmp", core.node.getUserDir());
+			temp = File.createTempFile("completed.list", ".tmp", core.getNode().getUserDir());
 			temp.deleteOnExit();
 			fos = new FileOutputStream(temp);
-			OutputStreamWriter osw = new OutputStreamWriter(fos, "UTF-8");
+			OutputStreamWriter osw = new OutputStreamWriter(fos, StandardCharsets.UTF_8);
 			bw = new BufferedWriter(osw);
 			String[] identifiers;
 			synchronized(completedRequestIdentifiers) {
@@ -2513,7 +2519,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			synchronized(completedGets) {
 				completedGets.put(identifier, event);
 			}
-			core.alerts.register(event);
+			core.getAlerts().register(event);
 		} else if(req instanceof ClientPut) {
 			FreenetURI uri = ((ClientPut)req).getFinalURI();
 			if(uri == null) {
@@ -2525,7 +2531,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			synchronized(completedPuts) {
 				completedPuts.put(identifier, event);
 			}
-			core.alerts.register(event);
+			core.getAlerts().register(event);
 		} else if(req instanceof ClientPutDir) {
 			FreenetURI uri = ((ClientPutDir)req).getFinalURI();
 			if(uri == null) {
@@ -2538,7 +2544,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			synchronized(completedPutDirs) {
 				completedPutDirs.put(identifier, event);
 			}
-			core.alerts.register(event);
+			core.getAlerts().register(event);
 		}
 	}
 

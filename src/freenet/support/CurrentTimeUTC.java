@@ -3,61 +3,69 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support;
 
-import java.util.Calendar;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.TimeZone;
 
 
 /**
- * A wrapper class around a GregorianCalendar which always returns the current time.
- * This is useful for working around the pitfall of class Calendar: It only returns the current time when you first use a get*() function,
- * in any get*() calls after the first call, the time value of the first call is returned. One would have to call Calendar.clear() before each
- * get to obtain the current time and this class takes care of that for you.
- * 
- * Further, this class is synchronized so you do not need to worry about synchronization of a Calendar anymore.
+ * A helper class, which returns the current time and date in UTC timezone.
+ *
+ * @deprecated use the Java 8 Date-Time APIs instead
+ * @see java.time.Instant
+ * @see java.time.LocalDate
+ * @see java.time.ZoneOffset#UTC
  */
+@Deprecated
 public class CurrentTimeUTC {
 
-	private static final GregorianCalendar mCalendar = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
+    /**
+     * Get the current date.
+     * @deprecated use {@link Date#Date() new Date()} or {@link java.time.Instant}
+     */
+    @Deprecated
+    public static Date get() {
+        return new Date();
+    }
 
-	public static Date get() {
-		synchronized(mCalendar) {
-			mCalendar.setTimeInMillis(System.currentTimeMillis());
-			return mCalendar.getTime();
-		}
-	}
+    /**
+     * Get the current time in milliseconds since epoch.
+     * @return the difference, measured in milliseconds, between the current time and midnight, January 1, 1970 UTC.
+     * @deprecated use {@link System#currentTimeMillis()}
+     */
+    @Deprecated
+    public static long getInMillis() {
+        return System.currentTimeMillis();
+    }
 
-	/**
-	 * Get the current time in milliseconds. 
-	 * 
-	 * In the current implementation, this just returns System.currentTimeMilis(). You should however use CurrenTimeUTC.getInMillis() instead because
-	 * the JavaDoc of System.currentTimeMilis() does not explicitly state what time zone it returns. Therefore, by using this wrapper function, your code
-	 * clearly states that it uses UTC time. 
+    /**
+	 * Get the current calendar year.
+	 * @deprecated use {@link LocalDate#getYear() LocalDate.now(ZoneOffset.UTC).getYear()}
 	 */
-	public static long getInMillis() {
-		return System.currentTimeMillis();
-	}
-
+	@Deprecated
 	public static int getYear() {
-		synchronized(mCalendar) {
-			mCalendar.setTimeInMillis(System.currentTimeMillis());
-			return mCalendar.get(Calendar.YEAR);
-		}
-	}
+		return LocalDate.now(ZoneOffset.UTC).getYear();
+    }
 
+    /**
+	 * Get the zero-indexed current calendar month.
+	 * @return the zero-indexed month number, where 0 indicates January and 11 indicates December
+	 * @deprecated use {@link LocalDate#getMonthValue() LocalDate.now(ZoneOffset.UTC).getMonthValue() - 1}
+	 */
+	@Deprecated
 	public static int getMonth() {
-		synchronized(mCalendar) {
-			mCalendar.setTimeInMillis(System.currentTimeMillis());
-			return mCalendar.get(Calendar.MONTH);
-		}
-	}
+		// Previously, this method used java.util.GregorianCalendar and Calendar.MONTH, which is zero-based.
+        // Newer java.time API returns months values starting from one,
+        // and subtraction is required to preserve backward compatibility.
+        return LocalDate.now(ZoneOffset.UTC).getMonthValue() - 1;
+    }
 
+    /**
+	 * Get the current day of the month.
+	 * @deprecated use {@link LocalDate#getDayOfMonth() LocalDate.now(ZoneOffset.UTC).getDayOfMonth()}
+	 */
+	@Deprecated
 	public static int getDayOfMonth() {
-		synchronized(mCalendar) {
-			mCalendar.setTimeInMillis(System.currentTimeMillis());
-			return mCalendar.get(Calendar.DAY_OF_MONTH);
-		}
-	}
-
+		return LocalDate.now(ZoneOffset.UTC).getDayOfMonth();
+    }
 }

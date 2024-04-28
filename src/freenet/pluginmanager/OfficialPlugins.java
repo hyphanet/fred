@@ -56,7 +56,7 @@ public class OfficialPlugins {
 					.advanced();
 			addPlugin("KeepAlive")
 					.inGroup("file-transfer")
-					.loadedFrom("CHK@bT1sdJ8VC0QT80kcefY95FYHEaqrHLlWVYgMX2bqeHg,AnvF8F7T9nJP8DY4snYsNJwz1np5JG73OaXeHJUqyZw,AAMC--8/plugin-KeepAlive.jar ");
+					.loadedFrom("CHK@mR-kJQNZYRaMRdO0D36NhLv8WnfF1sqsBe1ixKUg5lo,i-HExcBFiue3u4q5jooqRZUzRBGZJ0DSpd~~1T7fW6Q,AAMC--8/plugin-KeepAlive.jar");
 			addPlugin("MDNSDiscovery")
 					.inGroup("connectivity")
 					.minimumVersion(2)
@@ -83,8 +83,7 @@ public class OfficialPlugins {
 					.loadedFrom("CHK@ZiX8yeMHTUtNfJAgxpwH~jLRnnbb41BKEkAxOD~33tY,aBTvD3IoPKPLjnHOCNQ4-iRwqVED5kHgkmD4UhGdITk,AAMC--8/UPnP-10007.jar");
 			addPlugin("UPnP2")
 					.inGroup("connectivity")
-					.loadedFrom("CHK@oFNunyhic~ug3lWas8Jabpwbt3heHhrFzHswN~GhPNc,j~2AHw~ZyZGNMuqW3zmukTJHysDg5lBTvrySerSPxkI,AAMC--8/freenet-UPnP2.jar")
-					.advanced();
+					.loadedFrom("CHK@oFNunyhic~ug3lWas8Jabpwbt3heHhrFzHswN~GhPNc,j~2AHw~ZyZGNMuqW3zmukTJHysDg5lBTvrySerSPxkI,AAMC--8/freenet-UPnP2.jar");
 			addPlugin("XMLLibrarian")
 					.inGroup("index")
 					.minimumVersion(26)
@@ -107,7 +106,8 @@ public class OfficialPlugins {
 					.recommendedVersion(37)
 					.minimumVersion(36)
 					.usesXml()
-					.loadedFrom("CHK@RrYmOu8RGoEY44LOgGBBgY9qRxmiev0SFAVxWAbwROI,cfYMrDcBdewk4I7AC4J3mAq0g~NH3TxVpfeSkQ9Xaa8,AAMC--8/Library.jar");
+					.loadedFrom("CHK@RrYmOu8RGoEY44LOgGBBgY9qRxmiev0SFAVxWAbwROI,cfYMrDcBdewk4I7AC4J3mAq0g~NH3TxVpfeSkQ9Xaa8,AAMC--8/Library.jar")
+					.advanced();
 			addPlugin("Spider")
 					.inGroup("index")
 					.minimumVersion(53)
@@ -134,9 +134,9 @@ public class OfficialPlugins {
 					.loadedFrom("CHK@zAvWPxjh2rJ7j2cAiXcm2wnDYlURL9BFDGfLBaVtjqU,Ak90k0Qw1b6CWoWZ1AMdvrUj~evz4p9vl75mg7BsEp0,AAMC--8/FlogHelper.jar");
 			addPlugin("Sharesite")
 					.inGroup("communication")
-					.recommendedVersion(5)
+					.recommendedVersion(7)
 					.minimumVersion(2)
-					.loadedFrom("CHK@MDQlAV6EcyIvkomR~~YUx7YOS7BbicvAC9hpedmUlUw,rf3V7plsMOf650hNXOWqmF35dGs1LXRf3TiFOwdghyU,AAMC--8/Sharesite-0-4-8.jar");
+					.loadedFrom("CHK@~JCtW4wZDI3dX1vKejUQ-y19sC6tfc5L87hcknvAT-g,x5jFuw2KkDVEQ5d31zi47y7lXAHDfcvfu6rOgQpZkHs,AAMC--8/Sharesite-0-5-1.jar");
 		} catch (MalformedURLException mue1) {
 			throw new RuntimeException("Could not create FreenetURI.", mue1);
 		}

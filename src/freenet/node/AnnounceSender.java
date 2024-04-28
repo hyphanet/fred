@@ -68,16 +68,16 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 
 	public AnnounceSender(double target, OpennetManager om, Node node, AnnouncementCallback cb, PeerNode onlyNode) {
 		source = null;
-		this.uid = node.random.nextLong();
+		this.uid = node.getRandom().nextLong();
 		// Prevent it being routed back to us.
-		node.tracker.completed(uid);
+		node.getTracker().completed(uid);
 		this.om = om;
 		this.node = node;
 		this.htl = node.maxHTL();
 		this.target = target;
 		this.cb = cb;
 		this.onlyNode = onlyNode;
-		noderefBuf = om.crypto.myCompressedFullRef();
+		noderefBuf = om.getCrypto().myCompressedFullRef();
 		this.xferUID = 0;
 		this.paddedLength = 0;
 		this.noderefLength = 0;
@@ -87,17 +87,17 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 	public void run() {
 		try {
 			realRun();
-			node.nodeStats.reportAnnounceForwarded(forwardedRefs, source);
+			node.getNodeStats().reportAnnounceForwarded(forwardedRefs, source);
 		} catch (Throwable t) {
 			Logger.error(this, "Caught "+t+" announcing "+uid+" from "+source, t);
 		} finally {
 			if(source != null) {
 				source.completedAnnounce(uid);
 			}
-			node.tracker.completed(uid);
+			node.getTracker().completed(uid);
 			if(cb != null)
 				cb.completed();
-			node.nodeStats.endAnnouncement(uid);
+			node.getNodeStats().endAnnouncement(uid);
 		}
 	}
 
@@ -143,7 +143,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 
 			if(onlyNode == null) {
 				// Route it
-				next = node.peers.closerPeer(source, nodesRoutedTo, target, true, node.isAdvancedModeEnabled(), -1,
+				next = node.getPeers().closerPeer(source, nodesRoutedTo, target, true, node.isAdvancedModeEnabled(), -1,
 				        null, null, htl, 0, source == null, false, false);
 			} else {
 				next = onlyNode;
@@ -184,13 +184,12 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 				MessageFilter mfRejectedOverload = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPRejectedOverload);
 				MessageFilter mfOpennetDisabled = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPOpennetDisabled);
 
-				// mfRejectedOverload must be the last thing in the or
-				// So its or pointer remains null
-				// Otherwise we need to recreate it below
-				MessageFilter mf = mfAccepted.or(mfRejectedLoop.or(mfRejectedOverload.or(mfOpennetDisabled)));
+				// The order of these filters is performance critical. The last or-filter is checked first.
+				// So the last filter in the or-"chain" must be the filter which matches most frequently.
+				MessageFilter mf = mfRejectedOverload.or(mfRejectedLoop.or(mfOpennetDisabled.or(mfAccepted)));
 
 				try {
-					msg = node.usm.waitFor(mf, this);
+					msg = node.getUSM().waitFor(mf, this);
 					if(logMINOR) Logger.minor(this, "first part got "+msg);
 				} catch (DisconnectedException e) {
 					Logger.normal(this, "Disconnected from "+next+" while waiting for Accepted on "+uid);
@@ -268,7 +267,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 				MessageFilter mf = mfAnnounceCompleted.or(mfRouteNotFound.or(mfRejectedOverload.or(mfAnnounceReply.or(mfOpennetDisabled.or(mfNotWanted.or(mfOpennetNoderefRejected))))));
 
 				try {
-					msg = node.usm.waitFor(mf, this);
+					msg = node.getUSM().waitFor(mf, this);
 				} catch (DisconnectedException e) {
 					Logger.normal(this, "Disconnected from "+next+" while waiting for announcement");
 					break;
@@ -299,7 +298,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 					mf = mfAnnounceReply.or(mfNotWanted);
 					while(true)  {
 						try {
-							msg = node.usm.waitFor(mf, this);
+							msg = node.getUSM().waitFor(mf, this);
 						} catch (DisconnectedException e) {
 							return;
 						}
@@ -439,7 +438,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 			
 		};
 		try {
-			node.executor.execute(r);
+			node.getExecutor().execute(r);
 		} catch (Throwable t) {
 			synchronized(this) {
 				waitingForTransfers--;
@@ -538,7 +537,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 		try {
 			// Allow reconnection - sometimes one side has the ref and the other side doesn't.
 			if(om.addNewOpennetNode(fs, ConnectionType.ANNOUNCE, true) != null) {
-				sendOurRef(source, om.crypto.myCompressedFullRef());
+				sendOurRef(source, om.getCrypto().myCompressedFullRef());
 			} else {
 				if(logMINOR)
 					Logger.minor(this, "Don't need the node");
@@ -575,17 +574,17 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 
 	@Override
 	public void sentBytes(int x) {
-		node.nodeStats.announceByteCounter.sentBytes(x);
+		node.getNodeStats().announceByteCounter.sentBytes(x);
 	}
 
 	@Override
 	public void receivedBytes(int x) {
-		node.nodeStats.announceByteCounter.receivedBytes(x);
+		node.getNodeStats().announceByteCounter.receivedBytes(x);
 	}
 
 	@Override
 	public void sentPayload(int x) {
-		node.nodeStats.announceByteCounter.sentPayload(x);
+		node.getNodeStats().announceByteCounter.sentPayload(x);
 		// Doesn't count.
 	}
 

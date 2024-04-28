@@ -27,7 +27,7 @@ public interface ClientEventProducer {
     void addEventListener(ClientEventListener cel);
 
     /**
-     * Removes an EventListener that will no loger receive events
+     * Removes an EventListener that will no longer receive events
      * produced by the implementing object.
      * @param cel  The ClientEventListener to remove.
      * @return     true if a Listener was removed, false otherwise.

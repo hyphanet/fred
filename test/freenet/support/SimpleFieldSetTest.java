@@ -16,6 +16,8 @@
 
 package freenet.support;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.anEmptyMap;
 import static org.junit.Assert.*;
 
 import java.io.BufferedReader;
@@ -823,10 +825,10 @@ public class SimpleFieldSetTest {
 		String written = "foo.blah=\nEnd\n";
 		LineReader r = Readers.fromBufferedReader(new BufferedReader(new StringReader(written)));
 		SimpleFieldSet sfsCheck = new SimpleFieldSet(r, 1024, 1024, true, false, true, false);
-		assertTrue(sfsCheck.get("foo.blah").equals(""));
+		assertTrue(sfsCheck.get("foo.blah").isEmpty());
 		r = Readers.fromBufferedReader(new BufferedReader(new StringReader(written)));
 		sfsCheck = new SimpleFieldSet(r, 1024, 1024, true, false, true, true);
-		assertTrue(sfsCheck.get("foo.blah").equals(""));
+		assertTrue(sfsCheck.get("foo.blah").isEmpty());
 	}
 	
 	@Test
@@ -840,4 +842,12 @@ public class SimpleFieldSetTest {
         assertTrue(Arrays.equals(SimpleFieldSet.split(";;blah;1;2;;"), new String[] { "", "", "blah", "1", "2", "", "" }));
         assertTrue(Arrays.equals(SimpleFieldSet.split(";;;"), new String[] { "", "", "" }));
 	}
+
+	// This fixes https://freenet.mantishub.io/view.php?id=7197.
+	@Test
+	public void directSubsetsReturnsEmptyMapWhenSubsetsIsNotInitialized() {
+		SimpleFieldSet simpleFieldSet = new SimpleFieldSet(true);
+		assertThat(simpleFieldSet.directSubsets(), anEmptyMap());
+	}
+
 }

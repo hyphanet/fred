@@ -140,7 +140,7 @@ public abstract class ClientRequest implements Serializable {
 		} else {
 			origHandler = null;
 			if(global) {
-				client = persistence == Persistence.FOREVER ? handler.server.globalForeverClient : handler.server.globalRebootClient;
+				client = persistence == Persistence.FOREVER ? handler.getServer().getGlobalForeverClient() : handler.getServer().getGlobalRebootClient();
 	            this.verbosity = Integer.MAX_VALUE;
 	            clientName = null;
 			} else {
@@ -334,7 +334,7 @@ public abstract class ClientRequest implements Serializable {
 		if(newPriorityClass >= 0 && newPriorityClass != priorityClass) {
 			this.priorityClass = newPriorityClass;
 			ClientRequester r = getClientRequest();
-			r.setPriorityClass(priorityClass, server.core.clientContext);
+			r.setPriorityClass(priorityClass, server.getCore().getClientContext());
 			priorityClassChanged = true;
 			if(client != null) {
 				RequestStatusCache cache = client.getRequestStatusCache();
@@ -348,7 +348,7 @@ public abstract class ClientRequest implements Serializable {
 			return; // quick return, nothing was changed
 		}
 		
-		server.core.clientContext.jobRunner.setCheckpointASAP();
+		server.getCore().getClientContext().jobRunner.setCheckpointASAP();
 		
 		// this could become too complex with more parameters, but for now its ok
 		final PersistentRequestModifiedMessage modifiedMsg;
@@ -375,7 +375,7 @@ public abstract class ClientRequest implements Serializable {
 			}
 		}
 		if(persistence == Persistence.FOREVER) {
-		server.core.clientContext.jobRunner.queue(new PersistentJob() {
+		server.getCore().getClientContext().jobRunner.queue(new PersistentJob() {
 
 			@Override
 			public boolean run(ClientContext context) {
@@ -389,7 +389,7 @@ public abstract class ClientRequest implements Serializable {
 			
 		}, NativeThread.HIGH_PRIORITY);
 		} else {
-			server.core.getExecutor().execute(new PrioRunnable() {
+			server.getCore().getExecutor().execute(new PrioRunnable() {
 
 				@Override
 				public int getPriority() {
@@ -399,7 +399,7 @@ public abstract class ClientRequest implements Serializable {
 				@Override
 				public void run() {
 				    try {
-                        restart(server.core.clientContext, disableFilterData);
+                        restart(server.getCore().getClientContext(), disableFilterData);
                     } catch (PersistenceDisabledException e) {
                         // Impossible
                     }

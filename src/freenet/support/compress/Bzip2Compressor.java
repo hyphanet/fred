@@ -8,7 +8,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
@@ -28,14 +28,7 @@ import freenet.support.io.HeaderStreams;
 */
 public class Bzip2Compressor extends AbstractCompressor {
 
-	public static final byte[] BZ_HEADER;
-	static {
-		try {
-			BZ_HEADER = "BZ".getBytes("ISO-8859-1");
-		} catch (UnsupportedEncodingException e) {
-			throw new Error(e); // Impossible!
-		}
-	}
+	public static final byte[] BZ_HEADER = "BZ".getBytes(StandardCharsets.ISO_8859_1);
 
 	@Override
 	public Bucket compress(Bucket data, BucketFactory bf, long maxReadLength, long maxWriteLength)

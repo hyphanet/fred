@@ -52,12 +52,12 @@ public class IOStatisticCollector {
 				entry = new StatisticEntry();
 				targets.put(key, entry);
 			}
-			entry.addData((inbytes>0)?inbytes:0, (outbytes>0)?outbytes:0);
+			entry.addData(Math.max(inbytes, 0), Math.max(outbytes, 0));
 		}
 		if(!isLocal) {
 			synchronized(this) {
-				totalbytesout += (outbytes>0)?outbytes:0;
-				totalbytesin += (inbytes>0)?inbytes:0;
+				totalbytesout += Math.max(outbytes, 0);
+				totalbytesin += Math.max(inbytes, 0);
 				if(logDEBUG)
 					Logger.debug(IOStatisticCollector.class, "Add("+addr+":"+port+ ',' +inbytes+ ',' +outbytes+" -> "+totalbytesin+" : "+totalbytesout);
 			}

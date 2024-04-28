@@ -5,6 +5,7 @@ package freenet.clients.http;
 
 import java.io.IOException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
 import freenet.client.HighLevelSimpleClient;
@@ -53,7 +54,7 @@ public class TranslationToadlet extends Toadlet {
 				super.sendErrorPage(ctx, 503 /* Service Unavailable */, "Service Unavailable", l10n("noCustomTranslations"));
 				return;
 			}
-			byte[] data = sfs.toOrderedString().getBytes("UTF-8");
+			byte[] data = sfs.toOrderedString().getBytes(StandardCharsets.UTF_8);
 			MultiValueTable<String, String> head = new MultiValueTable<String, String>();
 			head.put("Content-Disposition", "attachment; filename=\"" + this.base.getL10nOverrideFileName(this.base.getSelectedLanguage()) + '"');
 			ctx.sendReplyHeaders(200, "Found", head, "text/plain; charset=utf-8", data.length);
@@ -167,7 +168,7 @@ public class TranslationToadlet extends Toadlet {
 		final HTMLNode translatingForBox = ctx.getPageMaker().getInfobox(null, l10n("selectTranslation"), contentNode);
 		ArrayList<String> elementsToTranslate = new ArrayList<String>();
 		elementsToTranslate.add("Node");
-		for(PluginInfoWrapper pluginInfo : this.core.node.pluginManager.getPlugins()) {
+		for(PluginInfoWrapper pluginInfo : this.core.getNode().getPluginManager().getPlugins()) {
 			if(!pluginInfo.isBaseL10nPlugin()) {
 				continue;
 			}
@@ -228,7 +229,7 @@ public class TranslationToadlet extends Toadlet {
 		if(request.isPartSet("translating_for")) {
 			final String translateFor = request.getPartAsStringFailsafe("translating_for", 255);
 
-			for(PluginInfoWrapper pluginInfo : this.core.node.pluginManager.getPlugins()) {
+			for(PluginInfoWrapper pluginInfo : this.core.getNode().getPluginManager().getPlugins()) {
 				if(translateFor.equals(pluginInfo.getPluginClassName()) && pluginInfo.isBaseL10nPlugin()) {
 					FredPluginBaseL10n plugin = (FredPluginBaseL10n) pluginInfo.getPlugin();
 					this.translatingFor = translateFor;
@@ -249,7 +250,7 @@ public class TranslationToadlet extends Toadlet {
 		
 		if(request.getPartAsStringFailsafe("translation_update", 32).length() > 0){
 			String key = request.getPartAsStringFailsafe("key", 256);
-			this.base.setOverride(key, new String(BucketTools.toByteArray(request.getPart("trans")), "UTF-8").trim());
+			this.base.setOverride(key, new String(BucketTools.toByteArray(request.getPart("trans")), StandardCharsets.UTF_8).trim());
 			
 			if("on".equalsIgnoreCase(request.getPartAsStringFailsafe("gotoNext", 7))) {
 				KeyIterator it = base.getDefaultLanguageTranslation().keyIterator("");

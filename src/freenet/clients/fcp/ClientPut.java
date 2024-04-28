@@ -7,7 +7,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.Date;
@@ -28,7 +28,6 @@ import freenet.crypt.SHA256;
 import freenet.keys.FreenetURI;
 import freenet.node.NodeClientCore;
 import freenet.support.Base64;
-import freenet.support.CurrentTimeUTC;
 import freenet.support.IllegalBase64Exception;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -117,7 +116,7 @@ public class ClientPut extends ClientPutBase {
 			String charset, short priorityClass, Persistence persistence, String clientToken,
 			boolean getCHKOnly, boolean dontCompress, int maxRetries, UploadFrom uploadFromType, File origFilename,
 			String contentType, RandomAccessBucket data, FreenetURI redirectTarget, String targetFilename, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, int extraInsertsSingleBlock, int extraInsertsSplitfileHeaderBlock, boolean realTimeFlag, InsertContext.CompatibilityMode compatMode, byte[] overrideSplitfileKey, boolean binaryBlob, NodeClientCore core) throws IdentifierCollisionException, NotAllowedException, MetadataUnresolvedException, IOException {
-		super(uri = checkEmptySSK(uri, targetFilename, core.clientContext), identifier, verbosity, charset, null, globalClient, priorityClass, persistence, null, true, getCHKOnly, dontCompress, maxRetries, earlyEncode, canWriteClientCache, forkOnCacheable, false, extraInsertsSingleBlock, extraInsertsSplitfileHeaderBlock, realTimeFlag, null, compatMode, false/*XXX ignoreUSKDatehints*/, core);
+		super(uri = checkEmptySSK(uri, targetFilename, core.getClientContext()), identifier, verbosity, charset, null, globalClient, priorityClass, persistence, null, true, getCHKOnly, dontCompress, maxRetries, earlyEncode, canWriteClientCache, forkOnCacheable, false, extraInsertsSingleBlock, extraInsertsSplitfileHeaderBlock, realTimeFlag, null, compatMode, false/*XXX ignoreUSKDatehints*/, core);
 		if(uploadFromType == UploadFrom.DISK) {
 			if(!core.allowUploadFrom(origFilename))
 				throw new NotAllowedException();
@@ -140,7 +139,7 @@ public class ClientPut extends ClientPutBase {
 		if(uploadFrom == UploadFrom.REDIRECT) {
 			this.targetURI = redirectTarget;
 			Metadata m = new Metadata(DocumentType.SIMPLE_REDIRECT, null, null, targetURI, cm);
-			tempData = m.toBucket(core.clientContext.getBucketFactory(isPersistentForever()));
+			tempData = m.toBucket(core.getClientContext().getBucketFactory(isPersistentForever()));
 			isMetadata = true;
 		} else
 			targetURI = null;
@@ -151,11 +150,11 @@ public class ClientPut extends ClientPutBase {
 		putter = new ClientPutter(this, data, this.uri, cm, 
 				ctx, priorityClass, 
 				isMetadata, 
-				this.uri.getDocName() == null ? targetFilename : null, binaryBlob, core.clientContext, overrideSplitfileKey, -1);
+				this.uri.getDocName() == null ? targetFilename : null, binaryBlob, core.getClientContext(), overrideSplitfileKey, -1);
 	}
 	
 	public ClientPut(FCPConnectionHandler handler, ClientPutMessage message, FCPServer server) throws IdentifierCollisionException, MessageInvalidException, IOException {
-		super(checkEmptySSK(message.uri, message.targetFilename, server.core.clientContext), message.identifier, message.verbosity, null, 
+		super(checkEmptySSK(message.uri, message.targetFilename, server.getCore().getClientContext()), message.identifier, message.verbosity, null,
 				handler, message.priorityClass, message.persistence, message.clientToken,
 				message.global, message.getCHKOnly, message.dontCompress, message.localRequestOnly, message.maxRetries, message.earlyEncode, message.canWriteClientCache, message.forkOnCacheable, message.compressorDescriptor, message.extraInsertsSingleBlock, message.extraInsertsSplitfileHeaderBlock, message.realTimeFlag, message.compatibilityMode, message.ignoreUSKDatehints, server);
 		String salt = null;
@@ -163,7 +162,7 @@ public class ClientPut extends ClientPutBase {
 		binaryBlob = message.binaryBlob;
 		
 		if(message.uploadFromType == UploadFrom.DISK) {
-			if(!handler.server.core.allowUploadFrom(message.origFilename))
+			if(!handler.getServer().getCore().allowUploadFrom(message.origFilename))
 				throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "Not allowed to upload from "+message.origFilename, identifier, global);
 
 			if(message.fileHash != null) {
@@ -197,7 +196,7 @@ public class ClientPut extends ClientPutBase {
 		if ((mimeType == null) && (targetFilename != null)) {
 			mimeType = DefaultMIMETypes.guessMIMEType(targetFilename, true);
 		}
-		if(mimeType != null && mimeType.equals("")) mimeType = null;
+		if(mimeType != null && mimeType.isEmpty()) mimeType = null;
 		if(mimeType != null && !DefaultMIMETypes.isPlausibleMIMEType(mimeType)) {
 			throw new MessageInvalidException(ProtocolErrorMessage.BAD_MIME_TYPE, "Bad MIME type in Metadata.ContentType", identifier, global);
 		}
@@ -211,7 +210,7 @@ public class ClientPut extends ClientPutBase {
 			this.targetURI = message.redirectTarget;
 			Metadata m = new Metadata(DocumentType.SIMPLE_REDIRECT, null, null, targetURI, cm);
 			try {
-	            tempData = m.toBucket(server.core.clientContext.getBucketFactory(isPersistentForever()));
+	            tempData = m.toBucket(server.getCore().getClientContext().getBucketFactory(isPersistentForever()));
 			} catch (MetadataUnresolvedException e) {
 				// Impossible
 				Logger.error(this, "Impossible: "+e, e);
@@ -231,11 +230,7 @@ public class ClientPut extends ClientPutBase {
 		if(salt != null) {
 			MessageDigest md = SHA256.getMessageDigest();
 			byte[] foundHash;
-			try {
-				md.update(salt.getBytes("UTF-8"));
-			} catch (UnsupportedEncodingException e) {
-				throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
-			}
+			md.update(salt.getBytes(StandardCharsets.UTF_8));
 			InputStream is = null;
 			try {
 				is = data.getInputStream();
@@ -261,7 +256,7 @@ public class ClientPut extends ClientPutBase {
 		putter = new ClientPutter(this, data, this.uri, cm, 
 				ctx, priorityClass, 
 				isMetadata,
-				this.uri.getDocName() == null ? targetFilename : null, binaryBlob, server.core.clientContext, message.overrideSplitfileCryptoKey, message.metadataThreshold);
+				this.uri.getDocName() == null ? targetFilename : null, binaryBlob, server.getCore().getClientContext(), message.overrideSplitfileCryptoKey, message.metadataThreshold);
 	}
 	
 	protected ClientPut() {
@@ -525,7 +520,7 @@ public class ClientPut extends ClientPutBase {
 		
 		int total=0, min=0, fetched=0, fatal=0, failed=0;
 		// See ClientRequester.getLatestSuccess() for why this defaults to current time.
-		Date latestSuccess = CurrentTimeUTC.get();
+		Date latestSuccess = new Date();
 		Date latestFailure = null;
 		boolean totalFinalized = false;
 		

@@ -1,0 +1,54 @@
+freenet (0.7.5+1498-1) unstable; urgency=medium
+
+  * Build 1498
+
+ -- Arne <arne_bab@web.de>  Sun, 15 Oct 2023 23:42:30 +0100
+
+freenet (0.7.5+1497-1) unstable; urgency=medium
+
+  * Build 1497
+
+ -- Arne <arne_bab@web.de>  Thu, 07 Sep 2023 23:42:30 +0100
+
+freenet (0.7.5+1494-7) unstable; urgency=medium
+
+  * Remove outdated files
+
+ -- DC <des@riseup.net>  Sat, 17 Sep 2022 15:46:23 +0100
+
+freenet (0.7.5+1494-7) unstable; urgency=medium
+
+  * Lintian binary overrides
+
+ -- DC <des@riseup.net>  Sat, 17 Sep 2022 13:57:51 +0100
+
+freenet (0.7.5+1494-4) unstable; urgency=medium
+
+  * Update package build descriptions
+
+ -- DC <des@riseup.net>  Sat, 02 Jul 2022 00:36:27 +0100
+
+freenet (0.7.5+1494-3) unstable; urgency=medium
+
+  * Add attribution to original work
+
+ -- DC* <des@riseup.net>  Sat, 02 Jul 2022 00:26:57 +0100
+
+freenet (0.7.5+1494-2) unstable; urgency=medium
+
+  * Update maintainer
+
+ -- DC* <des@riseup.net>  Sat, 02 Jul 2022 00:19:27 +0100
+
+freenet (0.7.5+1494-1) unstable; urgency=medium
+
+  * Build 1494
+
+ -- DC* <des@riseup.net>  Sat, 02 Jul 2022 00:00:49 +0100
+
+freenet (0.7.5+1493-1) unstable; urgency=medium
+
+  * Initial Release.
+  Packaged originally by Ximin Luo <infinity0@debian.org>: https://github.com/freenet/debian
+
+ -- DC* <des@riseup.net>  Fri, 01 Jul 2022 23:25:13 +0100
