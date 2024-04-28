@@ -20,6 +20,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.ConcurrentModificationException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -239,9 +240,15 @@ public class PluginManager {
 		while(true) {
 			int delta = (int) (deadline - now);
 			if(delta <= 0) {
-				String list = pluginList(loadedPlugins.getLoadedPlugins());
-				Logger.error(this, "Plugins still shutting down at timeout:\n"+list);
-				System.err.println("Plugins still shutting down at timeout:\n"+list);
+                String list = "";
+				try {
+					list = pluginList(loadedPlugins.getLoadedPlugins());
+					Logger.error(this, "Plugins still shutting down at timeout:\n"+list);
+					System.err.println("Plugins still shutting down at timeout:\n"+list);
+				} catch (ConcurrentModificationException e) {
+					Logger.error(this, "Error during shutdown: "+ e);
+					Logger.error(this, "Plugins still shutting down at timeout:\n"+list);
+				}
 			} else {
 				for (PluginInfoWrapper pluginInfoWrapper : loadedPlugins.getLoadedPlugins()) {
 					System.out.println("Waiting for plugin to finish shutting down: " + pluginInfoWrapper.getFilename());
