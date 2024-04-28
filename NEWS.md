@@ -137,8 +137,8 @@ A special thanks goes to Bombe for many careful reviews!
 
 [high-impact-task]: https://github.com/hyphanet/wiki/wiki/High-Impact-tasks
 [Roadmap]: https://github.com/hyphanet/wiki/wiki/Roadmap
-[exe signing workflow]: 
-[verify-build script]: 
+[exe signing workflow]: https://github.com/hyphanet/sign-windows-installer
+[verify-build script]: https://github.com/hyphanet/scripts/blob/master/verify-build
 
 # Full changelog:
 
