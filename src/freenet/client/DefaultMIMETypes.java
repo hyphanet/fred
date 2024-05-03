@@ -754,6 +754,7 @@ public class DefaultMIMETypes {
 		addMIMEType((short)619, "audio/speex", "spx");
 		addMIMEType((short)620, "audio/ogg", "oga");
 		addMIMEType((short)621, "audio/flac", "flac");
+		addMIMEType((short)622, "image/webp", "webp");
 	}
 	
 	/** Guess a MIME type from a filename.
