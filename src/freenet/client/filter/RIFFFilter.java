@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.EOFException;
-import java.util.HashMap;
 import java.util.Map;
 
 import freenet.l10n.NodeL10n;
@@ -15,7 +14,7 @@ import freenet.support.Logger.LogLevel;
 
 // RIFF file format filter for several formats, such as AVI, WAV, MID, and WebP
 public abstract class RIFFFilter implements ContentDataFilter {
-	static final byte[] magicNumber = new byte[] {'R', 'I', 'F', 'F'};
+	private static final byte[] magicNumber = new byte[] {'R', 'I', 'F', 'F'};
 
 	@Override
 	public void readFilter(InputStream input, OutputStream output, String charset, Map<String, String> otherParams,
@@ -34,72 +33,67 @@ public abstract class RIFFFilter implements ContentDataFilter {
 			 // FIXME Video with more than 2 GiB data need unsigned format
 			throw new DataFilterException(l10n("invalidTitle"), l10n("invalidTitle"), l10n("dataTooBig"));
 		}
-		out.writeInt(((fileSize & 0xff000000) >> 24) | ((fileSize & 0x00ff0000) >> 8) | ((fileSize & 0x0000ff00) << 8) | ((fileSize & 0x000000ff) << 24));
+		if(fileSize < 12) {
+			// There couldn't be any chunk in such a small file
+			throw new DataFilterException(l10n("invalidTitle"), l10n("invalidTitle"), NodeL10n.getBase().getString("ContentFilter.EOFMessage"));
+		}
+		writeLittleEndianInt(out, fileSize);
 		out.write(getChunkMagicNumber());
-		// readInt and writeInt are big endian, but RIFF use little endian
+
 		Object context = createContext();
-		boolean atLeastOneBlockIsFiltered = false;
 		byte[] fccType;
 		int ckSize;
+		int remainingSize = fileSize - 4;
 		try {
 			do {
 				fccType = new byte[4];
-				try {
-					in.readFully(fccType);
-				} catch(EOFException e) {
-					// EOF
-					if(!atLeastOneBlockIsFiltered) {
-						// It could be a corrupted file with no chunks
-						throw new DataFilterException(l10n("invalidTitle"), l10n("invalidTitle"), "No media chunk in the file");
-					} else {
-						// EOF can only be here, otherwise the file is corrupted
-						return;
-					}
-				}
+				in.readFully(fccType);
 				ckSize = readLittleEndianInt(in);
-				if((ckSize & 1) != 0) {
-					throw new DataFilterException(l10n("invalidTitle"), l10n("invalidTitle"), "Chunk must be padded to even size");
+				if(remainingSize < ckSize + 8 + (ckSize & 1)) {
+					throw new DataFilterException(l10n("invalidTitle"), l10n("invalidTitle"), "Chunk size is too big");
 				}
-				atLeastOneBlockIsFiltered = true;
-			} while(readFilterChunk(fccType, ckSize, context, in, out, charset, otherParams, schemeHostAndPort, cb));
+				remainingSize -= ckSize + 8 + (ckSize & 1);
+				readFilterChunk(fccType, ckSize, context, in, out, charset, otherParams, schemeHostAndPort, cb);
+			} while(remainingSize != 0);
 		} catch(EOFException e) {
-			throw new DataFilterException(l10n("invalidTitle"), l10n("invalidTitle"), "Unexpected end of file");
+			throw new DataFilterException(l10n("invalidTitle"), l10n("invalidTitle"), NodeL10n.getBase().getString("ContentFilter.EOFMessage"));
 		}
+		// Do a final test
+		if(remainingSize != 0) {
+			throw new DataFilterException(l10n("invalidTitle"), l10n("invalidTitle"), NodeL10n.getBase().getString("ContentFilter.EOFMessage"));
+		}
+		EOFCheck(context);
 	}
 	
-	public abstract byte[] getChunkMagicNumber();
+	protected abstract byte[] getChunkMagicNumber();
 	
-	public abstract Object createContext();
+	// Create a context object holding the context states
+	protected abstract Object createContext();
 	
-	public abstract boolean readFilterChunk(byte[] ID, int size, Object context, DataInputStream input, DataOutputStream output, String charset, Map<String, String> otherParams,
+	protected abstract void readFilterChunk(byte[] ID, int size, Object context, DataInputStream input, DataOutputStream output, String charset, Map<String, String> otherParams,
 			String schemeHostAndPort, FilterCallback cb) throws DataFilterException, IOException;
-
-	public void writeFilter(InputStream input, OutputStream output,
-			String charset, HashMap<String, String> otherParams,
-			FilterCallback cb) throws DataFilterException, IOException {
-		// TODO Auto-generated method stub
-
-	}
+	
+	protected abstract void EOFCheck(Object context) throws DataFilterException;
 	
 	private static String l10n(String key) {
 		return NodeL10n.getBase().getString("RIFFFilter."+key);
 	}
 	
 	// Pass through bytes to output unchanged
-	protected void passthroughBytes(DataInputStream in, DataOutputStream out, int bytes) throws DataFilterException, IOException {
-		if(bytes < 0)
+	protected void passthroughBytes(DataInputStream in, DataOutputStream out, int size) throws DataFilterException, IOException {
+		if(size < 0)
 		{
-			if(Logger.shouldLog(LogLevel.WARNING,  this.getClass())) Logger.warning(this, "RIFF block size " + bytes + " is less than 0");
+			if(Logger.shouldLog(LogLevel.WARNING,  this.getClass())) Logger.warning(this, "RIFF block size " + size + " is less than 0");
 			throw new DataFilterException(l10n("invalidTitle"), l10n("invalidTitle"), l10n("dataTooBig"));
 		} else {
 			// Copy 1MB at a time instead of all at once
 			int section;
-			int remaining = bytes;
+			int remaining = size;
 			while(remaining > 0) {
 				if(remaining > 1024 * 1024) {
 					section = 1024 * 1024;
 				} else {
-					section = bytes;
+					section = remaining;
 				}
 				byte[] buf = new byte[section];
 				in.readFully(buf);
@@ -109,30 +103,50 @@ public abstract class RIFFFilter implements ContentDataFilter {
 		}
 	}
 
-	// Read bytes as CodecPacket
-	protected CodecPacket readAsCodecPacket(DataInputStream in, int size) throws IOException {
+	// Write a JUNK chunk for unsupported data
+	protected void writeJunkChunk(DataInputStream in, DataOutputStream out, int size) throws DataFilterException, IOException {
+		size += size % 2; // Add a padding if necessary
+		if(in.skip(size) < size) {
+			// EOFException?
+			throw new EOFException();
+		}
 		if(size < 0)
 		{
 			if(Logger.shouldLog(LogLevel.WARNING,  this.getClass())) Logger.warning(this, "RIFF block size " + size + " is less than 0");
 			throw new DataFilterException(l10n("invalidTitle"), l10n("invalidTitle"), l10n("dataTooBig"));
 		} else {
-			byte[] buf;
-			try {
-				buf = new byte[size]; // FIXME: Doesn't work for huge videos
-			} catch(OutOfMemoryError e) {
-				throw new DataFilterException(l10n("invalidTitle"), l10n("invalidTitle"), "OutOfMemoryError when processing a chunk");
+			// Write 1MB at a time instead of all at once
+			int section;
+			int remaining = size;
+			byte[] zeros = new byte[1024 * 1024];
+			for(int i = 0; i < 1024 * 1024; i++) {
+				zeros[i] = 0;
 			}
-			in.readFully(buf);
-			return new CodecPacket(buf);
+			byte[] JUNK = new byte[] {'J', 'U', 'N', 'K'};
+			out.write(JUNK);
+			writeLittleEndianInt(out, size);
+			while(remaining > 0) {
+				if(remaining > 1024 * 1024) {
+					section = 1024 * 1024;
+				} else {
+					section = remaining;
+				}
+				out.write(zeros, 0, section);
+				remaining -= section;
+			}
 		}
 	}
 	
-	protected final static int readLittleEndianInt(DataInputStream in) throws IOException {
-		int[] ubytes = new int[4];
-		ubytes[0] = in.readUnsignedByte();
-		ubytes[1] = in.readUnsignedByte();
-		ubytes[2] = in.readUnsignedByte();
-		ubytes[3] = in.readUnsignedByte();
-		return ubytes[0] | (ubytes[1] << 8) | (ubytes[2] << 16) | (ubytes[3] << 24);
+	// Read a little endian int
+	// readInt and writeInt are big endian, but RIFF use little endian
+	protected final static int readLittleEndianInt(DataInputStream stream) throws IOException {
+		int a;
+		a = stream.readInt();
+		return Integer.reverseBytes(a);
+	}
+	
+	// Write a little endian int	
+	protected final static void writeLittleEndianInt(DataOutputStream stream, int a) throws IOException {
+		stream.writeInt(Integer.reverseBytes(a));
 	}
 }

@@ -8,6 +8,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.HashMap;
 
 import org.junit.Test;
@@ -25,7 +27,13 @@ public class WebPFilterTest {
      */
     @Test
     public void testNoChunkFile() throws IOException {
-        Bucket input = resourceToBucket("./webp/nochunks.not_webp");
+        ByteBuffer buf = ByteBuffer.allocate(12)
+                .order(ByteOrder.LITTLE_ENDIAN)
+                .put(new byte[]{'R', 'I', 'F', 'F'})
+                .putInt(4 /* file size */)
+                .put(new byte[]{'W', 'E', 'B', 'P'});
+
+        Bucket input = new ArrayBucket(buf.array());
         filterImage(input, DataFilterException.class);
     }
 
@@ -33,17 +41,71 @@ public class WebPFilterTest {
      * Tests file with too short VP8 chunk
      */
     @Test
-    public void testTruncatedFile() throws IOException {
-        Bucket input = resourceToBucket("./webp/test_truncated.not_webp");
+    public void testFileEOF() throws IOException {
+        ByteBuffer buf = ByteBuffer.allocate(33)
+                .order(ByteOrder.LITTLE_ENDIAN)
+                .put(new byte[]{'R', 'I', 'F', 'F'})
+                .putInt(0x1308 /* file size */)
+                .put(new byte[]{'W', 'E', 'B', 'P'})
+                .put(new byte[]{'V', 'P', '8', ' '})
+                .putInt(0x12FC /* chunk size */)
+                .putLong(((long)0x2a019d << 24 /* frame tag */) | (1 << 4 /* show_frame=1 */));
+
+        Bucket input = new ArrayBucket(buf.array());
         filterImage(input, DataFilterException.class);
     }
 
     /**
-     * Tests file with chunk size of 0x7fffffff
+     * Tests file with just only a JUNK chunk
+     */
+    @Test
+    public void testFileJustJUNK() throws IOException {
+        ByteBuffer buf = ByteBuffer.allocate(28)
+                .order(ByteOrder.LITTLE_ENDIAN)
+                .put(new byte[]{'R', 'I', 'F', 'F'})
+                .putInt(20 /* file size */)
+                .put(new byte[]{'W', 'E', 'B', 'P'})
+                .put(new byte[]{'J', 'U', 'N', 'K'})
+                .putInt(7 /* chunk size */)
+                .putLong(0);
+
+        Bucket input = new ArrayBucket(buf.array());
+        filterImage(input, DataFilterException.class);
+    }
+
+    /**
+     * Tests file with chunk size of 0x7fffff00
      */
     @Test
     public void testTooBig() throws IOException {
-        Bucket input = resourceToBucket("./webp/too_big.not_webp");
+        ByteBuffer buf = ByteBuffer.allocate(32)
+                .order(ByteOrder.LITTLE_ENDIAN)
+                .put(new byte[]{'R', 'I', 'F', 'F'})
+                .putInt(0x7fffff0c /* file size */)  // 2 GiB
+                .put(new byte[]{'W', 'E', 'B', 'P'})
+                .put(new byte[]{'V', 'P', '8', ' '})
+                .putInt(0x7fffff00 /* chunk size */)  // 2 GiB
+                .putLong(((long)0x2a019d << 24 /* frame tag */) | (1 << 4 /* show_frame=1 */));
+
+        Bucket input = new ArrayBucket(buf.array());
+        filterImage(input, DataFilterException.class);
+    }
+
+    /**
+     * Tests file with file size of 0
+     */
+    @Test
+    public void fileSizeTooSmall() throws IOException {
+        ByteBuffer buf = ByteBuffer.allocate(32)
+                .order(ByteOrder.LITTLE_ENDIAN)
+                .put(new byte[]{'R', 'I', 'F', 'F'})
+                .putInt(0 /* file size */)  // Empty RIFF file, promise!
+                .put(new byte[]{'W', 'E', 'B', 'P'})
+                .put(new byte[]{'V', 'P', '8', ' '})
+                .putInt(12 /* chunk size */)
+                .putLong(((long)0x2a019d << 24 /* frame tag */) | (1 << 4 /* show_frame=1 */));
+
+        Bucket input = new ArrayBucket(buf.array());
         filterImage(input, DataFilterException.class);
     }
     

@@ -85,7 +85,7 @@ public class ContentFilter {
 		// WEBP - has a filter
 		register(new FilterMIMEType("image/webp", "webp", new String[] { "image/webp" }, new String[0],
 				true, false, new WebPFilter(), false, false, false, false, true, false,
-				l10n("imagePngReadAdvice"),
+				l10n("imageWebPReadAdvice"),
 				false, null, null, false));
 
 		/* Ogg - has a filter
