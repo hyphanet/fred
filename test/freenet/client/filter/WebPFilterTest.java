@@ -15,6 +15,7 @@ import java.util.HashMap;
 import org.junit.Test;
 import freenet.support.api.Bucket;
 import freenet.support.io.ArrayBucket;
+import freenet.support.io.ArrayBucketFactory;
 import freenet.support.io.BucketTools;
 
 /**
@@ -120,6 +121,18 @@ public class WebPFilterTest {
         //Filter should return the original
         assertEquals("Input and output should be the same length", input.size(), output.size());
         assertArrayEquals("Input and output are not identical", BucketTools.toByteArray(input), BucketTools.toByteArray(output));
+    }
+    
+    /**
+     * Tests data after valid image
+     */
+    @Test
+    public void testDataAfterEOF() throws IOException {
+    	ArrayBucketFactory bf = new ArrayBucketFactory();
+        Bucket inputValid = resourceToBucket("./webp/test.webp");
+        Bucket input = BucketTools.pad(inputValid, (int)inputValid.size() + 1, bf, (int) inputValid.size());
+        assertEquals("Input size is wrong", inputValid.size() + 1l, input.size());
+        filterImage(input, DataFilterException.class);
     }
 
     private Bucket filterImage(Bucket input, Class<? extends Exception> expected) throws IOException {

@@ -58,6 +58,11 @@ public abstract class RIFFFilter implements ContentDataFilter {
 		} catch(EOFException e) {
 			throw new DataFilterException(l10n("invalidTitle"), l10n("invalidTitle"), NodeL10n.getBase().getString("ContentFilter.EOFMessage"));
 		}
+		// Testing if there is any unprocessed bytes left
+		if(input.read() != -1) {
+			// A byte is after expected EOF
+			throw new DataFilterException(l10n("invalidTitle"), l10n("invalidTitle"), NodeL10n.getBase().getString("ContentFilter.EOFMessage"));
+		}
 		// Do a final test
 		if(remainingSize != 0) {
 			throw new DataFilterException(l10n("invalidTitle"), l10n("invalidTitle"), NodeL10n.getBase().getString("ContentFilter.EOFMessage"));

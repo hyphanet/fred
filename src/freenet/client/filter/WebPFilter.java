@@ -132,6 +132,7 @@ public class WebPFilter extends RIFFFilter {
 			}
 			output.write(ID);
 			output.write(size);
+			ctx.VP8XFlags &= ~0x34; // removing ICCP, EXIF and XMP bits
 			output.write(ctx.VP8XFlags);
 			ctx.hasVP8X = true;
 			byte[] widthHeight = new byte[6];
