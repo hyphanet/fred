@@ -49,7 +49,7 @@ public abstract class RIFFFilter implements ContentDataFilter {
 				fccType = new byte[4];
 				in.readFully(fccType);
 				ckSize = readLittleEndianInt(in);
-				if(remainingSize < ckSize + 8 + (ckSize & 1)) {
+				if(ckSize < 0 || remainingSize < ckSize + 8 + (ckSize & 1)) {
 					throw new DataFilterException(l10n("invalidTitle"), l10n("invalidTitle"), "Chunk size is too big");
 				}
 				remainingSize -= ckSize + 8 + (ckSize & 1);
@@ -94,15 +94,20 @@ public abstract class RIFFFilter implements ContentDataFilter {
 			// Copy 1MB at a time instead of all at once
 			int section;
 			int remaining = size;
+			if(remaining > 1024 * 1024) {
+				section = 1024 * 1024;
+			} else {
+				section = remaining;
+			}
+			byte[] buf = new byte[section];
 			while(remaining > 0) {
 				if(remaining > 1024 * 1024) {
 					section = 1024 * 1024;
 				} else {
 					section = remaining;
 				}
-				byte[] buf = new byte[section];
-				in.readFully(buf);
-				out.write(buf);
+				in.readFully(buf, 0, section);
+				out.write(buf, 0, section);
 				remaining -= section;
 			}
 		}

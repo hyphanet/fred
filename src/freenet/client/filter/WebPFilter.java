@@ -10,7 +10,14 @@ import freenet.support.Logger.LogLevel;
 
 public class WebPFilter extends RIFFFilter {
 
-	protected final int AnimationFlag = (1 << 6);
+	//These constants are derived from mux_type.h in libwebp
+	private final int ANIMATION_FLAG  = 0x00000002;
+	private final int XMP_FLAG        = 0x00000004;
+	private final int EXIF_FLAG       = 0x00000008;
+	private final int ALPHA_FLAG      = 0x00000010;
+	private final int ICCP_FLAG       = 0x00000020;
+	private final int ALL_VALID_FLAGS = 0x0000003e;
+	
 	@Override
 	protected byte[] getChunkMagicNumber() {
 		return new byte[] {'W', 'E', 'B', 'P'};
@@ -69,7 +76,7 @@ public class WebPFilter extends RIFFFilter {
 			ctx.hasVP8L = true;
 			throw new DataFilterException("WebP lossless format is currently not supported", "WebP lossless format is currently not supported", "WebP lossless format is currently not supported by the filter. It could contain CVE-2023-4863 exploit.");
 		} else if(ID[0] == 'A' && ID[1] == 'L' && ID[2] == 'P' && ID[3] == 'H') {
-			if(ctx.hasVP8L || ctx.hasANIM || ctx.hasALPH) {
+			if(ctx.hasVP8L || ctx.hasANIM || ctx.hasALPH || (!ctx.hasVP8X) || ((ctx.VP8XFlags & ALPHA_FLAG) == 0)) {
 				// Only applicable to VP8 images. VP8L already has alpha channel, so does not need this.
 				throw new DataFilterException("WebP error", "WebP error", "Unexpected ALPH chunk was encountered");
 			}
@@ -91,7 +98,7 @@ public class WebPFilter extends RIFFFilter {
 			writeLittleEndianInt(output, size);
 			output.writeByte(flags);
 			passthroughBytes(input, output, size - 1);
-			if(((size - 1) & 1) != 0) // Add padding if necessary
+			if((size & 1) != 0) // Add padding if necessary
 				output.writeByte(input.readByte());
 			ctx.hasALPH = true;
 		} else if(ID[0] == 'A' && ID[1] == 'N' && ID[2] == 'I' && ID[3] == 'M') {
@@ -106,7 +113,7 @@ public class WebPFilter extends RIFFFilter {
 			throw new DataFilterException("WebP animation format is currently not supported", "WebP animation format is currently not supported", "WebP animation format is currently not supported by the filter. It could contain CVE-2023-4863 exploit.");
 		} else if(ID[0] == 'A' && ID[1] == 'N' && ID[2] == 'M' && ID[3] == 'F') {
 			// Animation frame
-			if((ctx.VP8XFlags & AnimationFlag) == 0 || ctx.hasVP8 || ctx.hasVP8L || !ctx.hasANIM) {
+			if((ctx.VP8XFlags & ANIMATION_FLAG) == 0 || ctx.hasVP8 || ctx.hasVP8L || !ctx.hasANIM) {
 				// Animation frame in static WebP file - Unexpected
 				throw new DataFilterException("WebP error", "WebP error", "Unexpected ANMF chunk was encountered");
 			} else {
@@ -123,7 +130,7 @@ public class WebPFilter extends RIFFFilter {
 				throw new DataFilterException("WebP error", "WebP error", "Unexpected VP8X chunk was encountered");
 			}
 			ctx.VP8XFlags = readLittleEndianInt(input);
-			if(((ctx.VP8XFlags & 3) != 0) || ((ctx.VP8XFlags & 0xffffff80) != 0)) {
+			if((ctx.VP8XFlags & ~ALL_VALID_FLAGS) != 0) {
 				// Has reserved flags or uses unsupported image fragmentation
 				throw new DataFilterException("WebP error", "WebP error", "VP8X header has reserved flags");
 			}
@@ -131,9 +138,9 @@ public class WebPFilter extends RIFFFilter {
 				throw new DataFilterException("WebP error", "WebP error", "VP8X header is too small or too big");
 			}
 			output.write(ID);
-			output.write(size);
-			ctx.VP8XFlags &= ~0x34; // removing ICCP, EXIF and XMP bits
-			output.write(ctx.VP8XFlags);
+			writeLittleEndianInt(output, size);
+			ctx.VP8XFlags &= ~(XMP_FLAG | EXIF_FLAG | ICCP_FLAG); // removing ICCP, EXIF and XMP bits
+			writeLittleEndianInt(output, ctx.VP8XFlags);
 			ctx.hasVP8X = true;
 			byte[] widthHeight = new byte[6];
 			input.readFully(widthHeight);

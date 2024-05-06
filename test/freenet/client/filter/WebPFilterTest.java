@@ -111,11 +111,24 @@ public class WebPFilterTest {
     }
     
     /**
-     * Tests valid image
+     * Tests valid image (lossy image from libwebp 1.4)
      */
     @Test
-    public void testValidImage() throws IOException {
+    public void testValidImageLossy() throws IOException {
         Bucket input = resourceToBucket("./webp/test.webp");
+        Bucket output = filterImage(input, null);
+
+        //Filter should return the original
+        assertEquals("Input and output should be the same length", input.size(), output.size());
+        assertArrayEquals("Input and output are not identical", BucketTools.toByteArray(input), BucketTools.toByteArray(output));
+    }
+
+    /**
+     * Tests valid image (lossy image with alpha channel from https://developers.google.com/speed/webp/gallery2 “Yellow Rose”)
+     */
+    @Test
+    public void testValidImageLossyAlpha() throws IOException {
+        Bucket input = resourceToBucket("./webp/1_webp_a.webp");
         Bucket output = filterImage(input, null);
 
         //Filter should return the original
