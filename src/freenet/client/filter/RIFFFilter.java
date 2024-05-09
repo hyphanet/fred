@@ -12,7 +12,9 @@ import freenet.l10n.NodeL10n;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 
-// RIFF file format filter for several formats, such as AVI, WAV, MID, and WebP
+/** RIFF file format filter for several formats, such as AVI, WAV, MID, and WebP
+ * 
+ */
 public abstract class RIFFFilter implements ContentDataFilter {
 	private static final byte[] magicNumber = new byte[] {'R', 'I', 'F', 'F'};
 
@@ -31,7 +33,7 @@ public abstract class RIFFFilter implements ContentDataFilter {
 		out.write(magicNumber);
 		if(fileSize < 0) {
 			 // FIXME Video with more than 2 GiB data need unsigned format
-			throw new DataFilterException(l10n("invalidTitle"), l10n("invalidTitle"), l10n("dataTooBig"));
+			throw new DataFilterException(l10n("invalidTitle"), l10n("invalidTitle"), l10n("data2GB"));
 		}
 		if(fileSize < 12) {
 			// There couldn't be any chunk in such a small file
@@ -50,7 +52,7 @@ public abstract class RIFFFilter implements ContentDataFilter {
 				in.readFully(fccType);
 				ckSize = readLittleEndianInt(in);
 				if(ckSize < 0 || remainingSize < ckSize + 8 + (ckSize & 1)) {
-					throw new DataFilterException(l10n("invalidTitle"), l10n("invalidTitle"), "Chunk size is too big");
+					throw new DataFilterException(l10n("invalidTitle"), l10n("invalidTitle"), l10n("dataTooBig"));
 				}
 				remainingSize -= ckSize + 8 + (ckSize & 1);
 				readFilterChunk(fccType, ckSize, context, in, out, charset, otherParams, schemeHostAndPort, cb);
@@ -70,21 +72,36 @@ public abstract class RIFFFilter implements ContentDataFilter {
 		EOFCheck(context);
 	}
 	
+	/** Get the FourCC to identify this file format
+	 * @return array of four bytes
+	 */
 	protected abstract byte[] getChunkMagicNumber();
 	
-	// Create a context object holding the context states
+	/** Create a context object holding the context states
+	 * @return context object
+	 */
 	protected abstract Object createContext();
 	
 	protected abstract void readFilterChunk(byte[] ID, int size, Object context, DataInputStream input, DataOutputStream output, String charset, Map<String, String> otherParams,
 			String schemeHostAndPort, FilterCallback cb) throws DataFilterException, IOException;
 	
+	/** Check for invalid conditions after EOF is reached
+	 * @param context context object
+	 * @throws DataFilterException
+	 */
 	protected abstract void EOFCheck(Object context) throws DataFilterException;
 	
 	private static String l10n(String key) {
 		return NodeL10n.getBase().getString("RIFFFilter."+key);
 	}
 	
-	// Pass through bytes to output unchanged
+	/** Pass through bytes to output unchanged
+	 * @param in Input stream
+	 * @param out Output stream
+	 * @param size Number of bytes to copy
+	 * @throws DataFilterException
+	 * @throws IOException
+	 */
 	protected void passthroughBytes(DataInputStream in, DataOutputStream out, int size) throws DataFilterException, IOException {
 		if(size < 0)
 		{
@@ -113,7 +130,13 @@ public abstract class RIFFFilter implements ContentDataFilter {
 		}
 	}
 
-	// Write a JUNK chunk for unsupported data
+	/** Write a JUNK chunk for unsupported data
+	 * @param in Input stream
+	 * @param out Output stream
+	 * @param size Size of the chunk, if the size is odd, a padding is added
+	 * @throws DataFilterException
+	 * @throws IOException
+	 */
 	protected void writeJunkChunk(DataInputStream in, DataOutputStream out, int size) throws DataFilterException, IOException {
 		size += size % 2; // Add a padding if necessary
 		if(in.skip(size) < size) {
@@ -147,15 +170,22 @@ public abstract class RIFFFilter implements ContentDataFilter {
 		}
 	}
 	
-	// Read a little endian int
-	// readInt and writeInt are big endian, but RIFF use little endian
+	/** Read a little endian int. readInt and writeInt are big endian, but RIFF use little endian
+	 * @param stream Stream to read from
+	 * @return
+	 * @throws IOException
+	 */
 	protected final static int readLittleEndianInt(DataInputStream stream) throws IOException {
 		int a;
 		a = stream.readInt();
 		return Integer.reverseBytes(a);
 	}
 	
-	// Write a little endian int	
+	/** Write a little endian int
+	 * @param stream Stream to write to
+	 * @param a
+	 * @throws IOException
+	 */
 	protected final static void writeLittleEndianInt(DataOutputStream stream, int a) throws IOException {
 		stream.writeInt(Integer.reverseBytes(a));
 	}
