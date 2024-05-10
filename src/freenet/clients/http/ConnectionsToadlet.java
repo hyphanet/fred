@@ -567,7 +567,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 						foafRow.addChild("td", String.valueOf(peersWithFriend.size()));
 						HTMLNode locationCell=foafRow.addChild("td", "class", "peer-location");
 						for (PeerNodeStatus peerNodeStatus : peersWithFriend) {
-							String address=((peerNodeStatus.getPeerAddress() != null) ? (peerNodeStatus.getPeerAddress() + ':' + peerNodeStatus.getPeerPort()) : (l10n("unknownAddress")));
+							String address=((peerNodeStatus.getPeerAddress() != null) ? peerNodeStatus.getPeerAddressAndPort() : (l10n("unknownAddress")));
 							locationCell.addChild("i", address);
 							locationCell.addChild("br");
 						}
@@ -993,7 +993,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			country.renderFlagIcon(addressRow);
 		}
 
-		addressRow.addChild("#", ((peerNodeStatus.getPeerAddress() != null) ? (peerNodeStatus.getPeerAddress() + ':' + peerNodeStatus.getPeerPort()) : (l10n("unknownAddress"))) + pingTime);
+		addressRow.addChild("#", ((peerNodeStatus.getPeerAddress() != null) ? peerNodeStatus.getPeerAddressAndPort() : (l10n("unknownAddress"))) + pingTime);
 
 		// version column
 		if (peerNodeStatus.getStatusValue() != PeerManager.PEER_NODE_STATUS_NEVER_CONNECTED && (peerNodeStatus.isPublicInvalidVersion() || peerNodeStatus.isPublicReverseInvalidVersion())) {  // Don't draw attention to a version problem if NEVER CONNECTED

@@ -49,9 +49,53 @@ public class AddressIdentifierTest {
 		assertEquals(AddressType.IPv6, AddressIdentifier.getAddressType("0:0:0:0:0:0:0:1"));
 		assertEquals(AddressType.IPv6, AddressIdentifier.getAddressType("fe80:0:0:0:203:dff:fe22:420f"));
 
+		/* test real abridged IPv6 addresses */
+		assertEquals(AddressType.IPv6, AddressIdentifier.getAddressType("::1:2:3:4:5:6:7"));
+		assertEquals(AddressType.IPv6, AddressIdentifier.getAddressType("::1:2:3:4:5:6"));
+		assertEquals(AddressType.IPv6, AddressIdentifier.getAddressType("::1:2:3:4:5"));
+		assertEquals(AddressType.IPv6, AddressIdentifier.getAddressType("::1:2:3:4"));
+		assertEquals(AddressType.IPv6, AddressIdentifier.getAddressType("::1:2:3"));
+		assertEquals(AddressType.IPv6, AddressIdentifier.getAddressType("::1:2"));
+		assertEquals(AddressType.IPv6, AddressIdentifier.getAddressType("::1"));
+		assertEquals(AddressType.IPv6, AddressIdentifier.getAddressType("::"));
+		assertEquals(AddressType.IPv6, AddressIdentifier.getAddressType("1::2:3:4:5:6:7"));
+		assertEquals(AddressType.IPv6, AddressIdentifier.getAddressType("1::2:3:4:5:6"));
+		assertEquals(AddressType.IPv6, AddressIdentifier.getAddressType("1::2:3:4:5"));
+		assertEquals(AddressType.IPv6, AddressIdentifier.getAddressType("1::2:3:4"));
+		assertEquals(AddressType.IPv6, AddressIdentifier.getAddressType("1::2:3"));
+		assertEquals(AddressType.IPv6, AddressIdentifier.getAddressType("1::2"));
+		assertEquals(AddressType.IPv6, AddressIdentifier.getAddressType("1::"));
+		assertEquals(AddressType.IPv6, AddressIdentifier.getAddressType("1:2::3:4:5:6:7"));
+		assertEquals(AddressType.IPv6, AddressIdentifier.getAddressType("1:2::3:4:5:6"));
+		assertEquals(AddressType.IPv6, AddressIdentifier.getAddressType("1:2::3:4:5"));
+		assertEquals(AddressType.IPv6, AddressIdentifier.getAddressType("1:2::3:4"));
+		assertEquals(AddressType.IPv6, AddressIdentifier.getAddressType("1:2::3"));
+		assertEquals(AddressType.IPv6, AddressIdentifier.getAddressType("1:2::"));
+		assertEquals(AddressType.IPv6, AddressIdentifier.getAddressType("1:2:3::4:5:6:7"));
+		assertEquals(AddressType.IPv6, AddressIdentifier.getAddressType("1:2:3::4:5:6"));
+		assertEquals(AddressType.IPv6, AddressIdentifier.getAddressType("1:2:3::4:5"));
+		assertEquals(AddressType.IPv6, AddressIdentifier.getAddressType("1:2:3::4"));
+		assertEquals(AddressType.IPv6, AddressIdentifier.getAddressType("1:2:3::"));
+		assertEquals(AddressType.IPv6, AddressIdentifier.getAddressType("1:2:3:4::5:6:7"));
+		assertEquals(AddressType.IPv6, AddressIdentifier.getAddressType("1:2:3:4::5:6"));
+		assertEquals(AddressType.IPv6, AddressIdentifier.getAddressType("1:2:3:4::5"));
+		assertEquals(AddressType.IPv6, AddressIdentifier.getAddressType("1:2:3:4::"));
+		assertEquals(AddressType.IPv6, AddressIdentifier.getAddressType("1:2:3:4:5::6:7"));
+		assertEquals(AddressType.IPv6, AddressIdentifier.getAddressType("1:2:3:4:5::6"));
+		assertEquals(AddressType.IPv6, AddressIdentifier.getAddressType("1:2:3:4:5::"));
+		assertEquals(AddressType.IPv6, AddressIdentifier.getAddressType("1:2:3:4:5:6::7"));
+		assertEquals(AddressType.IPv6, AddressIdentifier.getAddressType("1:2:3:4:5:6::"));
+		assertEquals(AddressType.IPv6, AddressIdentifier.getAddressType("1:2:3:4:5:6:7::"));
+
 		/* test fake IPv6 addresses */
 		assertEquals(AddressType.OTHER, AddressIdentifier.getAddressType("1:2:3:4:5:6:7:8:9"));
 		assertEquals(AddressType.OTHER, AddressIdentifier.getAddressType("12345:6:7:8:9"));
+		assertEquals(AddressType.OTHER, AddressIdentifier.getAddressType(":1:2:3:4:5:6:7:8"));
+		assertEquals(AddressType.OTHER, AddressIdentifier.getAddressType("1::2:3:4:5:6:7:8:9"));
+		assertEquals(AddressType.OTHER, AddressIdentifier.getAddressType("::1::2:3"));
+		assertEquals(AddressType.OTHER, AddressIdentifier.getAddressType("1::2:3::"));
+		assertEquals(AddressType.OTHER, AddressIdentifier.getAddressType("1::2:3::4"));
+		assertEquals(AddressType.OTHER, AddressIdentifier.getAddressType("12:34:56:78:9a:bc:de:fg"));
 	}
 	
 	@Test
@@ -59,6 +103,30 @@ public class AddressIdentifierTest {
 		assertFalse(AddressIdentifier.isAnISATAPIPv6Address("fe80:0:0:0:203:dff:fe22:420f"));
 		assertFalse(AddressIdentifier.isAnISATAPIPv6Address("fe80:0:5efe:0:203:dff:fe22:420f"));
 		assertTrue(AddressIdentifier.isAnISATAPIPv6Address("2001:1:2:3:0:5efe:c801:20a"));
+		// Some abridged addresses
+		assertTrue(AddressIdentifier.isAnISATAPIPv6Address("::1:2:3:0:5efe:6:7"));
+		assertTrue(AddressIdentifier.isAnISATAPIPv6Address("::1:2:0:5efE:5:6"));
+		assertTrue(AddressIdentifier.isAnISATAPIPv6Address("::1:0:5eFe:4:5"));
+		assertTrue(AddressIdentifier.isAnISATAPIPv6Address("::0:5eFE:3:4"));
+		assertTrue(AddressIdentifier.isAnISATAPIPv6Address("::5Efe:2:3"));
+		assertTrue(AddressIdentifier.isAnISATAPIPv6Address("1::2:3:0:5EfE:6:7"));
+		assertTrue(AddressIdentifier.isAnISATAPIPv6Address("1::2:0:5EFe:5:6"));
+		assertTrue(AddressIdentifier.isAnISATAPIPv6Address("1::0:5EFE:4:5"));
+		assertTrue(AddressIdentifier.isAnISATAPIPv6Address("1::5efe:3:4"));
+		assertTrue(AddressIdentifier.isAnISATAPIPv6Address("1:2::3:0:5efe:6:7"));
+		assertTrue(AddressIdentifier.isAnISATAPIPv6Address("1:2::0:5efe:5:6"));
+		assertTrue(AddressIdentifier.isAnISATAPIPv6Address("1:2::5efe:4:5"));
+		assertTrue(AddressIdentifier.isAnISATAPIPv6Address("1:2:3::0:5efe:6:7"));
+		assertTrue(AddressIdentifier.isAnISATAPIPv6Address("1:2:3::5efe:5:6"));
+		assertTrue(AddressIdentifier.isAnISATAPIPv6Address("1:2:3:4::5efe:6:7"));
+		assertTrue(AddressIdentifier.isAnISATAPIPv6Address("1:2:3:4:0:5efe::7"));
+		assertTrue(AddressIdentifier.isAnISATAPIPv6Address("1:2:3:4:0:5efe::"));
+		assertTrue(AddressIdentifier.isAnISATAPIPv6Address("1:2:3:4:0:5efe:7::"));
+		// Some invalid addresses
+		assertFalse(AddressIdentifier.isAnISATAPIPv6Address("2001:1:2:3:5efe:c801:20a"));
+		assertFalse(AddressIdentifier.isAnISATAPIPv6Address("2001:1:2:3:4:5:5efe:c801:20a"));
+		assertFalse(AddressIdentifier.isAnISATAPIPv6Address("2001::1::5efe:c801:20a"));
+		assertFalse(AddressIdentifier.isAnISATAPIPv6Address("1:2:3:0:5efe::"));
 	}
 
 }
