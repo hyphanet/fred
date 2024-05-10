@@ -511,8 +511,14 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 	/** Called when the fetch URI has changed. No major locks are held by caller. 
 	 * @param uri The new URI. */
 	public void onChangeURI(FreenetURI uri) {
-		kill();
+		kill(); // unsubscribes from the old uri
 		this.URI = uri;
+		try {
+            USK myUsk = USK.create(URI.setSuggestedEdition(currentVersion));
+            core.getUskManager().subscribe(myUsk, this, true, getRequestClient());
+        } catch(MalformedURLException e) {
+            Logger.minor(this, "Cannot create update USK for correct version", e);
+        }
 		maybeUpdate();
 	}
 
