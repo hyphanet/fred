@@ -3007,6 +3007,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					} else if (name.equalsIgnoreCase("Description")) {
 						hn.put("name", name);
 						hn.put("content", content);
+					} else if (name.equalsIgnoreCase("Viewport")) {
+						hn.put("name", name);
+						hn.put("content", content);
 					}
 				} else if ((http_equiv != null) && (name == null)) {
 					if (http_equiv.equalsIgnoreCase("Expires")) {
