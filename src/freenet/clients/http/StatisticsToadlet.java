@@ -234,8 +234,11 @@ public class StatisticsToadlet extends Toadlet {
 				
 				drawLoadBalancingBox(loadStatsInfobox, true);
 				
-				HTMLNode newLoadManagementBox = nextTableCell.addChild("div", "class", "infobox");
-				drawNewLoadManagementBox(newLoadManagementBox);
+				// New load management statistics
+				if(stats.enableNewLoadManagement(true) || stats.enableNewLoadManagement(false)) {
+					HTMLNode newLoadManagementBox = nextTableCell.addChild("div", "class", "infobox");
+					drawNewLoadManagementBox(newLoadManagementBox);
+				}
 								
 				// Psuccess box
 				HTMLNode successRateBox = nextTableCell.addChild("div", "class", "infobox");
