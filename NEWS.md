@@ -24,7 +24,7 @@ the many privacy focussed distributions which build on Debian to make
 done, tools which build on Hyphanet — like FMS, but also jSite and
 tools from pyFreenet — can be packaged to work out of the box, using
 Hyphanet as an ordinary background service. That’s a step towards
-Hyphanet as decetralized, privacy-preserving communication backend for
+Hyphanet as decentralized, privacy-preserving communication backend for
 other applications.
 
 Another step towards this is accepting the Schema hypha[net] to
