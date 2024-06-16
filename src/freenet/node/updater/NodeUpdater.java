@@ -91,15 +91,23 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 	}
 
 	void start() {
+        try {
+            this.subscribe();
+		} catch(MalformedURLException e) {
+            manager.blow("The auto-update URI isn't valid and can't be used", true);
+        }
+	}
+
+    void subscribe() throws MalformedURLException {
 		try {
 			// because of UoM, this version is actually worth having as well
 			USK myUsk = USK.create(URI.setSuggestedEdition(currentVersion));
 			core.getUskManager().subscribe(myUsk, this, true, getRequestClient());
 		} catch(MalformedURLException e) {
 			Logger.error(this, "The auto-update URI isn't valid and can't be used");
-			manager.blow("The auto-update URI isn't valid and can't be used", true);
+            throw e;
 		}
-	}
+    }
 	
 	protected void maybeProcessOldBlob() {
 		File oldBlob = getBlobFile(currentVersion);
@@ -513,11 +521,10 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 	public void onChangeURI(FreenetURI uri) {
 		kill(); // unsubscribes from the old uri
 		this.URI = uri;
-		try {
-            USK myUsk = USK.create(URI.setSuggestedEdition(currentVersion));
-            core.getUskManager().subscribe(myUsk, this, true, getRequestClient());
-        } catch(MalformedURLException e) {
-            Logger.minor(this, "Cannot create update USK for correct version", e);
+        try {
+            this.subscribe();
+        } catch (MalformedURLException e) {
+            // does not need this handling
         }
 		maybeUpdate();
 	}
