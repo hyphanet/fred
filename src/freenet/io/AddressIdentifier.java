@@ -53,7 +53,6 @@ public class AddressIdentifier {
 		 */
 		String ipv6AddressRegex = "::(?>(?>X:){0,6}X)?|X::(?>(?>X:){0,5}X)?|X:X::(?>(?>X:){0,4}X)?|X:X:X::(?>(?>X:){0,3}X)?|(?>X:){4}:(?>(?>X:){0,2}X)?|(?>X:){5}:(?>X:)?X?|(?>X:){6}:X?|(?>X:){7}(?>X|:)";
 		ipv6AddressRegex = ipv6AddressRegex.replaceAll("X", wordRegex);
-		//String ipv6ISATAPAddressRegex = wordRegex + "?:" + wordRegex + ':' + wordRegex + ':' + wordRegex + ":(0){1,4}:5[eE][fF][eE]:" + wordRegex + ':' + wordRegex + percentScopeIDRegex;
 		// case 0: :(?>(?>:X){1,3}:0{1,4}|:0{1,4}|):5EFE:X:X
 		// case 1: X:(?>:0{1,4}|:(?>X:){1,2}0{1,4}|):5EFE:X:X
 		// case 2: X:X:(?>:0{1,4}|:(?>X:)?0{1,4}|):5EFE:X:X
@@ -61,9 +60,9 @@ public class AddressIdentifier {
 		// case 5: (?>X:){4}0{1,4}:5EFE:(?>X:X|:X?|X::)
 		String ipv6ISATAPAddressRegex = ":(?>(?>:X){1,3}:0{1,4}|:0{1,4}|):5EFE:X:X|X:(?>:0{1,4}|:(?>X:){1,2}0{1,4}|):5EFE:X:X|X:X:(?>:0{1,4}|:(?>X:)?0{1,4}|):5EFE:X:X|X:X:X:(?>X:0{1,4}|:0{1,4}|X:|):5EFE:X:X|(?>X:){4}0{1,4}:5EFE:(?>X:X|:X?|X::)";
 		ipv6ISATAPAddressRegex = ipv6ISATAPAddressRegex.replaceAll("X", wordRegex);
-		ipv6Pattern = Pattern.compile(ipv6AddressRegex);
-		ipv6PatternWithPercentScopeID = Pattern.compile(ipv6AddressRegex + percentScopeIDRegex, Pattern.CASE_INSENSITIVE);
-		ipv6ISATAPPattern = Pattern.compile(ipv6ISATAPAddressRegex, Pattern.CASE_INSENSITIVE);
+		ipv6Pattern = Pattern.compile(ipv6AddressRegex, Pattern.CASE_INSENSITIVE);
+		ipv6PatternWithPercentScopeID = Pattern.compile("(?>" + ipv6AddressRegex + ")" + percentScopeIDRegex, Pattern.CASE_INSENSITIVE);
+		ipv6ISATAPPattern = Pattern.compile("(?>" + ipv6ISATAPAddressRegex + ")" + percentScopeIDRegex, Pattern.CASE_INSENSITIVE);
 	}
 	
 	public enum AddressType {

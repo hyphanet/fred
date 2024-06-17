@@ -85,6 +85,9 @@ public class Inet6AddressMatcherTest {
 		assertThrows(IllegalArgumentException.class, () -> new Inet6AddressMatcher("1::2::3"));
 		assertThrows(IllegalArgumentException.class, () -> new Inet6AddressMatcher("::1::2"));
 		assertThrows(IllegalArgumentException.class, () -> new Inet6AddressMatcher("::1:2:3:4:5:6:7:8"));
+		assertThrows(IllegalArgumentException.class, () -> new Inet6AddressMatcher(":1:2:3:4:5:6:7"));
+		assertThrows(IllegalArgumentException.class, () -> new Inet6AddressMatcher("1:2:3:4:5:6:7:"));
+		assertThrows(IllegalArgumentException.class, () -> new Inet6AddressMatcher("123456::789abcde"));
 		assertTrue(Inet6AddressMatcher.matches("::1", InetAddress.getByName("::1")));
 		assertTrue(Inet6AddressMatcher.matches("fe80::", InetAddress.getByName("fe80::")));
 	}

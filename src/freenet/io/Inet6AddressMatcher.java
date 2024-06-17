@@ -65,18 +65,18 @@ public class Inet6AddressMatcher implements AddressMatcher {
 	}
 
 	private byte[] convertToBytes(String address) throws IllegalArgumentException {
-		String[] addressTokens = address.split(":");
+		String[] addressTokens = address.split(":", -1); // Don't let Java discard trailing empty string, to distinguish "1:2:3:4:5:6:7:" and "1:2:3:4:5:6:7::" 
 		int tokenPosition = 0;
-		byte[] addressBytes = new byte[16];
-		byte[] addressBytesEnd = new byte[16];
+		byte[] addressBytes = new byte[16]; // Part before ::
+		byte[] addressBytesEnd = new byte[16]; // Part after ::, in reverse order
 		int count = 0;
 		int endCount = -1;
 		if(address.startsWith(":")) {
 			if(address.startsWith("::")) {
 				if(address == "::") {
-					return addressBytes;
+					return addressBytes; // Return 0:0:0:0:0:0:0:0
 				}
-				tokenPosition+=2; // This is an empty token, could be mistaken as duplicate ::
+				tokenPosition=2; // This is an empty token, could be mistaken as duplicate ::
 				endCount = 0;
 			} else {
 				throw new IllegalArgumentException(address + " is not an IPv6 address.");
@@ -90,6 +90,10 @@ public class Inet6AddressMatcher implements AddressMatcher {
 				try {
 					addressWord = Integer.parseInt(token, 16);
 				} catch(NumberFormatException e) {
+					throw new IllegalArgumentException(address + " is not an IPv6 address.");
+				}
+				// Enforce limits
+				if(addressWord < 0 || addressWord > 0xffff) {
 					throw new IllegalArgumentException(address + " is not an IPv6 address.");
 				}
 				if(endCount == -1) {
@@ -108,15 +112,16 @@ public class Inet6AddressMatcher implements AddressMatcher {
 					endCount++;
 				}
 			} else if(endCount == -1) {
+				if(count >= 8 || tokenPosition == addressTokens.length) {
+					// Catch the case "1:2:3:4:5:6:7:8::", let "1:2:3:4:5:6:7::" go
+					throw new IllegalArgumentException(address + " is not an IPv6 address.");
+				}
 				endCount = 0;
-			} else {
+			} else if(endCount > 0 || tokenPosition != addressTokens.length){ 
 				throw new IllegalArgumentException(address + " is not an IPv6 address.");
 			}
 		}
-		if(endCount != -1 && count + endCount >= 8) { // Maybe not needed
-			throw new IllegalArgumentException(address + " is not an IPv6 address.");
-		}
-		if(endCount != -1) {
+		if(endCount != -1) { // Copy the end part to the end of main part
 			for(int index = count; index < 8 - endCount; index++) {
 				addressBytes[index * 2] = 0;
 				addressBytes[index * 2 + 1] = 0;
