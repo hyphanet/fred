@@ -240,7 +240,7 @@ public class PluginManager {
 		while(true) {
 			int delta = (int) (deadline - now);
 			if(delta <= 0) {
-                String list = "";
+				String list = "";
 				try {
 					list = pluginList(loadedPlugins.getLoadedPlugins());
 					Logger.error(this, "Plugins still shutting down at timeout:\n"+list);
