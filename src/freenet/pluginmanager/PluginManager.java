@@ -637,7 +637,7 @@ public class PluginManager {
 
 	public void cancelRunningLoads(String filename, PluginProgress exceptFor) {
 		Logger.normal(this, "Cancelling loads for plugin "+filename);
-		for (PluginProgress progress : new ArrayList<PluginProgress>(loadedPlugins.getStartingPlugins())) {
+		for (PluginProgress progress : loadedPlugins.getStartingPlugins()) {
 			if ((progress != exceptFor) && filename.equals(progress.name)) {
 				progress.kill();
 				loadedPlugins.removeStartingPlugin(progress);
@@ -1608,10 +1608,15 @@ public class PluginManager {
 			}
 		}
 
+		/**
+		 * @return a copy of the starting plugins. Do not modify this: modifications will get thrown away.
+		 */
 		public Collection<PluginProgress> getStartingPlugins() {
+			Set<PluginProgress> startingPluginsCopy;
 			synchronized (this) {
-				return startingPlugins;
+				startingPluginsCopy = Set.copyOf(startingPlugins);
 			}
+			return startingPluginsCopy;
 		}
 
 		public void removeStartingPlugin(PluginProgress pluginProgress) {
@@ -1620,10 +1625,15 @@ public class PluginManager {
 			}
 		}
 
+		/**
+		 * @return a copy of the loaded plugins. Do not modify this: modifications will get thrown away.
+		 */
 		public Collection<PluginInfoWrapper> getLoadedPlugins() {
+			Set<PluginInfoWrapper> loadedPluginsCopy;
 			synchronized (this) {
-				return loadedPlugins;
+				loadedPluginsCopy = Set.copyOf(loadedPlugins);
 			}
+			return loadedPluginsCopy;
 		}
 
 		public void removeLoadedPlugin(PluginInfoWrapper pluginInfoWrapper) {
