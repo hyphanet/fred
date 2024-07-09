@@ -1526,7 +1526,7 @@ public class PluginManager {
 						try {
 							plug.setTheme(cssName);
 						} catch (Throwable t) {
-							Logger.error(this, "Caught Trowable in Callback", t);
+							Logger.error(this, "Caught Throwable in Callback", t);
 						}
 					}
 				}, "Callback");
@@ -1549,7 +1549,7 @@ public class PluginManager {
 						try {
 							plug.setLanguage(lang);
 						} catch (Throwable t) {
-							Logger.error(this, "Caught Trowable in Callback", t);
+							Logger.error(this, "Caught Throwable in Callback", t);
 						}
 					}
 				}, "Callback");
@@ -1561,7 +1561,7 @@ public class PluginManager {
 						try {
 							plug.setLanguage(lang);
 						} catch (Throwable t) {
-							Logger.error(this, "Caught Trowable in Callback", t);
+							Logger.error(this, "Caught Throwable in Callback", t);
 						}
 					}
 				}, "Callback");
