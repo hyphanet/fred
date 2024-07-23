@@ -98,7 +98,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
         }
 	}
 
-    void subscribe() throws MalformedURLException {
+    private void subscribe() throws MalformedURLException {
 		try {
 			// because of UoM, this version is actually worth having as well
 			USK myUsk = USK.create(URI.setSuggestedEdition(currentVersion));
