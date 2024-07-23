@@ -92,7 +92,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 
 	void start() {
         try {
-            this.subscribe();
+            subscribe();
 		} catch(MalformedURLException e) {
             manager.blow("The auto-update URI isn't valid and can't be used", true);
         }
