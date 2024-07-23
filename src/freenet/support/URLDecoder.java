@@ -38,7 +38,7 @@ public class URLDecoder
 	 *
 	 **/
 	public static String decode(String s, boolean tolerant) throws URLEncodedFormatException {
-		if (s.length() == 0)
+		if (s.isEmpty())
 			return "";
 		int len = s.length();
 		ByteArrayOutputStream decodedBytes = new ByteArrayOutputStream();

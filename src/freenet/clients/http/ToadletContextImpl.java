@@ -553,7 +553,7 @@ public class ToadletContextImpl implements ToadletContext {
 						return;
 					}
 					//System.out.println("Length="+line.length()+": "+line);
-					if(line.length() == 0) break;
+					if(line.isEmpty()) break;
 					int index = line.indexOf(':');
 					if (index < 0) {
 						throw new ParseException("Missing ':' in request header field", -1);

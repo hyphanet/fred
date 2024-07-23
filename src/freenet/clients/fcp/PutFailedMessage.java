@@ -64,7 +64,7 @@ public class PutFailedMessage extends FCPMessage implements Serializable {
 		
 		extraDescription = fs.get("ExtraDescription");
 		String euri = fs.get("ExpectedURI");
-		if(euri != null && euri.length() > 0)
+		if(euri != null && !euri.isEmpty())
 			expectedURI = new FreenetURI(euri);
 		else
 			expectedURI = null;

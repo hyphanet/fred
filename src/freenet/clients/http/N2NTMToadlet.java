@@ -156,7 +156,7 @@ public class N2NTMToadlet extends Toadlet {
 			DarknetPeerNode[] peerNodes = node.getDarknetConnections();
 			if(request.isPartSet(LocalFileBrowserToadlet.selectFile)) {
 				String fnam = request.getPartAsStringFailsafe("filename", 1024);
-				if(fnam != null && fnam.length() > 0) {
+				if(fnam != null && !fnam.isEmpty()) {
 					filename = new File(fnam);
 					if(!(filename.exists() && filename.canRead())) {
 						peerTableInfobox.addChild("#", l10n("noSuchFileOrCannotRead"));

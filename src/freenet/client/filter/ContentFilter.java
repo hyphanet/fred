@@ -335,7 +335,7 @@ public class ContentFilter {
 		else {
 			// Run the read filter if there is one.
 			if(handler.readFilter != null) {
-				if(handler.takesACharset && ((charset == null) || (charset.length() == 0))) {
+				if(handler.takesACharset && ((charset == null) || (charset.isEmpty()))) {
 					int bufferSize = handler.charsetExtractor.getCharsetBufferSize();
 					input.mark(bufferSize);
 					byte[] charsetBuffer = new byte[bufferSize];
@@ -448,7 +448,7 @@ public class ContentFilter {
 		}
 
 		// If no BOM, use the charset from the referring document.
-		if(handler.useMaybeCharset && maybeCharset != null && (maybeCharset.length() != 0))
+		if(handler.useMaybeCharset && maybeCharset != null && (!maybeCharset.isEmpty()))
 			return maybeCharset;
 
 		if(charset != null)
