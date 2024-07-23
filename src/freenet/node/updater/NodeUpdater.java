@@ -522,7 +522,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 		kill(); // unsubscribes from the old uri
 		this.URI = uri;
         try {
-            this.subscribe();
+            subscribe();
         } catch (MalformedURLException e) {
             // does not need this handling
         }
