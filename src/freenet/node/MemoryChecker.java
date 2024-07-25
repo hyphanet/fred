@@ -60,7 +60,7 @@ public class MemoryChecker implements Runnable {
 			else
 				avgFreeMemory.report(freeMemory);
 			
-			if (avgFreeMemory.countReports() >= 3 && avgFreeMemory.currentValue() < 4 * 1024 * 1024) {//  average free memory < 4 MB
+			if (avgFreeMemory.countReports() >= 3 && avgFreeMemory.currentValue() < 32 * 1024 * 1024) {//  average free memory < 32 MB
 				Logger.normal(this, "Reached threshold, checking for low memory ...");
 				System.gc();
 				System.runFinalization();
