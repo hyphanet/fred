@@ -347,6 +347,17 @@ public class PeerNodeStatus {
 	public int getPeerPort() {
 		return peerPort;
 	}
+	
+	/**
+	 * @return the string representation of peerAddress and peerPort
+	 */
+	public String getPeerAddressAndPort() {
+		if(peerAddressBytes != null && peerAddressBytes.length == 16) { // IPv6 address have [] around
+			return '[' + peerAddress + "]:" + peerPort;
+		} else {
+			return peerAddress + ':' + peerPort;
+		}
+	}
 
 	/**
 	 * @return the routingBackoffLength
@@ -420,7 +431,7 @@ public class PeerNodeStatus {
 
 	@Override
 	public String toString() {
-		return statusName + ' ' + peerAddress + ':' + peerPort + ' ' + location + ' ' + version + " RT backoff: " + routingBackoffLengthRT + " (" + (Math.max(routingBackedOffUntilRT - System.currentTimeMillis(), 0)) + " ) bulk backoff: " + routingBackoffLengthBulk + " (" + (Math.max(routingBackedOffUntilBulk - System.currentTimeMillis(), 0)) + ')';
+		return statusName + ' ' + getPeerAddressAndPort() + ' ' + location + ' ' + version + " RT backoff: " + routingBackoffLengthRT + " (" + (Math.max(routingBackedOffUntilRT - System.currentTimeMillis(), 0)) + " ) bulk backoff: " + routingBackoffLengthBulk + " (" + (Math.max(routingBackedOffUntilBulk - System.currentTimeMillis(), 0)) + ')';
 	}
 
 	@Override
