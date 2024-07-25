@@ -54,7 +54,7 @@ public class ContentFilter {
 		register(new FilterMIMEType("text/plain", "txt", new String[0], new String[] { "text", "pot" },
 				true, true, null, false, false, false, false, false, false,
 				l10n("textPlainReadAdvice"),
-				true, "US-ASCII", null, false));
+				true, "utf-8", null, false));
 
 		// GIF - has a filter
 		register(new FilterMIMEType("image/gif", "gif", new String[0], new String[0],
