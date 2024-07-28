@@ -407,21 +407,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		threadLimit = statsConfig.getInt("threadLimit");
 
 		// Yes it could be in seconds insteed of multiples of 0.12, but we don't want people to play with it :)
-		statsConfig.register("aggressiveGC", aggressiveGCModificator, sortOrder++, true, false, "NodeStat.aggressiveGC", "NodeStat.aggressiveGCLong",
-				new IntCallback() {
-					@Override
-					public Integer get() {
-						return aggressiveGCModificator;
-					}
-					@Override
-					public void set(Integer val) throws InvalidConfigValueException {
-						if (get().equals(val))
-					        return;
-						Logger.normal(this, "Changing aggressiveGCModificator to "+val);
-						aggressiveGCModificator = val;
-					}
-		},false);
-		aggressiveGCModificator = statsConfig.getInt("aggressiveGC");
+		statsConfig.registerIgnoredOption("aggressiveGC");
 
 		myMemoryChecker = new MemoryChecker(node.getTicker(), aggressiveGCModificator);
 		statsConfig.register("memoryChecker", true, sortOrder++, true, false, "NodeStat.memCheck", "NodeStat.memCheckLong",
