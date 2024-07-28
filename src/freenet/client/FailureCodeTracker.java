@@ -135,7 +135,7 @@ public class FailureCodeTracker implements Cloneable, Serializable {
 		if(map == null) return super.toString()+":empty";
 		StringBuilder sb = new StringBuilder(super.toString());
 		sb.append(':');
-		if(map.size() == 0) sb.append("empty");
+		if(map.isEmpty()) sb.append("empty");
 		else if(map.size() == 1) {
 			sb.append("one:");
 			Integer code = (Integer) (map.keySet().toArray())[0];

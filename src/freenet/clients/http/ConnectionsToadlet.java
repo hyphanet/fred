@@ -567,7 +567,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 						foafRow.addChild("td", String.valueOf(peersWithFriend.size()));
 						HTMLNode locationCell=foafRow.addChild("td", "class", "peer-location");
 						for (PeerNodeStatus peerNodeStatus : peersWithFriend) {
-							String address=((peerNodeStatus.getPeerAddress() != null) ? (peerNodeStatus.getPeerAddress() + ':' + peerNodeStatus.getPeerPort()) : (l10n("unknownAddress")));
+							String address=((peerNodeStatus.getPeerAddress() != null) ? peerNodeStatus.getPeerAddressAndPort() : (l10n("unknownAddress")));
 							locationCell.addChild("i", address);
 							locationCell.addChild("br");
 						}
@@ -669,7 +669,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			}
 			
 			StringBuilder ref = null;
-			if (urltext.length() > 0) {
+			if (!urltext.isEmpty()) {
 				// fetch reference from a URL
 				BufferedReader in = null;
 				try {
@@ -687,7 +687,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				} finally {
 					Closer.close(in);
 				}
-			} else if (reftext.length() > 0) {
+			} else if (!reftext.isEmpty()) {
 				// read from post data or file upload
 				// this slightly scary looking regexp chops any extra characters off the beginning or ends of lines and removes extra line breaks
 				ref = new StringBuilder(reftext.replaceAll(".*?((?:[\\w,\\.]+\\=[^\r\n]+?)|(?:End))[ \\t]*(?:\\r?\\n)+", "$1\n"));
@@ -993,7 +993,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			country.renderFlagIcon(addressRow);
 		}
 
-		addressRow.addChild("#", ((peerNodeStatus.getPeerAddress() != null) ? (peerNodeStatus.getPeerAddress() + ':' + peerNodeStatus.getPeerPort()) : (l10n("unknownAddress"))) + pingTime);
+		addressRow.addChild("#", ((peerNodeStatus.getPeerAddress() != null) ? peerNodeStatus.getPeerAddressAndPort() : (l10n("unknownAddress"))) + pingTime);
 
 		// version column
 		if (peerNodeStatus.getStatusValue() != PeerManager.PEER_NODE_STATUS_NEVER_CONNECTED && (peerNodeStatus.isPublicInvalidVersion() || peerNodeStatus.isPublicReverseInvalidVersion())) {  // Don't draw attention to a version problem if NEVER CONNECTED

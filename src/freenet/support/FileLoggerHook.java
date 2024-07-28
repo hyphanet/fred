@@ -284,7 +284,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 				findOldLogFiles((GregorianCalendar)gc.clone());
 				currentFilename = new File(getHourLogName(gc, -1, true));
 				synchronized(logFiles) {
-					if((!logFiles.isEmpty()) && logFiles.getLast().filename.equals(currentFilename)) {
+					if(!logFiles.isEmpty() && logFiles.getLast().filename.equals(currentFilename)) {
 						logFiles.removeLast();
 					}
 				}
@@ -636,7 +636,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 					name = name.substring(0, name.length()-".log.gz".length());
 				}
 				name = name.substring(prefix.length());
-				if((name.length() == 0) || (name.charAt(0) != '-')) {
+				if(name.isEmpty() || (name.charAt(0) != '-')) {
 					if(logMINOR) Logger.minor(this, "Deleting unrecognized: "+name+" ("+f.getPath()+ ')');
 					f.delete();
 					continue;
@@ -869,7 +869,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 	}
 
 	private void setLogFormat(String fmt) {
-		if ((fmt == null) || (fmt.length() == 0))
+		if ((fmt == null) || fmt.isEmpty())
 			fmt = "d:c:h:t:p:m";
 		char[] f = fmt.toCharArray();
 
@@ -912,7 +912,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 	}
 
 	private void setDateFormat(String dfmt) {
-		if ((dfmt != null) && (dfmt.length() != 0)) {
+		if ((dfmt != null) && !dfmt.isEmpty()) {
 			try {
 				df = new SimpleDateFormat(dfmt);
 			} catch (RuntimeException e) {

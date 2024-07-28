@@ -20,6 +20,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.ConcurrentModificationException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -239,9 +240,15 @@ public class PluginManager {
 		while(true) {
 			int delta = (int) (deadline - now);
 			if(delta <= 0) {
-				String list = pluginList(loadedPlugins.getLoadedPlugins());
-				Logger.error(this, "Plugins still shutting down at timeout:\n"+list);
-				System.err.println("Plugins still shutting down at timeout:\n"+list);
+				String list = "";
+				try {
+					list = pluginList(loadedPlugins.getLoadedPlugins());
+					Logger.error(this, "Plugins still shutting down at timeout:\n"+list);
+					System.err.println("Plugins still shutting down at timeout:\n"+list);
+				} catch (ConcurrentModificationException e) {
+					Logger.error(this, "Error during shutdown: "+ e);
+					Logger.error(this, "Plugins still shutting down at timeout:\n"+list);
+				}
 			} else {
 				for (PluginInfoWrapper pluginInfoWrapper : loadedPlugins.getLoadedPlugins()) {
 					System.out.println("Waiting for plugin to finish shutting down: " + pluginInfoWrapper.getFilename());
@@ -363,7 +370,7 @@ public class PluginManager {
 
 	private PluginInfoWrapper realStartPlugin(final PluginDownLoader<?> pdl, final String filename, final boolean store, boolean alwaysDownload) {
 	    if (!enabled) throw new IllegalStateException("Plugins disabled");
-		if(filename.trim().length() == 0)
+		if(filename.trim().isEmpty())
 			return null;
 		final PluginProgress pluginProgress = new PluginProgress(filename, pdl);
 		loadedPlugins.addStartingPlugin(pluginProgress);
@@ -630,7 +637,7 @@ public class PluginManager {
 
 	public void cancelRunningLoads(String filename, PluginProgress exceptFor) {
 		Logger.normal(this, "Cancelling loads for plugin "+filename);
-		for (PluginProgress progress : new ArrayList<PluginProgress>(loadedPlugins.getStartingPlugins())) {
+		for (PluginProgress progress : loadedPlugins.getStartingPlugins()) {
 			if ((progress != exceptFor) && filename.equals(progress.name)) {
 				progress.kill();
 				loadedPlugins.removeStartingPlugin(progress);
@@ -1001,7 +1008,7 @@ public class PluginManager {
 	}
 
 	public OfficialPluginDescription isOfficialPlugin(String name) {
-		if((name == null) || (name.trim().length() == 0))
+		if((name == null) || name.trim().isEmpty())
 			return null;
 		List<OfficialPluginDescription> availablePlugins = findAvailablePlugins();
 		for(OfficialPluginDescription desc : availablePlugins) {
@@ -1519,7 +1526,7 @@ public class PluginManager {
 						try {
 							plug.setTheme(cssName);
 						} catch (Throwable t) {
-							Logger.error(this, "Cought Trowable in Callback", t);
+							Logger.error(this, "Caught Throwable in Callback", t);
 						}
 					}
 				}, "Callback");
@@ -1542,7 +1549,7 @@ public class PluginManager {
 						try {
 							plug.setLanguage(lang);
 						} catch (Throwable t) {
-							Logger.error(this, "Cought Trowable in Callback", t);
+							Logger.error(this, "Caught Throwable in Callback", t);
 						}
 					}
 				}, "Callback");
@@ -1554,7 +1561,7 @@ public class PluginManager {
 						try {
 							plug.setLanguage(lang);
 						} catch (Throwable t) {
-							Logger.error(this, "Cought Trowable in Callback", t);
+							Logger.error(this, "Caught Throwable in Callback", t);
 						}
 					}
 				}, "Callback");
@@ -1601,10 +1608,15 @@ public class PluginManager {
 			}
 		}
 
+		/**
+		 * @return a copy of the starting plugins. Do not modify this: modifications will get thrown away.
+		 */
 		public Collection<PluginProgress> getStartingPlugins() {
+			Set<PluginProgress> startingPluginsCopy;
 			synchronized (this) {
-				return startingPlugins;
+				startingPluginsCopy = Set.copyOf(startingPlugins);
 			}
+			return startingPluginsCopy;
 		}
 
 		public void removeStartingPlugin(PluginProgress pluginProgress) {
@@ -1613,10 +1625,15 @@ public class PluginManager {
 			}
 		}
 
+		/**
+		 * @return a copy of the loaded plugins. Do not modify this: modifications will get thrown away.
+		 */
 		public Collection<PluginInfoWrapper> getLoadedPlugins() {
+			Set<PluginInfoWrapper> loadedPluginsCopy;
 			synchronized (this) {
-				return loadedPlugins;
+				loadedPluginsCopy = Set.copyOf(loadedPlugins);
 			}
+			return loadedPluginsCopy;
 		}
 
 		public void removeLoadedPlugin(PluginInfoWrapper pluginInfoWrapper) {

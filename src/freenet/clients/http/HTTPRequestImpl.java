@@ -123,7 +123,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 		this.data = null;
 		this.parts = null;
 		this.bucketfactory = null;
-		if ((encodedQueryString!=null) && (encodedQueryString.length()>0)) {
+		if ((encodedQueryString!=null) && !encodedQueryString.isEmpty()) {
 			this.uri = new URI(path+ '?' +encodedQueryString);
 		} else {
 			this.uri = new URI(path);
@@ -273,7 +273,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 		Map<String, List<String>> parameters = new HashMap<String, List<String>>();
 
 		// nothing to do if there was no query string in the URI
-		if ((queryString == null) || (queryString.length() == 0)) {
+		if ((queryString == null) || queryString.isEmpty()) {
 			return parameters;
 		}
 
@@ -501,7 +501,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 					boundary = subparts[1];
 			}
 
-			if((boundary == null) || (boundary.length() == 0))
+			if((boundary == null) || boundary.isEmpty())
 				return;
 			if(boundary.charAt(0) == '"')
 				boundary = boundary.substring(1);
@@ -535,7 +535,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 				contentType = null;
 				// chomp headers
 				while((line = lis.readLine(200, 200, true)) /* should be UTF-8 as we told the browser to send UTF-8 */ != null) {
-					if(line.length() == 0)
+					if(line.isEmpty())
 						break;
 
 					String[] lineparts = line.split(":");

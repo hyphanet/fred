@@ -170,7 +170,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		}
 
 		public String popElementFromStack() {
-			if(openElements.size()>0)
+			if(!openElements.isEmpty())
 				return openElements.pop();
 			else
 				return null;
@@ -480,7 +480,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			//Writing the remaining tags for XHTML if any
 			if(getisXHTML())
 			{
-				while(openElements.size()>0)
+				while(!openElements.isEmpty())
 					w.write("</"+openElements.pop()+">");
 			}
 			w.flush();
@@ -662,7 +662,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 						if (pc.writeStyleScriptWithTag) {
 							pc.writeStyleScriptWithTag = false;
 							String style = pc.currentStyleScriptChunk;
-							if ((style == null) || (style.length() == 0))
+							if ((style == null) || style.isEmpty())
 								pc.writeAfterTag.append("<!-- "+l10n("deletedUnknownStyle")+" -->");
 							else
 								w.write(style);
@@ -793,7 +793,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			if (((len - 1 != 0) || (s.length() > 1)) && s.endsWith("/")) {
 				s = s.substring(0, s.length() - 1);
 				v.set(len - 1, s);
-				if (s.length() == 0)
+				if (s.isEmpty())
 					len--;
 				endSlash = true;
 				// Don't need to set it back because everything is an I-value
@@ -2179,7 +2179,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 							}
 						} else if (idx > -1) {
 							String x = s.substring(0, idx);
-							if (x.length() == 0)
+							if (x.isEmpty())
 								x = prevX;
 							x = x.toLowerCase();
 							String y;
@@ -2647,8 +2647,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			if (type != null) {
 				String[] typesplit = splitType(type);
 				type = typesplit[0];
-				if ((typesplit[1] != null) && (typesplit[1].length() > 0))
+				if ((typesplit[1] != null) && !typesplit[1].isEmpty()) {
 					charset = typesplit[1];
+				}
 				if(logDEBUG)
 					Logger.debug(
 							this,
@@ -2744,9 +2745,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 
 			// Allow no rel or rev, even on <link>, as per HTML spec.
 
-			if(parsedRel.length() != 0)
+			if(!parsedRel.isEmpty())
 				hn.put("rel", parsedRel);
-			if(parsedRev.length() != 0)
+			if(!parsedRev.isEmpty())
 				hn.put("rev", parsedRev);
 
 			if(rel != null) {
@@ -3069,7 +3070,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 							throwFilterException(l10n("invalidMetaType"));
 					} else if (
 						http_equiv.equalsIgnoreCase("Content-Language")) {
-						if(content.matches("((?>[a-zA-Z0-9]*)(?>-[A-Za-z0-9]*)*(?>,\\s*)?)*") && (!content.trim().isEmpty())) {
+						if(content.matches("((?>[a-zA-Z0-9]*)(?>-[A-Za-z0-9]*)*(?>,\\s*)?)*") && !content.trim().isEmpty()) {
 							hn.put("http-equiv", "Content-Language");
 							hn.put("content", content);
 						}
@@ -3342,7 +3343,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				throw e;
 		}
 		String s = w.toString();
-		if ((s == null) || (s.length() == 0))
+		if ((s == null) || s.isEmpty())
 			return null;
 		//		Core.logger.log(SaferFilter.class, "Style now: " + s, LogLevel.DEBUG);
 		if(logMINOR) Logger.minor(HTMLFilter.class, "Style finally: " + s);
@@ -3457,7 +3458,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		if(logMINOR)
 			Logger.minor(HTMLFilter.class, "Sanitizing URI: "+suri+" ( override type "+overrideType +" override charset "+overrideCharset+" ) inline="+inline, new Exception("debug"));
 		boolean addMaybe = false;
-		if((overrideCharset != null) && (overrideCharset.length() > 0))
+		if((overrideCharset != null) && !overrideCharset.isEmpty())
 			overrideType += "; charset="+overrideCharset;
 		else if(maybeCharset != null)
 			addMaybe = true;

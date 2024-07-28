@@ -105,7 +105,7 @@ public final class ReceivedCookie extends Cookie {
 				
 				key = new String(header, keyBeginIndex, keyEndIndex - keyBeginIndex).toLowerCase();
 				
-				if(key.length() == 0)
+				if(key.isEmpty())
 					throw new ParseException("Invalid cookie: Contains an empty key: " + httpHeader, i);
 				
 				// We're done parsing the key, continue to the next character.

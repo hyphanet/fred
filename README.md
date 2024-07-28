@@ -31,6 +31,16 @@ of the archive it downloads from `https://services.gradle.org`.
     $ mkdir -p lib; cd lib && grep -o CHK.* ../dependencies.properties  | xargs -P16 -I {} bash -c 'fcpget -v {} "$(echo {} | sed s,^.*/,,)"'
     $ ant -propertyfile build.properties -f build-clean.xml -Dtest.skip=true -Dfindbugs.skip=true
 
+## Building the installers
+
+The installers are built from specialized repositories:
+
+- The GNU/Linux, macOS and *nix installer is built from [hyphanet/java_installer](https://github.com/hyphanet/java_installer).
+- The Windows installer is built from [hyphanet/wininstaller-innosetup](https://github.com/hyphanet/wininstaller-innosetup) and signed with [hyphanet/sign-windows-installer](https://github.com/hyphanet/sign-windows-installer).
+
+Free code signing for the Windows installer is provided by [SignPath.io](https://about.signpath.io/?), the certificate by the [SignPath Foundation](https://signpath.org/).
+
+
 ## Testing
 
 ### Run Tests
