@@ -261,7 +261,7 @@ task tar(type: Tar) {
   description = "Build a source release, specifically excluding the build directories and gradle wrapper files"
   compression = Compression.BZIP2
 
-  baseName = "freenet-sources"
+  archiveBaseName = "freenet-sources"
 
   from(project.rootDir) {
     exclude '**/build'
@@ -269,17 +269,17 @@ task tar(type: Tar) {
     exclude '.gradle'
   }
 
-  into(baseName)
+  into(archiveBaseName)
 
   preserveFileTimestamps = true
   reproducibleFileOrder = true
 
   // Set destination directory.
-  destinationDir = file("${project.buildDir}")
+  destinationDirectory = file("${project.buildDir}")
 
-  archiveName = "${baseName}.tgz"
+  archiveFileName = "${archiveBaseName}.tgz"
   doLast { // generate md5 checksum
-    ant.checksum file:"$destinationDir/$archiveName"
+    ant.checksum file:"$destinationDirectory/$archiveFileName"
   }
 }
 
