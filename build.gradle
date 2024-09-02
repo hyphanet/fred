@@ -127,7 +127,7 @@ jar.dependsOn buildJar
 def jars = []
 gradle.addListener(new TaskExecutionListener() {
 void afterExecute(Task task, TaskState state) {
-    if(task in AbstractArchiveTask) {
+    if(task in AbstractArchiveTask && task.enabled) {
         jars << task.outputs.files.singleFile
     }
 }
