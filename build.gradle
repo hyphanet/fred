@@ -102,7 +102,7 @@ task buildJar(type: Jar) {
     from(compileVersion.destinationDirectory)
     preserveFileTimestamps = true
     reproducibleFileOrder = true
-    duplicatesStrategy = "warn"
+    duplicatesStrategy = DuplicatesStrategy.FAIL
     archivesBaseName = "freenet"
     manifest {
         attributes("Permissions": "all-permissions")
