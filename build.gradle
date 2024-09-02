@@ -71,35 +71,35 @@ tasks.withType(Javadoc) {
     options.encoding = "UTF-8"
 }
 
-task compileVersion (type: JavaCompile) {
-    copy {
-        from sourceSets.main.java.srcDirs
-        into version_buildir
-        include "${version_src}"
+task generateVersionSource(type: Copy) {
+    dependsOn buildInfo
+    from(sourceSets.main.java.srcDirs) {
+        include version_src
         filter {
-            String line -> line.replaceAll("@custom@","${gitrev}")
+            String line -> line.replaceAll('@custom@', gitrev)
         }
     }
+    into version_buildir
+}
+
+task compileVersion (type: JavaCompile) {
+    dependsOn generateVersionSource, compileJava
     sourceCompatibility = 1.8
     targetCompatibility = 1.8
     source = version_buildir
-    include "${version_src}"
+    include version_src
     classpath = files(sourceSets.main.compileClasspath, sourceSets.main.output.classesDirs)
     destinationDirectory.set(layout.buildDirectory.dir("java/version/").get())
 }
 
-compileVersion.dependsOn buildInfo
-compileVersion.dependsOn compileJava
-//processResources.dependsOn compileVersion
-
-task jar (type: Jar, overwrite: true) {
-    from (compileVersion) {
-        include 'freenet/node/Version**class'
-    }
-    from ("${buildDir}/classes/java/main/") {
+task buildJar(type: Jar) {
+    dependsOn compileVersion, processResources
+    from(processResources)
+    from(compileJava.destinationDirectory) {
         exclude 'freenet/node/Version.class'
         exclude 'freenet/node/Version$1.class'
     }
+    from(compileVersion.destinationDirectory)
     preserveFileTimestamps = true
     reproducibleFileOrder = true
     duplicatesStrategy = "warn"
@@ -120,7 +120,9 @@ task jar (type: Jar, overwrite: true) {
                    ], "common")
     }
 }
-jar.dependsOn processResources
+
+jar.enabled = false
+jar.dependsOn buildJar
 
 def jars = []
 gradle.addListener(new TaskExecutionListener() {
