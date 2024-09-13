@@ -1614,7 +1614,7 @@ public class PluginManager {
 		public Collection<PluginProgress> getStartingPlugins() {
 			Set<PluginProgress> startingPluginsCopy;
 			synchronized (this) {
-				startingPluginsCopy = Set.copyOf(startingPlugins);
+				startingPluginsCopy = new HashSet<>(startingPlugins);
 			}
 			return startingPluginsCopy;
 		}
@@ -1631,7 +1631,7 @@ public class PluginManager {
 		public Collection<PluginInfoWrapper> getLoadedPlugins() {
 			Set<PluginInfoWrapper> loadedPluginsCopy;
 			synchronized (this) {
-				loadedPluginsCopy = Set.copyOf(loadedPlugins);
+				loadedPluginsCopy = new HashSet<>(loadedPlugins);
 			}
 			return loadedPluginsCopy;
 		}
