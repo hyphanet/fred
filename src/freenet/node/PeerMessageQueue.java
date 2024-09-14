@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Random;
 
 import freenet.io.comm.DMT;
 import freenet.support.DoublyLinkedList;
@@ -13,6 +14,7 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.MutableBoolean;
+import freenet.node.Node;
 
 /**
  * Queue of messages to send to a node. Ordered first by priority then by time.
@@ -710,7 +712,9 @@ public class PeerMessageQueue {
 
 	}
 
-	PeerMessageQueue() {
+	private Random fastWeakRandom;
+	PeerMessageQueue(Random fastWeakRandom) {
+		this.fastWeakRandom = fastWeakRandom;
 		queuesByPriority = new PrioQueue[DMT.NUM_PRIORITIES];
 		for(int i=0;i<queuesByPriority.length;i++) {
 			if(i == DMT.PRIORITY_BULK_DATA)
@@ -853,6 +857,7 @@ public class PeerMessageQueue {
 		return false;
 	}
 
+	// TODO only try realtime first 90% of the time to ensure that realtime cannot starve bulk.
 	/** Grab a message to send. WARNING: PeerMessageQueue not only removes the message,
 	 * it assumes it has been sent for purposes of fairness between UID's. You should try
 	 * not to call this function if you are not going to be able to send the message: 
@@ -875,7 +880,7 @@ public class PeerMessageQueue {
 		
 		// Include bulk or realtime, whichever is more urgent.
 		
-		boolean tryRealtimeFirst = true;
+		boolean tryRealtimeFirst = this.fastWeakRandom.nextInt(10) > 0;
 		
 		// If one is empty, try the other.
 		// Otherwise try whichever is more urgent, favouring realtime if there is a draw.

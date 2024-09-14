@@ -10,13 +10,13 @@ import org.junit.Test;
 public class PeerMessageQueueTest {
 	@Test
 	public void testUrgentTimeEmpty() {
-		PeerMessageQueue pmq = new PeerMessageQueue();
+		PeerMessageQueue pmq = new PeerMessageQueue(new MersenneTwister(new byte[16]));
 		assertEquals(Long.MAX_VALUE, pmq.getNextUrgentTime(Long.MAX_VALUE, System.currentTimeMillis()));
 	}
 
 	@Test
 	public void testUrgentTime() {
-		PeerMessageQueue pmq = new PeerMessageQueue();
+		PeerMessageQueue pmq = new PeerMessageQueue(new MersenneTwister(new byte[16]));
 
 		//Constructor might take some time, so grab a range
 		long start = System.currentTimeMillis();
@@ -37,7 +37,7 @@ public class PeerMessageQueueTest {
 	 * it. */
 	@Test
 	public void testUrgentTimeQueuedWrong() {
-		PeerMessageQueue pmq = new PeerMessageQueue();
+		PeerMessageQueue pmq = new PeerMessageQueue(new MersenneTwister(new byte[16]));
 
 		//Constructor might take some time, so grab a range
 		long start = System.currentTimeMillis();
@@ -67,7 +67,7 @@ public class PeerMessageQueueTest {
 
 	@Test
 	public void testGrabQueuedMessageItem() {
-		PeerMessageQueue pmq = new PeerMessageQueue();
+		PeerMessageQueue pmq = new PeerMessageQueue(new MersenneTwister(new byte[16]));
 
 		MessageItem itemUrgent = new MessageItem(new byte[1024], null, false, null, (short) 0, false, false);
 
