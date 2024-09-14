@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<verification-metadata xmlns="https://schema.gradle.org/dependency-verification" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://schema.gradle.org/dependency-verification https://schema.gradle.org/dependency-verification/dependency-verification-1.1.xsd">
+<verification-metadata xmlns="https://schema.gradle.org/dependency-verification" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://schema.gradle.org/dependency-verification https://schema.gradle.org/dependency-verification/dependency-verification-1.3.xsd">
    <configuration>
       <verify-metadata>true</verify-metadata>
       <verify-signatures>true</verify-signatures>
       <trusted-artifacts>
+         <trust file="apache-4.pom"/>
+         <trust file="kxml2-2.3.0-sources.jar"/>
          <trust file="commons-codec-1.4(-sources)*[.](jar|pom)" regex="true"/>
          <trust file="commons-logging-1.1.1(-sources)*[.](jar|pom)" regex="true"/>
          <trust file="commons-parent-[1-9]*[.]pom" regex="true"/>
-         <trust file="kxml2-2.3.0-sources.jar" regex="false"/>
-         <trust file="unbescape-1[.]1[.]6[.].*" regex="true"/>
          <trust file="mockito-core-1.9.5(-sources)*[.](jar|pom)" regex="true"/>
-         <trust file="apache-4.pom" regex="false"/>
+         <trust file="unbescape-1[.]1[.]6[.].*" regex="true"/>
       </trusted-artifacts>
       <trusted-keys>
          <trusted-key id="0785b3eff60b1b1bea94e0bb7c25280eae63ebe5" group="org.apache.httpcomponents"/>
