@@ -108,7 +108,9 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 				f.setAccessible(true);
 				ret = f.getInt(fdi);
 			} catch (Exception e) {
-			   Logger.error(UdpSocketHandler.class, e.getMessage(), e);
+				if (logMINOR) { // TODO: Known Java 21 problem.
+					Logger.warning(UdpSocketHandler.class, e.getMessage(), e);
+				}
 			}
 			return ret;
 		}
