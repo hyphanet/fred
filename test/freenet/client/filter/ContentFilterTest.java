@@ -380,6 +380,24 @@ public class ContentFilterTest {
         }
     }
 
+    @Test
+    public void charsetDetectionUsesUTF8DefaultForEmptyText() throws IOException {
+        String s = "";
+        byte[] buf = s.getBytes(StandardCharsets.UTF_8);
+        ArrayBucket out = new ArrayBucket();
+        FilterStatus fo = ContentFilter.filter(new ArrayBucket(buf).getInputStream(), out.getOutputStream(), "text/plain", null, null, null);
+        assertTrue("utf-8".equals(fo.charset));
+    }
+
+    @Test
+    public void charsetDetectionUsesBomForText() throws IOException {
+        String s = new String(CSSReadFilter.utf16be);
+        byte[] buf = s.getBytes(StandardCharsets.UTF_8);
+        ArrayBucket out = new ArrayBucket();
+        FilterStatus fo = ContentFilter.filter(new ArrayBucket(buf).getInputStream(), out.getOutputStream(), "text/plain", null, null, null);
+        assertTrue("UTF-16BE".equals(fo.charset));
+    }
+
     public static String htmlFilter(String data) throws Exception {
         if (data.startsWith("<html")) return htmlFilter(data, false);
         if (data.startsWith("<?")) return htmlFilter(data, false);
