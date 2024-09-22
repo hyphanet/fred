@@ -1,7 +1,15 @@
 next:
 
-- 
-
+- Update Gradle to 8.9 thanks to Christophe!
+- replace length = 0 checks with isEmpty() — thanks to Juiceman!
+- do not recommend disabling js helpers in fproxy (these are reviewed)
+- add more resilient plugin list exception handling
+- Remove gc meddling that hasn’t been necessary for many Java releases
+- Add webp filter, thanks to Torusrxxx!
+- Update japanise localization, thanks to qupo1!
+- Fix build info with gradle daemon, thanks to Bombe!
+- Improve IPv6 handling, thanks to Torusrxxx!
+- Hide no longer relevant new load management statistics, thanks to Torusrxxx!
 
 1498:
 
