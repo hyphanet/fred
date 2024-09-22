@@ -60,8 +60,10 @@ task buildInfo {
     }
 }
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
 
 tasks.withType(JavaCompile) {
     options.encoding = "UTF-8"
@@ -167,6 +169,7 @@ task copyResourcesToClasses2 {
     }
 }
 processResources.dependsOn copyResourcesToClasses2
+compileVersion.dependsOn copyResourcesToClasses2
 
 task copyTestResourcesToClasses2 {
     inputs.files sourceSets.test.allSource
@@ -260,7 +263,7 @@ task tar(type: Tar) {
   description = "Build a source release, specifically excluding the build directories and gradle wrapper files"
   compression = Compression.BZIP2
 
-  baseName = "freenet-sources"
+  archiveBaseName = "freenet-sources"
 
   from(project.rootDir) {
     exclude '**/build'
@@ -268,17 +271,17 @@ task tar(type: Tar) {
     exclude '.gradle'
   }
 
-  into(baseName)
+  into(archiveBaseName)
 
   preserveFileTimestamps = true
   reproducibleFileOrder = true
 
   // Set destination directory.
-  destinationDir = file("${project.buildDir}")
+  destinationDirectory = file("${project.buildDir}")
 
-  archiveName = "${baseName}.tgz"
+  archiveFileName = "${archiveBaseName}.tgz"
   doLast { // generate md5 checksum
-    ant.checksum file:"$destinationDir/$archiveName"
+    ant.checksum file:"$destinationDirectory/$archiveFileName"
   }
 }
 
