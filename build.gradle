@@ -53,7 +53,7 @@ def gitrev
 task buildInfo {
     try {
         def cmd = "git describe --always --abbrev=4 --dirty"
-        def proc = cmd.execute()
+        def proc = cmd.execute([], project.rootDir)
         gitrev = proc.text.trim()
     } catch (IOException ignored) {
         gitrev = "@unknown@"
