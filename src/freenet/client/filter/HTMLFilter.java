@@ -841,8 +841,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			sb.append(element);
 			if (unparsedAttrs != null) {
 				int n = unparsedAttrs.length;
-				for (int i = 0; i < n; i++) {
-					sb.append(' ').append(unparsedAttrs[i]);
+				for (String unparsedAttr : unparsedAttrs) {
+					sb.append(' ').append(unparsedAttr);
 				}
 			}
 			if (endSlash)
@@ -2145,8 +2145,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			}
 			this.booleanAttrs = new HashSet<String>();
 			if (booleanAttrs != null) {
-				for(int x = 0; x < booleanAttrs.length; x++) {
-					this.booleanAttrs.add(booleanAttrs[x]);
+				for (String booleanAttr : booleanAttrs) {
+					this.booleanAttrs.add(booleanAttr);
 				}
 			}
 		}

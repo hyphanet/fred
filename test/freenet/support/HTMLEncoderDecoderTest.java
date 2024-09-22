@@ -103,10 +103,10 @@ public class HTMLEncoderDecoderTest {
 			strBuffer[3].append(MAC_NEWLINE);
 			strBuffer[4].append(CONTROL);
 			strBuffer[5].append(ZEROWIDTHSPACE);
-			
-			for (int j = 0; j < strBuffer.length; j++)
+
+			for (StringBuilder stringBuilder : strBuffer)
 				assertEquals(" ",
-						HTMLDecoder.compact(strBuffer[j].toString()));
+						HTMLDecoder.compact(stringBuilder.toString()));
 		}
 	}
 	
