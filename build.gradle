@@ -53,15 +53,17 @@ def gitrev
 task buildInfo {
     try {
         def cmd = "git describe --always --abbrev=4 --dirty"
-        def proc = cmd.execute()
+        def proc = cmd.execute([], project.rootDir)
         gitrev = proc.text.trim()
     } catch (IOException ignored) {
         gitrev = "@unknown@"
     }
 }
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
 
 tasks.withType(JavaCompile) {
     options.encoding = "UTF-8"
@@ -71,38 +73,38 @@ tasks.withType(Javadoc) {
     options.encoding = "UTF-8"
 }
 
-task compileVersion (type: JavaCompile) {
-    copy {
-        from sourceSets.main.java.srcDirs
-        into version_buildir
-        include "${version_src}"
+task generateVersionSource(type: Copy) {
+    dependsOn buildInfo
+    from(sourceSets.main.java.srcDirs) {
+        include version_src
         filter {
-            String line -> line.replaceAll("@custom@","${gitrev}")
+            String line -> line.replaceAll('@custom@', gitrev)
         }
     }
+    into version_buildir
+}
+
+task compileVersion (type: JavaCompile) {
+    dependsOn generateVersionSource, compileJava
     sourceCompatibility = 1.8
     targetCompatibility = 1.8
     source = version_buildir
-    include "${version_src}"
+    include version_src
     classpath = files(sourceSets.main.compileClasspath, sourceSets.main.output.classesDirs)
     destinationDirectory.set(layout.buildDirectory.dir("java/version/").get())
 }
 
-compileVersion.dependsOn buildInfo
-compileVersion.dependsOn compileJava
-//processResources.dependsOn compileVersion
-
-task jar (type: Jar, overwrite: true) {
-    from (compileVersion) {
-        include 'freenet/node/Version**class'
-    }
-    from ("${buildDir}/classes/java/main/") {
+task buildJar(type: Jar) {
+    dependsOn compileVersion, processResources
+    from(processResources)
+    from(compileJava.destinationDirectory) {
         exclude 'freenet/node/Version.class'
         exclude 'freenet/node/Version$1.class'
     }
+    from(compileVersion.destinationDirectory)
     preserveFileTimestamps = true
     reproducibleFileOrder = true
-    duplicatesStrategy = "warn"
+    duplicatesStrategy = DuplicatesStrategy.FAIL
     archivesBaseName = "freenet"
     manifest {
         attributes("Permissions": "all-permissions")
@@ -120,12 +122,14 @@ task jar (type: Jar, overwrite: true) {
                    ], "common")
     }
 }
-jar.dependsOn processResources
+
+jar.enabled = false
+jar.dependsOn buildJar
 
 def jars = []
 gradle.addListener(new TaskExecutionListener() {
 void afterExecute(Task task, TaskState state) {
-    if(task in AbstractArchiveTask) {
+    if(task in AbstractArchiveTask && task.enabled) {
         jars << task.outputs.files.singleFile
     }
 }
@@ -167,6 +171,7 @@ task copyResourcesToClasses2 {
     }
 }
 processResources.dependsOn copyResourcesToClasses2
+compileVersion.dependsOn copyResourcesToClasses2
 
 task copyTestResourcesToClasses2 {
     inputs.files sourceSets.test.allSource
@@ -250,10 +255,9 @@ dependencies {
     implementation "org.unbescape:unbescape:1.1.6.RELEASE"
     implementation "org.slf4j:slf4j-api:1.7.25"
 
-    testImplementation 'junit:junit:4.12'
+    testImplementation 'junit:junit:4.13.2'
     testImplementation "org.mockito:mockito-core:1.9.5"
-    testImplementation "org.hamcrest:hamcrest-library:1.3"
-    testImplementation "org.hamcrest:hamcrest-core:1.3"
+    testImplementation "org.hamcrest:hamcrest:3.0"
     testImplementation "org.objenesis:objenesis:1.0"
 }
 
@@ -261,7 +265,7 @@ task tar(type: Tar) {
   description = "Build a source release, specifically excluding the build directories and gradle wrapper files"
   compression = Compression.BZIP2
 
-  baseName = "freenet-sources"
+  archiveBaseName = "freenet-sources"
 
   from(project.rootDir) {
     exclude '**/build'
@@ -269,17 +273,17 @@ task tar(type: Tar) {
     exclude '.gradle'
   }
 
-  into(baseName)
+  into(archiveBaseName)
 
   preserveFileTimestamps = true
   reproducibleFileOrder = true
 
   // Set destination directory.
-  destinationDir = file("${project.buildDir}")
+  destinationDirectory = file("${project.buildDir}")
 
-  archiveName = "${baseName}.tgz"
+  archiveFileName = "${archiveBaseName}.tgz"
   doLast { // generate md5 checksum
-    ant.checksum file:"$destinationDir/$archiveName"
+    ant.checksum file:"$destinationDirectory/$archiveFileName"
   }
 }
 
