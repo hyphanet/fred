@@ -8,6 +8,8 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import freenet.crypt.BlockCipher;
 import freenet.crypt.PCFBMode;
@@ -55,12 +57,14 @@ public class CipherManager {
 	 * Cache for digested keys
 	 */
 	@SuppressWarnings("serial")
-	private Map<ByteArrayWrapper, byte[]> digestRoutingKeyCache = new LinkedHashMap<ByteArrayWrapper, byte[]>() {
+	private final Map<ByteArrayWrapper, byte[]> digestRoutingKeyCache = new LinkedHashMap<ByteArrayWrapper, byte[]>() {
 		@Override
 		protected boolean removeEldestEntry(Map.Entry<ByteArrayWrapper, byte[]> eldest) {
 			return size() > 128;
 		}
 	};
+	
+	private final ReadWriteLock digestRoutingKeyCacheLock = new ReentrantReadWriteLock();
 
 	/**
 	 * Get digested routing key
@@ -70,10 +74,13 @@ public class CipherManager {
 	 */
 	byte[] getDigestedKey(byte[] plainKey) {
 		ByteArrayWrapper key = new ByteArrayWrapper(plainKey);
-		synchronized (digestRoutingKeyCache) {
+		digestRoutingKeyCacheLock.readLock().lock();
+		try {
 			byte[] dk = digestRoutingKeyCache.get(key);
 			if (dk != null)
 				return dk;
+		} finally {
+			digestRoutingKeyCacheLock.readLock().unlock();
 		}
 
 		MessageDigest digest = SHA256.getMessageDigest();
@@ -84,8 +91,11 @@ public class CipherManager {
 			byte[] hashedRoutingKey = digest.digest();
 			assert hashedRoutingKey.length == 0x20;
 
-			synchronized (digestRoutingKeyCache) {
+			digestRoutingKeyCacheLock.writeLock().lock();
+			try {
 				digestRoutingKeyCache.put(key, hashedRoutingKey);
+			} finally {
+				digestRoutingKeyCacheLock.writeLock().unlock();
 			}
 
 			return hashedRoutingKey;
