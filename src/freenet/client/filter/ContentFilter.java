@@ -56,6 +56,7 @@ public class ContentFilter {
 				l10n("textPlainReadAdvice"),
 				true, "US-ASCII", null, false));
 
+		// Images
 		// GIF - has a filter
 		register(new FilterMIMEType("image/gif", "gif", new String[0], new String[0],
 				true, false, new GIFFilter(), false, false, false, false, false, false,
@@ -74,7 +75,6 @@ public class ContentFilter {
 				l10n("imagePngReadAdvice"),
 				false, null, null, false));
 
-
 		// BMP - has a filter
 		// Reference: http://filext.com/file-extension/BMP
 		register(new FilterMIMEType("image/bmp", "bmp", new String[] { "image/x-bmp","image/x-bitmap","image/x-xbitmap","image/x-win-bitmap","image/x-windows-bmp","image/ms-bmp","image/x-ms-bmp","application/bmp","application/x-bmp","application/x-win-bitmap"  }, new String[0],
@@ -88,6 +88,7 @@ public class ContentFilter {
 				l10n("imageWebPReadAdvice"),
 				false, null, null, false));
 
+		// Audio
 		/* Ogg - has a filter
 		 * Xiph's container format. Contains one or more logical bitstreams.
 		 * Each type of bitstream will likely require additional processing,
@@ -123,6 +124,11 @@ public class ContentFilter {
 		register(new FilterMIMEType("audio/mpeg", "mp3", new String[] {"audio/mp3", "audio/x-mp3", "audio/x-mpeg", "audio/mpeg3", "audio/x-mpeg3", "audio/mpg", "audio/x-mpg", "audio/mpegaudio"},
 				new String[0], true, false, new MP3Filter(), true, true, false, true, false, false,
 				l10n("audioMP3ReadAdvice"), false, null, null, false));
+		
+		// WAV - has a filter
+		register(new FilterMIMEType("audio/vnd.wave", "mp3", new String[] {"audio/vnd.wave", "audio/x-wav", "audio/wav", "audio/wave"},
+				new String[0], true, false, new WAVFilter(), true, true, false, true, false, false,
+				l10n("audioWAVReadAdvice"), false, null, null, false));
 
 		// ICO needs filtering.
 		// Format is not the same as BMP iirc.
@@ -546,6 +552,8 @@ public class ContentFilter {
 					subMimetype = "video/ogg";
 } else if (uriPath.endsWith(".ogg")) {
 					subMimetype = "application/ogg";
+} else if (uriPath.endsWith(".wav")) {
+					subMimetype = "audio/vnd.wave";
 			} else { // force mp3 for anything we do not know
 					subMimetype = "audio/mpeg";
 			}
