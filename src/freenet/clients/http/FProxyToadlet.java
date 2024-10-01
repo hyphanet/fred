@@ -88,6 +88,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			"image/png",
 			"image/jpeg",
 			"image/gif",
+			"image/webp",
 			"audio/mp3",
 			"audio/ogg",
 			"video/ogg",
