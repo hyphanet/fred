@@ -5,10 +5,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Map;
 
-import freenet.client.filter.WebPFilter.WebPFilterContext;
 import freenet.l10n.NodeL10n;
-import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 
 public class WAVFilter extends RIFFFilter {
 	// RFC 2361
