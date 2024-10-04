@@ -307,6 +307,10 @@ public class SSL {
 
 	private static void createSSLContext() throws NoSuchAlgorithmException, UnrecoverableKeyException, KeyStoreException, KeyManagementException {
 		if(enable) {
+			if(keystore.size() == 0) {
+				// No certificates here, can't create SSL context
+				return;
+			}
 			// A KeyManagerFactory is used to create key managers
 			KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
 			// Initialize the KeyManagerFactory to work with our keystore
