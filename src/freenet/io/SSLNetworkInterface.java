@@ -72,10 +72,10 @@ public class SSLNetworkInterface extends NetworkInterface {
 
 		return serverSocket;
 	}
-	private static final Set<String> ALLOWED_CIPHERS = new HashSet(Arrays.asList(
+	private static final Set<String> ALLOWED_CIPHERS = new HashSet<String>(Arrays.asList(
+			"TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
 			"TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+			"TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
 			"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
-			"TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256",
-			"TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256",
 			"TLS_EMPTY_RENEGOTIATION_INFO_SCSV"));
 }

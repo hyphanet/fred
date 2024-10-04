@@ -19,30 +19,40 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import java.math.BigInteger;
+import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.KeyManagementException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
+import java.security.SignatureException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
-import java.util.Arrays;
-
+import java.security.cert.X509Certificate;
+import java.util.Date;
 import javax.net.ServerSocketFactory;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
+import javax.security.auth.x500.X500Principal;
+
+import org.bouncycastle.asn1.x509.ExtendedKeyUsage;
+import org.bouncycastle.asn1.x509.KeyPurposeId;
+import org.bouncycastle.asn1.x509.X509Extensions;
+import org.bouncycastle.asn1.x509.X509Name;
+import org.bouncycastle.x509.X509V3CertificateGenerator;
 
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
+import freenet.node.NodeStarter;
 import freenet.support.Logger;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.StringCallback;
-import freenet.support.io.Closer;
 import java.net.ServerSocket;
 
 public class SSL {
@@ -95,7 +105,7 @@ public class SSL {
 						enable = newValue;
 						if(enable)
 							try {
-								loadKeyStore();
+								loadKeyStoreAndCreateCertificate();
 								createSSLContext();
 							} catch(Exception e) {
 								enable = false;
@@ -196,9 +206,14 @@ public class SSL {
 			createSSLContext();
 		} catch(Exception e) {
 			Logger.error(SSL.class, "Keystore cannot be loaded, SSL will be disabled", e);
+		} finally {
+			if(enable && !available()) {
+				Logger.error(SSL.class, "SSL cannot be enabled!");
+			} else if(enable) {
+				Logger.normal(SSL.class, "SSL is enabled.");
+			}
+			sslConfig.finishedInitialization();
 		}
-		sslConfig.finishedInitialization();
-
 	}
 
 	/**
@@ -212,64 +227,80 @@ public class SSL {
 		return ssf.createServerSocket();
 	}
 
-	private static void loadKeyStore() throws NoSuchAlgorithmException, CertificateException, IOException, IllegalArgumentException, InstantiationException, IllegalAccessException, InvocationTargetException, KeyStoreException, UnrecoverableKeyException, KeyManagementException {
+	/**
+	 * Load key store from file but do not try to create a self-signed certificate when the file does not exist.
+	 * Used when the node is starting up, but not enough entropy is collected to generate a certificate.
+	 * @throws NoSuchAlgorithmException, CertificateException, IOException
+	 */
+	private static void loadKeyStore() throws NoSuchAlgorithmException, CertificateException, IOException {
 		if(enable) {
 			// A keystore is where keys and certificates are kept
 			// Both the keystore and individual private keys should be password protected
-			FileInputStream fis = null;
-			try {
-				fis = new FileInputStream(keyStore);
+			try (FileInputStream fis = new FileInputStream(keyStore)) {
 				keystore.load(fis, keyStorePass.toCharArray());
 			} catch(FileNotFoundException fnfe) {
 				// If keystore not exist, create keystore and server certificate
 				keystore.load(null, keyStorePass.toCharArray());
-				try {
-					Class<?> certAndKeyGenClazz = anyClass(
-						"sun.security.x509.CertAndKeyGen", // Java 7 and earlier
-						"sun.security.tools.keytool.CertAndKeyGen" // Java 8 and later
-					);
-					Constructor<?> certAndKeyGenCtor = certAndKeyGenClazz.getConstructor(String.class, String.class, String.class);
-					Object keypair = certAndKeyGenCtor.newInstance(KEY_ALGORITHM, SIG_ALGORITHM, "BC");
-
-					Class<?> x500NameClazz = Class.forName("sun.security.x509.X500Name");
-					Constructor<?> x500NameCtor = x500NameClazz.getConstructor(String.class, String.class,
-					        String.class, String.class, String.class, String.class);
-					Object x500Name = x500NameCtor.newInstance(CERTIFICATE_CN, CERTIFICATE_OU, CERTIFICATE_ON, "", "", "");
-					
-					Method certAndKeyGenGenerate = certAndKeyGenClazz.getMethod("generate", int.class);
-					certAndKeyGenGenerate.invoke(keypair, KEY_SIZE);
-					
-					Method certAndKeyGetPrivateKey = certAndKeyGenClazz.getMethod("getPrivateKey");
-					PrivateKey privKey = (PrivateKey) certAndKeyGetPrivateKey.invoke(keypair);
-
-					Certificate[] chain = new Certificate[1];
-					Method certAndKeyGenGetSelfCertificate = certAndKeyGenClazz.getMethod("getSelfCertificate",
-					        x500NameClazz, long.class);
-					chain[0] = (Certificate) certAndKeyGenGetSelfCertificate.invoke(keypair, x500Name,
-						CERTIFICATE_LIFETIME);
-
-					keystore.setKeyEntry("freenet", privKey, keyPass.toCharArray(), chain);
-					storeKeyStore();
-					createSSLContext();
-				} catch (ClassNotFoundException cnfe) {
-					throw new UnsupportedOperationException("The JVM you are using does not support generating strong SSL certificates", cnfe);
-				} catch (NoSuchMethodException nsme) {
-					throw new UnsupportedOperationException("The JVM you are using does not support generating strong SSL certificates", nsme);
-				}
-			} finally {
-				Closer.close(fis);
 			}
 		}
 	}
 
+	/**
+	 * Load key store from file and create a self-signed certificate when the file does not exist.
+	 */
+	private static void loadKeyStoreAndCreateCertificate() throws NoSuchAlgorithmException, CertificateException, IOException, IllegalArgumentException, KeyStoreException, UnrecoverableKeyException, KeyManagementException, InvalidKeyException, NoSuchProviderException, SignatureException {
+		if(enable) {
+			// A keystore is where keys and certificates are kept
+			// Both the keystore and individual private keys should be password protected
+			try (FileInputStream fis = new FileInputStream(keyStore)) {
+				keystore.load(fis, keyStorePass.toCharArray());
+			} catch(FileNotFoundException fnfe) {
+				createSelfSignedCertificate();
+			}
+		}
+	}
+	
+	private static void createSelfSignedCertificate() throws NoSuchAlgorithmException, CertificateException, IOException, IllegalArgumentException, KeyStoreException, UnrecoverableKeyException, KeyManagementException, InvalidKeyException, NoSuchProviderException, SignatureException {
+		// If keystore not exist, create keystore and server certificate
+		keystore.load(null, keyStorePass.toCharArray());
+		// Based on https://stackoverflow.com/questions/29852290/self-signed-x509-certificate-with-bouncy-castle-in-java
+
+		// generate a key pair
+		KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance(KEY_ALGORITHM, "BC");
+		keyPairGenerator.initialize(KEY_SIZE, NodeStarter.getGlobalSecureRandom());
+		KeyPair keyPair = keyPairGenerator.generateKeyPair();
+
+		// build a certificate generator
+		X509V3CertificateGenerator certGen = new X509V3CertificateGenerator();
+		X500Principal dnName = new X500Principal("CN=" + CERTIFICATE_CN + ", OU=" + CERTIFICATE_OU);
+
+		// add some options
+		certGen.setSerialNumber(BigInteger.valueOf(System.currentTimeMillis()));
+		certGen.setSubjectDN(new X509Name("dc=" + CERTIFICATE_CN));
+		certGen.setIssuerDN(dnName); // use the same
+		// now
+		certGen.setNotBefore(new Date(System.currentTimeMillis()));
+		// CERTIFICATE_LIFETIME
+		certGen.setNotAfter(new Date(System.currentTimeMillis() + CERTIFICATE_LIFETIME * 1000));
+		certGen.setPublicKey(keyPair.getPublic());
+		certGen.setSignatureAlgorithm(SIG_ALGORITHM);
+		certGen.addExtension(X509Extensions.ExtendedKeyUsage, true,
+				new ExtendedKeyUsage(KeyPurposeId.id_kp_timeStamping));
+
+		// finally, sign the certificate with the private key of the same KeyPair
+		X509Certificate cert = certGen.generate(keyPair.getPrivate(), "BC");
+		PrivateKey privKey = keyPair.getPrivate();
+		Certificate[] chain = new Certificate[1];
+		chain[0] = cert;
+		keystore.setKeyEntry("freenet", privKey, keyPass.toCharArray(), chain);
+		storeKeyStore();
+		createSSLContext();
+	}
+	
 	private static void storeKeyStore() throws KeyStoreException, NoSuchAlgorithmException, CertificateException, IOException {
 		if(enable) {
-			FileOutputStream fos = null;
-			try {
-				fos = new FileOutputStream(keyStore);
+			try (FileOutputStream fos = new FileOutputStream(keyStore);) {
 				keystore.store(fos, keyStorePass.toCharArray());
-			} finally {
-				Closer.close(fos);
 			}
 		}
 	}
@@ -288,17 +319,6 @@ public class SSL {
 			sslc.init(kmf.getKeyManagers(), null, null);
 			ssf = sslc.getServerSocketFactory();
 		}
-	}
-
-	private static Class<?> anyClass(String... names) throws ClassNotFoundException {
-		for (String clazz : names) {
-			try {
-				return Class.forName(clazz);
-			} catch (ClassNotFoundException e) {
-				Logger.minor(SSL.class, "Class " + clazz + " not found", e);
-			}
-		}
-		throw new ClassNotFoundException("Any of " + Arrays.toString(names));
 	}
 
 	private static void throwConfigError(String message, Throwable cause)
