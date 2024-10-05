@@ -44,11 +44,7 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 	 * available, will save some conversions and string allocations.
 	 */
 	public DSAPublicKey(DSAGroup g, String yAsHexString) throws NumberFormatException {
-		this.y = new BigInteger(yAsHexString, 16);
-		if(y.signum() != 1)
-			throw new IllegalArgumentException();
-		if(g == Global.DSAgroupBigA) g = null;
-		this.group = g;
+		this(g, new BigInteger(yAsHexString, 16));
 	}
 
 	public DSAPublicKey(DSAGroup g, DSAPrivateKey p) {
@@ -56,12 +52,7 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 	}
 
 	public DSAPublicKey(InputStream is) throws IOException, CryptFormatException {
-		DSAGroup g = (DSAGroup) DSAGroup.read(is);
-		if(g == Global.DSAgroupBigA) g = null;
-		group = g;
-		y = Util.readMPI(is);
-		if(y.compareTo(getGroup().getP()) > 0)
-			throw new IllegalArgumentException("y must be < p but y=" + y + " p=" + getGroup().getP());
+		this(DSAGroup.read(is), Util.readMPI(is));
 	}
 
 	public DSAPublicKey(byte[] pubkeyBytes) throws IOException, CryptFormatException {

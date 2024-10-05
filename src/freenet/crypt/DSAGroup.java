@@ -33,7 +33,7 @@ public class DSAGroup extends CryptoKey {
         	throw new IllegalArgumentException();
     }
 
-    public static CryptoKey read(InputStream i) throws IOException, CryptFormatException {
+    public static DSAGroup read(InputStream i) throws IOException, CryptFormatException {
         BigInteger p, q, g;
         p = Util.readMPI(i);
         q = Util.readMPI(i);
