@@ -36,8 +36,6 @@ package freenet.crypt;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.Provider;
 
 import freenet.support.io.Closer;
 
@@ -45,10 +43,6 @@ import freenet.support.io.Closer;
  * @author  Jeroen C. van Gelderen (gelderen@cryptix.org)
  */
 public class SHA256 {
-	/** Size (in bytes) of this hash */
-	private static final int HASH_SIZE = 32;
-
-	private static final Provider mdProvider = Util.mdProviders.get("SHA-256");
 
 	/**
 	 * It won't reset the Message Digest for you!
@@ -75,11 +69,7 @@ public class SHA256 {
 	 * Create a new SHA-256 MessageDigest
 	 */
 	public static MessageDigest getMessageDigest() {
-		try {
-			return MessageDigest.getInstance("SHA-256", mdProvider);
-		} catch (NoSuchAlgorithmException e) {
-			throw new IllegalStateException("SHA-256 not supported", e);
-		}
+		return HashType.SHA256.get();
 	}
 
 	/**
@@ -96,6 +86,6 @@ public class SHA256 {
 	}
 
 	public static int getDigestLength() {
-		return HASH_SIZE;
+		return HashType.SHA256.hashLength;
 	}
 }
