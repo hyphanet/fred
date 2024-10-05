@@ -24,6 +24,11 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 	/** Null means use Global.DSAgroupBigA. This makes persistence simpler. */
 	private final DSAGroup group;
 
+	/**
+	 * Cached key hash, computed lazily on first access to {@link #asBytesHash()}.
+	 */
+	private transient volatile byte[] bytesHash;
+
 	public DSAPublicKey(DSAGroup g, BigInteger y) {
 		if(y.signum() != 1)
 			throw new IllegalArgumentException();
@@ -122,8 +127,12 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 	}
 
 	public byte[] asBytesHash() {
-		byte[] hash = SHA256.digest(asBytes());
-		return hash;
+		byte[] result = bytesHash;
+		if (result == null) {
+			result = SHA256.digest(asBytes());
+			bytesHash = result;
+		}
+		return Arrays.copyOf(result, result.length);
 	}
 
 	public byte[] asPaddedBytes() {
