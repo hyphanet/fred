@@ -20,7 +20,7 @@ public abstract class CryptoKey implements CryptoElement, Serializable {
 	public abstract byte[] fingerprint();
 	public abstract byte[] asBytes();
 
-	static byte[] fingerprint(BigInteger[] quantities) {
+	static byte[] fingerprint(BigInteger... quantities) {
 		MessageDigest shactx = HashType.SHA1.get();
 		for (BigInteger quantity : quantities) {
 			byte[] mpi = Util.MPIbytes(quantity);

@@ -72,11 +72,7 @@ public class DSAGroup extends CryptoKey {
 
     @Override
 	public byte[] fingerprint() {
-        BigInteger fp[] = new BigInteger[3];
-        fp[0] = p;
-        fp[1] = q;
-        fp[2] = g;
-        return fingerprint(fp);
+        return fingerprint(p, q, g);
     }
 
     @Override

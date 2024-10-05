@@ -62,7 +62,7 @@ public class DSAPrivateKey extends CryptoKey {
     
     @Override
 	public byte[] fingerprint() {
-        return fingerprint(new BigInteger[] {x});
+        return fingerprint(x);
     }
 
 	public SimpleFieldSet asFieldSet() {
