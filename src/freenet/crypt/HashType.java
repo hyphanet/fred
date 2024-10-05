@@ -6,9 +6,8 @@ package freenet.crypt;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-import org.bitpedia.util.TigerTree;
-
 import freenet.support.Logger;
+import org.bitpedia.util.TigerTree;
 
 public enum HashType {
 	// warning: keep in sync with Util.mdProviders!
@@ -46,7 +45,6 @@ public enum HashType {
 				return new TigerTree();
 		}
 		if(name().equals("SHA256")) {
-			// Use the pool
 			return freenet.crypt.SHA256.getMessageDigest();
 		} else {
 			try {
@@ -58,9 +56,10 @@ public enum HashType {
 		}
 	}
 
+	/**
+	 * @deprecated message digests are no longer pooled, there is no need to recycle them
+	 */
+	@Deprecated
 	public final void recycle(MessageDigest md) {
-		if(this.equals(SHA256)) {
-			freenet.crypt.SHA256.returnMessageDigest(md);
-		} // Else no pooling.
 	}
 }

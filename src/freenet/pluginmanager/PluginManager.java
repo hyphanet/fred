@@ -32,8 +32,6 @@ import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 
-import org.tanukisoftware.wrapper.WrapperManager;
-
 import freenet.client.HighLevelSimpleClient;
 import freenet.clients.fcp.ClientPut;
 import freenet.clients.http.PageMaker.THEME;
@@ -68,6 +66,7 @@ import freenet.support.api.StringArrCallback;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 import freenet.support.io.NativeThread.PriorityLevel;
+import org.tanukisoftware.wrapper.WrapperManager;
 
 public class PluginManager {
 
@@ -1337,13 +1336,11 @@ public class PluginManager {
 		MessageDigest hash = null;
 		FileInputStream fis = null;
 		BufferedInputStream bis = null;
-		boolean wasFromDigest256Pool = false;
 		String result;
 
 		try {
 			if ("SHA-256".equals(digest)) {
-				hash = SHA256.getMessageDigest(); // grab digest from pool
-				wasFromDigest256Pool = true;
+				hash = SHA256.getMessageDigest();
 			} else {
 				hash = MessageDigest.getInstance(digest);
 			}
@@ -1357,8 +1354,6 @@ public class PluginManager {
 				hash.update(buffer, 0, len);
 			}
 			result = HexUtil.bytesToHex(hash.digest());
-			if (wasFromDigest256Pool)
-				SHA256.returnMessageDigest(hash);
 		} catch(Exception e) {
 			throw new PluginNotFoundException("Error while computing hash '"+digest+"' of the downloaded plugin: " + e, e);
 		} finally {

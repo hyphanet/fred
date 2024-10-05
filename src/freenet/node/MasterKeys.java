@@ -164,7 +164,6 @@ public class MasterKeys {
 				MasterKeys ret = new MasterKeys(clientCacheKey, databaseKey, tempfilesMasterSecret, flags);
 				clear(data);
 				clear(hash);
-				SHA256.returnMessageDigest(md);
 				System.err.println("Read old master keys file");
 				if(mustWrite) {
 				    ret.changePassword(masterKeysFile, password, hardRandom);
@@ -243,7 +242,6 @@ public class MasterKeys {
         MasterKeys ret = new MasterKeys(clientCacheKey, databaseKey, tempfilesMasterSecret, flags);
         clear(data);
         clear(hash);
-        SHA256.returnMessageDigest(md);
         return ret;
     }
 
@@ -303,7 +301,6 @@ public class MasterKeys {
 		
 		md.update(data, hashedStart, data.length-hashedStart);
 		byte[] hash = md.digest();
-        SHA256.returnMessageDigest(md); md = null;
 		baos.write(hash, 0, HASH_LENGTH);
 		data = baos.toByteArray();
 

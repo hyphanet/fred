@@ -36,8 +36,6 @@ import java.util.regex.PatternSyntaxException;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import org.tanukisoftware.wrapper.WrapperManager;
-
 import freenet.client.FetchException;
 import freenet.crypt.SHA256;
 import freenet.keys.FreenetURI;
@@ -53,6 +51,7 @@ import freenet.support.io.FileUtil;
 import freenet.support.io.FileUtil.CPUArchitecture;
 import freenet.support.io.FileUtil.OperatingSystem;
 import freenet.support.io.NativeThread;
+import org.tanukisoftware.wrapper.WrapperManager;
 
 /**
  * Parses the dependencies.properties file and ensures we have all the 
@@ -1665,7 +1664,6 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			MessageDigest md = SHA256.getMessageDigest();
 			SHA256.hash(fis, md);
 			byte[] hash = md.digest();
-			SHA256.returnMessageDigest(md);
 			fis.close();
 			fis = null;
 			if(Arrays.equals(hash, expectedHash)) {

@@ -129,26 +129,14 @@ public class HMAC_legacy {
 	}
 
 	public static byte[] macWithSHA256(byte[] K, byte[] text, int macbytes) {
-		MessageDigest sha256 = null;
-		try {
-			sha256 = SHA256.getMessageDigest();
-			HMAC_legacy hash = new HMAC_legacy(sha256);
-			return hash.mac(K, text, macbytes);
-		} finally {
-			if(sha256 != null)
-				SHA256.returnMessageDigest(sha256);
-		}
+		MessageDigest sha256 = SHA256.getMessageDigest();
+		HMAC_legacy hash = new HMAC_legacy(sha256);
+		return hash.mac(K, text, macbytes);
 	}
 
 	public static boolean verifyWithSHA256(byte[] K, byte[] text, byte[] mac) {
-		MessageDigest sha256 = null;
-		try {
-			sha256 = SHA256.getMessageDigest();
-			HMAC_legacy hash = new HMAC_legacy(sha256);
-			return hash.verify(K, text, mac);
-		} finally {
-			if(sha256 != null)
-				SHA256.returnMessageDigest(sha256);
-		}
+		MessageDigest sha256 = SHA256.getMessageDigest();
+		HMAC_legacy hash = new HMAC_legacy(sha256);
+		return hash.verify(K, text, mac);
 	}
 }
