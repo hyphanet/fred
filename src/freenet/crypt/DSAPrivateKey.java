@@ -67,10 +67,10 @@ public class DSAPrivateKey extends CryptoKey {
 	}
 
 	public static DSAPrivateKey create(SimpleFieldSet fs, DSAGroup group) throws IllegalBase64Exception {
-		BigInteger y = new BigInteger(1, Base64.decode(fs.get("x")));
-		if(y.bitLength() > 512)
+		BigInteger x = new BigInteger(1, Base64.decode(fs.get("x")));
+		if (x.bitLength() > 512) {
 			throw new IllegalBase64Exception("Probably a pubkey");
-		return new DSAPrivateKey(y, group);
+		}
+		return new DSAPrivateKey(x, group);
 	}
 }
-

@@ -33,10 +33,10 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 		if(y.signum() != 1)
 			throw new IllegalArgumentException();
 		this.y = y;
-		if(g == Global.DSAgroupBigA) g = null;
-		this.group = g;
-		if(y.compareTo(getGroup().getP()) > 0)
-			throw new IllegalArgumentException("y must be < p but y=" + y + " p=" + g.getP());
+		this.group = g == Global.DSAgroupBigA ? null : g;
+		if (y.compareTo(getGroup().getP()) > 0) {
+			throw new IllegalArgumentException("y must be < p but y=" + y + " p=" + getGroup().getP());
+		}
 	}
 
 	/**
@@ -88,10 +88,8 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 		return "DSA.p";
 	}
 
-	// Nope, this is fine
 	public final DSAGroup getGroup() {
-		if(group == null) return Global.DSAgroupBigA;
-		else return group;
+		return group == null ? Global.DSAgroupBigA : group;
 	}
 
 	public static CryptoKey read(InputStream i) throws IOException, CryptFormatException {
@@ -160,15 +158,10 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 	}
 
 	public static DSAPublicKey create(SimpleFieldSet set, DSAGroup group) throws FSParseException {
-		BigInteger x;
 		try {
-			x = new BigInteger(1, Base64.decode(set.get("y")));
-		} catch (IllegalBase64Exception e) {
-			throw new FSParseException(e);
-		}
-		try {
-			return new DSAPublicKey(group, x);
-		} catch (IllegalArgumentException e) {
+			BigInteger y = new BigInteger(1, Base64.decode(set.get("y")));
+			return new DSAPublicKey(group, y);
+		} catch (IllegalBase64Exception | IllegalArgumentException e) {
 			throw new FSParseException(e);
 		}
 	}
