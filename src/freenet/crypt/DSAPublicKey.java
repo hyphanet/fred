@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
 import java.util.Arrays;
+import java.util.Objects;
 
 import freenet.node.FSParseException;
 import freenet.store.StorableBlock;
@@ -140,23 +141,20 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 	}
 
 	public boolean equals(DSAPublicKey o) {
-		if(this == o) // Not necessary, but a very cheap optimization
+		if (this == o) {
 			return true;
-		return y.equals(o.y) && getGroup().equals(o.getGroup());
+		}
+		return Objects.equals(y, o.y) && Objects.equals(getGroup(), o.getGroup());
 	}
 
 	@Override
 	public int hashCode() {
-		return y.hashCode() ^ getGroup().hashCode();
+		return Objects.hash(y, getGroup());
 	}
 
 	@Override
 	public boolean equals(Object o) {
-		if(this == o) // Not necessary, but a very cheap optimization
-			return true;
-		else if((o == null) || (o.getClass() != this.getClass()))
-			return false;
-		return y.equals(((DSAPublicKey) o).y) && getGroup().equals(((DSAPublicKey) o).getGroup());
+		return o instanceof DSAPublicKey && equals((DSAPublicKey) o);
 	}
 
 	public int compareTo(Object other) {

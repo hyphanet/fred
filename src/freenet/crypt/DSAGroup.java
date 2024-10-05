@@ -6,6 +6,7 @@ package freenet.crypt;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
+import java.util.Objects;
 
 import freenet.node.FSParseException;
 import freenet.support.Base64;
@@ -82,21 +83,19 @@ public class DSAGroup extends CryptoKey {
 
     @Override
 	public boolean equals(Object o) {
-        if (this == o) // Not necessary, but a very cheap optimization
-                return true;
-        return (o instanceof DSAGroup) && p.equals(((DSAGroup) o).p)
-                && q.equals(((DSAGroup) o).q) && g.equals(((DSAGroup) o).g);
+        return (o instanceof DSAGroup) && equals((DSAGroup) o);
     }
 
     public boolean equals(DSAGroup o) {
-        if (this == o) // Not necessary, but a very cheap optimization
-                return true;
-        return p.equals(o.p) && q.equals(o.q) && g.equals(o.g);
+        if (this == o) {
+            return true;
+        }
+        return Objects.equals(p, o.p) && Objects.equals(q, o.q) && Objects.equals(g, o.g);
     }
 
     @Override
 	public int hashCode() {
-        return p.hashCode() ^ q.hashCode() ^ g.hashCode();
+        return Objects.hash(p, q, g);
     }
     
 	public SimpleFieldSet asFieldSet() {
