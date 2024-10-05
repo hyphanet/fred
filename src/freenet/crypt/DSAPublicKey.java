@@ -69,12 +69,6 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 			throw new CryptFormatException(e);
 		}
 	}
-	
-	protected DSAPublicKey() {
-	    // For serialization.
-	    y = null;
-	    group = null;
-	}
 
 	public BigInteger getY() {
 		return y;

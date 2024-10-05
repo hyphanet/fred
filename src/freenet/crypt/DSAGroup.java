@@ -32,13 +32,6 @@ public class DSAGroup extends CryptoKey {
         	throw new IllegalArgumentException();
     }
 
-    protected DSAGroup() {
-        // For serialization.
-        p = null;
-        q = null;
-        g = null;
-    }
-
     public static CryptoKey read(InputStream i) throws IOException, CryptFormatException {
         BigInteger p, q, g;
         p = Util.readMPI(i);
