@@ -45,19 +45,6 @@ public class DSAGroup extends CryptoKey {
         g = null;
     }
 
-	/**
-     * Parses a DSA Group from a string, where p, q, and g are in unsigned
-     * hex-strings, separated by a commas
-     */
-    // see readFromField() below
-    //public static DSAGroup parse(String grp) {
-    //    StringTokenizer str=new StringTokenizer(grp, ",");
-    //    BigInteger p,q,g;
-    //    p = new BigInteger(str.nextToken(), 16);
-    //    q = new BigInteger(str.nextToken(), 16);
-    //    g = new BigInteger(str.nextToken(), 16);
-    //    return new DSAGroup(p,q,g);
-    //}
     public static CryptoKey read(InputStream i) throws IOException, CryptFormatException {
         BigInteger p, q, g;
         p = Util.readMPI(i);

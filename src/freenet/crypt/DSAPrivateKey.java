@@ -24,12 +24,6 @@ public class DSAPrivateKey extends CryptoKey {
         	throw new IllegalArgumentException();
     }
 
-    // this is dangerous...  better to force people to construct the
-    // BigInteger themselves so they know what is going on with the sign
-    //public DSAPrivateKey(byte[] x) {
-    //    this.x = new BigInteger(1, x);
-    //}
-
     public DSAPrivateKey(DSAGroup g, Random r) {
         BigInteger tempX;
         do {
@@ -60,12 +54,6 @@ public class DSAPrivateKey extends CryptoKey {
     public String toLongString() {
         return "x="+HexUtil.biToHex(x);
     }
-    
-    // what?  why is DSAGroup passed in?
-    //public static CryptoKey readFromField(DSAGroup group, String field) {
-    //    //BigInteger x=Util.byteArrayToMPI(Util.hexToBytes(field));
-    //    return new DSAPrivateKey(new BigInteger(field, 16));
-    //}
     
     @Override
 	public byte[] asBytes() {

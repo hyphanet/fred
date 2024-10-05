@@ -40,8 +40,6 @@ public abstract class CryptoKey implements CryptoElement, Serializable {
 		}
 	}
 
-//	public abstract void write(OutputStream o) throws IOException;
-
 	public abstract String keyType();
 	public abstract byte[] fingerprint();
 	public abstract byte[] asBytes();
@@ -69,10 +67,6 @@ public abstract class CryptoKey implements CryptoElement, Serializable {
 		return b.toString();
 	}
 
-//	protected void write(OutputStream o, String clazz) throws IOException {
-//		UTF8.writeWithLength(o, clazz);
-//	}
-//
 	public String fingerprintToString() {
 		String fphex = HexUtil.bytesToHex(fingerprint());
 		StringBuilder b = new StringBuilder(40 + 10);
