@@ -39,9 +39,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 
-import freenet.node.NodeInitException;
 import freenet.support.io.Closer;
-import org.tanukisoftware.wrapper.WrapperManager;
 
 /**
  * @author  Jeroen C. van Gelderen (gelderen@cryptix.org)
@@ -75,14 +73,12 @@ public class SHA256 {
 
 	/**
 	 * Create a new SHA-256 MessageDigest
-	 * Either succeed or stop the node.
 	 */
 	public static MessageDigest getMessageDigest() {
 		try {
 			return MessageDigest.getInstance("SHA-256", mdProvider);
 		} catch (NoSuchAlgorithmException e) {
-			WrapperManager.stop(NodeInitException.EXIT_CRAPPY_JVM);
-			throw new RuntimeException(e);
+			throw new IllegalStateException("SHA-256 not supported", e);
 		}
 	}
 
