@@ -1,13 +1,11 @@
 package freenet.store;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
-
-import org.junit.Test;
 
 import freenet.crypt.DSAGroup;
 import freenet.crypt.DSAPrivateKey;
@@ -15,6 +13,7 @@ import freenet.crypt.DSAPublicKey;
 import freenet.crypt.Global;
 import freenet.support.ByteArrayWrapper;
 import freenet.support.math.MersenneTwister;
+import org.junit.Test;
 
 public class PubkeyStoreTest {
 	
@@ -31,7 +30,7 @@ public class PubkeyStoreTest {
 			DSAPublicKey key = new DSAPublicKey(group, privKey);
 			byte[] hash = key.asBytesHash();
 			ByteArrayWrapper w = new ByteArrayWrapper(hash);
-			map.put(w, key.cloneKey());
+			map.put(w, key);
 			pk.put(hash, key, false);
 			assertTrue(pk.fetch(hash, false, false, null).equals(key));
 		}

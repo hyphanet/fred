@@ -32,12 +32,6 @@ public class DSAGroup extends CryptoKey {
         	throw new IllegalArgumentException();
     }
 
-    private DSAGroup(DSAGroup group) {
-        this.p = new BigInteger(1, group.p.toByteArray());
-        this.q = new BigInteger(1, group.q.toByteArray());
-        this.g = new BigInteger(1, group.g.toByteArray());
-	}
-    
     protected DSAGroup() {
         // For serialization.
         p = null;
@@ -149,11 +143,6 @@ public class DSAGroup extends CryptoKey {
 		if(this == Global.DSAgroupBigA)
 			return "Global.DSAgroupBigA";
 		return "p="+HexUtil.biToHex(p)+", q="+HexUtil.biToHex(q)+", g="+HexUtil.biToHex(g);
-	}
-
-	public DSAGroup cloneKey() {
-		if(this == Global.DSAgroupBigA) return this;
-		return new DSAGroup(this);
 	}
 
 }
