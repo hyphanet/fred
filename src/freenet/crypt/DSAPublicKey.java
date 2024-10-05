@@ -98,10 +98,6 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 		return new DSAPublicKey(i);
 	}
 
-	public int keyId() {
-		return y.intValue();
-	}
-
 	@Override
 	public String toLongString() {
 		return "y=" + HexUtil.biToHex(y);
@@ -155,13 +151,6 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 	@Override
 	public boolean equals(Object o) {
 		return o instanceof DSAPublicKey && equals((DSAPublicKey) o);
-	}
-
-	public int compareTo(Object other) {
-		if(other instanceof DSAPublicKey)
-			return getY().compareTo(((DSAPublicKey) other).getY());
-		else
-			return -1;
 	}
 
 	public SimpleFieldSet asFieldSet() {
