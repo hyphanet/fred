@@ -126,7 +126,7 @@ public class ContentFilter {
 				l10n("audioMP3ReadAdvice"), false, null, null, false));
 		
 		// WAV - has a filter
-		register(new FilterMIMEType("audio/vnd.wave", "mp3", new String[] {"audio/vnd.wave", "audio/x-wav", "audio/wav", "audio/wave"},
+		register(new FilterMIMEType("audio/vnd.wave", "wav", new String[] {"audio/x-wav", "audio/wav", "audio/wave"},
 				new String[0], true, false, new WAVFilter(), true, true, false, true, false, false,
 				l10n("audioWAVReadAdvice"), false, null, null, false));
 
@@ -538,26 +538,26 @@ public class ContentFilter {
 	}
 
 	public static String mimeTypeForSrc(String uriold) {
-			String uriPath = uriold.contains("?")
-					? uriold.split("\\?")[0]
-					: uriold;
-			String subMimetype;
-			if (uriPath.endsWith(".m3u") || uriPath.endsWith(".m3u8")) {
-					subMimetype = "audio/mpegurl";
-} else if (uriPath.endsWith(".flac")) {
-					subMimetype = "audio/flac";
-} else if (uriPath.endsWith(".oga")) {
-					subMimetype = "audio/ogg";
-} else if (uriPath.endsWith(".ogv")) {
-					subMimetype = "video/ogg";
-} else if (uriPath.endsWith(".ogg")) {
-					subMimetype = "application/ogg";
-} else if (uriPath.endsWith(".wav")) {
-					subMimetype = "audio/vnd.wave";
-			} else { // force mp3 for anything we do not know
-					subMimetype = "audio/mpeg";
-			}
-			return subMimetype;
+		String uriPath = uriold.contains("?")
+				? uriold.split("\\?")[0]
+				: uriold;
+		String subMimetype;
+		if (uriPath.endsWith(".m3u") || uriPath.endsWith(".m3u8")) {
+			subMimetype = "audio/mpegurl";
+		} else if (uriPath.endsWith(".flac")) {
+			subMimetype = "audio/flac";
+		} else if (uriPath.endsWith(".oga")) {
+			subMimetype = "audio/ogg";
+		} else if (uriPath.endsWith(".ogv")) {
+			subMimetype = "video/ogg";
+		} else if (uriPath.endsWith(".ogg")) {
+			subMimetype = "application/ogg";
+		} else if (uriPath.endsWith(".wav")) {
+			subMimetype = "audio/vnd.wave";
+		} else { // force mp3 for anything we do not know
+			subMimetype = "audio/mpeg";
+		}
+		return subMimetype;
 	}
 
 	public static class FilterStatus {

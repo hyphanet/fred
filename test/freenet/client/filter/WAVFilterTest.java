@@ -39,36 +39,36 @@ public class WAVFilterTest {
 	// There is just a JUNK chunk in the file
 	@Test
 	public void testFileJustJUNK() throws IOException {
-        ByteBuffer buf = ByteBuffer.allocate(28)
-                .order(ByteOrder.LITTLE_ENDIAN)
-                .put(new byte[]{'R', 'I', 'F', 'F'})
-                .putInt(20 /* file size */)
-                .put(new byte[]{'W', 'A', 'V', 'E'})
-                .put(new byte[]{'J', 'U', 'N', 'K'})
-                .putInt(7 /* chunk size */)
-                .putLong(0);
+		ByteBuffer buf = ByteBuffer.allocate(28)
+			.order(ByteOrder.LITTLE_ENDIAN)
+			.put(new byte[]{'R', 'I', 'F', 'F'})
+			.putInt(20 /* file size */)
+			.put(new byte[]{'W', 'A', 'V', 'E'})
+			.put(new byte[]{'J', 'U', 'N', 'K'})
+			.putInt(7 /* chunk size */)
+			.putLong(0);
 
-        Bucket input = new ArrayBucket(buf.array());
-        filterWAV(input, DataFilterException.class);
+		Bucket input = new ArrayBucket(buf.array());
+		filterWAV(input, DataFilterException.class);
 	}
 
 	// There is just a fmt chunk in the file, but no audio data
 	@Test
 	public void testFileNoData() throws IOException {
-        ByteBuffer buf = ByteBuffer.allocate(36)
-                .order(ByteOrder.LITTLE_ENDIAN)
-                .put(new byte[]{'R', 'I', 'F', 'F'})
-                .putInt(28 /* file size */)
-                .put(new byte[]{'W', 'A', 'V', 'E'})
-                .put(new byte[]{'f', 'm', 't', ' '})
-                .putInt(16 /* chunk size */)
-                .put(new byte[]{1, 0, 2, 0}) //format, nChannels
-                .putInt(44100) // nSamplesPerSec
-                .putInt(44100 * 4) // nAvgBytesPerSec
-                .put(new byte[]{4, 0, 16, 0}); // nBlockAlign, wBitsPerSample
+		ByteBuffer buf = ByteBuffer.allocate(36)
+			.order(ByteOrder.LITTLE_ENDIAN)
+			.put(new byte[]{'R', 'I', 'F', 'F'})
+			.putInt(28 /* file size */)
+			.put(new byte[]{'W', 'A', 'V', 'E'})
+			.put(new byte[]{'f', 'm', 't', ' '})
+			.putInt(16 /* chunk size */)
+			.put(new byte[]{1, 0, 2, 0}) //format, nChannels
+			.putInt(44100) // nSamplesPerSec
+			.putInt(44100 * 4) // nAvgBytesPerSec
+			.put(new byte[]{4, 0, 16, 0}); // nBlockAlign, wBitsPerSample
 
-        Bucket input = new ArrayBucket(buf.array());
-        filterWAV(input, DataFilterException.class);
+		Bucket input = new ArrayBucket(buf.array());
+		filterWAV(input, DataFilterException.class);
 	}
 	
 	private Bucket filterWAV(Bucket input, Class<? extends Exception> expected) throws IOException {
@@ -78,11 +78,11 @@ public class WAVFilterTest {
 			InputStream inStream = input.getInputStream();
 			OutputStream outStream = output.getOutputStream()
 		) {
-            if (expected != null) {
-                assertThrows(expected, () -> objWAVFilter.readFilter(inStream, outStream, "", null, null, null));
-            } else {
-            	objWAVFilter.readFilter(inStream, outStream, "", null, null, null);
-            }
+			if (expected != null) {
+				assertThrows(expected, () -> objWAVFilter.readFilter(inStream, outStream, "", null, null, null));
+			} else {
+				objWAVFilter.readFilter(inStream, outStream, "", null, null, null);
+			}
 		}
 		return output;
 	}

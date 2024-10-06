@@ -14,20 +14,27 @@ public class WAVFilter extends RIFFFilter {
 	private final int WAVE_FORMAT_IEEE_FLOAT = 3;
 	private final int WAVE_FORMAT_ALAW = 6;
 	private final int WAVE_FORMAT_MULAW = 7;
+	// Header sizes (https://www.mmsp.ece.mcgill.ca/Documents/AudioFormats/WAVE/WAVE.html)
+	// fmt header without cbSize field
+	private final int FMT_SIZE_BASIC = 16;
+	// fmt header with cbSize = 0
+	private final int FMT_SIZE_cbSize = 18;
+	// fmt header with cbSize and extensions
+	private final int FMT_SIZE_cbSize_extension = 40;
 	
 	@Override
 	protected byte[] getChunkMagicNumber() {
 		return new byte[] {'W', 'A', 'V', 'E'};
 	}
 	
-	class WAVFilterContext {
-		public boolean hasfmt = false;
-		public boolean hasdata = false;
-		public int nSamplesPerSec = 0;
-		public int nChannels = 0;
-		public int nBlockAlign = 0;
-		public int wBitsPerSample = 0;
-		public int format = 0;
+	private static final class WAVFilterContext {
+		boolean hasfmt = false;
+		boolean hasdata = false;
+		int nSamplesPerSec = 0;
+		int nChannels = 0;
+		int nBlockAlign = 0;
+		int wBitsPerSample = 0;
+		int format = 0;
 	}
 
 	@Override
@@ -44,7 +51,7 @@ public class WAVFilter extends RIFFFilter {
 			if(ctx.hasfmt) {
 				throw new DataFilterException(l10n("invalidTitle"), l10n("invalidTitle"), "Unexpected fmt chunk was encountered");
 			}
-			if(size != 16 && size != 18 && size != 40) {
+			if(size != FMT_SIZE_BASIC && size != FMT_SIZE_cbSize && size != FMT_SIZE_cbSize_extension) {
 				throw new DataFilterException(l10n("invalidTitle"), l10n("invalidTitle"), "fmt chunk size is invalid");
 			}
 			ctx.format = Short.reverseBytes(input.readShort());
@@ -63,37 +70,36 @@ public class WAVFilter extends RIFFFilter {
 			ctx.wBitsPerSample = Short.reverseBytes(input.readShort());
 			output.writeInt((Short.reverseBytes((short) ctx.nBlockAlign) << 16) | Short.reverseBytes((short) ctx.wBitsPerSample));
 			ctx.hasfmt = true;
-			if(size > 16) {
+			if(size > FMT_SIZE_BASIC) {
 				short cbSize = Short.reverseBytes(input.readShort());
-				if(cbSize + 18 != size) {
+				if(cbSize + FMT_SIZE_cbSize != size) {
 					throw new DataFilterException(l10n("invalidTitle"), l10n("invalidTitle"), "fmt chunk size is invalid");
 				}
 				output.writeShort(Short.reverseBytes(cbSize));
 			}
-			if(size > 18) {
+			if(size > FMT_SIZE_cbSize) {
 				// wValidBitsPerSample, dwChannelMask, and SubFormat GUID
-				passthroughBytes(input, output, 22);
+				passthroughBytes(input, output, FMT_SIZE_cbSize_extension - FMT_SIZE_cbSize);
 			}
 			// Further checks
 			if((ctx.format == WAVE_FORMAT_ALAW || ctx.format == WAVE_FORMAT_MULAW) && ctx.wBitsPerSample != 8) {
+				// These formats are 8-bit
 				throw new DataFilterException(l10n("invalidTitle"), l10n("invalidTitle"), "Unexpected bits per sample value");
 			}
 			return;
-		} else if(!ctx.hasfmt) {
+		}
+		if(!ctx.hasfmt) {
 			throw new DataFilterException(l10n("invalidTitle"), l10n("invalidTitle"), "Unexpected header chunk was encountered, instead of fmt chunk");
 		}
 		if(ID[0] == 'd' && ID[1] == 'a' && ID[2] == 't' && ID[3] == 'a') {
-			if(ctx.format == WAVE_FORMAT_PCM || ctx.format == WAVE_FORMAT_IEEE_FLOAT || ctx.format == WAVE_FORMAT_ALAW || ctx.format == WAVE_FORMAT_MULAW) {
-				// Safe format, pass through
-				output.write(ID);
-				writeLittleEndianInt(output, size);
-				passthroughBytes(input, output, size);
-				if((size & 1) != 0) // Add padding if necessary
-					output.writeByte(input.readByte());
-				ctx.hasdata = true;
-			} else {
-				throw new DataFilterException(l10n("invalidTitle"), l10n("invalidTitle"), "Data format is not yet supported");
+			// audio data
+			output.write(ID);
+			writeLittleEndianInt(output, size);
+			passthroughBytes(input, output, size);
+			if((size & 1) != 0) { // Add padding if necessary
+				output.writeByte(input.readByte());
 			}
+			ctx.hasdata = true;
 		} else if(ID[0] == 'f' && ID[1] == 'a' && ID[2] == 'c' && ID[3] == 't') {
 			if(size < 4) {
 				throw new DataFilterException(l10n("invalidTitle"), l10n("invalidTitle"), "fact chunk must contain at least 4 bytes");
@@ -102,8 +108,9 @@ public class WAVFilter extends RIFFFilter {
 			output.write(ID);
 			writeLittleEndianInt(output, size);
 			passthroughBytes(input, output, size);
-			if((size & 1) != 0) // Add padding if necessary
+			if((size & 1) != 0) { // Add padding if necessary
 				output.writeByte(input.readByte());
+			}
 		} else {
 			// Unknown block
 			writeJunkChunk(input, output, size);

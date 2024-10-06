@@ -752,9 +752,6 @@ public class DefaultMIMETypes {
 		addMIMEType((short)620, "audio/ogg", "oga");
 		addMIMEType((short)621, "audio/flac", "flac");
 		addMIMEType((short)622, "image/webp", "webp");
-		addMIMEType((short)623, "image/avif", "avif");
-		addMIMEType((short)624, "image/heic", "heic");
-		addMIMEType((short)625, "image/heif", "heif");
 	}
 	
 	/** Guess a MIME type from a filename.
