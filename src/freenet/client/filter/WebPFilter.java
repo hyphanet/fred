@@ -12,11 +12,11 @@ import freenet.support.Logger.LogLevel;
 public class WebPFilter extends RIFFFilter {
 
 	//These constants are derived from mux_type.h in libwebp
-	private final int ANIMATION_FLAG  = 0x00000002;
-	private final int XMP_FLAG        = 0x00000004;
-	private final int EXIF_FLAG       = 0x00000008;
-	private final int ALPHA_FLAG      = 0x00000010;
-	private final int ICCP_FLAG       = 0x00000020;
+	private final int ANIMATION_FLAG = 0x00000002;
+	private final int XMP_FLAG = 0x00000004;
+	private final int EXIF_FLAG = 0x00000008;
+	private final int ALPHA_FLAG = 0x00000010;
+	private final int ICCP_FLAG = 0x00000020;
 	private final int ALL_VALID_FLAGS = 0x0000003e;
 	
 	@Override
@@ -24,14 +24,14 @@ public class WebPFilter extends RIFFFilter {
 		return new byte[] {'W', 'E', 'B', 'P'};
 	}
 	
-	class WebPFilterContext {
-		public int VP8XFlags = 0;
-		public boolean hasVP8X = false;
-		public boolean hasANIM = false;
-		public boolean hasANMF = false;
-		public boolean hasALPH = false;
-		public boolean hasVP8 = false;
-		public boolean hasVP8L = false;
+	private static final class WebPFilterContext {
+		int VP8XFlags = 0;
+		boolean hasVP8X = false;
+		boolean hasANIM = false;
+		boolean hasANMF = false;
+		boolean hasALPH = false;
+		boolean hasVP8 = false;
+		boolean hasVP8L = false;
 	}
 	
 	@Override
@@ -63,8 +63,9 @@ public class WebPFilter extends RIFFFilter {
 			writeLittleEndianInt(output, size);
 			output.write(buf);
 			passthroughBytes(input, output, size - buf.length);
-			if((size & 1) != 0) // Add padding if necessary
+			if((size & 1) != 0) { // Add padding if necessary
 				output.writeByte(input.readByte());
+			}
 			ctx.hasVP8 = true;
 		} else if(ID[0] == 'V' && ID[1] == 'P' && ID[2] == '8' && ID[3] == 'L') {
 			// VP8 Lossless format: https://chromium.googlesource.com/webm/libwebp/+/refs/tags/v1.4.0/doc/webp-lossless-bitstream-spec.txt
@@ -74,7 +75,7 @@ public class WebPFilter extends RIFFFilter {
 			//output.write(ID);
 			//output.writeInt(((size & 0xff000000) >> 24) | ((size & 0x00ff0000) >> 8) | ((size & 0x0000ff00) << 8) | ((size & 0x000000ff) << 24));
 			// CVE-2023-4863 is an exploit for libwebp (before version 1.3.2) implementation of WebP lossless format, and that could be used in animation and alpha channel as well. This is really serious that we must not let Bad Thing happen.
-	        // TODO: Check for CVE-2023-4863 exploit!
+			// TODO: Check for CVE-2023-4863 exploit!
 			ctx.hasVP8L = true;
 			throw new DataFilterException(l10n("losslessUnsupportedTitle"), l10n("losslessUnsupportedTitle"), l10n("losslessUnsupported"));
 		} else if(ID[0] == 'A' && ID[1] == 'L' && ID[2] == 'P' && ID[3] == 'H') {
@@ -93,7 +94,7 @@ public class WebPFilter extends RIFFFilter {
 			}
 			if((flags & 0xc0) != 0) {
 				// Compression is not uncompressed
-		        // TODO: Check for CVE-2023-4863 exploit!
+				// TODO: Check for CVE-2023-4863 exploit!
 				throw new DataFilterException(l10n("alphUnsupportedTitle"), l10n("alphUnsupportedTitle"), l10n("alphUnsupported"));
 			}
 			output.write(ID);
@@ -101,8 +102,9 @@ public class WebPFilter extends RIFFFilter {
 			writeLittleEndianInt(output, size);
 			output.writeByte(flags);
 			passthroughBytes(input, output, size - 1);
-			if((size & 1) != 0) // Add padding if necessary
+			if((size & 1) != 0) { // Add padding if necessary
 				output.writeByte(input.readByte());
+			}
 			ctx.hasALPH = true;
 		} else if(ID[0] == 'A' && ID[1] == 'N' && ID[2] == 'I' && ID[3] == 'M') {
 			if(ctx.hasVP8 || ctx.hasVP8L || ctx.hasANIM) {
@@ -123,7 +125,7 @@ public class WebPFilter extends RIFFFilter {
 				ctx.hasANMF = true;
 				//output.write(ID);
 				//output.writeInt(((size & 0xff000000) >> 24) | ((size & 0x00ff0000) >> 8) | ((size & 0x0000ff00) << 8) | ((size & 0x000000ff) << 24));
-		        // TODO: Check for CVE-2023-4863 exploit!
+				// TODO: Check for CVE-2023-4863 exploit!
 				throw new DataFilterException(l10n("animUnsupportedTitle"), l10n("animUnsupportedTitle"), l10n("animUnsupported"));
 			}
 		} else if(ID[0] == 'V' && ID[1] == 'P' && ID[2] == '8' && ID[3] == 'X') {
