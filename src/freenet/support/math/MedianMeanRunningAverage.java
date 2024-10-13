@@ -9,7 +9,9 @@ import java.util.Collections;
  * (Also uses CPU time O(N log N) with the number of reports in currentValue()).
  *
  * @author Matthew Toseland <toad@amphibian.dyndns.org> (0xE43DA450)
+ * @deprecated may use excessive RAM and CPU, see warning
  */
+@Deprecated
 public final class MedianMeanRunningAverage implements RunningAverage, Cloneable {
 
     private final ArrayList<Double> reports = new ArrayList<>();
