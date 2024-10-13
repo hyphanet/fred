@@ -3,10 +3,10 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.math;
 
-import freenet.support.LogThresholdCallback;
-import freenet.support.Logger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.UnaryOperator;
+
 import freenet.support.SimpleFieldSet;
-import freenet.support.Logger.LogLevel;
 
 /**
  * Exponential decay "running average".
@@ -23,30 +23,11 @@ import freenet.support.Logger.LogLevel;
  * </ul>
  */
 public final class BootstrappingDecayingRunningAverage implements RunningAverage, Cloneable {
-	private static final long serialVersionUID = -1;
-	@Override
-	public final BootstrappingDecayingRunningAverage clone() {
-		// Override clone() for locking; BDRAs are self-synchronized.
-		// Implement Cloneable to shut up findbugs.
-		return new BootstrappingDecayingRunningAverage(this);
-	}
-    
+
+	private final AtomicReference<Data> data = new AtomicReference<>();
 	private final double min;
 	private final double max;
-	private double currentValue;
-	private long reports;
-	private int maxReports;
 
-        private static volatile boolean logDEBUG;
-	static {
-		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
-			@Override
-			public void shouldUpdate(){
-				logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
-			}
-		});
-	}
-    
 	/**
 	 * Constructor
 	 * 
@@ -62,128 +43,83 @@ public final class BootstrappingDecayingRunningAverage implements RunningAverage
 	 *                {@link SimpleFieldSet} parameter for this object. Will
 	 *                override other parameters.
 	 */
-	public BootstrappingDecayingRunningAverage(double defaultValue, double min,
-			double max, int maxReports, SimpleFieldSet fs) {
+	public BootstrappingDecayingRunningAverage(
+			double defaultValue,
+			double min,
+			double max,
+			int maxReports,
+			SimpleFieldSet fs
+	) {
 		this.min = min;
 		this.max = max;
-		reports = 0;
-		currentValue = defaultValue;
-		this.maxReports = maxReports;
-		assert(maxReports > 0);
-		if(fs != null) {
+		long reports = 0;
+		double currentValue = defaultValue;
+		if (fs != null) {
 			double d = fs.getDouble("CurrentValue", currentValue);
-			if(!(Double.isNaN(d) || d < min || d > max)) {
+			if (!isInvalid(d)) {
+				reports = Math.max(0, fs.getLong("Reports", reports));
 				currentValue = d;
-				reports = fs.getLong("Reports", reports);
 			}
 		}
-	}
-    
-	/**
-	 * {@inheritDoc}
-         *
-         * @return
-         */
-	@Override
-	public synchronized double currentValue() {
-		return currentValue;
-	}
-			
-	/**
-	 * <strong>Not a public method.</strong> Changes the internally stored <code>currentValue</code> and return the old one.
-	 * 
-	 * Used by {@link DecayingKeyspaceAverage} to normalize the stored averages. Calling this function
-	 * may (purposefully) destroy the utility of the average being kept.
-	 * 
-         * @param d
-         * @return
-         * @see DecayingKeyspaceAverage
-	 */
-	protected synchronized double setCurrentValue(double d) {
-		double old=currentValue;
-		currentValue=d;
-		return old;
+		data.set(new Data(maxReports, reports, currentValue));
 	}
 
-	/**
-	 * {@inheritDoc}
-         *
-         * @param d
-         */
-	@Override
-	public synchronized void report(double d) {
-		if(d < min) {
-			if(logDEBUG)
-				Logger.debug(this, "Too low: "+d, new Exception("debug"));
-			d = min;
-		}
-		if(d > max) {
-			if(logDEBUG)
-				Logger.debug(this, "Too high: "+d, new Exception("debug"));
-			d = max;
-		}
-		reports++;
-		double decayFactor = 1.0 / (Math.min(reports, maxReports));
-		currentValue = (d * decayFactor) + (currentValue * (1-decayFactor));
+	private BootstrappingDecayingRunningAverage(BootstrappingDecayingRunningAverage other) {
+		this.min = other.min;
+		this.max = other.max;
+		this.data.set(new Data(other.data.get()));
 	}
 
-	/**
-	 * {@inheritDoc}
-         *
-         * @param d
-         */
+	@Override
+	public double currentValue() {
+		return data.get().currentValue;
+	}
+
+	@Override
+	public void report(double d) {
+		data.updateAndGet(data -> data.updated(d));
+	}
+
 	@Override
 	public void report(long d) {
 		report((double)d);
 	}
 
-	/**
-	 * {@inheritDoc}
-         *
-         * @param d
-         */
 	@Override
-	public synchronized double valueIfReported(double d) {
-		if(d < min) {
-			Logger.error(this, "Too low: "+d, new Exception("debug"));
-			d = min;
-		}
-		if(d > max) {
-			Logger.error(this, "Too high: "+d, new Exception("debug"));
-			d = max;
-		}
-		double decayFactor = 1.0 / (Math.min(reports + 1, maxReports));
-		return (d * decayFactor) + (currentValue * (1-decayFactor));
+	public double valueIfReported(double d) {
+		return data.get().updated(d).currentValue;
 	}
-    
+
+	@Override
+	public long countReports() {
+		return data.get().reports;
+	}
+
+	@Override
+	public BootstrappingDecayingRunningAverage clone() {
+		return new BootstrappingDecayingRunningAverage(this);
+	}
+
 	/**
 	 * Change <code>maxReports</code>.
-	 * 
+	 *
 	 * @param maxReports
 	 */
-	public synchronized void changeMaxReports(int maxReports) {
-		this.maxReports=maxReports;
+	public void changeMaxReports(int maxReports) {
+		data.updateAndGet(data -> data.withMaxReports(maxReports));
 	}
 
 	/**
-	 * Copy constructor.
+	 * Reports a new value while allowing for normalization of the resulting <code>currentValue</code>.
+	 * Used by {@link DecayingKeyspaceAverage} to normalize the stored averages. Calling this function
+	 * may (purposefully) destroy the utility of the average being kept.
 	 */
-	private BootstrappingDecayingRunningAverage(BootstrappingDecayingRunningAverage a) {
-		synchronized (a) {
-			this.currentValue = a.currentValue;
-			this.max = a.max;
-			this.maxReports = a.maxReports;
-			this.min = a.min;
-			this.reports = a.reports;
-		}
+	void report(UnaryOperator<Data> updateFunction) {
+		data.updateAndGet(updateFunction);
 	}
 
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public synchronized  long countReports() {
-		return reports;
+	double valueIfReported(UnaryOperator<Data> updateFunction) {
+		return updateFunction.apply(data.get()).currentValue;
 	}
 
 	/**
@@ -193,11 +129,58 @@ public final class BootstrappingDecayingRunningAverage implements RunningAverage
          * 		See {@link SimpleFieldSet#SimpleFieldSet(boolean)}.
          * @return
 	 */
-	public synchronized SimpleFieldSet exportFieldSet(boolean shortLived) {
+	public SimpleFieldSet exportFieldSet(boolean shortLived) {
+		Data data = this.data.get();
 		SimpleFieldSet fs = new SimpleFieldSet(shortLived);
 		fs.putSingle("Type", "BootstrappingDecayingRunningAverage");
-		fs.put("CurrentValue", currentValue);
-		fs.put("Reports", reports);
+		fs.put("CurrentValue", data.currentValue);
+		fs.put("Reports", data.reports);
 		return fs;
+	}
+
+	private boolean isInvalid(double d) {
+		return d < min || d > max || Double.isInfinite(d) || Double.isNaN(d);
+	}
+
+	class Data {
+		private final long maxReports;
+		private final long reports;
+		private final double currentValue;
+
+		private Data(long maxReports, long reports, double currentValue) {
+			this.maxReports = maxReports;
+			this.reports = reports;
+			this.currentValue = currentValue;
+		}
+
+		private Data(Data other) {
+			this.maxReports = other.maxReports;
+			this.reports = other.reports;
+			this.currentValue = other.currentValue;
+		}
+
+		double currentValue() {
+			return currentValue;
+		}
+
+		Data updated(double d) {
+			if (isInvalid(d)) {
+				return this;
+			}
+			double decayFactor = 1d / Math.min(reports + 1, maxReports);
+			double newValue = (d * decayFactor) + (currentValue * (1 - decayFactor));
+			return new Data(maxReports, reports + 1, newValue);
+		}
+
+		Data withCurrentValue(double currentValue) {
+			if (isInvalid(currentValue)) {
+				return this;
+			}
+			return new Data(maxReports, reports, currentValue);
+		}
+
+		Data withMaxReports(long maxReports) {
+			return new Data(maxReports, reports, currentValue);
+		}
 	}
 }
