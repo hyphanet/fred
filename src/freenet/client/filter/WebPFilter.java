@@ -44,17 +44,17 @@ public class WebPFilter extends RIFFFilter {
 			String schemeHostAndPort, FilterCallback cb) throws DataFilterException, IOException {
 		boolean logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this.getClass());
 		WebPFilterContext ctx = (WebPFilterContext)context;
-		if(ID[0] == 'V' && ID[1] == 'P' && ID[2] == '8' && ID[3] == ' ') {
+		if (ID[0] == 'V' && ID[1] == 'P' && ID[2] == '8' && ID[3] == ' ') {
 			// VP8 Lossy format: RFC 6386
 			// Most WebP files just contain a single chunk of this kind
-			if(ctx.hasVP8 || ctx.hasVP8L || ctx.hasANIM) {
+			if (ctx.hasVP8 || ctx.hasVP8L || ctx.hasANIM) {
 				throw new DataFilterException(l10n("invalidTitle"), l10n("invalidTitle"), "Unexpected VP8 chunk was encountered");
 			}
-			if(size < 10) {
+			if (size < 10) {
 				throw new DataFilterException(l10n("invalidTitle"), l10n("invalidTitle"), "The VP8 chunk was too small to be valid");
 			}
 			output.write(ID);
-			if(logDEBUG) Logger.debug(this, "Passing through WebP VP8 block with " + size + " bytes.");
+			if (logDEBUG) Logger.debug(this, "Passing through WebP VP8 block with " + size + " bytes.");
 			VP8PacketFilter VP8filter = new VP8PacketFilter(true);
 			// Just read 6 bytes of the header to validate
 			byte[] buf = new byte[6];
@@ -63,13 +63,13 @@ public class WebPFilter extends RIFFFilter {
 			writeLittleEndianInt(output, size);
 			output.write(buf);
 			passthroughBytes(input, output, size - buf.length);
-			if((size & 1) != 0) { // Add padding if necessary
+			if ((size & 1) != 0) { // Add padding if necessary
 				output.writeByte(input.readByte());
 			}
 			ctx.hasVP8 = true;
-		} else if(ID[0] == 'V' && ID[1] == 'P' && ID[2] == '8' && ID[3] == 'L') {
+		} else if (ID[0] == 'V' && ID[1] == 'P' && ID[2] == '8' && ID[3] == 'L') {
 			// VP8 Lossless format: https://chromium.googlesource.com/webm/libwebp/+/refs/tags/v1.4.0/doc/webp-lossless-bitstream-spec.txt
-			if(ctx.hasVP8 || ctx.hasVP8L || ctx.hasANIM || ctx.hasALPH) {
+			if (ctx.hasVP8 || ctx.hasVP8L || ctx.hasANIM || ctx.hasALPH) {
 				throw new DataFilterException(l10n("invalidTitle"), l10n("invalidTitle"), "Unexpected VP8L chunk was encountered");
 			}
 			//output.write(ID);
@@ -78,36 +78,36 @@ public class WebPFilter extends RIFFFilter {
 			// TODO: Check for CVE-2023-4863 exploit!
 			ctx.hasVP8L = true;
 			throw new DataFilterException(l10n("losslessUnsupportedTitle"), l10n("losslessUnsupportedTitle"), l10n("losslessUnsupported"));
-		} else if(ID[0] == 'A' && ID[1] == 'L' && ID[2] == 'P' && ID[3] == 'H') {
-			if(ctx.hasVP8L || ctx.hasANIM || ctx.hasALPH || (!ctx.hasVP8X) || ((ctx.VP8XFlags & ALPHA_FLAG) == 0)) {
+		} else if (ID[0] == 'A' && ID[1] == 'L' && ID[2] == 'P' && ID[3] == 'H') {
+			if (ctx.hasVP8L || ctx.hasANIM || ctx.hasALPH || (!ctx.hasVP8X) || ((ctx.VP8XFlags & ALPHA_FLAG) == 0)) {
 				// Only applicable to VP8 images. VP8L already has alpha channel, so does not need this.
 				throw new DataFilterException(l10n("invalidTitle"), l10n("invalidTitle"), "Unexpected ALPH chunk was encountered");
 			}
-			if(size == 0) {
+			if (size == 0) {
 				throw new DataFilterException(l10n("invalidTitle"), l10n("invalidTitle"), "Unexpected empty ALPH chunk");
 			}
 			// Alpha channel
 			int flags = input.readUnsignedByte();
-			if((flags & 2) != 0) {
+			if ((flags & 2) != 0) {
 				// Compression is not uncompressed
 				throw new DataFilterException(l10n("invalidTitle"), l10n("invalidTitle"), "WebP alpha channel contains reserved bits");
 			}
-			if((flags & 0xc0) != 0) {
+			if ((flags & 0xc0) != 0) {
 				// Compression is not uncompressed
 				// TODO: Check for CVE-2023-4863 exploit!
 				throw new DataFilterException(l10n("alphUnsupportedTitle"), l10n("alphUnsupportedTitle"), l10n("alphUnsupported"));
 			}
 			output.write(ID);
-			if(logDEBUG) Logger.debug(this, "Passing through WebP ALPH block with " + size + " bytes.");
+			if (logDEBUG) Logger.debug(this, "Passing through WebP ALPH block with " + size + " bytes.");
 			writeLittleEndianInt(output, size);
 			output.writeByte(flags);
 			passthroughBytes(input, output, size - 1);
-			if((size & 1) != 0) { // Add padding if necessary
+			if ((size & 1) != 0) { // Add padding if necessary
 				output.writeByte(input.readByte());
 			}
 			ctx.hasALPH = true;
-		} else if(ID[0] == 'A' && ID[1] == 'N' && ID[2] == 'I' && ID[3] == 'M') {
-			if(ctx.hasVP8 || ctx.hasVP8L || ctx.hasANIM) {
+		} else if (ID[0] == 'A' && ID[1] == 'N' && ID[2] == 'I' && ID[3] == 'M') {
+			if (ctx.hasVP8 || ctx.hasVP8L || ctx.hasANIM) {
 				throw new DataFilterException(l10n("invalidTitle"), l10n("invalidTitle"), "Unexpected ANIM chunk was encountered");
 			}
 			// Global animation parameters
@@ -116,9 +116,9 @@ public class WebPFilter extends RIFFFilter {
 			// TODO: Check for CVE-2023-4863 exploit!
 			ctx.hasANIM = true;
 			throw new DataFilterException(l10n("animUnsupportedTitle"), l10n("animUnsupportedTitle"), l10n("animUnsupported"));
-		} else if(ID[0] == 'A' && ID[1] == 'N' && ID[2] == 'M' && ID[3] == 'F') {
+		} else if (ID[0] == 'A' && ID[1] == 'N' && ID[2] == 'M' && ID[3] == 'F') {
 			// Animation frame
-			if((ctx.VP8XFlags & ANIMATION_FLAG) == 0 || ctx.hasVP8 || ctx.hasVP8L || !ctx.hasANIM) {
+			if ((ctx.VP8XFlags & ANIMATION_FLAG) == 0 || ctx.hasVP8 || ctx.hasVP8L || !ctx.hasANIM) {
 				// Animation frame in static WebP file - Unexpected
 				throw new DataFilterException(l10n("invalidTitle"), l10n("invalidTitle"), "Unexpected ANMF chunk was encountered");
 			} else {
@@ -128,18 +128,18 @@ public class WebPFilter extends RIFFFilter {
 				// TODO: Check for CVE-2023-4863 exploit!
 				throw new DataFilterException(l10n("animUnsupportedTitle"), l10n("animUnsupportedTitle"), l10n("animUnsupported"));
 			}
-		} else if(ID[0] == 'V' && ID[1] == 'P' && ID[2] == '8' && ID[3] == 'X') {
+		} else if (ID[0] == 'V' && ID[1] == 'P' && ID[2] == '8' && ID[3] == 'X') {
 			// meta information
-			if(ctx.hasVP8 || ctx.hasVP8L || ctx.hasANIM || ctx.hasVP8X) {
+			if (ctx.hasVP8 || ctx.hasVP8L || ctx.hasANIM || ctx.hasVP8X) {
 				// This should be the first chunk of the file
 				throw new DataFilterException(l10n("invalidTitle"), l10n("invalidTitle"), "Unexpected VP8X chunk was encountered");
 			}
 			ctx.VP8XFlags = readLittleEndianInt(input);
-			if((ctx.VP8XFlags & ~ALL_VALID_FLAGS) != 0) {
+			if ((ctx.VP8XFlags & ~ALL_VALID_FLAGS) != 0) {
 				// Has reserved flags or uses unsupported image fragmentation
 				throw new DataFilterException(l10n("invalidTitle"), l10n("invalidTitle"), "VP8X header has reserved flags");
 			}
-			if(size != 10) {
+			if (size != 10) {
 				throw new DataFilterException(l10n("invalidTitle"), l10n("invalidTitle"), "VP8X header is too small or too big");
 			}
 			output.write(ID);
@@ -156,26 +156,26 @@ public class WebPFilter extends RIFFFilter {
 			height = widthHeight[3] | widthHeight[4] << 8 | widthHeight [5] << 16;
 			width++;
 			height++;
-			if(width > 16384 || height > 16384) {
+			if (width > 16384 || height > 16384) {
 				// VP8 lossy format couldn't encode more than 16384 pixels in width or height. Check again when lossless format is supported.
 				throw new DataFilterException(l10n("invalidTitle"), l10n("invalidTitle"), "WebP image size is too big");
 			}
 			output.write(widthHeight);
-		} else if(ID[0] == 'I' && ID[1] == 'C' && ID[2] == 'C' && ID[3] == 'P') {
+		} else if (ID[0] == 'I' && ID[1] == 'C' && ID[2] == 'C' && ID[3] == 'P') {
 			// ICC Color Profile
-			if(logDEBUG) Logger.debug(this, "WebP image has ICCP block with " + size + " bytes converted into JUNK chunk.");
+			if (logDEBUG) Logger.debug(this, "WebP image has ICCP block with " + size + " bytes converted into JUNK chunk.");
 			writeJunkChunk(input, output, size);
-		} else if(ID[0] == 'E' && ID[1] == 'X' && ID[2] == 'I' && ID[3] == 'F') {
+		} else if (ID[0] == 'E' && ID[1] == 'X' && ID[2] == 'I' && ID[3] == 'F') {
 			// EXIF metadata
-			if(logDEBUG) Logger.debug(this, "WebP image has EXIF block with " + size + " bytes converted into JUNK chunk.");
+			if (logDEBUG) Logger.debug(this, "WebP image has EXIF block with " + size + " bytes converted into JUNK chunk.");
 			writeJunkChunk(input, output, size);
-		} else if(ID[0] == 'X' && ID[1] == 'M' && ID[2] == 'P' && ID[3] == ' ') {
+		} else if (ID[0] == 'X' && ID[1] == 'M' && ID[2] == 'P' && ID[3] == ' ') {
 			// XMP metadata
-			if(logDEBUG) Logger.debug(this, "WebP image has XMP block with " + size + " bytes converted into JUNK chunk.");
+			if (logDEBUG) Logger.debug(this, "WebP image has XMP block with " + size + " bytes converted into JUNK chunk.");
 			writeJunkChunk(input, output, size);
 		} else {
 			// Unknown block
-			if(logDEBUG) Logger.debug(this, "WebP image has Unknown block with " + size + " bytes converted into JUNK chunk.");
+			if (logDEBUG) Logger.debug(this, "WebP image has Unknown block with " + size + " bytes converted into JUNK chunk.");
 			writeJunkChunk(input, output, size);
 		}
 	}
@@ -183,7 +183,7 @@ public class WebPFilter extends RIFFFilter {
 	@Override
 	protected void EOFCheck(Object context) throws DataFilterException {
 		WebPFilterContext ctx = (WebPFilterContext)context;
-		if(ctx.hasVP8 == false && ctx.hasVP8L == false && ctx.hasANMF == false) {
+		if (ctx.hasVP8 == false && ctx.hasVP8L == false && ctx.hasANMF == false) {
 			throw new DataFilterException(l10n("invalidTitle"), l10n("invalidTitle"), "No image chunk in the WebP file is found");
 		}
 	}
