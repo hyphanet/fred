@@ -985,6 +985,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				"listing",
 				"plaintext",
 				"center",
+				"bdi",
 				"bdo",
 				"aside",
 				"header",
@@ -995,7 +996,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				"hgroup",
 				"wbr",
 				"summary",
-				"details"};
+				"details",
+				"main"};
 		for (String x: group2)
 			allowedTagsVerifiers.put(
 				x,
@@ -2291,7 +2293,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				// lang, xml:lang and dir can go on anything
 				// lang or xml:lang = language [ "-" country [ "-" variant ] ]
 				// The variant can be just about anything; no way to test (avian)
-				if (x.equals("xml:lang") ||x.equals("lang") || (x.equals("dir") && (o instanceof String) && (((String)o).equalsIgnoreCase("ltr") || ((String)o).equalsIgnoreCase("rtl")))) {
+				if (x.equals("xml:lang") ||x.equals("lang") || (x.equals("dir") && (o instanceof String) && (((String)o).equalsIgnoreCase("ltr") || ((String)o).equalsIgnoreCase("rtl") || ((String)o).equalsIgnoreCase("auto")))) {
 					if(logDEBUG) Logger.debug(this, "HTML Filter is putting attribute: "+x+" =  "+o);
 					hn.put(x, o);
 				}
