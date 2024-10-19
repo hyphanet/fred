@@ -44,4 +44,26 @@ public class FilterUtilsTest {
 		assertFalse(FilterUtils.isLength("1.", false));
 		assertFalse(FilterUtils.isLength("", false));
 	}
+	
+	@Test
+	public void testValidColors() {
+		assertTrue(FilterUtils.isColor("rebeccapurple"));
+		assertTrue(FilterUtils.isColor("Transparent"));
+		assertTrue(FilterUtils.isColor("WindowText"));
+		assertTrue(FilterUtils.isColor("#123ABC"));
+		assertTrue(FilterUtils.isColor("#123"));
+		assertTrue(FilterUtils.isColor("#123F"));
+		assertTrue(FilterUtils.isColor("#123456ff"));
+		assertTrue(FilterUtils.isColor("rgb(0 10 255)"));
+		assertTrue(FilterUtils.isColor("rgba(100 200 255 / 0.25)"));
+		assertTrue(FilterUtils.isColor("rgba(010 00200 255 / 25%)"));
+		assertTrue(FilterUtils.isColor("rgba(none 0 0% /)"));
+	}
+	
+	@Test
+	public void testInvalidColors() {
+		assertFalse(FilterUtils.isColor("rgb(0.1 0.2 0.3)"));
+		assertFalse(FilterUtils.isColor("rgb(/)"));
+		assertFalse(FilterUtils.isColor("#ABCDEFGH"));
+	}
 }
