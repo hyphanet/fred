@@ -989,7 +989,7 @@ class CSSTokenizerFilter {
 		}
 		else if("float".equalsIgnoreCase(element))
 		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("left","right","none"),ElementInfo.VISUALMEDIA));
+			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("left","right","none","inline-start","inline-end"),ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
 		} else if ("flex".equalsIgnoreCase(element)) {
 			// flex: none | <flex-grow> <flex-shrink>? || <flex-basis>
