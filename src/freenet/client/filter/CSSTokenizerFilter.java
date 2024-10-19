@@ -781,7 +781,7 @@ class CSSTokenizerFilter {
 		}
 		else if("clear".equalsIgnoreCase(element))
 		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("none","left","right","both"),ElementInfo.VISUALMEDIA));
+			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("none","left","right","both","inline-start","inline-end"),ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
 		}
 		else if("clip".equalsIgnoreCase(element))
@@ -1254,7 +1254,7 @@ class CSSTokenizerFilter {
 		}
 		else if("overflow".equalsIgnoreCase(element))
 		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("visible","hidden","scroll","auto"),ElementInfo.VISUALMEDIA));
+			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("visible","hidden","scroll","auto","clip"),ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
 		}
 		else if("padding-top".equalsIgnoreCase(element))
@@ -1529,7 +1529,7 @@ class CSSTokenizerFilter {
 		}
 		else if("text-underline-position".equalsIgnoreCase(element))
 		{
-			elementVerifiers.put(element,new CSSPropertyVerifier( Arrays.asList("auto","under","alphabetic","over"),ElementInfo.VISUALMEDIA));
+			elementVerifiers.put(element,new CSSPropertyVerifier( Arrays.asList("auto","under","left","right"),ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
 		}
 		else if("text-wrap".equalsIgnoreCase(element))
