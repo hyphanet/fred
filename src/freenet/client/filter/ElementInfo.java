@@ -215,8 +215,8 @@ public class ElementInfo {
 			"nth-last-child",
 			"nth-of-type",
 			"nth-last-of-type",
-			"link",
-			"visited",
+			"link", // inverse of visited, probably should be blocked?
+			"visited", // privacy risk (see BANNED_PSEUDOCLASS below)
 			"hover",
 			"active",
 			"checked",
@@ -227,7 +227,27 @@ public class ElementInfo {
 			"first-letter",
 			"before",
 			"after",
-			"target"
+			"target",
+			"any-link",
+			"default",
+			"defined",
+			"disabled",
+			"empty",
+			"enabled",
+			"focus-visible",
+			"dir",
+			"indeterminate",
+			"in-range",
+			"invalid",
+			"only-child",
+			"only-of-type",
+			"optional",
+			"out-of-range",
+			"placeholder-shown",
+			"read-only",
+			"read-write",
+			"required",
+			"root"
 	)));
 
 	public static final Set<String> BANNED_PSEUDOCLASS =
