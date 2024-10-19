@@ -182,13 +182,22 @@ public class ElementInfo {
 			"new york6"
 	)));
 
+	// https://developer.mozilla.org/en-US/docs/Web/CSS/font-family
 	public static final Set<String> GENERIC_FONT_KEYWORDS = 
 		Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(
 			"serif",
 			"sans-serif",
 			"cursive",
 			"fantasy",
-			"monospace"
+			"monospace",
+			"system-ui",
+			"ui-serif",
+			"ui-sans-serif",
+			"ui-monospace",
+			"ui-rounded",
+			"emoji",
+			"math",
+			"fangsong"
 	)));
 
 	public static final Set<String> GENERIC_VOICE_KEYWORDS = 
