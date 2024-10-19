@@ -322,6 +322,7 @@ class CSSTokenizerFilter {
 		allelementVerifiers.add("word-break");
 		allelementVerifiers.add("word-spacing");
 		allelementVerifiers.add("word-wrap");
+		allelementVerifiers.add("writing-mode");
 		allelementVerifiers.add("z-index");
 
 
@@ -775,7 +776,7 @@ class CSSTokenizerFilter {
 			allelementVerifiers.remove(element);
 
 		} else if ("caret-color".equalsIgnoreCase(element)) {
-			elementVerifiers.put(element, new CSSPropertyVerifier(Arrays.asList("auto", "transparent"), ElementInfo.VISUALMEDIA, Arrays.asList("co")));
+			elementVerifiers.put(element, new CSSPropertyVerifier(Arrays.asList("auto", "transparent", "currentcolor"), ElementInfo.VISUALMEDIA, Arrays.asList("co")));
 			allelementVerifiers.remove(element);
 		}
 		else if("clear".equalsIgnoreCase(element))
@@ -1559,7 +1560,7 @@ class CSSTokenizerFilter {
 		}
 		else if("unicode-bidi".equalsIgnoreCase(element))
 		{
-			elementVerifiers.put(element,new CSSPropertyVerifier( Arrays.asList("normal", "embed", "bidi-override"),ElementInfo.VISUALMEDIA));
+			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("normal", "embed", "bidi-override", "isolate", "isolate-override", "plaintext"),ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
 		}
 		else if("vertical-align".equalsIgnoreCase(element))
@@ -1618,6 +1619,11 @@ class CSSTokenizerFilter {
 		else if("word-wrap".equalsIgnoreCase(element))
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("normal", "break-word", "anywhere"),ElementInfo.VISUALMEDIA));
+			allelementVerifiers.remove(element);
+		}
+		else if("writing-mode".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("horizontal-tb", "vertical-rl", "vertical-lr", "lr", "lr-tb", "rl", "tb", "tb-lr", "tb-rl"),ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
 		}
 		else if("z-index".equalsIgnoreCase(element))
@@ -3914,7 +3920,7 @@ class CSSTokenizerFilter {
 					// CSS Property has one of the explicitly defined values
 					return true;
 				}
-				if (lowerCaseWord.equals("initial") || lowerCaseWord.equals("inherit") || lowerCaseWord.equals("unset")) {
+				if (lowerCaseWord.equals("initial") || lowerCaseWord.equals("inherit") || lowerCaseWord.equals("unset") || lowerCaseWord.equals("revert") || lowerCaseWord.equals("revert-layer")) {
 					// CSS Property is one of the Defaulting Keywords (http://www.w3.org/TR/css3-cascade/#defaulting-keywords)
 					return true;
 				}
