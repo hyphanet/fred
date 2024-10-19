@@ -27,6 +27,7 @@ import java.util.TimeZone;
 import freenet.clients.http.FProxyFetchInProgress.REFILTER_POLICY;
 import freenet.clients.http.annotation.AllowData;
 import freenet.clients.http.bookmark.BookmarkManager;
+import freenet.crypt.SSL;
 import freenet.l10n.NodeL10n;
 import freenet.node.useralerts.UserAlertManager;
 import freenet.support.HTMLEncoder;
@@ -433,7 +434,11 @@ public class ToadletContextImpl implements ToadletContext {
 		mvt.put("x-content-security-policy", contentSecurityPolicy);
 		mvt.put("x-webkit-csp", contentSecurityPolicy);
 		mvt.put("x-frame-options", allowFrames ? "SAMEORIGIN" : "DENY");
-
+		String HSTS = SSL.getHSTSHeader();
+		if(!HSTS.isEmpty() && !mvt.containsKey("strict-transport-security")) {
+			// SSL enabled, set strict-transport-security so that the user agent upgrade future requests to SSL.
+			mvt.put("strict-transport-security", HSTS);
+		}
 		StringBuilder buf = new StringBuilder(1024);
 		buf.append("HTTP/1.1 ");
 		buf.append(replyCode);
@@ -517,13 +522,11 @@ public class ToadletContextImpl implements ToadletContext {
 	 * Handle an incoming connection. Blocking, obviously.
 	 */
 	public static void handle(Socket sock, ToadletContainer container, PageMaker pageMaker, UserAlertManager userAlertManager, BookmarkManager bookmarkManager) {
-		try {
+		try (
 			InputStream is = new BufferedInputStream(sock.getInputStream(), 4096);
-			
-			LineReadingInputStream lis = new LineReadingInputStream(is);
-			
+			LineReadingInputStream lis = new LineReadingInputStream(is)
+		) {
 			while(true) {
-				
 				String firstLine = lis.readLine(32768, 128, false); // ISO-8859-1 or US-ASCII, _not_ UTF-8
 				if (firstLine == null) {
 					sock.close();

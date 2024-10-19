@@ -52,6 +52,7 @@ import freenet.config.SubConfig;
 import freenet.node.NodeStarter;
 import freenet.support.Logger;
 import freenet.support.api.BooleanCallback;
+import freenet.support.api.IntCallback;
 import freenet.support.api.StringCallback;
 import java.net.ServerSocket;
 
@@ -74,6 +75,7 @@ public class SSL {
 	private static String keyStore;
 	private static String keyStorePass;
 	private static String keyPass;
+	private static int HSTSMaxAge;
 
 	/**
 	 * Call this function before ask ServerSocket
@@ -81,6 +83,13 @@ public class SSL {
 	 */
 	public static boolean available() {
 		return (ssf != null);
+	}
+
+	public static String getHSTSHeader() {
+		if(available() && HSTSMaxAge > 0)
+			return "max-age=" + HSTSMaxAge;
+		else
+			return "";
 	}
 
 	/**
@@ -120,7 +129,7 @@ public class SSL {
 				}
 			});
 
-		sslConfig.register("sslKeyStore", "datastore/certs", configItemOrder++, true, true, "SSL.keyStore", "SSL.keyStore",
+		sslConfig.register("sslKeyStore", "datastore/certs", configItemOrder++, true, true, "SSL.keyStore", "SSL.keyStoreLong",
 			new StringCallback() {
 
 				@Override
@@ -195,10 +204,28 @@ public class SSL {
 				}
 			});
 
+		sslConfig.register("sslHSTS", 0, configItemOrder++, true, true, "SSL.HSTS", "SSL.HSTSLong",
+			new IntCallback() {
+
+				@Override
+				public Integer get() {
+					return HSTSMaxAge;
+				}
+
+				@Override
+				public void set(Integer newHSTSMaxAge) throws InvalidConfigValueException {
+					if(newHSTSMaxAge < 0)
+						throwConfigError("HSTS Max age must be not less than 0", new IllegalArgumentException());
+					else
+						HSTSMaxAge = newHSTSMaxAge;
+				}
+			});
+
 		enable = sslConfig.getBoolean("sslEnable");
 		keyStore = sslConfig.getString("sslKeyStore");
 		keyStorePass = sslConfig.getString("sslKeyStorePass");
 		keyPass = sslConfig.getString("sslKeyPass");
+		HSTSMaxAge = sslConfig.getInt("sslHSTS");
 
 		try {
 			keystore = KeyStore.getInstance("PKCS12");
