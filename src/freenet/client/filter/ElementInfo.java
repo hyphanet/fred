@@ -184,7 +184,7 @@ public class ElementInfo {
 			"visited", // privacy risk (see BANNED_PSEUDOCLASS below)
 			"hover",
 			"active",
-			"checked",
+			"checked", // forms
 			"focus",
 			"focus-within",
 			"first-line",
@@ -193,23 +193,23 @@ public class ElementInfo {
 			"after",
 			"target",
 			"any-link",
-			"default",
+			"default", // forms
 			"defined", // Javascript only (BANNED_PSEUDOCLASS)
 			"disabled", // forms
 			"empty",
 			"enabled", // forms
 			"focus-visible",
 			"indeterminate", // forms
-			"in-range",
-			"invalid",
+			"in-range", // forms
+			"invalid", // forms
 			"only-child",
 			"only-of-type",
-			"optional",
-			"out-of-range",
-			"placeholder-shown",
-			"read-only",
-			"read-write",
-			"required",
+			"optional", // forms
+			"out-of-range", // forms
+			"placeholder-shown", // forms
+			"read-only", // forms
+			"read-write", // forms
+			"required", // forms
 			"root"
 	)));
 
@@ -427,11 +427,16 @@ public class ElementInfo {
 				// Pseudo-classes can be chained, at least dynamic ones can, see CSS2.1 section 5.11.3
 				String[] split = cname.split(":");
 				for(String s : split)
-					if(isBannedPseudoClass(s)) return true;
+					if(isBannedPseudoClass2(s)) return true;
 				return false;
+			} else {
+				return isBannedPseudoClass2(cname);
 			}
-			cname=cname.toLowerCase();
-			return BANNED_PSEUDOCLASS.contains(cname);
+		}
+		
+		private static boolean isBannedPseudoClass2(String cname)
+		{
+			return BANNED_PSEUDOCLASS.contains(cname.toLowerCase());
 		}
 
 		public static boolean isValidPseudoClass(String cname)
@@ -440,20 +445,23 @@ public class ElementInfo {
 				// Pseudo-classes can be chained, at least dynamic ones can, see CSS2.1 section 5.11.3
 				String[] split = cname.split(":");
 				for(String s : split)
-					if(!isValidPseudoClass(s)) return false;
+					if(!isValidPseudoClass2(s)) return false;
 				return true;
+			} else {
+				return isValidPseudoClass2(cname);
 			}
+		}
+		
+		private static boolean isValidPseudoClass2(String cname)
+		{
 			cname=cname.toLowerCase();
 			if(PSEUDOCLASS.contains(cname))
 				return true;
-
-			
 			else if(cname.startsWith("lang") && Pattern.matches("[\\w\\-*]{1,30}", getPseudoClassArg(cname, "lang")))
 			{
 				// More than 8000 valid BCP-47 language codes. Just let through all of them.
 				return true;
 			}
-			
 			else if(cname.startsWith("nth-child") && FilterUtils.isNth(getPseudoClassArg(cname, "nth-child")))
 				return true;
 			else if(cname.startsWith("nth-last-child") && FilterUtils.isNth(getPseudoClassArg(cname, "nth-last-child")))
@@ -466,7 +474,6 @@ public class ElementInfo {
 				String arg = getPseudoClassArg(cname, "dir");
 				return arg.equalsIgnoreCase("ltr") || arg.equalsIgnoreCase("rtl");
 			}
-
 			return false;
 		}
 

@@ -25,7 +25,6 @@ import java.util.Set;
 import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
-import freenet.support.io.Closer;
 import freenet.support.io.FileBucket;
 
 /** Comprehensive CSS2.1 filter. The old jflex-based filter was very far
@@ -1030,7 +1029,7 @@ class CSSTokenizerFilter {
 		}
 		else if("font-size".equalsIgnoreCase(element))
 		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("xx-small","x-small","small","medium","large","x-large","xx-large","larger","smaller"),ElementInfo.VISUALMEDIA,Arrays.asList("le","pe")));
+			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("xx-small","x-small","small","medium","large","x-large","xx-large","xxx-large","larger","smaller"),ElementInfo.VISUALMEDIA,Arrays.asList("le","pe")));
 			allelementVerifiers.remove(element);
 		}
 		else if("font-style".equalsIgnoreCase(element))
@@ -4871,18 +4870,15 @@ outer:		for(int i=0;i<value.length;i++) {
 		fout.delete();
 		final Bucket inputBucket = new FileBucket(fin, true, false, false, false);
 		final Bucket outputBucket = new FileBucket(fout, false, true, false, false);
-		InputStream inputStream = null;
-		OutputStream outputStream = null;
-		try {
-			inputStream = inputBucket.getInputStream();
-			outputStream = outputBucket.getOutputStream();
+		try (
+			InputStream inputStream = inputBucket.getInputStream();
+			OutputStream outputStream = outputBucket.getOutputStream()
+		) {
 			Logger.setupStdoutLogging(Logger.LogLevel.DEBUG, "");
 
 			ContentFilter.filter(inputStream, outputStream, "text/css",
 					new URI("http://127.0.0.1:8888/freenet:USK@ZupQjDFZSc3I4orBpl1iTEAPZKo2733RxCUbZ2Q7iH0,EO8Tuf8SP3lnDjQdAPdCM2ve2RaUEN8m-hod3tQ5oQE,AQACAAE/jFreesite/19/Style/"), null, null, null, null);
 		} finally {
-			Closer.close(inputStream);
-			Closer.close(outputStream);
 			inputBucket.free();
 			outputBucket.free();
 		}

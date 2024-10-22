@@ -235,12 +235,58 @@ public class CSSParserTest {
 	static {
 		CSS_SELECTOR_LEVEL4.put("div:dir(ltr) {}", "div:dir(ltr)");
 		CSS_SELECTOR_LEVEL4.put("div:dir(rtl) {}", "div:dir(rtl)");
+		CSS_SELECTOR_LEVEL4.put(":target {}", ":target");
+		CSS_SELECTOR_LEVEL4.put(":any-link {}", ":any-link");
+		CSS_SELECTOR_LEVEL4.put(":empty {}", ":empty");
+		CSS_SELECTOR_LEVEL4.put(":focus-visible {}", ":focus-visible");
+		CSS_SELECTOR_LEVEL4.put(":only-child {}", ":only-child");
+		CSS_SELECTOR_LEVEL4.put(":only-of-type {}", ":only-of-type");
+		CSS_SELECTOR_LEVEL4.put(":root {font-size: xxx-large;}", ":root {font-size: xxx-large;}");
+		// forms
+		CSS_SELECTOR_LEVEL4.put("input:default {}", "input:default");
+		CSS_SELECTOR_LEVEL4.put("input:disabled {}", "input:disabled");
+		CSS_SELECTOR_LEVEL4.put("input:enabled {}", "input:enabled");
+		CSS_SELECTOR_LEVEL4.put("input:indeterminate {}", "input:indeterminate");
+		CSS_SELECTOR_LEVEL4.put("input:in-range {}", "input:in-range");
+		CSS_SELECTOR_LEVEL4.put("input:invalid {}", "input:invalid");
+		CSS_SELECTOR_LEVEL4.put("input:optional {}", "input:optional");
+		CSS_SELECTOR_LEVEL4.put("input:out-of-range {}", "input:out-of-range");
+		CSS_SELECTOR_LEVEL4.put("input:placeholder-shown {}", "input:placeholder-shown");
+		CSS_SELECTOR_LEVEL4.put("input:read-only {}", "input:read-only");
+		CSS_SELECTOR_LEVEL4.put("input:read-write {}", "input:read-write");
+		CSS_SELECTOR_LEVEL4.put("input:required {}", "input:required");
 	}
 
 	private final static HashSet<String> CSS_BAD_SELECTOR_LEVEL4= new HashSet<>();
 	static {
+		// not dir
 		CSS_BAD_SELECTOR_LEVEL4.add("div:bidir(ltr) {}");
-		CSS_BAD_SELECTOR_LEVEL4.add("div:dir {}"); // missing ltr or rtl
+		// missing ltr or rtl
+		CSS_BAD_SELECTOR_LEVEL4.add("div:dir {}");
+		// these selectors don't have arguments
+		CSS_BAD_SELECTOR_LEVEL4.add(":target() {}");
+		CSS_BAD_SELECTOR_LEVEL4.add(":any-link() {}");
+		CSS_BAD_SELECTOR_LEVEL4.add(":empty() {}");
+		CSS_BAD_SELECTOR_LEVEL4.add(":focus-visible() {}");
+		CSS_BAD_SELECTOR_LEVEL4.add(":only-child() {}");
+		CSS_BAD_SELECTOR_LEVEL4.add(":only-of-type() {}");
+		CSS_BAD_SELECTOR_LEVEL4.add(":root() {}");
+		// these forms selectors don't have arguments
+		CSS_BAD_SELECTOR_LEVEL4.add("input:default() {}");
+		CSS_BAD_SELECTOR_LEVEL4.add("input:disabled() {}");
+		CSS_BAD_SELECTOR_LEVEL4.add("input:enabled() {}");
+		CSS_BAD_SELECTOR_LEVEL4.add("input:indeterminate() {}");
+		CSS_BAD_SELECTOR_LEVEL4.add("input:in-range() {}");
+		CSS_BAD_SELECTOR_LEVEL4.add("input:invalid() {}");
+		CSS_BAD_SELECTOR_LEVEL4.add("input:optional() {}");
+		CSS_BAD_SELECTOR_LEVEL4.add("input:out-of-range() {}");
+		CSS_BAD_SELECTOR_LEVEL4.add("input:placeholder-shown() {}");
+		CSS_BAD_SELECTOR_LEVEL4.add("input:read-only() {}");
+		CSS_BAD_SELECTOR_LEVEL4.add("input:read-write() {}");
+		CSS_BAD_SELECTOR_LEVEL4.add("input:required() {}");
+		// banned
+		CSS_BAD_SELECTOR_LEVEL4.add(":defined {}");
+		CSS_BAD_SELECTOR_LEVEL4.add(":defined() {}");
 	}
 	
 	private static final String CSS_STRING_NEWLINES = "* { content: \"this string does not terminate\n}\nbody {\nbackground: url(http://www.google.co.uk/intl/en_uk/images/logo.gif); }\n\" }";
