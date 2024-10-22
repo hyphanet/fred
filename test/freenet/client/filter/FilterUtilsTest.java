@@ -54,6 +54,7 @@ public class FilterUtilsTest {
 		assertTrue(FilterUtils.isColor("#123"));
 		assertTrue(FilterUtils.isColor("#123F"));
 		assertTrue(FilterUtils.isColor("#123456ff"));
+		assertTrue(FilterUtils.isColor("rgb(0,10,255)"));
 		assertTrue(FilterUtils.isColor("rgb(0 10 255)"));
 		assertTrue(FilterUtils.isColor("rgba(100 200 255 / 0.25)"));
 		assertTrue(FilterUtils.isColor("rgba(010 00200 255 / 25%)"));
@@ -62,8 +63,15 @@ public class FilterUtilsTest {
 	
 	@Test
 	public void testInvalidColors() {
-		assertFalse(FilterUtils.isColor("rgb(0.1 0.2 0.3)"));
-		assertFalse(FilterUtils.isColor("rgb(/)"));
-		assertFalse(FilterUtils.isColor("#ABCDEFGH"));
+		assertFalse(FilterUtils.isColor("rgb(0.1 0.2 0.3)")); // should be between 0 and 255, not 0.1
+		assertFalse(FilterUtils.isColor("rgb(")); // completely empty; don't trigger out of range access here!
+		assertFalse(FilterUtils.isColor("rgb()")); // completely empty; don't trigger out of range access here!
+		assertFalse(FilterUtils.isColor("rgb(/)")); // completely empty; don't trigger out of range access here!
+		assertFalse(FilterUtils.isColor("#ABCDEFGH")); // #ABCDEF followed by G and H
+		assertFalse(FilterUtils.isColor("112233")); // missing #
+		assertFalse(FilterUtils.isColor("#12")); // not #RGB
+		assertFalse(FilterUtils.isColor("#12345")); // not #RGBA neither #RRGGBB
+		assertFalse(FilterUtils.isColor("#1234567")); // not #RRGGBB neither #RRGGBBAA
+		assertFalse(FilterUtils.isColor("url(/KSK@foo)")); // url not color!
 	}
 }

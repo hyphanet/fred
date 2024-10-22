@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 public class ElementInfo {
 
@@ -51,42 +52,6 @@ public class ElementInfo {
 			"input", // ??? Most input's aren't???
 			"applet",
 			"button"
-	)));
-
-	// FIXME add some more languages.
-	public static final Set<String> LANGUAGES =
-		Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(
-			"az",
-			"be",
-			"bg",
-			"cs",
-			"de",
-			"el",
-			"en",
-			"es",
-			"fi",
-			"fr",
-			"id",
-			"it",
-			"ja",
-			"ka",
-			"kk",
-			"ky",
-			"lv",
-			"mo",
-			"nl",
-			"no",
-			"pl",
-			"pt",
-			"ro",
-			"ru",
-			"sv",
-			"tl",
-			"tr",
-			"tt",
-			"uk",
-			"zh-hans",
-			"zh-hant"
 	)));
 
 	public static final Set<String> MEDIA = 
@@ -215,14 +180,13 @@ public class ElementInfo {
 			"nth-last-child",
 			"nth-of-type",
 			"nth-last-of-type",
-			"link", // inverse of visited, probably should be blocked?
+			"link", // inverse of visited (see BANNED_PSEUDOCLASS below)
 			"visited", // privacy risk (see BANNED_PSEUDOCLASS below)
 			"hover",
 			"active",
 			"checked",
 			"focus",
 			"focus-within",
-			"lang",
 			"first-line",
 			"first-letter",
 			"before",
@@ -230,13 +194,12 @@ public class ElementInfo {
 			"target",
 			"any-link",
 			"default",
-			"defined",
-			"disabled",
+			"defined", // Javascript only (BANNED_PSEUDOCLASS)
+			"disabled", // forms
 			"empty",
-			"enabled",
+			"enabled", // forms
 			"focus-visible",
-			"dir",
-			"indeterminate",
+			"indeterminate", // forms
 			"in-range",
 			"invalid",
 			"only-child",
@@ -278,7 +241,10 @@ public class ElementInfo {
 			//        is considered too much of a danger, so we scrub that pseudoclass.
 			//
 			// [1] http://lcamtuf.coredump.cx/css_calc/
-			"visited"
+			"link",
+			"visited",
+			// Javascript only
+			"defined"
 	)));
 
 	public static boolean isSpecificFontFamily(String font) {
@@ -467,7 +433,7 @@ public class ElementInfo {
 			cname=cname.toLowerCase();
 			return BANNED_PSEUDOCLASS.contains(cname);
 		}
-		
+
 		public static boolean isValidPseudoClass(String cname)
 		{
 			if(cname.indexOf(':') != -1) {
@@ -482,28 +448,35 @@ public class ElementInfo {
 				return true;
 
 			
-			else if(cname.contains("lang") && LANGUAGES.contains(getPseudoClassArg(cname, "lang")))
+			else if(cname.startsWith("lang") && Pattern.matches("[\\w\\-*]{1,30}", getPseudoClassArg(cname, "lang")))
 			{
-				// FIXME accept unknown languages as long as they are [a-z-]
+				// More than 8000 valid BCP-47 language codes. Just let through all of them.
 				return true;
 			}
 			
-			else if(cname.contains("nth-child") && FilterUtils.isNth(getPseudoClassArg(cname, "nth-child")))
+			else if(cname.startsWith("nth-child") && FilterUtils.isNth(getPseudoClassArg(cname, "nth-child")))
 				return true;
-			else if(cname.contains("nth-last-child") && FilterUtils.isNth(getPseudoClassArg(cname, "nth-last-child")))
+			else if(cname.startsWith("nth-last-child") && FilterUtils.isNth(getPseudoClassArg(cname, "nth-last-child")))
 				return true;
-			else if(cname.contains("nth-of-type") && FilterUtils.isNth(getPseudoClassArg(cname, "nth-of-type")))
+			else if(cname.startsWith("nth-of-type") && FilterUtils.isNth(getPseudoClassArg(cname, "nth-of-type")))
 				return true;
-			else if(cname.contains("nth-last-of-type") && FilterUtils.isNth(getPseudoClassArg(cname, "nth-last-of-type")))
+			else if(cname.startsWith("nth-last-of-type") && FilterUtils.isNth(getPseudoClassArg(cname, "nth-last-of-type")))
 				return true;
-			
+			else if(cname.startsWith("dir")) {
+				String arg = getPseudoClassArg(cname, "dir");
+				return arg.equalsIgnoreCase("ltr") || arg.equalsIgnoreCase("rtl");
+			}
+
 			return false;
-		} 
+		}
+
 		public static String getPseudoClassArg(String cname, String cname_sans_arg) {
 			String arg="";
 			int cnameIndex=cname.indexOf(cname_sans_arg);
 			int firstIndex=cname.indexOf('(');
 			int secondIndex=cname.lastIndexOf(')');
+			if(cnameIndex == -1 || firstIndex == -1 || secondIndex == -1)
+				return "";
 			if(cname.substring(cnameIndex + cname_sans_arg.length(), firstIndex).trim().isEmpty() && cname.substring(0, cnameIndex).trim().isEmpty() && cname.substring(secondIndex + 1, cname.length()).trim().isEmpty())
 			{
 				arg=CSSTokenizerFilter.removeOuterQuotes(cname.substring(firstIndex+1,secondIndex).trim());

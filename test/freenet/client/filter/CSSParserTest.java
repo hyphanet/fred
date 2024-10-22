@@ -39,7 +39,7 @@ public class CSSParserTest {
 	private final static HashMap<String,String> CSS1_SELECTOR= new HashMap<>();
 	static {
 		CSS1_SELECTOR.put("h1 {}","h1");
-		CSS1_SELECTOR.put("h1:link {}","h1:link");
+		CSS1_SELECTOR.put("h1:link {color:transparent}","");
 		CSS1_SELECTOR.put("h1:visited {}","");
 		CSS1_SELECTOR.put("h1.warning {}","h1.warning");
 		CSS1_SELECTOR.put("h1#myid {}","h1#myid");
@@ -90,9 +90,9 @@ public class CSSParserTest {
 		CSS2_SELECTOR.put("div > p:FIRST-CHILD { text-indent: 0 }", "div>p:FIRST-CHILD { text-indent: 0 }");
 		CSS2_SELECTOR.put("p:first-child em { font-weight : bold }", "p:first-child em { font-weight: bold }");
 		CSS2_SELECTOR.put("* > a:first-child {}", "*>a:first-child {}");
-		CSS2_SELECTOR.put(":link { color: red }", ":link { color: red }");
 		// REDFLAG: link vs visited is safe for Freenet as there is no scripting.
 		// If there was scripting it would not be safe, although datastore probing is probably the greater threat.
+		CSS2_SELECTOR.put(":link { color: red }", "");
 		CSS2_SELECTOR.put("a.external:visited { color: blue }", "");
 		CSS2_SELECTOR.put("a:focus:hover { background: white }", "a:focus:hover { background: white }");
 		CSS2_SELECTOR.put("p:first-line { text-transform: uppercase;}", "p:first-line { text-transform: uppercase;}");
@@ -137,6 +137,10 @@ public class CSSParserTest {
 		CSS2_BAD_SELECTOR.add("h1[foo,=bar] {}");
 
 		CSS2_BAD_SELECTOR.add("h1:langblahblah(fr) {}");
+		// java.lang.StringIndexOutOfBoundsException
+		CSS2_BAD_SELECTOR.add("h1:golang {}");
+		// missing argument
+		CSS2_BAD_SELECTOR.add("h1:lang {}");
 
 		// THE FOLLOWING ARE VALID BUT DISALLOWED
 		// ] inside string inside attribute selector: way too confusing for parsers.
@@ -222,8 +226,23 @@ public class CSSParserTest {
 		// Whitespace not supported at all.
 		CSS3_BAD_SELECTOR.add("tr:nth-child( n+2) {}");
 		CSS3_BAD_SELECTOR.add("tr:nth-child(n + 2) {}");
+		// java.lang.StringIndexOutOfBoundsException
+		CSS3_BAD_SELECTOR.add("tr:tenth-child {}");
+		CSS3_BAD_SELECTOR.add("tr:tenth-child(2n+1) {}");
 	}
 
+	private final static HashMap<String,String> CSS_SELECTOR_LEVEL4= new HashMap<>();
+	static {
+		CSS_SELECTOR_LEVEL4.put("div:dir(ltr) {}", "div:dir(ltr)");
+		CSS_SELECTOR_LEVEL4.put("div:dir(rtl) {}", "div:dir(rtl)");
+	}
+
+	private final static HashSet<String> CSS_BAD_SELECTOR_LEVEL4= new HashSet<>();
+	static {
+		CSS_BAD_SELECTOR_LEVEL4.add("div:bidir(ltr) {}");
+		CSS_BAD_SELECTOR_LEVEL4.add("div:dir {}"); // missing ltr or rtl
+	}
+	
 	private static final String CSS_STRING_NEWLINES = "* { content: \"this string does not terminate\n}\nbody {\nbackground: url(http://www.google.co.uk/intl/en_uk/images/logo.gif); }\n\" }";
 	private static final String CSS_STRING_NEWLINESC = "* {}\nbody { }\n";
 
@@ -751,7 +770,8 @@ public class CSSParserTest {
 		propertyTests.put("p { text-indent: 3em }", "p { text-indent: 3em }");
 		propertyTests.put("p { text-indent: 33% }", "p { text-indent: 33% }");
 		propertyTests.put("div.important { text-align: center }", "div.important { text-align: center }");
-		propertyTests.put("a:visited,a:link { text-decoration: underline }", "a:link { text-decoration: underline }");
+		propertyTests.put("a:visited,a:link { text-decoration: underline }", "");
+		propertyTests.put("a:any-link { text-decoration: underline }", "a:any-link { text-decoration: underline }");
 		propertyTests.put("blockquote { text-decoration: underline overline line-through blink } h1 { text-decoration: none } h2 { text-decoration: inherit }","blockquote { text-decoration: underline overline line-through blink } h1 { text-decoration: none } h2 { text-decoration: inherit }");
 		propertyTests.put("blockquote { letter-spacing: 0.1em }", "blockquote { letter-spacing: 0.1em }");
 		propertyTests.put("blockquote { letter-spacing: normal }", "blockquote { letter-spacing: normal }");
@@ -776,10 +796,8 @@ public class CSSParserTest {
 		propertyTests.put("table { empty-cells: show }", "table { empty-cells: show }");
 
 		// User interface
-		propertyTests.put(":link,:visited { cursor: url(example.svg#linkcursor) url(hyper.cur) pointer }", ":link { cursor: url(\"example.svg#linkcursor\") url(\"hyper.cur\") pointer }");
-		propertyTests.put(":link,:visited { cursor: url(example.svg#linkcursor), url(hyper.cur), pointer }", ":link { cursor: url(\"example.svg#linkcursor\"), url(\"hyper.cur\"), pointer }");
-		propertyTests.put(":link,:visited { cursor: url(example.svg#linkcursor) 2 5, url(hyper.cur), pointer }", ":link { cursor: url(\"example.svg#linkcursor\") 2 5, url(\"hyper.cur\"), pointer }");
-                propertyTests.put(":link,:visited { cursor: url(example.svg#linkcursor) 2, url(hyper.cur), pointer }", ":link { }");
+		propertyTests.put(":link,:visited { cursor: url(example.svg#linkcursor) url(hyper.cur) pointer }", "");
+        propertyTests.put(":any-link { cursor: url(example.svg#linkcursor) 2, url(hyper.cur), pointer }", ":any-link { }");
 
 		// UI colors
 		propertyTests.put("p { color: WindowText; background-color: Window }", "p { color: WindowText; background-color: Window }");
@@ -960,7 +978,17 @@ public class CSSParserTest {
 		testCssSelectorFiltering(CSS3_SELECTOR);
 		testBadSelectorFiltering(CSS3_BAD_SELECTOR);
 	}
+	
+	@Test
+	public void testCSS4Selector() throws IOException, URISyntaxException {
+		testCssSelectorFiltering(CSS_SELECTOR_LEVEL4);
+	}
 
+	@Test
+	public void testCSS4SelectorBad() throws IOException, URISyntaxException {
+		testBadSelectorFiltering(CSS_BAD_SELECTOR_LEVEL4);
+	}
+	
 	@Test
 	public void testNewlines() throws IOException, URISyntaxException {
 		assertEquals(
