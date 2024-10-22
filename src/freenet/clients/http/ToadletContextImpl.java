@@ -204,9 +204,8 @@ public class ToadletContextImpl implements ToadletContext {
 	
 	@Override
 	public void sendReplyHeadersFProxy(int replyCode, String replyDescription, MultiValueTable<String,String> mvt, String mimeType, long contentLength) throws ToadletContextClosedException, IOException {
-	    boolean enableJavascript = false;
-	    if(container.isFProxyWebPushingEnabled() && container.isFProxyJavascriptEnabled())
-	        enableJavascript = true;
+	    boolean enableJavascript;
+	    enableJavascript = container.isFProxyWebPushingEnabled() && container.isFProxyJavascriptEnabled();
 	    sendReplyHeaders(replyCode, replyDescription, mvt, mimeType, contentLength, null, false, true, enableJavascript);
 	}
 	
@@ -216,12 +215,11 @@ public class ToadletContextImpl implements ToadletContext {
 			throw new IllegalStateException("Already sent headers!", firstReplySendingException);
 		}
 		firstReplySendingException = new Exception();
-		
-		if(replyCookies != null) {
-			if (mvt == null) {
-				mvt = new MultiValueTable<String,String>();
-			}
-			
+
+		if (mvt == null) {
+			mvt = new MultiValueTable<String,String>();
+		}
+		if (replyCookies != null) {
 			// We do NOT use "set-cookie2" even though we should according though RFC2965 - Firefox 3.0.14 ignores it for me!
 			
 			for(Cookie cookie : replyCookies) {
@@ -229,6 +227,14 @@ public class ToadletContextImpl implements ToadletContext {
 				mvt.put("set-cookie", cookieHeader);
 				if(logMINOR)
 					Logger.minor(this, "set-cookie: " + cookieHeader);
+			}
+		}
+
+		if (container.isSSL()) {
+			String HSTS = SSL.getHSTSHeader();
+			if (!HSTS.isEmpty() && !mvt.containsKey("strict-transport-security")) {
+				// SSL enabled, set strict-transport-security so that the user agent upgrade future requests to SSL.
+				mvt.put("strict-transport-security", HSTS);
 			}
 		}
 		sendReplyHeaders(sockOutputStream, replyCode, replyDescription, mvt, mimeType, contentLength, mTime, shouldDisconnect, enableJavascript, allowFrames);
