@@ -966,6 +966,18 @@ public class CSSParserTest {
 		propertyTests.put("div { transition-delay: \"test\"; }", "div { }");
 		propertyTests.put("div { transition-property: \"test\"; }", "div { }");
 		propertyTests.put("div { transition-timing-function: \"test\"; }", "div { }");
+		
+		// writing mode
+		propertyTests.put("#a { writing-mode: vertical-rl; text-underline-position: left; } #b { writing-mode: horizontal-tb; text-underline-position: auto; }", "#a { writing-mode: vertical-rl; text-underline-position: left; } #b { writing-mode: horizontal-tb; text-underline-position: auto; }");
+		
+		// Compositing and Blending
+		propertyTests.put("#foo { background: url(\"1.png\"); background-blend-mode: darken; }", "#foo { background: url(\"1.png\"); background-blend-mode: darken; }");
+		propertyTests.put("#foo {mix-blend-mode: luminosity; }", "#foo {mix-blend-mode: luminosity; }");
+		
+		// new property values
+		propertyTests.put("div { overflow: clip; clear: inline-end; text-decoration: revert; float: inline-end;}", "div { overflow: clip; clear: inline-end; text-decoration: revert; float: inline-end;}");
+		propertyTests.put("#a {unicode-bidi: isolate;}", "#a {unicode-bidi: isolate;}");
+		propertyTests.put("textarea#x {caret-color: currentcolor;}", "textarea#x {caret-color: currentcolor;}");
 	}
 
 	FilterMIMEType cssMIMEType;

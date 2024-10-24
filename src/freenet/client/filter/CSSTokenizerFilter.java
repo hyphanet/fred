@@ -118,6 +118,7 @@ class CSSTokenizerFilter {
 		allelementVerifiers.add("align-self");
 		allelementVerifiers.add("azimuth");
 		allelementVerifiers.add("background-attachment");
+		allelementVerifiers.add("background-blend-mode");
 		allelementVerifiers.add("background-clip");
 		allelementVerifiers.add("background-color");
 		allelementVerifiers.add("background-image");
@@ -242,6 +243,7 @@ class CSSTokenizerFilter {
 		allelementVerifiers.add("max-width");
 		allelementVerifiers.add("min-height");
 		allelementVerifiers.add("min-width");
+		allelementVerifiers.add("mix-blend-mode");
 		allelementVerifiers.add("nav-down");
 		allelementVerifiers.add("nav-left");
 		allelementVerifiers.add("nav-right");
@@ -331,7 +333,7 @@ class CSSTokenizerFilter {
 	 * Array for storing additional Verifier objects for validating Regular expressions in CSS Property value
 	 * e.g. [ <color> | transparent]{1,4}. It is explained in detail in CSSPropertyVerifier class
 	 */
-	private final static CSSPropertyVerifier[] auxilaryVerifiers=new CSSPropertyVerifier[148];
+	private final static CSSPropertyVerifier[] auxilaryVerifiers=new CSSPropertyVerifier[149];
 	static
 	{
 		/*CSSPropertyVerifier(String[] allowedValues,String[] possibleValues,String expression,boolean onlyValueVerifier)*/
@@ -452,6 +454,11 @@ class CSSTokenizerFilter {
 		else if("background-attachment".equalsIgnoreCase(element)){
 			auxilaryVerifiers[60] = new CSSPropertyVerifier(Arrays.asList("local","scroll","fixed"), null, null, null, true);
 			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("60<1,65535>"), true,true));
+			allelementVerifiers.remove(element);
+		}
+		else if("background-blend-mode".equalsIgnoreCase(element)){
+			auxilaryVerifiers[148] = new CSSPropertyVerifier(Arrays.asList("normal","multiply","screen","overlay","darken","lighten","color-dodge","color-burn","hard-light","soft-light","difference","exclusion","hue","saturation","color","luminosity"), null, null, null, true);
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("148<1,2>"), true,true));
 			allelementVerifiers.remove(element);
 		}
 		else if("background-clip".equalsIgnoreCase(element))
@@ -1196,7 +1203,13 @@ class CSSTokenizerFilter {
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("auto"),ElementInfo.VISUALMEDIA,Arrays.asList("le","pe")));
 			allelementVerifiers.remove(element);
-		} else if ("nav-down".equalsIgnoreCase(element)) {
+		}
+		else if("mix-blend-mode".equalsIgnoreCase(element)){
+			auxilaryVerifiers[148] = new CSSPropertyVerifier(Arrays.asList("normal","multiply","screen","overlay","darken","lighten","color-dodge","color-burn","hard-light","soft-light","difference","exclusion","hue","saturation","color","luminosity"), null, null, null, true);
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("148<1,2>"), true,true));
+			allelementVerifiers.remove(element);
+		}
+		else if ("nav-down".equalsIgnoreCase(element)) {
 			elementVerifiers.put(element, new CSSPropertyVerifier(Arrays.asList("auto"), ElementInfo.VISUALINTERACTIVEMEDIA, null, Arrays.asList("143 144?")));
 			allelementVerifiers.remove(element);
 		} else if ("nav-left".equalsIgnoreCase(element)) {
