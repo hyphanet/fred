@@ -968,8 +968,9 @@ public class CSSParserTest {
 		propertyTests.put("div { transition-timing-function: \"test\"; }", "div { }");
 		
 		// writing mode
-		propertyTests.put("#a { writing-mode: vertical-rl; text-underline-position: left; } #b { writing-mode: horizontal-tb; text-underline-position: auto; }", "#a { writing-mode: vertical-rl; text-underline-position: left; } #b { writing-mode: horizontal-tb; text-underline-position: auto; }");
-		
+		propertyTests.put("#a { writing-mode: vertical-rl; text-underline-position: left; }", "#a { writing-mode: vertical-rl; text-underline-position: left; }");
+		propertyTests.put("#b { writing-mode: horizontal-tb; text-underline-position: auto; inline-size: max-content; block-size: 200px; }", "#b { writing-mode: horizontal-tb; text-underline-position: auto; inline-size: max-content; block-size: 200px; }");
+
 		// Compositing and Blending
 		propertyTests.put("#foo { background: url(\"1.png\"); background-blend-mode: darken; }", "#foo { background: url(\"1.png\"); background-blend-mode: darken; }");
 		propertyTests.put("#foo {mix-blend-mode: luminosity; }", "#foo {mix-blend-mode: luminosity; }");
@@ -985,6 +986,8 @@ public class CSSParserTest {
 		propertyTests.put("#x { text-shadow: white 2px 5px; }", "#x { text-shadow: white 2px 5px; }");
 		propertyTests.put("#x { text-shadow: 5px 10px; }", "#x { text-shadow: 5px 10px; }");
 		propertyTests.put("#x { text-shadow: 1px 1px 2px 1px black; }", "#x { }");
+		// not possible to parse a comma separated list?
+		//propertyTests.put("#x { text-shadow: 1px 1px 2px red, 0 0 1em blue, 0 0 0.2em blue; }", "#x { text-shadow: 1px 1px 2px red, 0 0 1em blue, 0 0 0.2em blue; }");
 	}
 
 	FilterMIMEType cssMIMEType;

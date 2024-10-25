@@ -127,6 +127,7 @@ class CSSTokenizerFilter {
 		allelementVerifiers.add("background-repeat");
 		allelementVerifiers.add("background-size");
 		allelementVerifiers.add("background");
+		allelementVerifiers.add("block-size");
 		allelementVerifiers.add("border-collapse");
 		allelementVerifiers.add("border-color");
 		allelementVerifiers.add("border-top-color");
@@ -223,6 +224,7 @@ class CSSTokenizerFilter {
 		allelementVerifiers.add("font");
 		allelementVerifiers.add("hanging-punctuation");
 		allelementVerifiers.add("height");
+		allelementVerifiers.add("inline-size");
 		allelementVerifiers.add("justify-content");
 		allelementVerifiers.add("justify-items");
 		allelementVerifiers.add("justify-self");
@@ -517,6 +519,11 @@ class CSSTokenizerFilter {
 			//background-repeat
 			auxilaryVerifiers[10]=new CSSPropertyVerifier(Arrays.asList("repeat","repeat-x","repeat-y","no-repeat"),null,null,null,true);
 			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("6a7a8a9a10")));
+			allelementVerifiers.remove(element);
+		}
+		else if("block-size".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("auto"),ElementInfo.VISUALMEDIA,Arrays.asList("le","pe")));
 			allelementVerifiers.remove(element);
 		}
 		else if("border-collapse".equalsIgnoreCase(element))
@@ -1097,6 +1104,11 @@ class CSSTokenizerFilter {
 			allelementVerifiers.remove(element);
 		}
 		else if("height".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("auto"),ElementInfo.VISUALMEDIA,Arrays.asList("le","pe")));
+			allelementVerifiers.remove(element);
+		}
+		else if("inline-size".equalsIgnoreCase(element))
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("auto"),ElementInfo.VISUALMEDIA,Arrays.asList("le","pe")));
 			allelementVerifiers.remove(element);
@@ -4003,10 +4015,15 @@ class CSSTokenizerFilter {
 				}
 			}
 
-			if(words[0] instanceof ParsedIdentifier && isColor) {
-				if(FilterUtils.isColor(((ParsedIdentifier)words[0]).original))
+			if(words[0] instanceof ParsedIdentifier) {
+				String value = ((ParsedIdentifier)words[0]).original;
+				if(isColor && FilterUtils.isColor(value)) {
 					return true;
-
+				}
+				if(isLength && (value.equalsIgnoreCase("min-content") || value.equalsIgnoreCase("max-content") || value.equalsIgnoreCase("fit-content"))) {
+					//TODO: support fit-content(20em)
+					return true;
+				}
 			}
 			if(isURI && words[0] instanceof ParsedURL)
 
