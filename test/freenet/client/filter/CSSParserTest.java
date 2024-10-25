@@ -978,6 +978,13 @@ public class CSSParserTest {
 		propertyTests.put("div { overflow: clip; clear: inline-end; text-decoration: revert; float: inline-end;}", "div { overflow: clip; clear: inline-end; text-decoration: revert; float: inline-end;}");
 		propertyTests.put("#a {unicode-bidi: isolate;}", "#a {unicode-bidi: isolate;}");
 		propertyTests.put("textarea#x {caret-color: currentcolor;}", "textarea#x {caret-color: currentcolor;}");
+		// text-shadow
+		propertyTests.put("#x { text-shadow: 1px 1px 2px black; }", "#x { text-shadow: 1px 1px 2px black; }");
+		propertyTests.put("#x { text-shadow: #fc0 1px 0 10px; }", "#x { text-shadow: #fc0 1px 0 10px; }");
+		propertyTests.put("#x { text-shadow: 5px 5px #558abb; }", "#x { text-shadow: 5px 5px #558abb; }");
+		propertyTests.put("#x { text-shadow: white 2px 5px; }", "#x { text-shadow: white 2px 5px; }");
+		propertyTests.put("#x { text-shadow: 5px 10px; }", "#x { text-shadow: 5px 10px; }");
+		propertyTests.put("#x { text-shadow: 1px 1px 2px 1px black; }", "#x { }");
 	}
 
 	FilterMIMEType cssMIMEType;

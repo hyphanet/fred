@@ -375,7 +375,7 @@ class CSSTokenizerFilter {
 		auxilaryVerifiers[78]=new CSSPropertyVerifier(null,null,Arrays.asList("70<1,2>"),null,true);
 
 		// <text-shadow>
-		auxilaryVerifiers[79]=new CSSPropertyVerifier(null, null, Arrays.asList("74a73"), null, true);
+		auxilaryVerifiers[79]=new CSSPropertyVerifier(null, null, Arrays.asList("73 72 72 72","73 72 72","72 72 72 73","72 72 73","72 72"), null, true);
 
 		// <spacing-limit>
 		auxilaryVerifiers[85]=new CSSPropertyVerifier(Arrays.asList("normal"), Arrays.asList("le","pe"), null, null, true);
@@ -1531,7 +1531,7 @@ class CSSTokenizerFilter {
 		}
 		else if("text-shadow".equalsIgnoreCase(element))
 		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("none"),ElementInfo.VISUALMEDIA,null,Arrays.asList("79<0,65535>"),true,true));
+			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("none"),ElementInfo.VISUALMEDIA,null,Arrays.asList("79"),true,true));
 			allelementVerifiers.remove(element);
 		}
 		else if("text-transform".equalsIgnoreCase(element))
