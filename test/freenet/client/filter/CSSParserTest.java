@@ -985,6 +985,7 @@ public class CSSParserTest {
 		propertyTests.put("#a { word-break: keep-all; font-kerning: none; }", "#a { word-break: keep-all; font-kerning: none; }");
 		propertyTests.put("#a { tab-size: 4; }", "#a { tab-size: 4; }");
 		propertyTests.put("#a { tab-size: 12pt; }", "#a { tab-size: 12pt; }");
+		propertyTests.put("img#a { object-fit: scale-down; }", "img#a { object-fit: scale-down; }");
 		// text-emphasis
 		propertyTests.put("#x { text-emphasis: triangle blue; }", "#x { text-emphasis: triangle blue; }"); // java.lang.NullPointerException
 		propertyTests.put("#x { text-emphasis: filled triangle blue; }", "#x { text-emphasis: filled triangle blue; }");

@@ -251,6 +251,7 @@ class CSSTokenizerFilter {
 		allelementVerifiers.add("nav-left");
 		allelementVerifiers.add("nav-right");
 		allelementVerifiers.add("nav-up");
+		allelementVerifiers.add("object-fit");
 		allelementVerifiers.add("opacity");
 		allelementVerifiers.add("order");
 		allelementVerifiers.add("orphans");
@@ -1240,6 +1241,9 @@ class CSSTokenizerFilter {
 			allelementVerifiers.remove(element);
 		} else if ("nav-up".equalsIgnoreCase(element)) {
 			elementVerifiers.put(element, new CSSPropertyVerifier(Arrays.asList("auto"), ElementInfo.VISUALINTERACTIVEMEDIA, null, Arrays.asList("143 144?")));
+			allelementVerifiers.remove(element);
+		} else if ("object-fit".equalsIgnoreCase(element)) {
+			elementVerifiers.put(element, new CSSPropertyVerifier(Arrays.asList("contain","cover","fill","none","scale-down"), ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
 		}
 		else if("opacity".equalsIgnoreCase(element))
