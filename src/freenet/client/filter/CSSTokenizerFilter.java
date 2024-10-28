@@ -217,6 +217,7 @@ class CSSTokenizerFilter {
 		allelementVerifiers.add("flex-wrap");
 		allelementVerifiers.add("float");
 		allelementVerifiers.add("font-family");
+		allelementVerifiers.add("font-kerning");
 		allelementVerifiers.add("font-size");
 		allelementVerifiers.add("font-style");
 		allelementVerifiers.add("font-variant");
@@ -287,6 +288,7 @@ class CSSTokenizerFilter {
 		allelementVerifiers.add("speech-rate");
 		allelementVerifiers.add("stress");
 		allelementVerifiers.add("table-layout");
+		allelementVerifiers.add("tab-size");
 		allelementVerifiers.add("text-align");
 		allelementVerifiers.add("text-align-last");
 		allelementVerifiers.add("text-autospace");
@@ -1042,6 +1044,11 @@ class CSSTokenizerFilter {
 			elementVerifiers.put(element,new FontPropertyVerifier(false));
 			allelementVerifiers.remove(element);
 		}
+		else if("font-kerning".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("auto","none","normal"),ElementInfo.VISUALMEDIA));
+			allelementVerifiers.remove(element);
+		}
 		else if("font-size".equalsIgnoreCase(element))
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("xx-small","x-small","small","medium","large","x-large","xx-large","xxx-large","larger","smaller"),ElementInfo.VISUALMEDIA,Arrays.asList("le","pe")));
@@ -1437,6 +1444,11 @@ class CSSTokenizerFilter {
 			elementVerifiers.put(element,new CSSPropertyVerifier( Arrays.asList("auto","fixed"),ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
 		}
+		else if("tab-size".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,Arrays.asList("le","in")));
+			allelementVerifiers.remove(element);
+		}
 		else if("text-align".equalsIgnoreCase(element))
 		{  // FIXME: We don't support "one character" as the spec says http://www.w3.org/TR/css3-text/#text-align0
 			elementVerifiers.put(element,new CSSPropertyVerifier( Arrays.asList("start","end","left","right","center","justify","match-parent"),ElementInfo.VISUALMEDIA));
@@ -1630,7 +1642,7 @@ class CSSTokenizerFilter {
 		}
 		else if("word-break".equalsIgnoreCase(element))
 		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("normal","break-all","hyphenate"),ElementInfo.VISUALMEDIA));
+			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("normal","break-all","hyphenate","keep-all"),ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
 		}
 		else if("word-spacing".equalsIgnoreCase(element))

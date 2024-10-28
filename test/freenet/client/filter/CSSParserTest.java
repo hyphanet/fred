@@ -982,6 +982,9 @@ public class CSSParserTest {
 		propertyTests.put("textarea#x {caret-color: currentcolor;}", "textarea#x {caret-color: currentcolor;}");
 		propertyTests.put("div { word-wrap: anywhere; overflow-wrap: anywhere; }", "div { word-wrap: anywhere; overflow-wrap: anywhere; }");
 		propertyTests.put("div { white-space-collapse: collapse; }", "div { white-space-collapse: collapse; }");
+		propertyTests.put("#a { word-break: keep-all; font-kerning: none; }", "#a { word-break: keep-all; font-kerning: none; }");
+		propertyTests.put("#a { tab-size: 4; }", "#a { tab-size: 4; }");
+		propertyTests.put("#a { tab-size: 12pt; }", "#a { tab-size: 12pt; }");
 		// text-emphasis
 		propertyTests.put("#x { text-emphasis: triangle blue; }", "#x { text-emphasis: triangle blue; }"); // java.lang.NullPointerException
 		propertyTests.put("#x { text-emphasis: filled triangle blue; }", "#x { text-emphasis: filled triangle blue; }");
