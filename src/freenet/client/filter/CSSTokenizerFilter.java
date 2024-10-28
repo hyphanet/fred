@@ -259,6 +259,7 @@ class CSSTokenizerFilter {
 		allelementVerifiers.add("outline-width");
 		allelementVerifiers.add("outline");
 		allelementVerifiers.add("overflow");
+		allelementVerifiers.add("overflow-wrap");
 		allelementVerifiers.add("padding-top");
 		allelementVerifiers.add("padding-right");
 		allelementVerifiers.add("padding-bottom");
@@ -319,7 +320,7 @@ class CSSTokenizerFilter {
 		allelementVerifiers.add("voice-family");
 		allelementVerifiers.add("volume");
 		allelementVerifiers.add("white-space");
-		allelementVerifiers.add("white-space-collapsing");
+		allelementVerifiers.add("white-space-collapse");
 		allelementVerifiers.add("widows");
 		allelementVerifiers.add("width");
 		allelementVerifiers.add("word-break");
@@ -358,10 +359,12 @@ class CSSTokenizerFilter {
 		// <border-radius>
 		auxilaryVerifiers[64]=new CSSPropertyVerifier(null,Arrays.asList("le", "pe"),null,null,true);
 
+		// <text-decoration-color>
+		auxilaryVerifiers[73]=new CSSPropertyVerifier(null, Arrays.asList("co"), null, null, true);
+		
 		// <shadow>
 		auxilaryVerifiers[71]=new CSSPropertyVerifier(Arrays.asList("inset"), null, null, null, true);
 		auxilaryVerifiers[72]=new CSSPropertyVerifier(null, Arrays.asList("le"), null, null, true);
-		auxilaryVerifiers[73]=new CSSPropertyVerifier(null, Arrays.asList("co"), null, null, true);
 		auxilaryVerifiers[74]=new CSSPropertyVerifier(null, null, Arrays.asList("72<1,4>"), null, true);
 		auxilaryVerifiers[75]=new CSSPropertyVerifier(null, null, Arrays.asList("71a74a73"), null, true);
 
@@ -388,15 +391,13 @@ class CSSTokenizerFilter {
 		auxilaryVerifiers[102] = new CSSPropertyVerifier(Arrays.asList("line-through"), null, null, null, true);
 		auxilaryVerifiers[115] = new CSSPropertyVerifier(Arrays.asList("none"),null,null,Arrays.asList("100a101a102"));
 		auxilaryVerifiers[116] = new CSSPropertyVerifier(Arrays.asList("blink"), null, null, null, true);
-		// <text-decoration-color>
-		auxilaryVerifiers[103] = new CSSPropertyVerifier(null, Arrays.asList("co"), null, null, true);
 		// <text-decoration-style>
 		auxilaryVerifiers[104] = new CSSPropertyVerifier(Arrays.asList("solid", "double", "dotted", "dashed", "wave"), null, null, null, true);
 
 		// <text-emphasis-style>
 		auxilaryVerifiers[105]=new CSSPropertyVerifier(Arrays.asList("filled","open"),null,null,null,true);
 		auxilaryVerifiers[106]=new CSSPropertyVerifier(Arrays.asList("dot","circle","double-circle","triangle","sesame"),null,null,null,true);
-		auxilaryVerifiers[107]=new CSSPropertyVerifier(Arrays.asList("none"),ElementInfo.VISUALMEDIA,Arrays.asList("st"),Arrays.asList("105a106"));
+		auxilaryVerifiers[107]=new CSSPropertyVerifier(Arrays.asList("none"),null,Arrays.asList("st"),Arrays.asList("105a106"));
 
 		// <align-content> and <justify-content>
 		// auto | <baseline-position> | <content-distribution> || [ <overflow-position>? && <content-position> ]
@@ -1458,13 +1459,13 @@ class CSSTokenizerFilter {
 		}
 		else if("text-decoration".equalsIgnoreCase(element))
 		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("115a103a104a116")));
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("115a73a104a116")));
 			allelementVerifiers.remove(element);
 
 		}
 		else if("text-decoration-color".equalsIgnoreCase(element))
 		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("103")));
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("73")));
 			allelementVerifiers.remove(element);
 
 		}
@@ -1492,13 +1493,13 @@ class CSSTokenizerFilter {
 		}
 		else if("text-emphasis".equalsIgnoreCase(element))
 		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("103a107")));
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("73a107")));
 			allelementVerifiers.remove(element);
 
 		}
 		else if("text-emphasis-color".equalsIgnoreCase(element))
 		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("103")));
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("73")));
 			allelementVerifiers.remove(element);
 
 		}
@@ -1548,7 +1549,7 @@ class CSSTokenizerFilter {
 		}
 		else if("text-transform".equalsIgnoreCase(element))
 		{
-			elementVerifiers.put(element,new CSSPropertyVerifier( Arrays.asList("capitalize","uppercase","lowercase","none","fullwidth","large-kana"),ElementInfo.VISUALMEDIA));
+			elementVerifiers.put(element,new CSSPropertyVerifier( Arrays.asList("capitalize","uppercase","lowercase","none","fullwidth","full-size-kana","math-auto"),ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
 		}
 		else if("text-underline-position".equalsIgnoreCase(element))
@@ -1612,12 +1613,9 @@ class CSSTokenizerFilter {
 			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("normal","pre","nowrap","pre-wrap","pre-line"),ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
 		}
-		else if("white-space-collapsing".equalsIgnoreCase(element))
+		else if("white-space-collapse".equalsIgnoreCase(element))
 		{
-			auxilaryVerifiers[80]=new CSSPropertyVerifier(Arrays.asList("preserve","preserve-break"),null,null,null,true);
-			auxilaryVerifiers[81]=new CSSPropertyVerifier(Arrays.asList("trim-inner"),null,null,null,true);
-			auxilaryVerifiers[82]=new CSSPropertyVerifier(null,null,Arrays.asList("80a81"),null,true);
-			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("collapse" ,"discard"),null,ElementInfo.VISUALMEDIA,Arrays.asList("82")));
+			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("preserve","preserve-break","collapse","discard","break-spaces"),null,ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
 		}
 		else if("widows".equalsIgnoreCase(element))
@@ -1640,8 +1638,9 @@ class CSSTokenizerFilter {
 			elementVerifiers.put(element,new CSSPropertyVerifier(null,null,ElementInfo.VISUALMEDIA,Arrays.asList("85<1,3>")));
 			allelementVerifiers.remove(element);
 		}
-		else if("word-wrap".equalsIgnoreCase(element))
+		else if("word-wrap".equalsIgnoreCase(element) || "overflow-wrap".equalsIgnoreCase(element))
 		{
+			// word-wrap was a Microsoft extension that got renamed to overflow-wrap in CSS Text Module Level 3.
 			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("normal", "break-word", "anywhere"),ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
 		}

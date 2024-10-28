@@ -818,6 +818,7 @@ public class CSSParserTest {
 		propertyTests.put("div.important { text-align: center }", "div.important { text-align: center }");
 		propertyTests.put("a:visited,a:link { text-decoration: underline }", "");
 		propertyTests.put("a:any-link { text-decoration: underline }", "a:any-link { text-decoration: underline }");
+		propertyTests.put("a:any-link { text-decoration: underline red }", "a:any-link { text-decoration: underline red }");
 		propertyTests.put("blockquote { text-decoration: underline overline line-through blink } h1 { text-decoration: none } h2 { text-decoration: inherit }","blockquote { text-decoration: underline overline line-through blink } h1 { text-decoration: none } h2 { text-decoration: inherit }");
 		propertyTests.put("blockquote { letter-spacing: 0.1em }", "blockquote { letter-spacing: 0.1em }");
 		propertyTests.put("blockquote { letter-spacing: normal }", "blockquote { letter-spacing: normal }");
@@ -979,6 +980,12 @@ public class CSSParserTest {
 		propertyTests.put("div { overflow: clip; clear: inline-end; text-decoration: revert; float: inline-end;}", "div { overflow: clip; clear: inline-end; text-decoration: revert; float: inline-end;}");
 		propertyTests.put("#a {unicode-bidi: isolate;}", "#a {unicode-bidi: isolate;}");
 		propertyTests.put("textarea#x {caret-color: currentcolor;}", "textarea#x {caret-color: currentcolor;}");
+		propertyTests.put("div { word-wrap: anywhere; overflow-wrap: anywhere; }", "div { word-wrap: anywhere; overflow-wrap: anywhere; }");
+		propertyTests.put("div { white-space-collapse: collapse; }", "div { white-space-collapse: collapse; }");
+		// text-emphasis
+		propertyTests.put("#x { text-emphasis: triangle blue; }", "#x { text-emphasis: triangle blue; }"); // java.lang.NullPointerException
+		propertyTests.put("#x { text-emphasis: filled triangle blue; }", "#x { text-emphasis: filled triangle blue; }");
+		propertyTests.put("#x { text-emphasis-style: triangle; text-emphasis-color: blue; }", "#x { text-emphasis-style: triangle; text-emphasis-color: blue; }");
 		// text-shadow
 		propertyTests.put("#x { text-shadow: 1px 1px 2px black; }", "#x { text-shadow: 1px 1px 2px black; }");
 		propertyTests.put("#x { text-shadow: #fc0 1px 0 10px; }", "#x { text-shadow: #fc0 1px 0 10px; }");
