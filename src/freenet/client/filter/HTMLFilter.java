@@ -1080,7 +1080,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			"ol",
 			new CoreTagVerifier(
 				"ol",
-				new String[] { "type", "compact", "start" },
+				new String[] { "type", "compact", "start", "reversed" },
 				emptyStringArray,
 				emptyStringArray,
 				emptyStringArray,
