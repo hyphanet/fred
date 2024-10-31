@@ -357,6 +357,9 @@ class CSSTokenizerFilter {
 		//<border-top-color>
 		auxilaryVerifiers[15]=new CSSPropertyVerifier(Arrays.asList("transparent"),Arrays.asList("co"),null,null,true);
 
+		//list-style-type
+		auxilaryVerifiers[35]=new CSSPropertyVerifier(Arrays.asList("disc","circle","square","decimal","decimal-leading-zero","lower-roman","upper-roman","lower-greek","lower-latin","upper-latin","armenian","georgian","lower-alpha","upper-alpha","none","arabic-indic","bengali","cambodian","cjk-decimal","cjk-earthly-branch","cjk-heavenly-stem","cjk-ideographic","devanagari","disclosure-closed","disclosure-open","ethiopic-numeric","gujarati","gurmukhi","hebrew","hiragana","hiragana-iroha","japanese-formal","japanese-informal","kannada","katakana","katakana-iroha","khmer","korean-hangul-formal","korean-hanja-formal","lao","lower-armenian","malayalam","mongolian","myanmar","oriya","persian","simp-chinese-formal","simp-chinese-informal","tamil","telugu","thai","tibetan","trad-chinese-formal","trad-chinese-informal","upper-armenian"),Arrays.asList("st"),null,null,true);
+
 		// <background-clip> <background-origin>
 		auxilaryVerifiers[61]=new CSSPropertyVerifier(Arrays.asList("border-box", "padding-box", "content-box"),null,null,null,true);
 		// <border-radius>
@@ -1163,7 +1166,7 @@ class CSSTokenizerFilter {
 		}
 		else if("list-style-type".equalsIgnoreCase(element))
 		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("disc","circle","square","decimal","decimal-leading-zero","lower-roman","upper-roman","lower-greek","lower-latin","upper-latin","armenian","georgian","lower-alpha","upper-alpha","none"),ElementInfo.VISUALMEDIA));
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("35")));
 			allelementVerifiers.remove(element);
 		}
 		else if("list-style".equalsIgnoreCase(element))
@@ -1172,8 +1175,6 @@ class CSSTokenizerFilter {
 			auxilaryVerifiers[33]=new CSSPropertyVerifier(Arrays.asList("none"),Arrays.asList("ur"),null,null,true);
 			//list-style-position
 			auxilaryVerifiers[34]=new CSSPropertyVerifier(Arrays.asList("inside","outside"),null,null,null,true);
-			//list-style-type
-			auxilaryVerifiers[35]=new CSSPropertyVerifier(Arrays.asList("disc","circle","square","decimal","decimal-leading-zero","lower-roman","upper-roman","lower-greek","lower-latin","upper-latin","armenian","georgian","lower-alpha","upper-alpha","none"),null,null,null,true);
 			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("33a34a35")));
 			allelementVerifiers.remove(element);
 		}
