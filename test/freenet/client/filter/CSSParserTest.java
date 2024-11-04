@@ -988,6 +988,7 @@ public class CSSParserTest {
 		propertyTests.put("img#a { object-fit: scale-down; }", "img#a { object-fit: scale-down; }");
 		propertyTests.put("#x { list-style-type: korean-hanja-formal }", "#x { list-style-type: korean-hanja-formal }");
 		propertyTests.put("#x { list-style-type: \"*\" }", "#x { list-style-type: \"*\" }");
+		propertyTests.put("#x { max-inline-size: none; min-block-size: auto; }", "#x { max-inline-size: none; min-block-size: auto; }");
 
 		// text-emphasis
 		propertyTests.put("#x { text-emphasis: triangle blue; }", "#x { text-emphasis: triangle blue; }"); // java.lang.NullPointerException

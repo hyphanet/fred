@@ -242,9 +242,13 @@ class CSSTokenizerFilter {
 		allelementVerifiers.add("margin-top");
 		allelementVerifiers.add("margin-bottom");
 		allelementVerifiers.add("margin");
+		allelementVerifiers.add("max-block-size");
 		allelementVerifiers.add("max-height");
+		allelementVerifiers.add("max-inline-size");
 		allelementVerifiers.add("max-width");
+		allelementVerifiers.add("min-block-size");
 		allelementVerifiers.add("min-height");
+		allelementVerifiers.add("min-inline-size");
 		allelementVerifiers.add("min-width");
 		allelementVerifiers.add("mix-blend-mode");
 		allelementVerifiers.add("nav-down");
@@ -1206,7 +1210,17 @@ class CSSTokenizerFilter {
 			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("36<1,4>")));
 			allelementVerifiers.remove(element);
 		}
+		else if("max-block-size".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("none"),ElementInfo.VISUALMEDIA,Arrays.asList("le","pe")));
+			allelementVerifiers.remove(element);
+		}
 		else if("max-height".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("none"),ElementInfo.VISUALMEDIA,Arrays.asList("le","pe")));
+			allelementVerifiers.remove(element);
+		}
+		else if("max-inline-size".equalsIgnoreCase(element))
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("none"),ElementInfo.VISUALMEDIA,Arrays.asList("le","pe")));
 			allelementVerifiers.remove(element);
@@ -1216,7 +1230,17 @@ class CSSTokenizerFilter {
 			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("none"),ElementInfo.VISUALMEDIA,Arrays.asList("le","pe")));
 			allelementVerifiers.remove(element);
 		}
+		else if("min-block-size".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("auto"),ElementInfo.VISUALMEDIA,Arrays.asList("le","pe")));
+			allelementVerifiers.remove(element);
+		}
 		else if("min-height".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("auto"),ElementInfo.VISUALMEDIA,Arrays.asList("le","pe")));
+			allelementVerifiers.remove(element);
+		}
+		else if("min-inline-size".equalsIgnoreCase(element))
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("auto"),ElementInfo.VISUALMEDIA,Arrays.asList("le","pe")));
 			allelementVerifiers.remove(element);
