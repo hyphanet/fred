@@ -1600,7 +1600,7 @@ class CSSTokenizerFilter {
 		}
 		else if("text-wrap".equalsIgnoreCase(element))
 		{
-			elementVerifiers.put(element,new CSSPropertyVerifier( Arrays.asList("normal","unrestricted","none","suppress"),ElementInfo.VISUALMEDIA));
+			elementVerifiers.put(element,new CSSPropertyVerifier( Arrays.asList("wrap","nowrap","balance"),ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
 		}
 		else if("top".equalsIgnoreCase(element))
