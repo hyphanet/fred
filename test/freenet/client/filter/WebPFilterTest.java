@@ -112,12 +112,7 @@ public class WebPFilterTest {
 	 */
 	@Test
 	public void testValidImageLossy() throws IOException {
-		Bucket input = resourceToBucket("./webp/test.webp");
-		Bucket output = filterImage(input, null);
-
-		//Filter should return the original
-		assertEquals("Input and output should be the same length", input.size(), output.size());
-		assertArrayEquals("Input and output are not identical", BucketTools.toByteArray(input), BucketTools.toByteArray(output));
+		testValidImage("test.webp");
 	}
 
 	/**
@@ -125,12 +120,15 @@ public class WebPFilterTest {
 	 */
 	@Test
 	public void testValidImageLossyAlpha() throws IOException {
-		Bucket input = resourceToBucket("./webp/1_webp_a.webp");
-		Bucket output = filterImage(input, null);
+		testValidImage("1_webp_a.webp");
+	}
 
-		//Filter should return the original
-		assertEquals("Input and output should be the same length", input.size(), output.size());
-		assertArrayEquals("Input and output are not identical", BucketTools.toByteArray(input), BucketTools.toByteArray(output));
+	/**
+	 * Tests valid image (lossy animation with alpha channel from https://commons.wikimedia.org/wiki/File:Simple_Animated_Clock.webp)
+	 */
+	@Test
+	public void testValidAnimationLossyAlpha() throws IOException {
+		testValidImage("Simple_Animated_Clock.webp");
 	}
 	
 	/**
@@ -163,5 +161,14 @@ public class WebPFilterTest {
 
 	private static void readFilter(WebPFilter objWebPFilter, InputStream inStream, OutputStream outStream) throws IOException {
 		objWebPFilter.readFilter(inStream, outStream, "", null, null, null);
+	}
+	
+	private void testValidImage(String resource) throws IOException {
+		Bucket input = resourceToBucket("./webp/" + resource);
+		Bucket output = filterImage(input, null);
+
+		//Filter should return the original
+		assertEquals("Input and output should be the same length", input.size(), output.size());
+		assertArrayEquals("Input and output are not identical", BucketTools.toByteArray(input), BucketTools.toByteArray(output));
 	}
 }
