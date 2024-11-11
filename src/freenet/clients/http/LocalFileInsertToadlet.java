@@ -54,7 +54,7 @@ public class LocalFileInsertToadlet extends LocalFileBrowserToadlet {
 		}
 
 		String element = set.get("compress");
-		if (element != null && Boolean.valueOf(element)) {
+		if (element != null && Boolean.parseBoolean(element)) {
 			fieldPairs.put("compress", element);
 		}
 

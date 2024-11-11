@@ -85,7 +85,7 @@ public class HTMLEncoder {
 			
 			int max = 0;
 			for (Character key : map.keySet()) {
-				int val = key.charValue();
+				int val = key;
 				keys[keyIndex++] = val;
 				if(val > max) max = val;
 			}
@@ -112,8 +112,8 @@ public class HTMLEncoder {
 			strings = new String[modulo];
 			for (Map.Entry<Character,String> entry : map.entrySet()) {
 				Character character = entry.getKey();
-				keyIndex = character.charValue()%modulo;
-				chars[keyIndex] = character.charValue();
+				keyIndex = character %modulo;
+				chars[keyIndex] = character;
 				strings[keyIndex] = entry.getValue();
 			}
 			if (chars[0] == 0 && strings[0] != null) chars[0] = 1;

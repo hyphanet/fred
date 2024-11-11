@@ -503,7 +503,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 								//i now points to the proper location (equal, insertion point, or end-of-list)
 								//maybe better called "reverseGroup"?
 								List<PeerNodeStatus> peerGroup;
-								if (i<max && locations.get(i).doubleValue()==location) {
+								if (i<max && locations.get(i) ==location) {
 									peerGroup=peerGroups.get(i);
 								} else {
 									peerGroup=new ArrayList<PeerNodeStatus>();
@@ -737,7 +737,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				PeerAdditionReturnCodes result=addNewNode(nodesToAdd[i].trim().concat("\nEnd"), privateComment, trust, visibility);
 				//Store the result
 				Integer prev = results.get(result);
-				if(prev == null) prev = Integer.valueOf(0);
+				if(prev == null) prev = 0;
 				results.put(result, prev+1);
 			}
 			
@@ -1154,7 +1154,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			String messageName = entry.getKey();
 			Long messageCount = entry.getValue();
 			messageNames.add(messageName);
-			messageCounts.put(messageName, new Long[] { messageCount, Long.valueOf(0) });
+			messageCounts.put(messageName, new Long[] { messageCount, 0L});
 		}
 		for (Map.Entry<String,Long> entry : peerNodeStatus.getLocalMessagesSent().entrySet() ) {
 			String messageName =  entry.getKey();
@@ -1164,7 +1164,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			}
 			Long[] existingCounts = messageCounts.get(messageName);
 			if (existingCounts == null) {
-				messageCounts.put(messageName, new Long[] { Long.valueOf(0), messageCount });
+				messageCounts.put(messageName, new Long[] {0L, messageCount });
 			} else {
 				existingCounts[1] = messageCount;
 			}
