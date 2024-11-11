@@ -1312,7 +1312,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 		 * not increase the expiry time.
 		 */
 		
-		// First take the original TIME_LEFT. This will start at 10 minutes if we get rejected in
+		// First take the original TIME_LEFT. This will start at 3 (FailureTable.REJECT_TIME) minutes if we get rejected in
 		// the same millisecond as the failure table block was added.
 		int timeLeft = msg.getInt(DMT.TIME_LEFT);
 		int origTimeLeft = timeLeft;
