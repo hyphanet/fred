@@ -3,9 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.keys;
 
-import org.bouncycastle.crypto.params.DSAPublicKeyParameters;
-import org.bouncycastle.crypto.signers.DSASigner;
-
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.util.Arrays;
@@ -16,6 +13,8 @@ import freenet.crypt.SHA256;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
+import org.bouncycastle.crypto.params.DSAPublicKeyParameters;
+import org.bouncycastle.crypto.signers.DSASigner;
 
 /**
  * SSKBlock. Contains a full fetched key. Can do a node-level verification. Can 
@@ -138,21 +137,16 @@ public class SSKBlock implements KeyBlock {
 			System.arraycopy(headers, x, bufS, 0, SIG_S_LENGTH);
 			x+=SIG_S_LENGTH;
 
-			MessageDigest md = null;
 			byte[] overallHash;
-			try {
-				md = SHA256.getMessageDigest();
-				md.update(data);
-				byte[] dataHash = md.digest();
-				// All headers up to and not including the signature
-				md.update(headers, 0, headersOffset + ENCRYPTED_HEADERS_LENGTH);
-				// Then the implicit data hash
-				md.update(dataHash);
-				// Makes the implicit overall hash
-				overallHash = md.digest();
-			} finally {
-				SHA256.returnMessageDigest(md);
-			}
+			MessageDigest md = SHA256.getMessageDigest();
+			md.update(data);
+			byte[] dataHash = md.digest();
+			// All headers up to and not including the signature
+			md.update(headers, 0, headersOffset + ENCRYPTED_HEADERS_LENGTH);
+			// Then the implicit data hash
+			md.update(dataHash);
+			// Makes the implicit overall hash
+			overallHash = md.digest();
 			
 			// Now verify it
 			BigInteger r = new BigInteger(1, bufR);

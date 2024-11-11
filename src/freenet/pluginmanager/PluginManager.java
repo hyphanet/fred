@@ -32,8 +32,6 @@ import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 
-import org.tanukisoftware.wrapper.WrapperManager;
-
 import freenet.client.HighLevelSimpleClient;
 import freenet.clients.fcp.ClientPut;
 import freenet.clients.http.PageMaker.THEME;
@@ -42,7 +40,7 @@ import freenet.clients.http.Toadlet;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.NodeNeedRestartException;
 import freenet.config.SubConfig;
-import freenet.crypt.SHA256;
+import freenet.crypt.HashType;
 import freenet.keys.FreenetURI;
 import freenet.l10n.BaseL10n.LANGUAGE;
 import freenet.l10n.NodeL10n;
@@ -68,6 +66,7 @@ import freenet.support.api.StringArrCallback;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 import freenet.support.io.NativeThread.PriorityLevel;
+import org.tanukisoftware.wrapper.WrapperManager;
 
 public class PluginManager {
 
@@ -1181,7 +1180,7 @@ public class PluginManager {
 		if (digest == null) {
 			return;
 		}
-		String testsum = getFileDigest(pluginFile, "SHA-1");
+		String testsum = getFileDigest(pluginFile);
 		if (!(digest.equalsIgnoreCase(testsum))) {
 			Logger.error(this, "Checksum verification failed, should be " + digest + " but was " + testsum);
 			throw new PluginNotFoundException("Checksum verification failed, should be " + digest + " but was " + testsum);
@@ -1332,21 +1331,14 @@ public class PluginManager {
 		return cachedFiles;
 	}
 
-	private String getFileDigest(File file, String digest) throws PluginNotFoundException {
+	private String getFileDigest(File file) throws PluginNotFoundException {
 		final int BUFFERSIZE = 4096;
-		MessageDigest hash = null;
+		MessageDigest hash = HashType.SHA1.get();
 		FileInputStream fis = null;
 		BufferedInputStream bis = null;
-		boolean wasFromDigest256Pool = false;
 		String result;
 
 		try {
-			if ("SHA-256".equals(digest)) {
-				hash = SHA256.getMessageDigest(); // grab digest from pool
-				wasFromDigest256Pool = true;
-			} else {
-				hash = MessageDigest.getInstance(digest);
-			}
 			// We compute the hash
 			// http://java.sun.com/developer/TechTips/1998/tt0915.html#tip2
 			fis = new FileInputStream(file);
@@ -1357,10 +1349,8 @@ public class PluginManager {
 				hash.update(buffer, 0, len);
 			}
 			result = HexUtil.bytesToHex(hash.digest());
-			if (wasFromDigest256Pool)
-				SHA256.returnMessageDigest(hash);
 		} catch(Exception e) {
-			throw new PluginNotFoundException("Error while computing hash '"+digest+"' of the downloaded plugin: " + e, e);
+			throw new PluginNotFoundException("Error while computing hash of the downloaded plugin: " + e, e);
 		} finally {
 			Closer.close(bis);
 			Closer.close(fis);

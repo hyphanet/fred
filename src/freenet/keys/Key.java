@@ -134,7 +134,6 @@ public abstract class Key implements WritableToDataOutputStream, Comparable<Key>
         md.update((byte)(TYPE >> 8));
         md.update((byte)TYPE);
         byte[] digest = md.digest();
-        SHA256.returnMessageDigest(md); md = null;
 			cachedNormalizedDouble = Util.keyDigestAsNormalizedDouble(digest);
 			return cachedNormalizedDouble;
     }

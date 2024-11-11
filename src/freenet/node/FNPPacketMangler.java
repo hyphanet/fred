@@ -3,6 +3,10 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.io.File;
 import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
@@ -47,10 +51,6 @@ import freenet.support.TimeUtil;
 import freenet.support.io.FileUtil;
 import freenet.support.io.InetAddressComparator;
 import freenet.support.io.NativeThread;
-
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * @author amphibian
@@ -1760,7 +1760,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		// Similar to JFK keygen, should be safe enough.
 		md.update("INITIAL0".getBytes(StandardCharsets.UTF_8));
 		byte[] hashed = md.digest();
-		SHA256.returnMessageDigest(md);
 		return Fields.bytesToInt(hashed, 0);
 	}
 
@@ -1771,7 +1770,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		// Similar to JFK keygen, should be safe enough.
 		md.update("INITIAL1".getBytes(StandardCharsets.UTF_8));
 		byte[] hashed = md.digest();
-		SHA256.returnMessageDigest(md);
 		return Fields.bytesToInt(hashed, 0);
 	}
 

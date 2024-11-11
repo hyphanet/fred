@@ -694,8 +694,6 @@ public class LocationManager implements ByteCounter {
                 announceLocChange(true, true, false);
                 node.writeNodeFile();
             }
-
-            SHA256.returnMessageDigest(md);
         } catch (Throwable t) {
             Logger.error(this, "Caught "+t, t);
         } finally {
