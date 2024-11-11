@@ -380,22 +380,35 @@ public class ContentFilterTest {
         }
     }
 
+
     @Test
-    public void charsetDetectionUsesUTF8DefaultForEmptyText() throws IOException {
-        String s = "";
-        byte[] buf = s.getBytes(StandardCharsets.UTF_8);
+    public void byteOrderMarkForUtf8IsDetectedCorrectly() throws IOException {
+        byte[] buf = { (byte) 0xef, (byte) 0xbb, (byte) 0xbf, 0x40 };
         ArrayBucket out = new ArrayBucket();
         FilterStatus fo = ContentFilter.filter(new ArrayBucket(buf).getInputStream(), out.getOutputStream(), "text/plain", null, null, null);
         assertTrue("utf-8".equals(fo.charset));
     }
 
     @Test
-    public void charsetDetectionUsesBomForText() throws IOException {
-        String s = new String(CSSReadFilter.utf16be);
-        byte[] buf = s.getBytes(StandardCharsets.UTF_8);
+    public void byteOrderMarkForUtf16BeIsDetectedCorrectly() throws IOException {
+        byte[] buf = { (byte) 0xfe, (byte) 0xff, 0x00, 0x40 };
         ArrayBucket out = new ArrayBucket();
         FilterStatus fo = ContentFilter.filter(new ArrayBucket(buf).getInputStream(), out.getOutputStream(), "text/plain", null, null, null);
         assertTrue("UTF-16BE".equals(fo.charset));
+    }
+
+    @Test
+    public void byteOrderMarkForUtf16LeIsDetectedCorrectly() throws IOException {
+        byte[] buf = { (byte) 0xff, (byte) 0xfe, 0x40, 0x00 };
+        ArrayBucket out = new ArrayBucket();
+        FilterStatus fo = ContentFilter.filter(
+            new ArrayBucket(buf).getInputStream(),
+            out.getOutputStream(),
+            "text/plain",
+            null,
+            null,
+            null);
+        assertTrue("UTF-16LE".equals(fo.charset));
     }
 
     public static String htmlFilter(String data) throws Exception {
