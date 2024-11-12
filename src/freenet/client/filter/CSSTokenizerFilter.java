@@ -297,11 +297,13 @@ class CSSTokenizerFilter {
 		allelementVerifiers.add("text-align");
 		allelementVerifiers.add("text-align-last");
 		allelementVerifiers.add("text-autospace");
+		allelementVerifiers.add("text-combine-upright");
 		allelementVerifiers.add("text-decoration");
 		allelementVerifiers.add("text-decoration-color");
 		allelementVerifiers.add("text-decoration-line");
 		allelementVerifiers.add("text-decoration-skip");
 		allelementVerifiers.add("text-decoration-style");
+		allelementVerifiers.add("text-decoration-thickness");
 		allelementVerifiers.add("text-emphasis");
 		allelementVerifiers.add("text-emphasis-color");
 		allelementVerifiers.add("text-emphasis-position");
@@ -1498,6 +1500,11 @@ class CSSTokenizerFilter {
 			allelementVerifiers.remove(element);
 
 		}
+		else if("text-combine-upright".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("none","all"),ElementInfo.VISUALMEDIA,null,null));
+			allelementVerifiers.remove(element);
+		}
 		else if("text-decoration".equalsIgnoreCase(element))
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("115a73a104a116")));
@@ -1530,13 +1537,16 @@ class CSSTokenizerFilter {
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("104")));
 			allelementVerifiers.remove(element);
-
+		}
+		else if("text-decoration-thickness".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element, new CSSPropertyVerifier(Arrays.asList("from-font", "auto"), ElementInfo.VISUALMEDIA, Arrays.asList("le", "pe")));
+			allelementVerifiers.remove(element);
 		}
 		else if("text-emphasis".equalsIgnoreCase(element))
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("73a107")));
 			allelementVerifiers.remove(element);
-
 		}
 		else if("text-emphasis-color".equalsIgnoreCase(element))
 		{
