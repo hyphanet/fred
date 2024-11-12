@@ -56,23 +56,24 @@ public class DNSRequester implements Runnable {
     private void realRun() {
         PeerNode[] nodes = node.getPeers().myPeers();
         long now = System.currentTimeMillis();
-        if((now - lastLogTime) > 1000) {
-        	if(logMINOR)
+        if((now - lastLogTime) > 100) {
+        	if(logMINOR) {
         		Logger.minor(this, "Processing DNS Requests (log rate-limited)");
+            }
             lastLogTime = now;
         }
-        for(PeerNode pn: nodes) {
-            //Logger.minor(this, "Node: "+pn);
-            if(!pn.isConnected()) {
-                // Not connected
-                // Try new DNS lookup
-            	//Logger.minor(this, "Doing lookup on "+pn+" of "+nodes.length);
-                pn.maybeUpdateHandshakeIPs(false);
-            }
+        // check a randomly chosen node to avoid sending bursts of DNS requests
+        PeerNode pn = nodes[node.getFastWeakRandom().nextInt(nodes.length)];
+        //Logger.minor(this, "Node: "+pn);
+        if(!pn.isConnected()) {
+            // Not connected
+            // Try new DNS lookup
+            //Logger.minor(this, "Doing lookup on "+pn+" of "+nodes.length);
+            pn.maybeUpdateHandshakeIPs(false);
         }
         try {
             synchronized(this) {
-                wait(10000);  // sleep 10s ...
+                wait(1000);  // sleep 1s ...
             }
         } catch (InterruptedException e) {
             // Ignore, just wake up. Just sleeping to not busy wait anyway
