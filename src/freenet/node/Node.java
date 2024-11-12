@@ -38,17 +38,18 @@ import java.util.MissingResourceException;
 import java.util.Random;
 import java.util.Set;
 
-import freenet.config.*;
-import freenet.node.diagnostics.*;
-import freenet.node.useralerts.*;
-import freenet.support.io.*;
-import org.tanukisoftware.wrapper.WrapperManager;
-
 import freenet.client.FetchContext;
 import freenet.clients.fcp.FCPMessage;
 import freenet.clients.fcp.FeedMessage;
 import freenet.clients.http.SecurityLevelsToadlet;
 import freenet.clients.http.SimpleToadletServer;
+import freenet.config.Dimension;
+import freenet.config.EnumerableOptionCallback;
+import freenet.config.FreenetFilePersistentConfig;
+import freenet.config.InvalidConfigValueException;
+import freenet.config.NodeNeedRestartException;
+import freenet.config.PersistentConfig;
+import freenet.config.SubConfig;
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.ECDH;
 import freenet.crypt.MasterSecret;
@@ -91,6 +92,8 @@ import freenet.node.NodeDispatcher.NodeDispatcherCallback;
 import freenet.node.OpennetManager.ConnectionType;
 import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
 import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
+import freenet.node.diagnostics.DefaultNodeDiagnostics;
+import freenet.node.diagnostics.NodeDiagnostics;
 import freenet.node.probe.Listener;
 import freenet.node.probe.Type;
 import freenet.node.stats.DataStoreInstanceType;
@@ -98,6 +101,13 @@ import freenet.node.stats.DataStoreStats;
 import freenet.node.stats.NotAvailNodeStoreStats;
 import freenet.node.stats.StoreCallbackStats;
 import freenet.node.updater.NodeUpdateManager;
+import freenet.node.useralerts.JVMVersionAlert;
+import freenet.node.useralerts.MeaningfulNodeNameUserAlert;
+import freenet.node.useralerts.NotEnoughNiceLevelsUserAlert;
+import freenet.node.useralerts.PeersOffersUserAlert;
+import freenet.node.useralerts.SimpleUserAlert;
+import freenet.node.useralerts.TimeSkewDetectedUserAlert;
+import freenet.node.useralerts.UserAlert;
 import freenet.pluginmanager.ForwardPort;
 import freenet.pluginmanager.PluginManager;
 import freenet.store.BlockMetadata;
@@ -136,10 +146,12 @@ import freenet.support.api.ShortCallback;
 import freenet.support.api.StringCallback;
 import freenet.support.io.ArrayBucketFactory;
 import freenet.support.io.Closer;
+import freenet.support.io.DatastoreUtil;
 import freenet.support.io.FileUtil;
 import freenet.support.io.NativeThread;
 import freenet.support.math.MersenneTwister;
 import freenet.support.transport.ip.HostnameSyntaxException;
+import org.tanukisoftware.wrapper.WrapperManager;
 
 /**
  * @author amphibian
@@ -3389,12 +3401,6 @@ public class Node implements TimeSkewDetectorCallback {
 			throw new NodeInitException(NodeInitException.EXIT_COULD_NOT_START_UPDATER, "Could not start Updater: "+e);
 		}
 
-		/* TODO: Make sure that this is called BEFORE any instances of HTTPFilter are created.
-		 * HTTPFilter uses checkForGCJCharConversionBug() which returns the value of the static
-		 * variable jvmHasGCJCharConversionBug - and this is initialized in the following function.
-		 * If this is not possible then create a separate function to check for the GCJ bug and
-		 * call this function earlier.
-		 */
 		checkForEvilJVMBugs();
 
 		if(!NativeThread.HAS_ENOUGH_NICE_LEVELS)
@@ -3439,9 +3445,6 @@ public class Node implements TimeSkewDetectorCallback {
 				}
 			}, transition - now);
 	}
-
-
-	private static boolean jvmHasGCJCharConversionBug=false;
 
 	private void checkForEvilJVMBugs() {
 		// Now check whether we are likely to get the EvilJVMBug.
@@ -3494,22 +3497,6 @@ public class Node implements TimeSkewDetectorCallback {
 
 		} else if (jvmVendor.startsWith("Apple ") || jvmVendor.startsWith("\"Apple ")) {
 			//Note that Sun/Oracle does not produce VMs for the Macintosh operating system, dont ask the user to find one...
-		} else if(!isOpenJDK) {
-			if(jvmVendor.startsWith("Free Software Foundation")) {
-				// GCJ/GIJ.
-				try {
-					javaVersion = System.getProperty("java.version").split(" ")[0].replaceAll("[.]","");
-					int jvmVersionInt = Integer.parseInt(javaVersion);
-
-					if(jvmVersionInt <= 422 && jvmVersionInt >= 100) // make sure that no bogus values cause true
-						jvmHasGCJCharConversionBug=true;
-				}
-
-				catch(Throwable t) {
-					Logger.error(this, "GCJ version check is broken!", t);
-				}
-				clientCore.getAlerts().register(new SimpleUserAlert(true, l10n("usingGCJTitle"), l10n("usingGCJ"), l10n("usingGCJTitle"), UserAlert.WARNING));
-			}
 		}
 
 		if(!isUsingWrapper() && !skipWrapperWarning) {
@@ -3526,8 +3513,9 @@ public class Node implements TimeSkewDetectorCallback {
 //		}
 	}
 
+	@Deprecated
 	public static boolean checkForGCJCharConversionBug() {
-		return jvmHasGCJCharConversionBug; // should be initialized on early startup
+		return false;
 	}
 
 	private String l10n(String key) {
