@@ -3447,57 +3447,13 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	private void checkForEvilJVMBugs() {
-		// Now check whether we are likely to get the EvilJVMBug.
-		// If we are running a Sun/Oracle or Blackdown JVM, on Linux, and LD_ASSUME_KERNEL is not set, then we are.
-
 		String jvmVendor = System.getProperty("java.vm.vendor");
-		String jvmSpecVendor = System.getProperty("java.specification.vendor","");
 		String javaVersion = System.getProperty("java.version");
 		String jvmName = System.getProperty("java.vm.name");
 		String osName = System.getProperty("os.name");
 		String osVersion = System.getProperty("os.version");
 
-		boolean isOpenJDK = false;
-		//boolean isOracle = false;
-
 		if(logMINOR) Logger.minor(this, "JVM vendor: "+jvmVendor+", JVM name: "+jvmName+", JVM version: "+javaVersion+", OS name: "+osName+", OS version: "+osVersion);
-
-		if(jvmName.startsWith("OpenJDK ")) {
-			isOpenJDK = true;
-		}
-		
-		//Add some checks for "Oracle" to futureproof against them renaming from "Sun".
-		//Should have no effect because if a user has downloaded a new enough file for Oracle to have changed the name these bugs shouldn't apply.
-		//Still, one never knows and this code might be extended to cover future bugs.
-		if((!isOpenJDK) && (jvmVendor.startsWith("Sun ") || jvmVendor.startsWith("Oracle ")) || (jvmVendor.startsWith("The FreeBSD Foundation") && (jvmSpecVendor.startsWith("Sun ") || jvmSpecVendor.startsWith("Oracle "))) || (jvmVendor.startsWith("Apple "))) {
-			//isOracle = true;
-			// Sun/Oracle bugs
-
-			// Spurious OOMs
-			// http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4855795
-			// http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=2138757
-			// http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=2138759
-			// Fixed in 1.5.0_10 and 1.4.2_13
-
-			boolean is150 = javaVersion.startsWith("1.5.0_");
-			boolean is160 = javaVersion.startsWith("1.6.0_");
-
-			if(is150 || is160) {
-				String[] split = javaVersion.split("_");
-				String secondPart = split[1];
-				if(secondPart.contains("-")) {
-					split = secondPart.split("-");
-					secondPart = split[0];
-				}
-				int subver = Integer.parseInt(secondPart);
-
-				Logger.minor(this, "JVM version: "+javaVersion+" subver: "+subver+" from "+secondPart);
-
-			}
-
-		} else if (jvmVendor.startsWith("Apple ") || jvmVendor.startsWith("\"Apple ")) {
-			//Note that Sun/Oracle does not produce VMs for the Macintosh operating system, dont ask the user to find one...
-		}
 
 		if(!isUsingWrapper() && !skipWrapperWarning) {
 			clientCore.getAlerts().register(new SimpleUserAlert(true, l10n("notUsingWrapperTitle"), l10n("notUsingWrapper"), l10n("notUsingWrapperShort"), UserAlert.WARNING));
