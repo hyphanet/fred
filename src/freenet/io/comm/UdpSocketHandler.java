@@ -1,11 +1,5 @@
 package freenet.io.comm;
 
-import com.sun.jna.LastErrorException;
-import com.sun.jna.Native;
-import com.sun.jna.Platform;
-import com.sun.jna.Pointer;
-import com.sun.jna.ptr.IntByReference;
-
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -20,6 +14,11 @@ import java.net.SocketTimeoutException;
 import java.nio.channels.UnsupportedAddressTypeException;
 import java.util.Random;
 
+import com.sun.jna.LastErrorException;
+import com.sun.jna.Native;
+import com.sun.jna.Platform;
+import com.sun.jna.Pointer;
+import com.sun.jna.ptr.IntByReference;
 import freenet.io.AddressTracker;
 import freenet.io.comm.Peer.LocalAddressException;
 import freenet.node.Node;
@@ -40,7 +39,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 	private Random dropRandom;
 	/** If &gt;0, 1 in _dropProbability chance of dropping a packet; for debugging */
 	private int _dropProbability;
-	// Icky layer violation, but we need to know the Node to work around the EvilJVMBug.
+	// Icky layer violation
 	private final Node node;
         private static volatile boolean logMINOR;
 	private static volatile boolean logDEBUG;

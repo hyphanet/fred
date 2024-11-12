@@ -3401,7 +3401,7 @@ public class Node implements TimeSkewDetectorCallback {
 			throw new NodeInitException(NodeInitException.EXIT_COULD_NOT_START_UPDATER, "Could not start Updater: "+e);
 		}
 
-		checkForEvilJVMBugs();
+		warnIfNotUsingWrapper();
 
 		if(!NativeThread.HAS_ENOUGH_NICE_LEVELS)
 			clientCore.getAlerts().register(new NotEnoughNiceLevelsUserAlert());
@@ -3446,15 +3446,7 @@ public class Node implements TimeSkewDetectorCallback {
 			}, transition - now);
 	}
 
-	private void checkForEvilJVMBugs() {
-		String jvmVendor = System.getProperty("java.vm.vendor");
-		String javaVersion = System.getProperty("java.version");
-		String jvmName = System.getProperty("java.vm.name");
-		String osName = System.getProperty("os.name");
-		String osVersion = System.getProperty("os.version");
-
-		if(logMINOR) Logger.minor(this, "JVM vendor: "+jvmVendor+", JVM name: "+jvmName+", JVM version: "+javaVersion+", OS name: "+osName+", OS version: "+osVersion);
-
+	private void warnIfNotUsingWrapper() {
 		if(!isUsingWrapper() && !skipWrapperWarning) {
 			clientCore.getAlerts().register(new SimpleUserAlert(true, l10n("notUsingWrapperTitle"), l10n("notUsingWrapper"), l10n("notUsingWrapperShort"), UserAlert.WARNING));
 		}
