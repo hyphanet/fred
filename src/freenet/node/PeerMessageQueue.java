@@ -894,7 +894,7 @@ public class PeerMessageQueue {
 			tryRealtimeFirst = false;
 		}
 		
-		// FIXME token bucket?
+		
 		if(tryRealtimeFirst) {
 			// Try realtime first
 			if(logMINOR) Logger.minor(this, "Trying realtime first");
