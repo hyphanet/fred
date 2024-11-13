@@ -14,7 +14,6 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.MutableBoolean;
-import freenet.node.Node;
 
 /**
  * Queue of messages to send to a node. Ordered first by priority then by time.
