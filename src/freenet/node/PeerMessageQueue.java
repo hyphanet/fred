@@ -712,7 +712,7 @@ public class PeerMessageQueue {
 
 	}
 
-	private Random fastWeakRandom;
+	final private Random fastWeakRandom;
 	PeerMessageQueue(Random fastWeakRandom) {
 		this.fastWeakRandom = fastWeakRandom;
 		queuesByPriority = new PrioQueue[DMT.NUM_PRIORITIES];
