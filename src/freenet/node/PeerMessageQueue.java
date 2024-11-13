@@ -857,7 +857,6 @@ public class PeerMessageQueue {
 		return false;
 	}
 
-	// TODO only try realtime first 90% of the time to ensure that realtime cannot starve bulk.
 	/** Grab a message to send. WARNING: PeerMessageQueue not only removes the message,
 	 * it assumes it has been sent for purposes of fairness between UID's. You should try
 	 * not to call this function if you are not going to be able to send the message: 
