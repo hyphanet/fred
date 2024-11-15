@@ -206,6 +206,7 @@ class CSSTokenizerFilter {
 		allelementVerifiers.add("cursor");
 		allelementVerifiers.add("direction");
 		allelementVerifiers.add("display");
+		allelementVerifiers.add("dominant-baseline");
 		allelementVerifiers.add("elevation");
 		allelementVerifiers.add("empty-cells");
 		allelementVerifiers.add("flex");
@@ -1003,6 +1004,11 @@ class CSSTokenizerFilter {
 			elementVerifiers.put(element,new CSSPropertyVerifier(null, null, Arrays.asList("131a132", "140<0,1>[1,3]", "137", "138", "139"), null, true));
 			allelementVerifiers.remove(element);
 		}
+		else if("dominant-baseline".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("auto", "text-bottom", "alphabetic", "ideographic", "middle", "central", "mathematical", "hanging", "text-top"),ElementInfo.VISUALMEDIA));
+			allelementVerifiers.remove(element);
+		}
 		else if("elevation".equalsIgnoreCase(element))
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("below","level","above","higher","lower"),ElementInfo.AURALMEDIA,Arrays.asList("an")));
@@ -1157,7 +1163,7 @@ class CSSTokenizerFilter {
 		}
 		else if("line-break".equalsIgnoreCase(element))
 		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("auto","newspaper","normal","strict","keep-all"),ElementInfo.VISUALMEDIA));
+			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("auto","anywhere","normal","strict","loose"),ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
 		}
 		else if("list-style-image".equalsIgnoreCase(element))
