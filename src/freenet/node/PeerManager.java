@@ -335,8 +335,8 @@ public class PeerManager {
 	 */
 	boolean addPeer(PeerNode pn, boolean ignoreOpennet, boolean reactivate) {
 		assert (pn != null);
-		if(reactivate)
-			pn.forceCancelDisconnecting();
+		// Call onAdded() first for the case where it is present but disconnecting.
+        pn.onAdded();
 		synchronized(this) {
 			for(PeerNode myPeer: myPeers) {
 				if(myPeer.equals(pn)) {
@@ -349,9 +349,6 @@ public class PeerManager {
 			myPeers[myPeers.length - 1] = pn;
 			Logger.normal(this, "Added " + pn);
 		}
-		if(pn.recordStatus())
-			addPeerNodeStatus(pn.getPeerNodeStatus(), pn, false);
-		pn.setPeerNodeStatus(System.currentTimeMillis());
 		if((!ignoreOpennet) && pn instanceof OpennetPeerNode) {
 			OpennetManager opennet = node.getOpennet();
 			if(opennet != null)
