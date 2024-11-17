@@ -9,9 +9,9 @@ import freenet.io.comm.ByteCounter;
 import freenet.io.comm.Message;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.Peer;
+import freenet.io.comm.Peer.LocalAddressException;
 import freenet.io.comm.PeerContext;
 import freenet.io.comm.SocketHandler;
-import freenet.io.comm.Peer.LocalAddressException;
 import freenet.io.xfer.PacketThrottle;
 
 /** Tests can override this to record specific events e.g. rekey */
@@ -220,22 +220,6 @@ public class NullBasePeerNode implements BasePeerNode {
 
 	@Override
 	public void handleMessage(Message msg) {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public MessageItem makeLoadStats(boolean realtime, boolean highPriority, boolean lossy) {
-		// Don't send load stats.
-		return null;
-	}
-
-	@Override
-	public boolean grabSendLoadStatsASAP(boolean realtime) {
-		return false;
-	}
-
-	@Override
-	public void setSendLoadStatsASAP(boolean realtime) {
 		throw new UnsupportedOperationException();
 	}
 

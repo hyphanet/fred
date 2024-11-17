@@ -1,5 +1,11 @@
 package freenet.node;
 
+import static java.util.concurrent.TimeUnit.DAYS;
+import static java.util.concurrent.TimeUnit.HOURS;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -83,12 +89,6 @@ import freenet.support.math.SimpleRunningAverage;
 import freenet.support.math.TimeDecayingRunningAverage;
 import freenet.support.transport.ip.HostnameSyntaxException;
 import freenet.support.transport.ip.IPUtil;
-
-import static java.util.concurrent.TimeUnit.DAYS;
-import static java.util.concurrent.TimeUnit.HOURS;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * @author amphibian
@@ -1338,8 +1338,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			om.onDisconnect(this);
 		outputLoadTrackerRealTime.failSlotWaiters(true);
 		outputLoadTrackerBulk.failSlotWaiters(true);
-		loadSenderRealTime.onDisconnect();
-		loadSenderBulk.onDisconnect();
 		return ret;
 	}
 
@@ -2252,8 +2250,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	* Send any high level messages that need to be sent on connect.
 	*/
 	protected void sendInitialMessages() {
-		loadSender(true).setSendASAP();
-		loadSender(false).setSendASAP();
 		Message locMsg = DMT.createFNPLocChangeNotificationNew(node.getLocationManager().getLocation(), node.getPeers().getPeerLocationDoubles(true));
 		Message ipMsg = DMT.createFNPDetectedIPAddress(detectedPeer);
 		Message timeMsg = DMT.createFNPTime(System.currentTimeMillis());
@@ -4332,126 +4328,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	
 	private final Object routedToLock = new Object();
 	
-	final LoadSender loadSenderRealTime = new LoadSender(true);
-	final LoadSender loadSenderBulk = new LoadSender(false);
-	
-	class LoadSender {
-	
-		LoadSender(boolean realTimeFlag) {
-			this.realTimeFlag = realTimeFlag;
-		}
-		
-		public void onDisconnect() {
-			this.lastSentAllocationInput = 0;
-			this.lastSentAllocationOutput = 0;
-			this.timeLastSentAllocationNotice = -1;
-			this.lastFullStats = null;
-		}
-
-		private int lastSentAllocationInput;
-		private int lastSentAllocationOutput;
-		private int lastSentMaxOutputTransfers = Integer.MAX_VALUE;
-		private int lastSentMaxOutputTransfersPeerLimit = Integer.MAX_VALUE;
-		private long timeLastSentAllocationNotice;
-		private long countAllocationNotices;
-		private PeerLoadStats lastFullStats;
-		private final boolean realTimeFlag;
-		private boolean sendASAP;
-		
-		public void onSetPeerAllocation(boolean input, int thisAllocation, int transfersPerInsert) {
-			
-			boolean mustSend = false;
-			// FIXME review constants, how often are allocations actually sent?
-			long now = System.currentTimeMillis();
-			synchronized(this) {
-				int last = input ? lastSentAllocationInput : lastSentAllocationOutput;
-				if(now - timeLastSentAllocationNotice > 5000) {
-					if(logMINOR) Logger.minor(this, "Last sent allocation "+TimeUtil.formatTime(now - timeLastSentAllocationNotice));
-					mustSend = true;
-				} else {
-					if(thisAllocation > last * 1.05) {
-						if(logMINOR) Logger.minor(this, "Last allocation was "+last+" this is "+thisAllocation);
-						mustSend = true;
-					} else if(thisAllocation < last * 0.9) { 
-						if(logMINOR) Logger.minor(this, "Last allocation was "+last+" this is "+thisAllocation);
-						mustSend = true;
-					}
-				}
-				if(!mustSend) return;
-				sendASAP = true;
-			}
-			if(!mustSend) return;
-		}
-		
-		public void onSetMaxOutputTransfers(int maxOutputTransfers) {
-			synchronized(this) {
-				if(maxOutputTransfers == lastSentMaxOutputTransfers) return;
-				if(lastSentMaxOutputTransfers == Integer.MAX_VALUE || lastSentMaxOutputTransfers == 0) {
-					sendASAP = true;
-				} else if(maxOutputTransfers > lastSentMaxOutputTransfers * 1.05 || maxOutputTransfers < lastSentMaxOutputTransfers * 0.9) {
-					sendASAP = true;
-				}
-			}
-		}
-		
-		public void onSetMaxOutputTransfersPeerLimit(int maxOutputTransfersPeerLimit) {
-			synchronized(this) {
-				if(maxOutputTransfersPeerLimit == lastSentMaxOutputTransfersPeerLimit) return;
-				if(lastSentMaxOutputTransfersPeerLimit == Integer.MAX_VALUE || lastSentMaxOutputTransfersPeerLimit == 0) {
-					sendASAP = true;
-				} else if(maxOutputTransfersPeerLimit > lastSentMaxOutputTransfersPeerLimit * 1.05 || maxOutputTransfersPeerLimit < lastSentMaxOutputTransfersPeerLimit * 0.9) {
-					sendASAP = true;
-				}
-			}
-		}
-		
-		Message makeLoadStats(long now, int transfersPerInsert, boolean noRemember) {
-			PeerLoadStats stats = node.getNodeStats().createPeerLoadStats(PeerNode.this, transfersPerInsert, realTimeFlag);
-			synchronized(this) {
-				lastSentAllocationInput = (int) stats.inputBandwidthPeerLimit;
-				lastSentAllocationOutput = (int) stats.outputBandwidthPeerLimit;
-				lastSentMaxOutputTransfers = stats.maxTransfersOut;
-				if(!noRemember) {
-					if(lastFullStats != null && lastFullStats.equals(stats)) return null;
-					lastFullStats = stats;
-				}
-				timeLastSentAllocationNotice = now;
-				countAllocationNotices++;
-				if(logMINOR) Logger.minor(this, "Sending allocation notice to "+this+" allocation is "+lastSentAllocationInput+" input "+lastSentAllocationOutput+" output.");
-			}
-			Message msg = DMT.createFNPPeerLoadStatus(stats);
-			return msg;
-		}
-
-		public synchronized boolean grabSendASAP() {
-			boolean send = sendASAP;
-			sendASAP = false;
-			return send;
-		}
-
-		public synchronized void setSendASAP() {
-			sendASAP = true;
-		}
-
-	}
-	
 	void removeUIDsFromMessageQueues(Long[] list) {
 		this.messageQueue.removeUIDsFromMessageQueues(list);
 	}
 
-	public void onSetMaxOutputTransfers(boolean realTime, int maxOutputTransfers) {
-		(realTime ? loadSenderRealTime : loadSenderBulk).onSetMaxOutputTransfers(maxOutputTransfers);
-	}
-	
-	public void onSetMaxOutputTransfersPeerLimit(boolean realTime, int maxOutputTransfers) {
-		(realTime ? loadSenderRealTime : loadSenderBulk).onSetMaxOutputTransfersPeerLimit(maxOutputTransfers);
-	}
-	
-	public void onSetPeerAllocation(boolean input, int thisAllocation, int transfersPerInsert, int maxOutputTransfers, boolean realTime) {
-		(realTime ? loadSenderRealTime : loadSenderBulk).onSetPeerAllocation(input, thisAllocation, transfersPerInsert);
-	}
-
-	public class IncomingLoadSummaryStats {
+	public static class IncomingLoadSummaryStats {
 		public IncomingLoadSummaryStats(int totalRequests,
 				double outputBandwidthPeerLimit,
 				double inputBandwidthPeerLimit,
@@ -4992,7 +4873,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			RunningRequestsSnapshot runningRequests = node.getNodeStats().getRunningRequestsTo(PeerNode.this, loadStats.averageTransfersOutPerInsert, realTime);
 			RunningRequestsSnapshot otherRunningRequests = loadStats.getOtherRunningRequests();
 			boolean ignoreLocalVsRemoteBandwidthLiability = node.getNodeStats().ignoreLocalVsRemoteBandwidthLiability();
-			return new IncomingLoadSummaryStats(runningRequests.totalRequests(), 
+			return new IncomingLoadSummaryStats(runningRequests.totalRequests(),
 					loadStats.outputBandwidthPeerLimit, loadStats.inputBandwidthPeerLimit,
 					loadStats.outputBandwidthUpperLimit, loadStats.inputBandwidthUpperLimit,
 					runningRequests.calculate(ignoreLocalVsRemoteBandwidthLiability, false),
@@ -5292,10 +5173,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		return outputLoadTracker(realTime).getIncomingLoadStats();
 	}
 
-	public LoadSender loadSender(boolean realtime) {
-		return realtime ? loadSenderRealTime : loadSenderBulk;
-	}
-	
 	/** A fatal timeout occurred, and we don't know whether the peer is still running the
 	 * request we passed in for us. If it is, we cannot reuse that slot. So we need to
 	 * query it periodically until it is no longer running it. If we cannot send the query
@@ -5455,25 +5332,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			}
 		}
 		return false;
-	}
-	
-	@Override
-	public MessageItem makeLoadStats(boolean realtime, boolean boostPriority, boolean noRemember) {
-	    // FIXME re-enable when try NLM again.
-	    return null;
-//		Message msg = loadSender(realtime).makeLoadStats(System.currentTimeMillis(), node.nodeStats.outwardTransfersPerInsert(), noRemember);
-//		if(msg == null) return null;
-//		return new MessageItem(msg, null, node.nodeStats.allocationNoticesCounter, boostPriority ? DMT.PRIORITY_NOW : (short)-1);
-	}
-
-	@Override
-	public boolean grabSendLoadStatsASAP(boolean realtime) {
-		return loadSender(realtime).grabSendASAP();
-	}
-
-	@Override
-	public void setSendLoadStatsASAP(boolean realtime) {
-		loadSender(realtime).setSendASAP();
 	}
 	
 	@Override

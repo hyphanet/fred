@@ -26,8 +26,6 @@ public class MessageItem {
 	private final short priority;
 	private long cachedID;
 	private boolean hasCachedID;
-	final boolean sendLoadRT;
-	final boolean sendLoadBulk;
 	private long deadline;
 
 	public MessageItem(Message msg2, AsyncMessageCallback[] cb2, ByteCounter ctr, short overridePriority) {
@@ -40,8 +38,6 @@ public class MessageItem {
 			priority = overridePriority;
 		else
 			priority = msg2.getPriority();
-		this.sendLoadRT = msg2.needsLoadRT();
-		this.sendLoadBulk = msg2.needsLoadBulk();
 		buf = msg.encodeToPacket();
 		if(buf.length > NewPacketFormat.MAX_MESSAGE_SIZE) {
 			// This is bad because fairness between UID's happens at the level of message queueing,
@@ -56,7 +52,7 @@ public class MessageItem {
 		this(msg2, cb2, ctr, (short)-1);
 	}
 
-	public MessageItem(byte[] data, AsyncMessageCallback[] cb2, boolean formatted, ByteCounter ctr, short priority, boolean sendLoadRT, boolean sendLoadBulk) {
+	public MessageItem(byte[] data, AsyncMessageCallback[] cb2, boolean formatted, ByteCounter ctr, short priority) {
 		this.cb = cb2;
 		this.msg = null;
 		this.buf = data;
@@ -66,8 +62,6 @@ public class MessageItem {
 		this.ctrCallback = ctr;
 		this.submitted = System.currentTimeMillis();
 		this.priority = priority;
-		this.sendLoadRT = sendLoadRT;
-		this.sendLoadBulk = sendLoadBulk;
 	}
 
 	/**
