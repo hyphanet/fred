@@ -334,7 +334,7 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 					return firstFile.getName().compareToIgnoreCase(secondFile.getName());
 				}
 			});
-			HTMLNode listingTable = listingDiv.addChild("table");
+			HTMLNode listingTable = listingDiv.addChild("table", "class", "directory-listing");
 			HTMLNode headerRow = listingTable.addChild("tr");
 			headerRow.addChild("th");
 			headerRow.addChild("th", l10n("fileHeader"));
