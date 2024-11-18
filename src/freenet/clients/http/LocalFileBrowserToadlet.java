@@ -7,6 +7,7 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.l10n.NodeL10n;
 import freenet.node.NodeClientCore;
 import freenet.support.HTMLNode;
+import freenet.support.SizeUtil;
 import freenet.support.api.HTTPRequest;
 
 import java.io.File;
@@ -406,13 +407,13 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 						
 						fileRow.addChild("td", currentFile.getName());
 						fileRow.addChild("td", "class", "right-align",
-						        String.valueOf(currentFile.length()));
+						        SizeUtil.formatSize(currentFile.length(), true));
 					} else {
 						fileRow.addChild("td");
 						fileRow.addChild("td", "class", "unreadable-file",
 						        currentFile.getName());
 						fileRow.addChild("td", "class", "right-align",
-						        String.valueOf(currentFile.length()));
+						        SizeUtil.formatSize(currentFile.length(), true));
 					}
 				}
 			}
