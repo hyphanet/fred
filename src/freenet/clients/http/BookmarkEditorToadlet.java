@@ -379,7 +379,10 @@ public class BookmarkEditorToadlet extends Toadlet {
 				if(req.isPartSet("name"))
 					name = req.getPartAsStringFailsafe("name", MAX_NAME_LENGTH);
 
-				if("edit".equals(action)) {
+				Bookmark targetBookmark = bookmarkManager.getBookmarkByPath(bookmarkManager.parentPath(bookmarkPath) + name);
+				if (!isValidName(name) || (targetBookmark != null && targetBookmark != bookmark)) {
+					addNameError(pageMaker, content);
+				} else if ("edit".equals(action)) {
 					bookmarkManager.renameBookmark(bookmarkPath, name);
 					boolean hasAnActivelink = req.isPartSet("hasAnActivelink");
 					if(bookmark instanceof BookmarkItem) {
@@ -394,7 +397,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 
 				} else if("addItem".equals(action) || "addCat".equals(action)) {
 
-					Bookmark newBookmark = null;
+					Bookmark newBookmark;
 					if("addItem".equals(action)) {
 						FreenetURI key = new FreenetURI(req.getPartAsStringFailsafe("key", MAX_KEY_LENGTH));
 						/* TODO:
@@ -404,29 +407,21 @@ public class BookmarkEditorToadlet extends Toadlet {
 						 * - values as "on", "true", "yes" should be accepted.
 						 */
 						boolean hasAnActivelink = req.isPartSet("hasAnActivelink");
-						if (!isValidName(name)) {
-              addNameError(pageMaker, content);
-						} else
-							newBookmark = new BookmarkItem(key, name,
-							        req.getPartAsStringFailsafe("descB", MAX_KEY_LENGTH),
-							        req.getPartAsStringFailsafe("explain", MAX_EXPLANATION_LENGTH),
-							        hasAnActivelink, bookmarkManager, ctx.getAlertManager());
-					} else
-						if (!isValidName(name)) {
-              addNameError(pageMaker, content);
-						} else
-							newBookmark = new BookmarkCategory(name);
-					
-					if (newBookmark != null) {
-
-						bookmarkManager.addBookmark(bookmarkPath, newBookmark);
-						bookmarkManager.storeBookmarks();
-						if(newBookmark instanceof BookmarkItem)
-							sendBookmarkFeeds(req, (BookmarkItem) newBookmark, req.getPartAsStringFailsafe("publicDescB", MAX_KEY_LENGTH));
-
-						pageMaker.getInfobox("infobox-success", NodeL10n.getBase().getString("BookmarkEditorToadlet.addedNewBookmarkTitle"), content, "bookmark-add-new", false).
-							addChild("p", NodeL10n.getBase().getString("BookmarkEditorToadlet.addedNewBookmark"));
+						newBookmark = new BookmarkItem(key, name,
+								req.getPartAsStringFailsafe("descB", MAX_KEY_LENGTH),
+								req.getPartAsStringFailsafe("explain", MAX_EXPLANATION_LENGTH),
+								hasAnActivelink, bookmarkManager, ctx.getAlertManager());
+					} else {
+						newBookmark = new BookmarkCategory(name);
 					}
+
+					bookmarkManager.addBookmark(bookmarkPath, newBookmark);
+					bookmarkManager.storeBookmarks();
+					if(newBookmark instanceof BookmarkItem)
+						sendBookmarkFeeds(req, (BookmarkItem) newBookmark, req.getPartAsStringFailsafe("publicDescB", MAX_KEY_LENGTH));
+
+					pageMaker.getInfobox("infobox-success", NodeL10n.getBase().getString("BookmarkEditorToadlet.addedNewBookmarkTitle"), content, "bookmark-add-new", false).
+						addChild("p", NodeL10n.getBase().getString("BookmarkEditorToadlet.addedNewBookmark"));
 				}
 			}
 			else if("share".equals(action))
