@@ -998,7 +998,6 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 
 		// get uri host and headers
 		MultiValueTable<String, String> headers = ctx.getHeaders();
-		// TODO: parse the Forwarded header, too. Skipped here to reduce the scope.
 		String uriScheme = ctx.getUri().getScheme();
 		String uriHost = ctx.getUri().getHost();
 
