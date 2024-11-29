@@ -670,6 +670,22 @@ table tbody tr.priority6:nth-child(2n) {
   background-color: #8eb1e6;
 }
 
+/*** File browser ***/
+table.directory-listing {
+  width: 100%;
+}
+
+table.directory-listing td:nth-of-type(2) {
+  width: 100%;
+}
+
+table.directory-listing th, table.directory-listing td {
+  padding: .5ex;
+}
+
+table.directory-listing input {
+  margin: 0;
+}
 
 /*** Bookmarks ***/
 #bookmarks,
