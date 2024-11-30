@@ -143,11 +143,12 @@ public class ClientSSK extends ClientKey {
 		extra[4] = (byte) KeyBlock.HASH_SHA256;
 		return extra;
 	}
-	
-	static final byte[] STANDARD_EXTRA = getExtraBytes(Key.ALGO_AES_PCFB_256_SHA256);
-	
+
+	/**
+	 * @return the provided argument
+	 * @deprecated mutable data cannot safely be interned
+	 */
 	public static byte[] internExtra(byte[] buf) {
-		if(Arrays.equals(buf, STANDARD_EXTRA)) return STANDARD_EXTRA;
 		return buf;
 	}
 

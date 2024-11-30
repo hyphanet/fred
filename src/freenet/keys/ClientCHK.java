@@ -163,9 +163,7 @@ public class ClientCHK extends ClientKey implements Serializable {
 		dos.write(routingKey);
 		dos.write(cryptoKey);
 	}
-    
-	static byte[] lastExtra;
-	
+
 	public byte[] getExtra() {
 		return getExtra(cryptoAlgorithm, compressionAlgorithm, controlDocument);
 	}
@@ -177,32 +175,19 @@ public class ClientCHK extends ClientKey implements Serializable {
 		extra[2] = (byte) (controlDocument ? 2 : 0);
 		extra[3] = (byte) (compressionAlgorithm >> 8);
 		extra[4] = (byte) compressionAlgorithm;
-		byte[] last = lastExtra;
-		// No synchronization required IMHO
-		if(Arrays.equals(last, extra)) return last;
-		assert(extra.length == EXTRA_LENGTH);
-		lastExtra = extra;
 		return extra;
 	}
 	
 	public static byte getCryptoAlgorithmFromExtra(byte[] extra) {
 		return extra[1];
 	}
-	
-	static HashSet<ByteArrayWrapper> standardExtras = new HashSet<ByteArrayWrapper>();
-	static {
-		for(byte cryptoAlgorithm = Key.ALGO_AES_PCFB_256_SHA256; cryptoAlgorithm <= Key.ALGO_AES_CTR_256_SHA256; cryptoAlgorithm++) {
-			for(short compressionAlgorithm = -1; compressionAlgorithm <= (short)(COMPRESSOR_TYPE.countCompressors()); compressionAlgorithm++) {
-				standardExtras.add(new ByteArrayWrapper(getExtra(cryptoAlgorithm, compressionAlgorithm, true)));
-				standardExtras.add(new ByteArrayWrapper(getExtra(cryptoAlgorithm, compressionAlgorithm, false)));
-			}
-		}
-	}
-	
+
+	/**
+	 * @return the provided argument
+	 * @deprecated mutable data cannot safely be interned
+	 */
+	@Deprecated
 	public static byte[] internExtra(byte[] extra) {
-		for(ByteArrayWrapper baw : standardExtras) {
-			if(Arrays.equals(baw.get(), extra)) return baw.get();
-		}
 		return extra;
 	}
 	

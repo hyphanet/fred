@@ -14,7 +14,6 @@ import java.security.interfaces.ECPublicKey;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.GregorianCalendar;
 import java.util.HashSet;
@@ -615,7 +614,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		swapRequestsInterval = new SimpleRunningAverage(50, Node.MIN_INTERVAL_BETWEEN_INCOMING_SWAP_REQUESTS);
 		probeRequestsInterval = new SimpleRunningAverage(50, Node.MIN_INTERVAL_BETWEEN_INCOMING_PROBE_REQUESTS);
 
-		messageQueue = new PeerMessageQueue();
+		messageQueue = new PeerMessageQueue(node.getFastWeakRandom());
 
 		decrementHTLAtMaximum = node.getRandom().nextFloat() < Node.DECREMENT_AT_MAX_PROB;
 		decrementHTLAtMinimum = node.getRandom().nextFloat() < Node.DECREMENT_AT_MIN_PROB;
@@ -3397,7 +3396,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			return "peer_unknown_status";
 	}
 
-	protected synchronized int getPeerNodeStatus(long now, long routingBackedOffUntilRT, long localRoutingBackedOffUntilBulk, boolean overPingTime, boolean noLoadStats) {
+	protected synchronized int getPeerNodeStatus(long now, long routingBackedOffUntilRT, long routingBackedOffUntilBulk, boolean overPingTime, boolean noLoadStats) {
 		if(disconnecting)
 			return PeerManager.PEER_NODE_STATUS_DISCONNECTING;
 		boolean isConnected = isConnected();
@@ -3477,7 +3476,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 
 	public int setPeerNodeStatus(long now, boolean noLog) {
 		long localRoutingBackedOffUntilRT = getRoutingBackedOffUntil(true);
-		long localRoutingBackedOffUntilBulk = getRoutingBackedOffUntil(true);
+		long localRoutingBackedOffUntilBulk = getRoutingBackedOffUntil(false);
 		int oldPeerNodeStatus;
 		long threshold = maxPeerPingTime();
 		boolean noLoadStats = noLoadStats();
