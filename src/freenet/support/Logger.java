@@ -619,17 +619,6 @@ public abstract class Logger {
 
 		registerLogThresholdCallback(ltc);
 	}
-	
-	/**
-	 * Report a fatal error and exit.
-	 * @param cause the object or class involved
-	 * @param retcode the return code
-	 * @param message the reason why
-	 */
-	public static void fatal(Object cause, int retcode, String message) {
-		error(cause, message);
-		System.exit(retcode);
-	}
 
 	/** Add a logger hook to the global logger hook chain. Messages which
 	 * are not filtered out by the global logger hook chain's thresholds
