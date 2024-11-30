@@ -101,7 +101,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 				Field fdVal = channel.getClass().getDeclaredField("fdVal");
 				return theUnsafe.getInt(channel, theUnsafe.objectFieldOffset(fdVal));
 			} catch (Exception e) {
-			   Logger.error(UdpSocketHandler.class, e.getMessage(), e);
+			   Logger.warning(UdpSocketHandler.class, e.getMessage(), e);
 			   return -1;
 			}
 		}
