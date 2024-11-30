@@ -72,7 +72,6 @@ public abstract class LoggerHook extends Logger {
 	 * @param e        Logs this exception with the message.
 	 * @param priority The priority of the mesage, one of LogLevel.ERROR,
 	 *                 LogLevel.NORMAL, LogLevel.MINOR, or LogLevel.DEBUG.
-	 * @see #log(Object o, String message, int priority)
 	 */
 	@Override
 	public void log(Object o, String message, Throwable e, 
