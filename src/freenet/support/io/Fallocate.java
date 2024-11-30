@@ -10,7 +10,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
 import freenet.support.Logger;
-import freenet.support.math.MersenneTwister;
 
 /**
  * Provides access to operating system-specific {@code fallocate} and
@@ -20,6 +19,7 @@ import freenet.support.math.MersenneTwister;
 public final class Fallocate {
 
   private static final boolean IS_LINUX = Platform.isLinux();
+  private static final boolean IS_WINDOWS = Platform.isWindows();
   private static final boolean IS_POSIX = !Platform.isWindows() && !Platform.isMac() && !Platform.isOpenBSD();
   private static final boolean IS_ANDROID = Platform.isAndroid();
 
@@ -38,21 +38,11 @@ public final class Fallocate {
   }
 
   public static Fallocate forChannel(FileChannel channel, long final_filesize) {
-    try {
-      return new Fallocate(channel, getDescriptor(channel), final_filesize);
-    } catch (final UnsupportedOperationException exception) {
-      // File descriptor is not supported: fd is null and unavailable
-      return new Fallocate(channel, 0, final_filesize);
-    }
+    return new Fallocate(channel, getDescriptor(channel), final_filesize);
   }
 
   public static Fallocate forChannel(FileChannel channel, FileDescriptor fd, long final_filesize) {
-    try {
-      return new Fallocate(channel, getDescriptor(fd), final_filesize);
-    } catch (final UnsupportedOperationException exception) {
-      // File descriptor is not supported: fd is null and unavailable
-      return new Fallocate(channel, 0, final_filesize);
-    }
+    return new Fallocate(channel, getDescriptor(fd), final_filesize);
   }
 
   public Fallocate fromOffset(long offset) throws IllegalArgumentException {
@@ -61,20 +51,14 @@ public final class Fallocate {
     return this;
   }
 
+  // This method only works for Linux, do not use it.
+  @Deprecated
   public Fallocate keepSize() throws UnsupportedOperationException {
-    requireLinux("fallocate keep size");
+	if (!IS_LINUX) {
+	  throw new UnsupportedOperationException("fallocate keep size is not supported on this file system");
+	}
     mode |= FALLOC_FL_KEEP_SIZE;
     return this;
-  }
-
-  private void requireLinux(String feature) throws UnsupportedOperationException {
-    if (!IS_LINUX) {
-      throwUnsupported(feature);
-    }
-  }
-
-  private void throwUnsupported(String feature) throws UnsupportedOperationException {
-    throw new UnsupportedOperationException(feature + " is not supported on this file system");
   }
 
   public void execute() throws IOException {
@@ -90,17 +74,14 @@ public final class Fallocate {
         isUnsupported = true;
       }
     } else {
-      // fd is null and unavailable
-      if (Platform.isWindows()) {
-        // Windows do not create sparse files by default, so just write a byte at the end.
-        channel.write(ByteBuffer.allocate(1), final_filesize - 1);
-      } else {
-        isUnsupported = true;
-      }
+      isUnsupported = true;
     }
 
     if (isUnsupported || errno != 0) {
-      Logger.normal(this, "fallocate() failed; using legacy method; errno=" + errno);
+      if (errno != 0) {
+    	// OS supports fallocate() but it failed. Do not log if the OS does not support fallocate().
+        Logger.normal(this, "fallocate() failed; using legacy method; errno=" + errno);
+      }
       legacyFill(channel, final_filesize, offset);
     }
   }
@@ -121,38 +102,41 @@ public final class Fallocate {
     private static native int posix_fallocate(int fd, long offset, long length);
   }
 
-  private static int getDescriptor(FileChannel channel) throws UnsupportedOperationException {
+  private static int getDescriptor(FileChannel channel) {
     try {
       // sun.nio.ch.FileChannelImpl declares private final java.io.FileDescriptor fd
       final Field field = channel.getClass().getDeclaredField("fd");
       field.setAccessible(true);
       return getDescriptor((FileDescriptor) field.get(channel));
     } catch (final Exception e) {
-      throw new UnsupportedOperationException("unsupported FileChannel implementation", e);
+      // File descriptor is not supported: fd is null and unavailable, return 0
+      return 0;
     }
   }
 
-  private static int getDescriptor(FileDescriptor descriptor) throws UnsupportedOperationException {
+  private static int getDescriptor(FileDescriptor descriptor) {
     try {
       // Oracle java.io.FileDescriptor declares private int fd
       final Field field = descriptor.getClass().getDeclaredField(IS_ANDROID ? "descriptor" : "fd");
       field.setAccessible(true);
       return (int) field.get(descriptor);
     } catch (final Exception e) {
-      throw new UnsupportedOperationException("unsupported FileDescriptor implementation", e);
+      // File descriptor is not supported: fd is null and unavailable, return 0
+      return 0;
     }
   }
 
   private static void legacyFill(FileChannel fc, long newLength, long offset) throws IOException {
-    MersenneTwister mt = new MersenneTwister();
-    byte[] b = new byte[4096];
-    ByteBuffer bb = ByteBuffer.wrap(b);
-    while (offset < newLength) {
-      bb.rewind();
-      mt.nextBytes(b);
-      offset += fc.write(bb, offset);
-      if (offset % (1024 * 1024 * 1024L) == 0) {
-        mt = new MersenneTwister();
+    if (IS_WINDOWS) {
+      // Windows do not create sparse files by default, so just write a byte at the end.
+      fc.write(ByteBuffer.allocate(1), newLength - 1);
+    } else {
+	  // fill fc with zeros
+      byte[] b = new byte[4096];
+      ByteBuffer bb = ByteBuffer.wrap(b);
+      while (offset < newLength) {
+        bb.rewind();
+        offset += fc.write(bb, offset);
       }
     }
   }
