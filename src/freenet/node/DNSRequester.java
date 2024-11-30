@@ -3,6 +3,12 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import java.util.ArrayDeque;
+import java.util.Arrays;
+import java.util.Deque;
+import java.util.HashSet;
+import java.util.Set;
+
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -16,6 +22,8 @@ public class DNSRequester implements Runnable {
 
     final Node node;
     private long lastLogTime;
+    private final Set<Double> recentNodeIdentitySet = new HashSet<>();
+    private final Deque<Double> recentNodeIdentityQueue = new ArrayDeque<>();
     // Only set when doing simulations.
     static boolean DISABLE = false;
 
@@ -54,23 +62,40 @@ public class DNSRequester implements Runnable {
     }
 
     private void realRun() {
-        PeerNode[] nodes = node.getPeers().myPeers();
-        long now = System.currentTimeMillis();
-        if((now - lastLogTime) > 100) {
-        	if(logMINOR) {
-        		Logger.minor(this, "Processing DNS Requests (log rate-limited)");
+        // run DNS requests for not recently checked, unconnected
+        // nodes to avoid the coupon collector's problem
+        PeerNode[] nodesToCheck = Arrays.stream(node.getPeers().myPeers())
+            .filter(peerNode -> !peerNode.isConnected())
+            // identify recent nodes by location, because the exact location cannot be used twice
+            // (that already triggers the simplest pitch black attack defenses)
+            // Double may not be comparable in general (floating point),
+            // but just checking for equality with itself is safe
+            .filter(peerNode -> !recentNodeIdentitySet.contains(peerNode.getLocation()))
+            .toArray(PeerNode[]::new);
+
+        if(logMINOR) {
+            long now = System.currentTimeMillis();
+            if((now - lastLogTime) > 100) {
+            		Logger.minor(this, "Processing DNS Requests (log rate-limited)");
             }
             lastLogTime = now;
         }
-        // check a randomly chosen node to avoid sending bursts of DNS requests
-        PeerNode pn = nodes[node.getFastWeakRandom().nextInt(nodes.length)];
-        //Logger.minor(this, "Node: "+pn);
-        if(!pn.isConnected()) {
-            // Not connected
-            // Try new DNS lookup
-            //Logger.minor(this, "Doing lookup on "+pn+" of "+nodes.length);
-            pn.maybeUpdateHandshakeIPs(false);
+        // check a randomly chosen node that has not been checked
+        // recently to avoid sending bursts of DNS requests
+        int unconnectedNodesLength = nodesToCheck.length;
+        PeerNode pn = nodesToCheck[node.getFastWeakRandom().nextInt(unconnectedNodesLength)];
+        // do not request this node again,
+        // until at least 80% of the other unconnected nodes have been checked
+        recentNodeIdentitySet.add(pn.getLocation());
+        recentNodeIdentityQueue.offerFirst(pn.getLocation());
+        while (unconnectedNodesLength > 5 && recentNodeIdentityQueue.size() > (0.81 * unconnectedNodesLength)) {
+          recentNodeIdentitySet.remove(recentNodeIdentityQueue.removeLast());
         }
+        //Logger.minor(this, "Node: "+pn);
+
+        // Try new DNS lookup
+        //Logger.minor(this, "Doing lookup on "+pn+" of "+nodesToCheck.length);
+        pn.maybeUpdateHandshakeIPs(false);
         try {
             synchronized(this) {
                 wait(1000);  // sleep 1s ...
