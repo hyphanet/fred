@@ -141,7 +141,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 
 	protected long jfkContextLifetime = 0;
 	/** My low-level address for SocketManager purposes */
-	private Peer detectedPeer;
+	private Peer detectedPeer = null;
 	/** My OutgoingPacketMangler i.e. the object which encrypts packets sent to this node */
 	private final OutgoingPacketMangler outgoingMangler;
 	/** Advertised addresses */
@@ -455,7 +455,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 
 		testnetEnabled = fs.getBoolean("testnet", false);
 		if(testnetEnabled) {
-			String err = "Ignoring incompatible testnet node " + detectedPeer;
+			String err = "Ignoring incompatible testnet node " + fs.toOrderedString();
 			Logger.error(this, err);
 			throw new PeerParseException(err);
 		}
@@ -542,8 +542,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 				"\nNode:      " + HexUtil.bytesToHex(nodeKey) +
 				"\nNode hash: " + HexUtil.bytesToHex(nodeKeyHash) +
 				"\nThis:      " + HexUtil.bytesToHex(identityHash) +
-				"\nThis hash: " + HexUtil.bytesToHex(identityHashHash) +
-				"\nFor:       " + getPeer());
+				"\nThis hash: " + HexUtil.bytesToHex(identityHashHash));
 
 		try {
 			incomingSetupCipher = new Rijndael(256, 256);
@@ -592,12 +591,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		}
 		if(nominalPeer.isEmpty()) {
 			Logger.normal(this, "No IP addresses found for identity '" + identityAsBase64String + "', possibly at location '" + location + ": " + userToString());
-			detectedPeer = null;
-		} else {
-			nominalPeer.sort(Peer.PEER_COMPARATOR);
-			// TODO	this throws away all valid addresses but the first, without checking whether they can connect. Need to try a later one if connection fails.
-			// sort hostName first.
-			detectedPeer = nominalPeer.get(0);
 		}
 		updateShortToString();
 
@@ -691,7 +684,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		}
 		// populate handshakeIPs so handshakes can start ASAP
 		lastAttemptedHandshakeIPUpdateTime = 0;
-		maybeUpdateHandshakeIPs(true);
 
 		listeningHandshakeBurstCount = 0;
 		listeningHandshakeBurstSize = Node.MIN_BURSTING_HANDSHAKE_BURST_SIZE
@@ -787,7 +779,16 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	*/
 	@Override
 	public synchronized Peer getPeer() {
+		if (detectedPeer == null && !nominalPeer.isEmpty()) {
+			sortNominalPeer();
+			detectedPeer = nominalPeer.get(0);
+			updateShortToString();
+		}
 		return detectedPeer;
+	}
+
+	private void sortNominalPeer() {
+		nominalPeer.sort(Peer.PEER_COMPARATOR);
 	}
 
 	/**
@@ -862,7 +863,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		long now = System.currentTimeMillis();
 		Peer localDetectedPeer = null;
 		synchronized(this) {
-			localDetectedPeer = detectedPeer;
+			localDetectedPeer = getPeer();
 			if((now - lastAttemptedHandshakeIPUpdateTime) < MINUTES.toMillis(5)) {
 				//Logger.minor(this, "Looked up recently (localDetectedPeer = "+localDetectedPeer + " : "+((localDetectedPeer == null) ? "" : localDetectedPeer.getAddress(false).toString()));
 				return;
@@ -1186,7 +1187,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			sendHandshakeTime = now; // Immediately
 			ctx = null;
 		}
-		Logger.normal(this, "We are asking for the key to be renewed (" + this.detectedPeer + ')');
+		Logger.normal(this, "We are asking for the key to be renewed (" + this.getPeer() + ')');
 	}
 
 	/**
@@ -1413,7 +1414,12 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		boolean tempShouldSendHandshake = false;
 		synchronized(this) {
 			if(disconnecting) return false;
-			tempShouldSendHandshake = ((now > sendHandshakeTime) && (handshakeIPs != null) && (isRekeying || !isConnected()));
+			if (now > sendHandshakeTime) {
+				maybeUpdateHandshakeIPs(true);
+				tempShouldSendHandshake = ((now > sendHandshakeTime) && (getHandshakeIPs() != null) && (
+						isRekeying
+								|| !isConnected()));
+			}
 		}
 		if(logMINOR) Logger.minor(this, "shouldSendHandshake(): initial = "+tempShouldSendHandshake);
 		if(tempShouldSendHandshake && (hasLiveHandshake(now)))
@@ -1806,7 +1812,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			return;
 		}
 		synchronized(this) {
-			Peer oldPeer = detectedPeer;
+			Peer oldPeer = getPeer();
 			if((newPeer != null) && ((oldPeer == null) || !oldPeer.equals(newPeer))) {
 				this.detectedPeer = newPeer;
 				updateShortToString();
@@ -2255,7 +2261,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		loadSender(true).setSendASAP();
 		loadSender(false).setSendASAP();
 		Message locMsg = DMT.createFNPLocChangeNotificationNew(node.getLocationManager().getLocation(), node.getPeers().getPeerLocationDoubles(true));
-		Message ipMsg = DMT.createFNPDetectedIPAddress(detectedPeer);
+		Message ipMsg = DMT.createFNPDetectedIPAddress(getPeer());
 		Message timeMsg = DMT.createFNPTime(System.currentTimeMillis());
 		Message dRoutingMsg = DMT.createRoutingStatus(!disableRoutingHasBeenSetLocally);
 		Message uptimeMsg = DMT.createFNPUptime((byte)(int)(100*node.getUptimeEstimator().getUptime()));
@@ -2275,7 +2281,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	}
 
 	private void sendIPAddressMessage() {
-		Message ipMsg = DMT.createFNPDetectedIPAddress(detectedPeer);
+		Message ipMsg = DMT.createFNPDetectedIPAddress(getPeer());
 		try {
 			sendAsync(ipMsg, null, node.getNodeStats().changedIPCtr);
 		} catch(NotConnectedException e) {
@@ -2443,7 +2449,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		// Anything may be omitted for a differential node reference
 		boolean changedAnything = false;
 		if(!forDiffNodeRef && (false != fs.getBoolean("testnet", false))) {
-			String err = "Preventing connection to node " + detectedPeer +" - testnet is enabled!";
+			String err = "Preventing connection to node " + getPeer() +" - testnet is enabled!";
 			Logger.error(this, err);
 			throw new FSParseException(err);
 		}
@@ -2553,8 +2559,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 						nominalPeer.add(p);
 					}
 				}
+				sortNominalPeer();
 				// XXX should we trigger changedAnything on *any* change, or on just *addition* of new addresses
-				if(!Arrays.equals(oldPeers, nominalPeer.toArray(new Peer[nominalPeer.size()]))) {
+				if(!Arrays.equals(oldPeers, nominalPeer.toArray(new Peer[0]))) {
 					changedAnything = true;
 					if(logMINOR) Logger.minor(this, "Got new physical.udp for "+this+" : "+Arrays.toString(nominalPeer.toArray()));
 					// Look up the DNS names if any ASAP
@@ -2693,8 +2700,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	*/
 	public synchronized SimpleFieldSet exportMetadataFieldSet(long now) {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
-		if(detectedPeer != null)
-			fs.putSingle("detected.udp", detectedPeer.toStringPrefNumeric());
+		if(getPeer() != null)
+			fs.putSingle("detected.udp", getPeer().toStringPrefNumeric());
 		if(lastReceivedPacketTime() > 0)
 			fs.put("timeLastReceivedPacket", timeLastReceivedPacket);
 		if(lastReceivedAckTime() > 0)
@@ -3955,7 +3962,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	public Peer getHandshakeIP() {
 		Peer[] localHandshakeIPs;
 		if(!shouldSendHandshake()) {
-			if(logMINOR) Logger.minor(this, "Not sending handshake to "+getPeer()+" because pn.shouldSendHandshake() returned false");
+			if(logMINOR) Logger.minor(this, "Not sending handshake to "+detectedPeer+" because pn.shouldSendHandshake() returned false");
 			return null;
 		}
 		long firstTime = System.currentTimeMillis();
@@ -5426,7 +5433,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	}
 
 	public synchronized boolean matchesPeerAndPort(Peer peer) {
-		if(detectedPeer != null && detectedPeer.laxEquals(peer)) return true;
+		if(getPeer() != null && getPeer().laxEquals(peer)) return true;
 		if(nominalPeer != null) { // FIXME condition necessary???
 			for(Peer p : nominalPeer) {
 				if(p != null && p.laxEquals(peer)) return true;
@@ -5439,8 +5446,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	 * @param strict If true, only match if the IP is actually in use. If false,
 	 * also match from nominal IP addresses and domain names etc. */
 	public synchronized boolean matchesIP(FreenetInetAddress addr, boolean strict) {
-		if(detectedPeer != null) {
-			FreenetInetAddress a = detectedPeer.getFreenetAddress();
+		if(getPeer() != null) {
+			FreenetInetAddress a = getPeer().getFreenetAddress();
 			if(a != null) {
 				if(strict ? a.equals(addr) : a.laxEquals(addr))
 					return true;
