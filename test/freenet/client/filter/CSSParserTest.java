@@ -989,6 +989,9 @@ public class CSSParserTest {
 		propertyTests.put("#x { list-style-type: korean-hanja-formal }", "#x { list-style-type: korean-hanja-formal }");
 		propertyTests.put("#x { list-style-type: \"*\" }", "#x { list-style-type: \"*\" }");
 		propertyTests.put("#x { max-inline-size: none; min-block-size: auto; }", "#x { max-inline-size: none; min-block-size: auto; }");
+		propertyTests.put("#x { text-combine-upright: all; }", "#x { text-combine-upright: all; }");
+		propertyTests.put("#x { text-decoration-thickness: 5px; }", "#x { text-decoration-thickness: 5px; }");
+		propertyTests.put("#x { dominant-baseline: alphabetic; }", "#x { dominant-baseline: alphabetic; }");
 
 		// text-emphasis
 		propertyTests.put("#x { text-emphasis: triangle blue; }", "#x { text-emphasis: triangle blue; }"); // java.lang.NullPointerException

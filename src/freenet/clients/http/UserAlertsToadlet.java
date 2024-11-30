@@ -43,14 +43,10 @@ public class UserAlertsToadlet extends Toadlet {
 	}
 
 	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
-
-		MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-
 		if (request.isPartSet("dismiss-user-alert")) {
 			int userAlertHashCode = request.getIntPart("disable", -1);
 			ctx.getAlertManager().dismissAlert(userAlertHashCode);
 		}
-		
 		
 		String redirect;
 		try {
@@ -65,8 +61,7 @@ public class UserAlertsToadlet extends Toadlet {
 		      "/#bookmarks".equals(redirect))) {
 		    redirect = ".";
 		}
-		headers.put("Location", redirect);
-		
+		MultiValueTable<String, String> headers = MultiValueTable.from("Location", redirect);
 		ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 	}
 

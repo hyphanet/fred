@@ -3,8 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import org.tanukisoftware.wrapper.WrapperListener;
-import org.tanukisoftware.wrapper.WrapperManager;
+import static java.util.concurrent.TimeUnit.MINUTES;
 
 import java.io.File;
 import java.io.IOException;
@@ -29,8 +28,8 @@ import freenet.support.PooledExecutor;
 import freenet.support.ProcessPriority;
 import freenet.support.SimpleFieldSet;
 import freenet.support.io.NativeThread;
-
-import static java.util.concurrent.TimeUnit.MINUTES;
+import org.tanukisoftware.wrapper.WrapperListener;
+import org.tanukisoftware.wrapper.WrapperManager;
 
 /**
  *  @author nextgens
@@ -109,10 +108,6 @@ public class NodeStarter implements WrapperListener {
 			System.out.println("Usage: $ java freenet.node.Node <configFile>");
 			return -1;
 		}
-		String builtWithMessage = "freenet.jar built with freenet-ext.jar Build #" + ExtVersion.buildNumber + " r" + ExtVersion.cvsRevision+" running with ext build "+extBuildNumber+" r" + extRevisionNumber;
-		Logger.normal(this, builtWithMessage);
-		System.out.println(builtWithMessage);
-
 		File configFilename;
 		if(args.length == 0) {
 			System.out.println("Using default config filename freenet.ini");
@@ -148,6 +143,11 @@ public class NodeStarter implements WrapperListener {
 			return -2;
 		}
 
+		String builtWithMessage = "freenet.jar built with freenet-ext.jar Build #" + ExtVersion.buildNumber + " r" + ExtVersion.cvsRevision+" running with ext build "+extBuildNumber+" r" + extRevisionNumber;
+		Logger.normal(this, builtWithMessage);
+		System.out.println(builtWithMessage);
+
+
 		System.out.println("Starting executor...");
 		executor.start();
 
@@ -182,7 +182,6 @@ public class NodeStarter implements WrapperListener {
 		NativeThread plug = new NativeThread(useless, "Plug", NativeThread.MAX_PRIORITY, false);
 		// Not daemon, but doesn't do anything.
 		// Keeps the JVM alive.
-		// DO NOT do anything in the plug thread, if you do you risk the EvilJVMBug.
 		plug.setDaemon(false);
 		plug.start();
 
@@ -363,7 +362,6 @@ public class NodeStarter implements WrapperListener {
 			Thread plug = new Thread(useless, "Plug");
 			// Not daemon, but doesn't do anything.
 			// Keeps the JVM alive.
-			// DO NOT do anything in the plug thread, if you do you risk the EvilJVMBug.
 			plug.setDaemon(false);
 			plug.start();
 		}
