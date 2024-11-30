@@ -19,6 +19,10 @@ import java.lang.reflect.Method;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.Random;
@@ -775,22 +779,21 @@ final public class FileUtil {
 		return File.createTempFile(prefix, suffix, directory);
 	}
 
+	/**
+	 * Copies the file from the source to the target location, including its attributes.
+	 *
+	 * @param copyFrom the source filename
+	 * @param copyTo the target filename
+	 * @return whether the file was copied successfully
+	 */
 	public static boolean copyFile(File copyFrom, File copyTo) {
-		copyTo.delete();
-		boolean executable = copyFrom.canExecute();
-		FileBucket outBucket = new FileBucket(copyTo, false, true, false, false);
-		FileBucket inBucket = new FileBucket(copyFrom, true, false, false, false);
 		try {
-			BucketTools.copy(inBucket, outBucket);
-			if(executable) {
-			    if(!(copyTo.setExecutable(true) || copyTo.canExecute())) {
-			        System.err.println("Unable to preserve executable bit when copying "+copyFrom+" to "+copyTo+" - you may need to make it executable!");
-			        // return false; ??? FIXME debatable.
-			    }
-			}
+			Path source = copyFrom.toPath();
+			Path target = copyTo.toPath();
+			Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
 			return true;
-		} catch (IOException e) {
-			System.err.println("Unable to copy from "+copyFrom+" to "+copyTo);
+		} catch (IOException | InvalidPathException e) {
+			System.err.println("Unable to copy from " + copyFrom + " to " + copyTo);
 			return false;
 		}
 	}
