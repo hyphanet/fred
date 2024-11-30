@@ -89,7 +89,7 @@ public class UpdatedVersionAvailableUserAlert extends AbstractUserAlert {
 		
 		if(ut.formText != null) {
 			alertNode.addChild("form", new String[] { "action", "method" }, new String[] { "/", "post" }).addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "update", ut.formText });
-			alertNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", updater.node.clientCore.formPassword });
+			alertNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", updater.getNode().getClientCore().getFormPassword() });
 		}
 
 		int version;
@@ -149,7 +149,7 @@ public class UpdatedVersionAvailableUserAlert extends AbstractUserAlert {
 				formText = l10n("updateASAPButton");
 			}
 			
-			if(updater.node.updateIsUrgent()) {
+			if(updater.getNode().updateIsUrgent()) {
 				sb.append(" ");
 				sb.append(l10n("updateIsUrgent"));
 			}
@@ -172,16 +172,16 @@ public class UpdatedVersionAvailableUserAlert extends AbstractUserAlert {
 		} else {
 			name = "update.sh";
 		}
-		File f = new File(updater.node.getNodeDir(), name);
+		File f = new File(updater.getNode().getNodeDir(), name);
 		if(f.exists()) return f.toString();
-		f = new File(new File(updater.node.getNodeDir(), "bin"), name);
+		f = new File(new File(updater.getNode().getNodeDir(), "bin"), name);
 		if(f.exists()) return f.toString();
 		return name;
 	}
 
 	@Override
 	public short getPriorityClass() {
-		Node node = updater.node;
+		Node node = updater.getNode();
 		if(node.updateIsUrgent())
 			return UserAlert.CRITICAL_ERROR;
 		if(updater.inFinalCheck() || updater.canUpdateNow() || !updater.isArmed())

@@ -44,11 +44,11 @@ public class MasterKeysTest {
         DummyRandomSource random = new DummyRandomSource(77391);
         MasterKeys original = MasterKeys.read(keysFile, random, password);
         byte[] clientCacheMasterKey = original.clientCacheMasterKey;
-        DatabaseKey dkey = original.createDatabaseKey(random);
+        DatabaseKey dkey = original.createDatabaseKey();
         MasterSecret tempfileMasterSecret = original.getPersistentMasterSecret();
         MasterKeys restored = MasterKeys.read(keysFile, random, password);
         assertArrayEquals(clientCacheMasterKey, restored.clientCacheMasterKey);
-        assertEquals(dkey,restored.createDatabaseKey(random));
+        assertEquals(dkey,restored.createDatabaseKey());
         assertEquals(tempfileMasterSecret, restored.getPersistentMasterSecret());
     }
     
@@ -77,7 +77,7 @@ public class MasterKeysTest {
         DummyRandomSource random = new DummyRandomSource(77391);
         MasterKeys original = MasterKeys.read(keysFile, random, oldPassword);
         byte[] clientCacheMasterKey = original.clientCacheMasterKey;
-        DatabaseKey dkey = original.createDatabaseKey(random);
+        DatabaseKey dkey = original.createDatabaseKey();
         MasterSecret tempfileMasterSecret = original.getPersistentMasterSecret();
         // Change password.
         original.changePassword(keysFile, newPassword, random);
@@ -92,7 +92,7 @@ public class MasterKeysTest {
         }
         MasterKeys restored = MasterKeys.read(keysFile, random, newPassword);
         assertArrayEquals(clientCacheMasterKey, restored.clientCacheMasterKey);
-        assertEquals(dkey,restored.createDatabaseKey(random));
+        assertEquals(dkey,restored.createDatabaseKey());
         assertEquals(tempfileMasterSecret, restored.getPersistentMasterSecret());
     }
 

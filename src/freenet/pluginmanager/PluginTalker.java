@@ -58,7 +58,7 @@ public class PluginTalker {
 
 	protected WeakReference<FredPluginFCP> findPlugin(String pluginname2) throws PluginNotFoundException {
 		Logger.normal(this, "Searching fcp plugin: " + pluginname2);
-		FredPluginFCP plug = node.pluginManager.getFCPPlugin(pluginname2);
+		FredPluginFCP plug = node.getPluginManager().getFCPPlugin(pluginname2);
 		if (plug == null) {
 			Logger.error(this, "Could not find fcp plugin: " + pluginname2);
 			throw new PluginNotFoundException();
@@ -69,7 +69,7 @@ public class PluginTalker {
 
 	public void send(final SimpleFieldSet plugparams, final Bucket data2) {
 
-		node.executor.execute(new Runnable() {
+		node.getExecutor().execute(new Runnable() {
 
 			@Override
 			public void run() {

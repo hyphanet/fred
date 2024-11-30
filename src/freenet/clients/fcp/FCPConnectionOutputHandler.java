@@ -39,9 +39,9 @@ public class FCPConnectionOutputHandler implements Runnable {
 	}
 
 	void start() {
-		if (handler.sock == null)
+		if (handler.getSocket() == null)
 			return;
-		handler.server.node.executor.execute(this, "FCP output handler for "+handler.sock.getRemoteSocketAddress()+ ':' +handler.sock.getPort());
+		handler.getServer().getNode().getExecutor().execute(this, "FCP output handler for "+handler.getSocket().getRemoteSocketAddress()+ ':' +handler.getSocket().getPort());
 	}
 	
 	@Override
@@ -67,7 +67,7 @@ public class FCPConnectionOutputHandler implements Runnable {
 	}
  
 	private void realRun() throws IOException {
-		OutputStream os = new BufferedOutputStream(handler.sock.getOutputStream(), 4096);
+		OutputStream os = new BufferedOutputStream(handler.getSocket().getOutputStream(), 4096);
 		while(true) {
 			boolean closed;
 			FCPMessage msg = null;
@@ -122,14 +122,14 @@ public class FCPConnectionOutputHandler implements Runnable {
     /**
      * @deprecated
      *     Use {@link FCPConnectionHandler#send(FCPMessage)} instead of using public access to the
-     *     member variable {@link FCPConnectionHandler#outputHandler} to call this function here
+     *     member variable {@link FCPConnectionHandler#getOutputHandler()} to call this function here
      *     upon the outputHandler. In other words: Replace
      *     <code>fcpConnectionHandler.outputHandler.queue(...)</code>
      *     with <code>fcpConnectionHandler.send(...)</code><br>
      *     TODO: The deprecation is merely to enforce people to stop using the said member variable
      *     in a public way. The function itself is fine to stay. Once the public usage has been
      *     replaced by the suggested way of using send(), please make the member variable
-     *     {@link FCPConnectionHandler#outputHandler} private and remove the deprecation at this
+     *     {@link FCPConnectionHandler#getOutputHandler()} private and remove the deprecation at this
      *     function here.
      */
     @Deprecated
@@ -137,8 +137,8 @@ public class FCPConnectionOutputHandler implements Runnable {
 		if(logDEBUG)
 			Logger.debug(this, "Queueing "+msg, new Exception("debug"));
 		if(msg == null) throw new NullPointerException();
-		boolean neverDropAMessage = handler.server.neverDropAMessage();
-		int MAX_QUEUE_LENGTH = handler.server.maxMessageQueueLength();
+		boolean neverDropAMessage = handler.getServer().neverDropAMessage();
+		int MAX_QUEUE_LENGTH = handler.getServer().maxMessageQueueLength();
 		synchronized(outQueue) {
 			if(closedOutputQueue) {
 				Logger.error(this, "Closed already: "+this+" queueing message "+msg);
@@ -176,7 +176,7 @@ public class FCPConnectionOutputHandler implements Runnable {
 	}
 
 	public boolean isQueueHalfFull() {
-		int MAX_QUEUE_LENGTH = handler.server.maxMessageQueueLength();
+		int MAX_QUEUE_LENGTH = handler.getServer().maxMessageQueueLength();
 		synchronized(outQueue) {
 			return outQueue.size() > MAX_QUEUE_LENGTH / 2;
 		}

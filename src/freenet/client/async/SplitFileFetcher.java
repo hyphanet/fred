@@ -21,6 +21,7 @@ import freenet.keys.ClientCHKBlock;
 import freenet.keys.FreenetURI;
 import freenet.node.BaseSendableGet;
 import freenet.support.Logger;
+import freenet.support.api.Bucket;
 import freenet.support.api.LockableRandomAccessBuffer;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
@@ -125,7 +126,7 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherStorage
         try {
             // Completion via truncation.
             if(isFinalFetch && cb instanceof FileGetCompletionCallback && 
-                    (decompressors == null || decompressors.size() == 0) &&
+                    (decompressors == null || decompressors.isEmpty()) &&
                     !fetchContext.filterData) {
                 FileGetCompletionCallback fileCallback = ((FileGetCompletionCallback)cb);
                 File targetFile = fileCallback.getCompletionFile();
@@ -297,7 +298,10 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherStorage
     @Override
     public void queueHeal(byte[] data, byte[] cryptoKey, byte cryptoAlgorithm) {
         try {
-            context.healingQueue.queue(BucketTools.makeImmutableBucket(context.tempBucketFactory, data), cryptoKey, cryptoAlgorithm, context);
+            Bucket dataBucket = BucketTools.makeImmutableBucket(
+                context.tempBucketFactory,
+                data);
+            context.healingQueue.queue(dataBucket, cryptoKey, cryptoAlgorithm, context);
         } catch (IOException e) {
             // Nothing to be done, but need to log the error.
             Logger.error(this, "I/O error, failed to queue healing block: "+e, e);

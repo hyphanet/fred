@@ -56,7 +56,7 @@ public class DatastoreTooSmallAlert implements UserAlert {
 
 	@Override
 	public String getText() {
-		Config config = core.node.config;
+		Config config = core.getNode().getConfig();
 
 		// Datastore size as configured in wizard is the sum of these three.
 		long storeSize = config.get("node").getLong("storeSize");
@@ -68,7 +68,7 @@ public class DatastoreTooSmallAlert implements UserAlert {
 		// And round it, in case manually configured and not exact multiple of GiB.
 		long currentSize = (totalSize + 512*1024*1024) / (1024*1024*1024);
 		// Calculate available size the same way as in wizard, recommend at least 20% of that.
-		long availableSize = DATASTORE_SIZE.maxDatastoreSize(core.node) / (1024*1024*1024);
+		long availableSize = DATASTORE_SIZE.maxDatastoreSize(core.getNode()) / (1024*1024*1024);
 		long minSize = availableSize / 5;
 		// Wizard never recommends sizes above 100 GiB, so claim a minimum of at most 50 GiB.
 		if (minSize > 50) minSize = 50;
@@ -83,7 +83,7 @@ public class DatastoreTooSmallAlert implements UserAlert {
 
 	@Override
 	public HTMLNode getHTMLText() {
-		Config config = core.node.config;
+		Config config = core.getNode().getConfig();
 
 		// Datastore size as configured in wizard is the sum of these three.
 		long storeSize = config.get("node").getLong("storeSize");
@@ -95,7 +95,7 @@ public class DatastoreTooSmallAlert implements UserAlert {
 		// And round it, in case manually configured and not exact multiple of GiB.
 		long currentSize = (totalSize + 512*1024*1024) / (1024*1024*1024);
 		// Calculate available size the same way as in wizard, recommend at least 20% of that.
-		long availableSize = DATASTORE_SIZE.maxDatastoreSize(core.node) / (1024*1024*1024);
+		long availableSize = DATASTORE_SIZE.maxDatastoreSize(core.getNode()) / (1024*1024*1024);
 		long minSize = availableSize / 5;
 		// Wizard never recommends sizes above 100 GiB, so claim a minimum of at most 50 GiB.
 		if (minSize > 50) minSize = 50;
@@ -120,7 +120,7 @@ public class DatastoreTooSmallAlert implements UserAlert {
 
 	@Override
 	public boolean isValid() {
-		Config config = core.node.config;
+		Config config = core.getNode().getConfig();
 
 		// Datastore size as configured in wizard is the sum of these three.
 		long storeSize = config.get("node").getLong("storeSize");
@@ -132,14 +132,14 @@ public class DatastoreTooSmallAlert implements UserAlert {
 		// And round it, in case manually configured and not exact multiple of GiB.
 		long currentSize = (totalSize + 512*1024*1024) / (1024*1024*1024);
 		// Calculate available size the same way as in wizard, only warn if below 10% of that.
-		long availableSize = DATASTORE_SIZE.maxDatastoreSize(core.node) / (1024*1024*1024);
+		long availableSize = DATASTORE_SIZE.maxDatastoreSize(core.getNode()) / (1024*1024*1024);
 		long minSize = availableSize / 10;
 		// Wizard never recommends sizes above 100 GiB, so never warn if above 25 GiB.
 		if (minSize > 25) minSize = 25;
 
 		// Check if warning has already been dismissed on this Freenet version
 		int currentVersion = Version.buildNumber();
-		int dismissedVersion = core.node.config.get("node").getInt("datastoreTooSmallDismissed");
+		int dismissedVersion = core.getNode().getConfig().get("node").getInt("datastoreTooSmallDismissed");
 
 		return currentSize < minSize && currentVersion != dismissedVersion;
 	}
@@ -163,7 +163,7 @@ public class DatastoreTooSmallAlert implements UserAlert {
 		String currentVersion = Integer.toString(Version.buildNumber());
 
 		try {
-			core.node.config.get("node").set("datastoreTooSmallDismissed", currentVersion);
+			core.getNode().getConfig().get("node").set("datastoreTooSmallDismissed", currentVersion);
 		} catch (ConfigException e) {
 		}
 	}

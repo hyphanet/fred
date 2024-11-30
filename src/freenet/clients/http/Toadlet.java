@@ -6,7 +6,6 @@ package freenet.clients.http;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
@@ -315,7 +314,7 @@ public abstract class Toadlet {
 	}
 
 	protected void writeReply(ToadletContext context, int code, String mimeType, String desc, MultiValueTable<String, String> headers, String reply, boolean forceDisableJavascript) throws ToadletContextClosedException, IOException {
-	    byte[] buffer = reply.getBytes("UTF-8");
+	    byte[] buffer = reply.getBytes(StandardCharsets.UTF_8);
 	    writeReply(context, code, mimeType, desc, headers, buffer, 0, buffer.length, forceDisableJavascript);
 	}
 
@@ -356,8 +355,7 @@ public abstract class Toadlet {
 			"<html><head><title>"+msg+"</title></head><body><h1>" +
 			l10n("permRedirectWithReason", "reason", msg)+
 			"</h1><a href=\""+HTMLEncoder.encode(location)+"\">"+l10n("clickHere")+"</a></body></html>";
-		byte[] buf;
-		buf = redirDoc.getBytes(StandardCharsets.UTF_8);
+		byte[] buf = redirDoc.getBytes(StandardCharsets.UTF_8);
 		MultiValueTable<String, String> headers = MultiValueTable.from("Location", location);
 		ctx.sendReplyHeaders(301, "Moved Permanently", headers, "text/html; charset=UTF-8", buf.length);
 		ctx.writeData(buf, 0, buf.length);
@@ -383,8 +381,7 @@ public abstract class Toadlet {
 			l10n("tempRedirectWithReason", "reason", msg)+
 			"</h1><a href=\""+HTMLEncoder.encode(location)+"\">" +
 			l10n("clickHere") + "</a></body></html>";
-		byte[] buf;
-		buf = redirDoc.getBytes(StandardCharsets.UTF_8);
+		byte[] = redirDoc.getBytes(StandardCharsets.UTF_8);
 		MultiValueTable<String, String> mvt = MultiValueTable.from("Location", location);
 		ctx.sendReplyHeaders(302, "Found", mvt, "text/html; charset=UTF-8", buf.length);
 		ctx.writeData(buf, 0, buf.length);

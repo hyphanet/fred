@@ -6,6 +6,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -128,7 +129,7 @@ public class RAMSaltMigrationTest {
 				blockActuallyStoredList.add(blockInsertedList.get(i));
 			}
 		}
-		assertTrue("Inserts failed, not a single key stored", dummyValueActuallyStoredList.size() > 0);
+		assertTrue("Inserts failed, not a single key stored", !dummyValueActuallyStoredList.isEmpty());
 	}
 
 	/**
@@ -628,11 +629,11 @@ public class RAMSaltMigrationTest {
 		ClientCHKBlock cb = new ClientCHKBlock(verify, key);
 		Bucket output = cb.decode(new ArrayBucketFactory(), 32768, false);
 		byte[] buf = BucketTools.toByteArray(output);
-		return new String(buf, "UTF-8");
+		return new String(buf, StandardCharsets.UTF_8);
 	}
 
 	private ClientCHKBlock encodeBlock(String test, boolean newFormat) throws CHKEncodeException, IOException {
-		byte[] data = test.getBytes("UTF-8");
+		byte[] data = test.getBytes(StandardCharsets.UTF_8);
 		SimpleReadOnlyArrayBucket bucket = new SimpleReadOnlyArrayBucket(data);
 		return ClientCHKBlock.encode(bucket, false, false, (short) -1, bucket.size(),
 				Compressor.DEFAULT_COMPRESSORDESCRIPTOR, null,

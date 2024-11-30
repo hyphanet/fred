@@ -14,6 +14,8 @@ import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -54,7 +56,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 	protected int INTERVAL = Calendar.MINUTE;
 	protected int INTERVAL_MULTIPLIER = 5;
 	
-	private static final String ENCODING = "UTF-8";
+	private static final Charset ENCODING = StandardCharsets.UTF_8;
 
         private static volatile boolean logMINOR;
 	static {
@@ -282,7 +284,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 				findOldLogFiles((GregorianCalendar)gc.clone());
 				currentFilename = new File(getHourLogName(gc, -1, true));
 				synchronized(logFiles) {
-					if((!logFiles.isEmpty()) && logFiles.getLast().filename.equals(currentFilename)) {
+					if(!logFiles.isEmpty() && logFiles.getLast().filename.equals(currentFilename)) {
 						logFiles.removeLast();
 					}
 				}
@@ -525,15 +527,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 		}
 	}
 	
-	private static final byte[] BOM;
-	
-	static {
-		try {
-			BOM = "\uFEFF".getBytes(ENCODING);
-		} catch (UnsupportedEncodingException e) {
-			throw new Error(e);
-		}
-	}
+	private static final byte[] BOM = "\uFEFF".getBytes(ENCODING);
 
 	protected int runningCompressors = 0;
 	protected Object runningCompressorsSync = new Object();
@@ -642,7 +636,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 					name = name.substring(0, name.length()-".log.gz".length());
 				}
 				name = name.substring(prefix.length());
-				if((name.length() == 0) || (name.charAt(0) != '-')) {
+				if(name.isEmpty() || (name.charAt(0) != '-')) {
 					if(logMINOR) Logger.minor(this, "Deleting unrecognized: "+name+" ("+f.getPath()+ ')');
 					f.delete();
 					continue;
@@ -797,9 +791,23 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 	public void start() {
 		if(redirectStdOut) {
 			try {
-				System.setOut(new PrintStream(new OutputStreamLogger(LogLevel.NORMAL, "Stdout: ", ENCODING), false, ENCODING));
-				if(redirectStdErr)
-					System.setErr(new PrintStream(new OutputStreamLogger(LogLevel.ERROR, "Stderr: ", ENCODING), false, ENCODING));
+				String encName = ENCODING.name();
+				System.setOut(
+					new PrintStream(
+						new OutputStreamLogger(LogLevel.NORMAL, "Stdout: ", encName),
+						false,
+						encName
+					)
+				);
+				if(redirectStdErr) {
+					System.setErr(
+						new PrintStream(
+							new OutputStreamLogger(LogLevel.ERROR, "Stderr: ", encName),
+							false,
+							encName
+						)
+					);
+				}
 			} catch (UnsupportedEncodingException e) {
 				throw new Error(e);
 			}
@@ -861,7 +869,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 	}
 
 	private void setLogFormat(String fmt) {
-		if ((fmt == null) || (fmt.length() == 0))
+		if ((fmt == null) || fmt.isEmpty())
 			fmt = "d:c:h:t:p:m";
 		char[] f = fmt.toCharArray();
 
@@ -904,7 +912,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 	}
 
 	private void setDateFormat(String dfmt) {
-		if ((dfmt != null) && (dfmt.length() != 0)) {
+		if ((dfmt != null) && !dfmt.isEmpty()) {
 			try {
 				df = new SimpleDateFormat(dfmt);
 			} catch (RuntimeException e) {
@@ -991,7 +999,10 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 		try {
 			logString(sb.toString().getBytes(ENCODING));
 		} catch (UnsupportedEncodingException e1) {
-			throw new Error(e1);
+			throw new IllegalStateException(
+				"Failed to convert log message to bytes. Unsupported charset encoding: " + ENCODING.name(),
+				e1
+			);
 		}
 	}
 

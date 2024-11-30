@@ -31,7 +31,7 @@ public abstract class BaseUpdateableElement extends HTMLNode {
 		updateState(true);
 		// Notifies the manager that the element has been rendered
 		if(pushed)
-			((SimpleToadletServer) ctx.getContainer()).pushDataManager.elementRendered(ctx.getUniqueId(), this);
+			((SimpleToadletServer) ctx.getContainer()).getPushDataManager().elementRendered(ctx.getUniqueId(), this);
 	}
 
 	/**

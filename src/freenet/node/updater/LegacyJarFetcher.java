@@ -46,7 +46,7 @@ class LegacyJarFetcher implements ClientGetCallback {
 	public LegacyJarFetcher(FreenetURI uri, File saveTo, NodeClientCore core, LegacyFetchCallback cb) {
 		this.uri = uri;
 		this.saveTo = saveTo;
-		this.context = core.clientContext;
+		this.context = core.getClientContext();
 		this.cb = cb;
 		ctx = core.makeClient((short) 1, true, false).getFetchContext();
 		ctx.allowSplitfiles = true;

@@ -16,7 +16,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import freenet.support.CurrentTimeUTC;
 import freenet.support.LRUMap;
 import freenet.support.Logger;
 import freenet.support.StringValidityChecker;
@@ -95,7 +94,7 @@ public final class SessionManager {
 	 * @param myCookieNamespace The name of the client application which uses this cookie. Must not be empty. Must be latin letters and numbers only.
 	 */
 	public SessionManager(String myCookieNamespace) {
-		if(myCookieNamespace.length() == 0)
+		if(myCookieNamespace.isEmpty())
 			throw new IllegalArgumentException("You must specify a cookie namespace or use the constructor " +
 					"which allows specification of a cookie path.");
 		
@@ -252,7 +251,7 @@ public final class SessionManager {
 	public synchronized Session createSession(String userID, ToadletContext context) {
 		// We must synchronize around the fetching of the time and mSessionsByID.push() because mSessionsByID is no sorting data structure: It's a plain
 		// LRUMap so to ensure that it stays sorted the operation "getTime(); push();" must be atomic.
-		long time = CurrentTimeUTC.getInMillis();
+		long time = System.currentTimeMillis();
 		
 		removeExpiredSessions(time);
 		
@@ -279,7 +278,7 @@ public final class SessionManager {
 		if(sessionID == null)
 			return false;
 		
-		removeExpiredSessions(CurrentTimeUTC.getInMillis());
+		removeExpiredSessions(System.currentTimeMillis());
 		
 		return mSessionsByID.containsKey(sessionID);
 	}
@@ -299,7 +298,7 @@ public final class SessionManager {
 		
 		// We must synchronize around the fetching of the time and mSessionsByID.push() because mSessionsByID is no sorting data structure: It's a plain
 		// LRUMap so to ensure that it stays sorted the operation "getTime(); push();" must be atomic.
-		long time = CurrentTimeUTC.getInMillis();
+		long time = System.currentTimeMillis();
 		
 		removeExpiredSessions(time);
 		

@@ -134,7 +134,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         
         Message msg;
         try {
-            msg = node.usm.waitFor(mf, this);
+            msg = node.getUSM().waitFor(mf, this);
         } catch (DisconnectedException e) {
             Logger.normal(this, "Disconnected while waiting for DataInsert on "+uid);
             return;
@@ -168,12 +168,12 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         prb = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE);
         if(htl > 0)
             sender = node.makeInsertSender(key, htl, uid, tag, source, headers, prb, false, false, forkOnCacheable, preferInsert, ignoreLowBackoff, realTimeFlag);
-        br = new BlockReceiver(node.usm, source, uid, prb, this, node.getTicker(), false, realTimeFlag, myTimeoutHandler, false);
+        br = new BlockReceiver(node.getUSM(), source, uid, prb, this, node.getTicker(), false, realTimeFlag, myTimeoutHandler, false);
         
         // Receive the data, off thread
         Runnable dataReceiver = new DataReceiver();
 		receiveStarted = true;
-        node.executor.execute(dataReceiver, "CHKInsertHandler$DataReceiver for UID "+uid);
+        node.getExecutor().execute(dataReceiver, "CHKInsertHandler$DataReceiver for UID "+uid);
 
         // Wait...
         // What do we want to wait for?
@@ -321,7 +321,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
     		Message m = DMT.createFNPInsertTransfersCompleted(uid, true);
     		source.sendAsync(m, null, this);
     		prb = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE);
-    		br = new BlockReceiver(node.usm, source, uid, prb, this, node.getTicker(), false, realTimeFlag, null, false);
+    		br = new BlockReceiver(node.getUSM(), source, uid, prb, this, node.getTicker(), false, realTimeFlag, null, false);
     		prb.abort(RetrievalException.NO_DATAINSERT, "No DataInsert", true);
     		source.localRejectedOverload("TimedOutAwaitingDataInsert", realTimeFlag);
     		
@@ -329,7 +329,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
     		// Yes it's ugly everywhere but since we have a longish connection timeout it's necessary everywhere. :|
     		// FIXME review two stage timeout everywhere with some low level networking guru.
     		MessageFilter mf = makeDataInsertFilter(SECONDS.toMillis(60));
-    		node.usm.addAsyncFilter(mf, new SlowAsyncMessageFilterCallback() {
+    		node.getUSM().addAsyncFilter(mf, new SlowAsyncMessageFilterCallback() {
 
     			@Override
     			public void onMatched(Message m) {
@@ -510,13 +510,13 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         		totalReceived += sender.getTotalReceivedBytes();
         	}
         	if(logMINOR) Logger.minor(this, "Remote CHK insert cost "+totalSent+ '/' +totalReceived+" bytes ("+code+ ") receive failed = "+receiveFailed());
-        	node.nodeStats.remoteChkInsertBytesSentAverage.report(totalSent);
-        	node.nodeStats.remoteChkInsertBytesReceivedAverage.report(totalReceived);
+        	node.getNodeStats().remoteChkInsertBytesSentAverage.report(totalSent);
+        	node.getNodeStats().remoteChkInsertBytesReceivedAverage.report(totalReceived);
         	if(code == CHKInsertSender.SUCCESS) {
         		// Report both sent and received because we have both a Handler and a Sender
         		if(sender != null && sender.startedSendingData())
-        			node.nodeStats.successfulChkInsertBytesSentAverage.report(totalSent);
-        		node.nodeStats.successfulChkInsertBytesReceivedAverage.report(totalReceived);
+        			node.getNodeStats().successfulChkInsertBytesSentAverage.report(totalSent);
+        		node.getNodeStats().successfulChkInsertBytesReceivedAverage.report(totalReceived);
         	}
         }
     }
@@ -585,7 +585,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         				receiveCompleted = true;
         				CHKInsertHandler.this.notifyAll();
         			}
-   					node.nodeStats.successfulBlockReceive(realTimeFlag, false);
+   					node.getNodeStats().successfulBlockReceive(realTimeFlag, false);
         		}
 
         		@Override
@@ -616,7 +616,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         				Logger.normal(this, "Failed to retrieve ("+e.getReason()+"/"+RetrievalException.getErrString(e.getReason())+"): "+e+" for "+CHKInsertHandler.this, e);
         			
         			if(!prb.abortedLocally())
-        				node.nodeStats.failedBlockReceive(false, false, realTimeFlag, false);
+        				node.getNodeStats().failedBlockReceive(false, false, realTimeFlag, false);
         			return;
         		}
         		
@@ -648,7 +648,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 		synchronized(totalSync) {
 			totalSentBytes += x;
 		}
-		node.nodeStats.insertSentBytes(false, x);
+		node.getNodeStats().insertSentBytes(false, x);
 	}
 
 	@Override
@@ -656,7 +656,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 		synchronized(totalSync) {
 			totalReceivedBytes += x;
 		}
-		node.nodeStats.insertReceivedBytes(false, x);
+		node.getNodeStats().insertReceivedBytes(false, x);
 	}
 
 	public int getTotalSentBytes() {
@@ -670,7 +670,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 	@Override
 	public void sentPayload(int x) {
 		node.sentPayload(x);
-		node.nodeStats.insertSentBytes(false, -x);
+		node.getNodeStats().insertSentBytes(false, -x);
 	}
 
 	@Override

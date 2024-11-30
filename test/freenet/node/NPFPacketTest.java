@@ -39,7 +39,7 @@ public class NPFPacketTest {
 
 		assertEquals(0, r.getSequenceNumber());
 		assertEquals(1, r.getAcks().size());
-		assertTrue(r.getAcks().contains(Integer.valueOf(0)));
+		assertTrue(r.getAcks().contains(0));
 		assertEquals(0, r.getFragments().size());
 		assertFalse(r.getError());
 	}
@@ -56,14 +56,14 @@ public class NPFPacketTest {
 
 		assertEquals(0, r.getSequenceNumber());
 		assertEquals(8, r.getAcks().size());
-		assertTrue(r.getAcks().contains(Integer.valueOf(5)));
-		assertTrue(r.getAcks().contains(Integer.valueOf(10)));
-		assertTrue(r.getAcks().contains(Integer.valueOf(11)));
-		assertTrue(r.getAcks().contains(Integer.valueOf(1005555)));
-		assertTrue(r.getAcks().contains(Integer.valueOf(1005556)));
-		assertTrue(r.getAcks().contains(Integer.valueOf(1005557)));
-		assertTrue(r.getAcks().contains(Integer.valueOf(1005558)));
-		assertTrue(r.getAcks().contains(Integer.valueOf(1005559)));
+		assertTrue(r.getAcks().contains(5));
+		assertTrue(r.getAcks().contains(10));
+		assertTrue(r.getAcks().contains(11));
+		assertTrue(r.getAcks().contains(1005555));
+		assertTrue(r.getAcks().contains(1005556));
+		assertTrue(r.getAcks().contains(1005557));
+		assertTrue(r.getAcks().contains(1005558));
+		assertTrue(r.getAcks().contains(1005559));
 		assertEquals(0, r.getFragments().size());
 		assertFalse(r.getError());
 	}

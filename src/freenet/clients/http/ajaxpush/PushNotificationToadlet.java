@@ -2,6 +2,7 @@ package freenet.clients.http.ajaxpush;
 
 import java.io.IOException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.RedirectException;
@@ -30,11 +31,11 @@ public class PushNotificationToadlet extends Toadlet {
 
 	public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		String requestId = req.getParam("requestId");
-		PushDataManager.UpdateEvent event = ((SimpleToadletServer) ctx.getContainer()).pushDataManager.getNextNotification(requestId);
+		PushDataManager.UpdateEvent event = ((SimpleToadletServer) ctx.getContainer()).getPushDataManager().getNextNotification(requestId);
 		if (event != null) {
 			String elementRequestId = event.getRequestId();
 			String elementId = event.getElementId();
-			writeHTMLReply(ctx, 200, "OK", UpdaterConstants.SUCCESS + ":" + Base64.encodeStandard(elementRequestId.getBytes("UTF-8")) + UpdaterConstants.SEPARATOR + elementId);
+			writeHTMLReply(ctx, 200, "OK", UpdaterConstants.SUCCESS + ":" + Base64.encodeStandard(elementRequestId.getBytes(StandardCharsets.UTF_8)) + UpdaterConstants.SEPARATOR + elementId);
 			if (logMINOR) {
 				Logger.minor(this, "Notification got:" + event);
 			}

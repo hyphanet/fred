@@ -5,7 +5,7 @@ package freenet.support;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Decode encoded URLs (or parts of URLs). @see URLEncoder.
@@ -38,7 +38,7 @@ public class URLDecoder
 	 *
 	 **/
 	public static String decode(String s, boolean tolerant) throws URLEncodedFormatException {
-		if (s.length() == 0)
+		if (s.isEmpty())
 			return "";
 		int len = s.length();
 		ByteArrayOutputStream decodedBytes = new ByteArrayOutputStream();
@@ -65,29 +65,21 @@ public class URLDecoder
 				} catch (NumberFormatException nfe) {
 					// Not encoded?
 					if(tolerant && !hasDecodedSomething) {
-						try {
-							byte[] buf = ('%'+hexval).getBytes("UTF-8");
-							decodedBytes.write(buf, 0, buf.length);
-							continue;
-						} catch (UnsupportedEncodingException e) {
-							throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
-						}
+						byte[] buf = ('%'+hexval).getBytes(StandardCharsets.UTF_8);
+						decodedBytes.write(buf, 0, buf.length);
+						continue;
 					}
 					
 					throw new URLEncodedFormatException("Not a two character hex % escape: "+hexval+" in "+s);
 				}
 			} else {
-				try {
-					byte[] encoded = String.valueOf(c).getBytes("UTF-8");
-					decodedBytes.write(encoded, 0, encoded.length);
-				} catch (UnsupportedEncodingException e) {
-					throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
-				}
+				byte[] encoded = String.valueOf(c).getBytes(StandardCharsets.UTF_8);
+				decodedBytes.write(encoded, 0, encoded.length);
 			}
 		}
 		try {
 			decodedBytes.close();
-			return new String(decodedBytes.toByteArray(), "utf-8");
+			return new String(decodedBytes.toByteArray(), StandardCharsets.UTF_8);
 		} catch (IOException ioe1) {
 			/* if this throws something's wrong */
 		}

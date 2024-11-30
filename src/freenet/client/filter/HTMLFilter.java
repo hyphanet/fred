@@ -170,7 +170,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		}
 
 		public String popElementFromStack() {
-			if(openElements.size()>0)
+			if(!openElements.isEmpty())
 				return openElements.pop();
 			else
 				return null;
@@ -218,31 +218,14 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				// If detecting charset, and found it, stop afterwards.
 				if(onlyDetectingCharset && detectedCharset != null)
 					return;
-				int x;
-
-				try {
-					x = r.read();
-				}
-				/**
-				 * libgcj up to at least 4.2.2 has a bug: InputStreamReader.refill() throws this exception when BufferedInputReader.refill() returns false for EOF. See:
-				 * line 299 at InputStreamReader.java (in refill()): http://www.koders.com/java/fidD8F7E2EB1E4C22DA90EBE0130306AE30F876AB00.aspx?s=refill#L279
-				 * line 355 at BufferedInputStream.java (in refill()): http://www.koders.com/java/fid1949641524FAC0083432D79793F554CD85F46759.aspx?s=refill#L355
-				 * TODO: remove this when the gcj bug is fixed and the affected gcj versions are outdated.
-				 */
-				catch(java.io.CharConversionException cce) {
-					if(freenet.node.Node.checkForGCJCharConversionBug()) /* only ignore the exception on affected libgcj */
-						x = -1;
-					else
-						throw cce;
-				}
-
+				int x = r.read();
 				if (x == -1) {
 					switch (mode) {
 						case INTEXT :
 							if(textAllowed) {
 								saveText(b, currentTag, w, this);
 							} else {
-								if(!b.toString().trim().equals(""))
+								if(!b.toString().trim().isEmpty())
 									throwFilterException(l10n("textBeforeHTML"));
 							}
 							break;
@@ -294,7 +277,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 								if(textAllowed) {
 									saveText(b, currentTag, w, this);
 								} else {
-									if(!b.toString().trim().equals(""))
+									if(!b.toString().trim().isEmpty())
 										throwFilterException(l10n("textBeforeHTML"));
 								}
 								b.setLength(0);
@@ -316,7 +299,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 								if(textAllowed) {
 									saveText(b, currentTag, w, this);
 								} else {
-									if(!b.toString().trim().equals(""))
+									if(!b.toString().trim().isEmpty())
 										throwFilterException(l10n("textBeforeHTML"));
 								}
 
@@ -454,7 +437,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 								if(textAllowed) {
 									saveText(b, currentTag, w, this);
 								} else {
-									if(!b.toString().trim().equals(""))
+									if(!b.toString().trim().isEmpty())
 										throwFilterException(l10n("textBeforeHTML"));
 								}
 								balt.setLength(0);
@@ -480,7 +463,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			//Writing the remaining tags for XHTML if any
 			if(getisXHTML())
 			{
-				while(openElements.size()>0)
+				while(!openElements.isEmpty())
 					w.write("</"+openElements.pop()+">");
 			}
 			w.flush();
@@ -662,7 +645,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 						if (pc.writeStyleScriptWithTag) {
 							pc.writeStyleScriptWithTag = false;
 							String style = pc.currentStyleScriptChunk;
-							if ((style == null) || (style.length() == 0))
+							if ((style == null) || style.isEmpty())
 								pc.writeAfterTag.append("<!-- "+l10n("deletedUnknownStyle")+" -->");
 							else
 								w.write(style);
@@ -793,7 +776,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			if (((len - 1 != 0) || (s.length() > 1)) && s.endsWith("/")) {
 				s = s.substring(0, s.length() - 1);
 				v.set(len - 1, s);
-				if (s.length() == 0)
+				if (s.isEmpty())
 					len--;
 				endSlash = true;
 				// Don't need to set it back because everything is an I-value
@@ -953,49 +936,57 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					emptyStringArray));
 		String[] group2 =
 			{
-				"span",
-				"address",
-				"em",
-				"strong",
-				"dfn",
-				"code",
-				"samp",
-				"kbd",
-				"var",
-				"cite",
 				"abbr",
 				"acronym",
-				"sub",
-				"sup",
-				"dt",
-				"dd",
-				"tt",
-				"i",
-				"b",
-				"big",
-				"small",
-				"strike",
-				"s",
-				"u",
-				"noframes",
-				"fieldset",
-// Delete <noscript> / </noscript>. So we can at least see the non-scripting code.
-//				"noscript",
-				"xmp",
-				"listing",
-				"plaintext",
-				"center",
-				"bdo",
-				"aside",
-				"header",
-				"nav",
-				"footer",
+				"address",
 				"article",
-				"section",
+				"aside",
+				"b",
+				"bdi",
+				"bdo",
+				"big",
+				"center",
+				"cite",
+				"code",
+				"dd",
+				"details",
+				"dfn",
+				"dt",
+				"em",
+				"fieldset",
+				"figcaption",
+				"figure",
+				"footer",
+				"header",
 				"hgroup",
-				"wbr",
+				"i",
+				"kbd",
+				"listing",
+				"main",
+				"mark",
+				"nav",
+				"noframes",
+				// Delete <noscript> / </noscript>. So we can at least see the non-scripting code.
+				//"noscript",
+				"plaintext",
+				"rp",
+				"rt",
+				"ruby",
+				"s",
+				"samp",
+				"section",
+				"small",
+				"span",
+				"strike",
+				"strong",
+				"sub",
 				"summary",
-				"details"};
+				"sup",
+				"tt",
+				"u",
+				"var",
+				"wbr",
+				"xmp"};
 		for (String x: group2)
 			allowedTagsVerifiers.put(
 				x,
@@ -1072,7 +1063,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			"ol",
 			new CoreTagVerifier(
 				"ol",
-				new String[] { "type", "compact", "start" },
+				new String[] { "type", "compact", "start", "reversed" },
 				emptyStringArray,
 				emptyStringArray,
 				emptyStringArray,
@@ -2179,7 +2170,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 							}
 						} else if (idx > -1) {
 							String x = s.substring(0, idx);
-							if (x.length() == 0)
+							if (x.isEmpty())
 								x = prevX;
 							x = x.toLowerCase();
 							String y;
@@ -2291,7 +2282,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				// lang, xml:lang and dir can go on anything
 				// lang or xml:lang = language [ "-" country [ "-" variant ] ]
 				// The variant can be just about anything; no way to test (avian)
-				if (x.equals("xml:lang") ||x.equals("lang") || (x.equals("dir") && (o instanceof String) && (((String)o).equalsIgnoreCase("ltr") || ((String)o).equalsIgnoreCase("rtl")))) {
+				if (x.equals("xml:lang") ||x.equals("lang") || (x.equals("dir") && (o instanceof String) && (((String)o).equalsIgnoreCase("ltr") || ((String)o).equalsIgnoreCase("rtl") || ((String)o).equalsIgnoreCase("auto")))) {
 					if(logDEBUG) Logger.debug(this, "HTML Filter is putting attribute: "+x+" =  "+o);
 					hn.put(x, o);
 				}
@@ -2647,8 +2638,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			if (type != null) {
 				String[] typesplit = splitType(type);
 				type = typesplit[0];
-				if ((typesplit[1] != null) && (typesplit[1].length() > 0))
+				if ((typesplit[1] != null) && !typesplit[1].isEmpty()) {
 					charset = typesplit[1];
+				}
 				if(logDEBUG)
 					Logger.debug(
 							this,
@@ -2744,9 +2736,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 
 			// Allow no rel or rev, even on <link>, as per HTML spec.
 
-			if(parsedRel.length() != 0)
+			if(!parsedRel.isEmpty())
 				hn.put("rel", parsedRel);
-			if(parsedRev.length() != 0)
+			if(!parsedRev.isEmpty())
 				hn.put("rev", parsedRev);
 
 			if(rel != null) {
@@ -3006,6 +2998,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					} else if (name.equalsIgnoreCase("Description")) {
 						hn.put("name", name);
 						hn.put("content", content);
+					} else if (name.equalsIgnoreCase("Viewport")) {
+						hn.put("name", name);
+						hn.put("content", content);
 					}
 				} else if ((http_equiv != null) && (name == null)) {
 					if (http_equiv.equalsIgnoreCase("Expires")) {
@@ -3066,7 +3061,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 							throwFilterException(l10n("invalidMetaType"));
 					} else if (
 						http_equiv.equalsIgnoreCase("Content-Language")) {
-						if(content.matches("((?>[a-zA-Z0-9]*)(?>-[A-Za-z0-9]*)*(?>,\\s*)?)*") && (!content.trim().equals(""))) {
+						if(content.matches("((?>[a-zA-Z0-9]*)(?>-[A-Za-z0-9]*)*(?>,\\s*)?)*") && !content.trim().isEmpty()) {
 							hn.put("http-equiv", "Content-Language");
 							hn.put("content", content);
 						}
@@ -3339,7 +3334,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				throw e;
 		}
 		String s = w.toString();
-		if ((s == null) || (s.length() == 0))
+		if ((s == null) || s.isEmpty())
 			return null;
 		//		Core.logger.log(SaferFilter.class, "Style now: " + s, LogLevel.DEBUG);
 		if(logMINOR) Logger.minor(HTMLFilter.class, "Style finally: " + s);
@@ -3454,7 +3449,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		if(logMINOR)
 			Logger.minor(HTMLFilter.class, "Sanitizing URI: "+suri+" ( override type "+overrideType +" override charset "+overrideCharset+" ) inline="+inline, new Exception("debug"));
 		boolean addMaybe = false;
-		if((overrideCharset != null) && (overrideCharset.length() > 0))
+		if((overrideCharset != null) && !overrideCharset.isEmpty())
 			overrideType += "; charset="+overrideCharset;
 		else if(maybeCharset != null)
 			addMaybe = true;

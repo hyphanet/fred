@@ -18,9 +18,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.net.MalformedURLException;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -35,8 +35,6 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
-
-import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.client.FetchException;
 import freenet.crypt.SHA256;
@@ -53,6 +51,7 @@ import freenet.support.io.FileUtil;
 import freenet.support.io.FileUtil.CPUArchitecture;
 import freenet.support.io.FileUtil.OperatingSystem;
 import freenet.support.io.NativeThread;
+import org.tanukisoftware.wrapper.WrapperManager;
 
 /**
  * Parses the dependencies.properties file and ensures we have all the 
@@ -899,16 +898,8 @@ outer:	for(String propName : props.stringPropertyNames()) {
 		return true;
 	}
 	
-	static final byte[] SCRIPT_HEAD;
-	
-	static {
-	    try {
-	        SCRIPT_HEAD = "#!".getBytes("UTF-8");
-	    } catch(UnsupportedEncodingException e) {
-	        throw new Error(e);
-	    }
-	}
-	
+	static final byte[] SCRIPT_HEAD = "#!".getBytes(StandardCharsets.UTF_8);
+
 	private boolean isOnPathNotAScript(String toFind) {
 	    String path = System.getenv("PATH"); // Upper case should work on both linux and Windows
 	    if(path == null) return false;
@@ -1512,7 +1503,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
             OutputStream os = null;
             try {
                 os = new BufferedOutputStream(fb.getOutputStream());
-                OutputStreamWriter osw = new OutputStreamWriter(os, "ISO-8859-1"); // Right???
+                OutputStreamWriter osw = new OutputStreamWriter(os, StandardCharsets.ISO_8859_1); // Right???
                 osw.write("#!/bin/sh\n"); // FIXME exec >/dev/null 2>&1 ???? Believed to be portable.
                 //osw.write("trap true PIPE\n"); - should not be necessary
                 osw.write("while kill -0 "+WrapperManager.getWrapperPID()+" > /dev/null 2>&1; do sleep 1; done\n");
@@ -1535,15 +1526,14 @@ outer:	for(String propName : props.stringPropertyNames()) {
          * just get rid of this - in which case maybe we want to improve on this.
          * @throws IOException */ 
         private boolean createRunShNoNice(File input, File output) throws IOException {
-            final String charset = "UTF-8";
             InputStream is = null;
             OutputStream os = null;
             boolean failed = false;
             try {
                 is = new FileInputStream(input);
-                BufferedReader br = new BufferedReader(new InputStreamReader(new BufferedInputStream(is), charset));
+                BufferedReader br = new BufferedReader(new InputStreamReader(new BufferedInputStream(is), StandardCharsets.UTF_8));
                 os = new FileOutputStream(output);
-                Writer w = new BufferedWriter(new OutputStreamWriter(new BufferedOutputStream(os), charset));
+                Writer w = new BufferedWriter(new OutputStreamWriter(new BufferedOutputStream(os), StandardCharsets.UTF_8));
                 boolean writtenPrio = false;
                 String line;
                 while((line = br.readLine()) != null) {
@@ -1563,8 +1553,6 @@ outer:	for(String propName : props.stringPropertyNames()) {
                     return false;
                 }
                 return true;
-            } catch (UnsupportedEncodingException e) {
-                throw new Error(e);
             } catch (IOException e) {
                 failed = true;
                 return false;
@@ -1676,7 +1664,6 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			MessageDigest md = SHA256.getMessageDigest();
 			SHA256.hash(fis, md);
 			byte[] hash = md.digest();
-			SHA256.returnMessageDigest(md);
 			fis.close();
 			fis = null;
 			if(Arrays.equals(hash, expectedHash)) {

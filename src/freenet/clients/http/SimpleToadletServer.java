@@ -124,10 +124,15 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 	private int fproxyConnections;
 	
 	private boolean finishedStartup;
-	
-	/** The PushDataManager handles all the pushing tasks*/
-	public PushDataManager pushDataManager; 
-	
+
+	/**
+	 * The PushDataManager handles all the pushing tasks
+	 * @deprecated Use {@link #getPushDataManager()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
+	public PushDataManager pushDataManager;
+
 	/** The IntervalPusherManager handles interval pushing*/
 	public IntervalPusherManager intervalPushManager;
 
@@ -258,8 +263,8 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 			cssTheme = THEME.themeFromName(CSSName);
 			pageMaker.setTheme(cssTheme);
 			NodeClientCore core = SimpleToadletServer.this.core;
-			if (core.node.pluginManager != null)
-				core.node.pluginManager.setFProxyTheme(cssTheme);
+			if (core.getNode().getPluginManager() != null)
+				core.getNode().getPluginManager().setFProxyTheme(cssTheme);
 			fetchKeyBoxAboveBookmarks = cssTheme.fetchKeyBoxAboveBookmarks;
 		}
 
@@ -278,7 +283,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		public void set(String val) throws InvalidConfigValueException {
 			NodeClientCore core = SimpleToadletServer.this.core;
 			if(core == null) return;
-			if(val.equals(get()) || val.equals(""))
+			if(val.equals(get()) || val.isEmpty())
 				cssOverride = null;
 			else {
 				File tmp = new File(val.trim());
@@ -415,11 +420,11 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 			refilterPolicy = REFILTER_POLICY.valueOf(val);
 		}
 		
-	};
+	}
 
 	public void createFproxy() {
 		NodeClientCore core = this.core;
-		Node node = core.node;
+		Node node = core.getNode();
 		synchronized(this) {
 			if(haveCalledFProxy) return;
 			haveCalledFProxy = true;
@@ -429,7 +434,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		intervalPushManager=new IntervalPusherManager(getTicker(), pushDataManager);
 		bookmarkManager = new BookmarkManager(core, publicGatewayMode());
 		try {
-			FProxyToadlet.maybeCreateFProxyEtc(core, node, node.config, this);
+			FProxyToadlet.maybeCreateFProxyEtc(core, node, node.getConfig(), this);
 		} catch (IOException e) {
 			Logger.error(this, "Could not start fproxy: "+e, e);
 			System.err.println("Could not start fproxy:");
@@ -887,7 +892,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 	}
 	
 	public void finishStart() {
-		core.node.securityLevels.addNetworkThreatLevelListener(new SecurityLevelListener<NETWORK_THREAT_LEVEL>() {
+		core.getNode().getSecurityLevels().addNetworkThreatLevelListener(new SecurityLevelListener<NETWORK_THREAT_LEVEL>() {
 
 			@Override
 			public void onChange(NETWORK_THREAT_LEVEL oldLevel,
@@ -903,7 +908,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 			}
 			
 		});
-		core.node.securityLevels.addPhysicalThreatLevelListener(new SecurityLevelListener<PHYSICAL_THREAT_LEVEL> () {
+		core.getNode().getSecurityLevels().addPhysicalThreatLevelListener(new SecurityLevelListener<PHYSICAL_THREAT_LEVEL> () {
 
 			@Override
 			public void onChange(PHYSICAL_THREAT_LEVEL oldLevel, PHYSICAL_THREAT_LEVEL newLevel) {
@@ -981,7 +986,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 
 		// Show the wizard until dismissed by the user (See bug #2624)
 		NodeClientCore core = this.core;
-		if(core != null && core.node != null && !fproxyHasCompletedWizard) {
+		if(core != null && core.getNode() != null && !fproxyHasCompletedWizard) {
 			//If the user has not completed the wizard, only allow access to the wizard and static
 			//resources. Anything else redirects to the first page of the wizard.
 			if (!(path.startsWith(FirstTimeWizardToadlet.TOADLET_URL) ||
@@ -999,7 +1004,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 			for(ToadletElement te: toadlets) {
 				if(path.startsWith(te.prefix))
 					return te.t;
-				if(te.prefix.length() > 0 && te.prefix.charAt(te.prefix.length()-1) == '/') {
+				if(!te.prefix.isEmpty() && te.prefix.charAt(te.prefix.length()-1) == '/') {
 					if(path.equals(te.prefix.substring(0, te.prefix.length()-1))) {
 						URI newURI;
 						try {
@@ -1097,7 +1102,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 	public UserAlertManager getUserAlertManager() {
 		NodeClientCore core = this.core;
 		if(core == null) return null;
-		return core.alerts;
+		return core.getAlerts();
 	}
 
 	public void setCSSName(THEME theme) {
@@ -1120,7 +1125,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 			if(advancedModeEnabled == enabled) return;
 			advancedModeEnabled = enabled;
 		}
-		core.node.config.store();
+		core.getNode().getConfig().store();
 	}
 
 	@Override
@@ -1144,7 +1149,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 	@Override
 	public String getFormPassword() {
 		if(core == null) return "";
-		return core.formPassword;
+		return core.getFormPassword();
 	}
 
 	@Override
@@ -1241,7 +1246,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 	}
 	
 	public Ticker getTicker(){
-		return core.node.getTicker();
+		return core.getNode().getTicker();
 	}
 	
 	public NodeClientCore getCore(){
@@ -1314,6 +1319,10 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 	public long generateUniqueID() {
 		// FIXME increment a counter?
 		return random.nextLong();
+	}
+
+	public PushDataManager getPushDataManager() {
+		return pushDataManager;
 	}
 
 }

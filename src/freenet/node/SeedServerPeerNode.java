@@ -82,7 +82,7 @@ public class SeedServerPeerNode extends PeerNode {
 		final OpennetManager om = node.getOpennet();
 		if(om == null) {
 			Logger.normal(this, "Opennet turned off while connecting to seednodes");
-			node.peers.disconnectAndRemove(this, true, true, true);
+			node.getPeers().disconnectAndRemove(this, true, true, true);
 		} else {
 			// Wait 5 seconds. Another node may connect first, we don't want all the
 			// announcements to go to the node which we connect to most quickly.
@@ -90,7 +90,7 @@ public class SeedServerPeerNode extends PeerNode {
 				@Override
 				public void run() {
 					try {
-						om.announcer.maybeSendAnnouncement();
+						om.getAnnouncer().maybeSendAnnouncement();
 					} catch (Throwable t) {
 						Logger.error(this, "Caught "+t, t);
 					}
@@ -127,7 +127,7 @@ public class SeedServerPeerNode extends PeerNode {
 	@Override
 	public boolean disconnected(boolean dumpMessageQueue, boolean dumpTrackers) {
 		boolean ret = super.disconnected(dumpMessageQueue, dumpTrackers);
-		node.peers.disconnectAndRemove(this, false, false, false);
+		node.getPeers().disconnectAndRemove(this, false, false, false);
 		return ret;
 	}
 	
@@ -135,10 +135,10 @@ public class SeedServerPeerNode extends PeerNode {
 	public boolean shouldDisconnectAndRemoveNow() {
 		OpennetManager om = node.getOpennet();
 		if(om == null) return true;
-		if(!om.announcer.enoughPeers()) return false;
+		if(!om.getAnnouncer().enoughPeers()) return false;
 		// We have enough peers, but we might fluctuate a bit.
 		// Drop the connection once we have consistently had enough opennet peers for 5 minutes.
-		return System.currentTimeMillis() - om.announcer.timeGotEnoughPeers() > MINUTES.toMillis(5);
+		return System.currentTimeMillis() - om.getAnnouncer().timeGotEnoughPeers() > MINUTES.toMillis(5);
 	}
 
 	@Override

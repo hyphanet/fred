@@ -81,6 +81,12 @@ public class ContentFilter {
 				true, false, new BMPFilter(), false, false, false, false, true, false,
 				l10n("imageBMPReadAdvice"),
 				false, null, null, false));
+		
+		// WEBP - has a filter
+		register(new FilterMIMEType("image/webp", "webp", new String[] { "image/webp" }, new String[0],
+				true, false, new WebPFilter(), false, false, false, false, true, false,
+				l10n("imageWebPReadAdvice"),
+				false, null, null, false));
 
 		/* Ogg - has a filter
 		 * Xiph's container format. Contains one or more logical bitstreams.
@@ -92,7 +98,7 @@ public class ContentFilter {
 				true, false, new OggFilter(), true, true, false, true, false, false,
 				l10n("containerOggReadAdvice"),false, null, null, false));
 
-		/* FLAC - Needs filter
+		/* FLAC - has a filter
 		 * Lossless audio format. This data is sometimes encapsulated inside
 		 * of ogg containers. It is, however, not currently supported, and
 		 * is very dangerous, as it may specify URLs from which album art
@@ -335,7 +341,7 @@ public class ContentFilter {
 		else {
 			// Run the read filter if there is one.
 			if(handler.readFilter != null) {
-				if(handler.takesACharset && ((charset == null) || (charset.length() == 0))) {
+				if(handler.takesACharset && ((charset == null) || (charset.isEmpty()))) {
 					int bufferSize = handler.charsetExtractor.getCharsetBufferSize();
 					input.mark(bufferSize);
 					byte[] charsetBuffer = new byte[bufferSize];
@@ -448,7 +454,7 @@ public class ContentFilter {
 		}
 
 		// If no BOM, use the charset from the referring document.
-		if(handler.useMaybeCharset && maybeCharset != null && (maybeCharset.length() != 0))
+		if(handler.useMaybeCharset && maybeCharset != null && (!maybeCharset.isEmpty()))
 			return maybeCharset;
 
 		if(charset != null)

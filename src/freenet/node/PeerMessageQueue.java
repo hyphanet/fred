@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Random;
 
 import freenet.io.comm.DMT;
 import freenet.support.DoublyLinkedList;
@@ -384,7 +385,7 @@ public class PeerMessageQueue {
 			} else {
 				if(nonEmptyItemsWithID != null) {
 					for(Items items : nonEmptyItemsWithID) {
-						if(items.items.size() == 0) continue;
+						if(items.items.isEmpty()) continue;
 						if(items.timeLastSent > 0) {
 							t = Math.min(t, items.timeLastSent + timeout);
 							if(t <= stopIfBeforeTime) return t;
@@ -701,7 +702,7 @@ public class PeerMessageQueue {
 			}
 			if(nonEmptyItemsWithID != null) {
 				for(Items items : nonEmptyItemsWithID) {
-					if(items.items.size() == 0) continue;
+					if(items.items.isEmpty()) continue;
 					return false;
 				}
 			}
@@ -710,7 +711,9 @@ public class PeerMessageQueue {
 
 	}
 
-	PeerMessageQueue() {
+	final private Random fastWeakRandom;
+	PeerMessageQueue(Random fastWeakRandom) {
+		this.fastWeakRandom = fastWeakRandom;
 		queuesByPriority = new PrioQueue[DMT.NUM_PRIORITIES];
 		for(int i=0;i<queuesByPriority.length;i++) {
 			if(i == DMT.PRIORITY_BULK_DATA)
@@ -873,25 +876,23 @@ public class PeerMessageQueue {
 			if(ret != null) return ret;
 		}
 		
+		
+
 		// Include bulk or realtime, whichever is more urgent.
-		
-		boolean tryRealtimeFirst = true;
-		
-		// If one is empty, try the other.
-		// Otherwise try whichever is more urgent, favouring realtime if there is a draw.
-		// Realtime is supposed to be bursty.
-		
+		boolean tryRealtimeFirst;
 		if(queuesByPriority[DMT.PRIORITY_REALTIME_DATA].isEmpty()) {
 			tryRealtimeFirst = false;
 		} else if(queuesByPriority[DMT.PRIORITY_BULK_DATA].isEmpty()) {
 			tryRealtimeFirst = true;
-		} else if(queuesByPriority[DMT.PRIORITY_BULK_DATA].getNextUrgentTime(Long.MAX_VALUE, 0) >= queuesByPriority[DMT.PRIORITY_REALTIME_DATA].getNextUrgentTime(Long.MAX_VALUE, 0)) {
+		} else if(queuesByPriority[DMT.PRIORITY_BULK_DATA].getNextUrgentTime(Long.MAX_VALUE, 0)
+				>= queuesByPriority[DMT.PRIORITY_REALTIME_DATA].getNextUrgentTime(Long.MAX_VALUE, 0)) {
 			tryRealtimeFirst = true;
 		} else {
-			tryRealtimeFirst = false;
+			// 10% chance to use bulk in case of a draw to avoid starving the bulk queue.
+			tryRealtimeFirst = this.fastWeakRandom.nextInt(10) > 0;
 		}
 		
-		// FIXME token bucket?
+		
 		if(tryRealtimeFirst) {
 			// Try realtime first
 			if(logMINOR) Logger.minor(this, "Trying realtime first");

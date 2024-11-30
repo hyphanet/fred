@@ -14,10 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import freenet.support.math.MersenneTwister;
-
 import freenet.crypt.AEADCryptBucket;
-
 import freenet.crypt.EncryptedRandomAccessBucket;
 import freenet.crypt.EncryptedRandomAccessBuffer;
 import freenet.crypt.MasterSecret;
@@ -30,6 +27,7 @@ import freenet.support.api.BucketFactory;
 import freenet.support.api.LockableRandomAccessBuffer;
 import freenet.support.api.RandomAccessBucket;
 import freenet.support.api.RandomAccessBuffer;
+import freenet.support.math.MersenneTwister;
 
 /**
  * Helper functions for working with Buckets.
@@ -276,27 +274,22 @@ public class BucketTools {
 		InputStream is = data.getInputStreamUnbuffered();
 		try {
 			MessageDigest md = SHA256.getMessageDigest();
-			try { 
-				long bucketLength = data.size();
-				long bytesRead = 0;
-				byte[] buf = new byte[BUFFER_SIZE];
-				while ((bytesRead < bucketLength) || (bucketLength == -1)) {
-					int readBytes = is.read(buf);
-					if (readBytes < 0)
-						break;
-					bytesRead += readBytes;
-					if (readBytes > 0)
-						md.update(buf, 0, readBytes);
-				}
-				if ((bytesRead < bucketLength) && (bucketLength > 0))
-					throw new EOFException();
-				if ((bytesRead != bucketLength) && (bucketLength > 0))
-					throw new IOException("Read " + bytesRead + " but bucket length " + bucketLength + " on " + data + '!');
-				byte[] retval = md.digest();
-				return retval;
-			} finally {
-				SHA256.returnMessageDigest(md);
+			long bucketLength = data.size();
+			long bytesRead = 0;
+			byte[] buf = new byte[BUFFER_SIZE];
+			while ((bytesRead < bucketLength) || (bucketLength == -1)) {
+				int readBytes = is.read(buf);
+				if (readBytes < 0)
+					break;
+				bytesRead += readBytes;
+				if (readBytes > 0)
+					md.update(buf, 0, readBytes);
 			}
+			if ((bytesRead < bucketLength) && (bucketLength > 0))
+				throw new EOFException();
+			if ((bytesRead != bucketLength) && (bucketLength > 0))
+				throw new IOException("Read " + bytesRead + " but bucket length " + bucketLength + " on " + data + '!');
+            return md.digest();
 		} finally {
 			if(is != null) is.close();
 		}
@@ -438,7 +431,7 @@ public class BucketTools {
 	 * @param bf
 	 * @param length
 	 * 
-	 * @return the paded bucket
+	 * @return the padded bucket
 	 */
 	public static Bucket pad(Bucket oldBucket, int blockLength, BucketFactory bf, int length) throws IOException {
 		byte[] hash = BucketTools.hash(oldBucket);

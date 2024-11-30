@@ -244,7 +244,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, Serializable {
 		@Override
 		public final int available() {
 			int x = (int)Math.min(dataLength - ptr, Integer.MAX_VALUE);
-			return (x < 0) ? 0 : x;
+			return Math.max(x, 0);
 		}
 		
 		@Override

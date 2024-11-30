@@ -136,7 +136,7 @@ public class SplitFileInserterSender extends SendableInsert {
                 });
                 if(request.localRequestOnly) {
                     try {
-                        node.node.store(block, false, request.canWriteClientCache, true, false);
+                        node.getNode().store(block, false, request.canWriteClientCache, true, false);
                     } catch (KeyCollisionException e) {
                         throw new LowLevelPutException(LowLevelPutException.COLLISION);
                     }

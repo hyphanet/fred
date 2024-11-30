@@ -1,7 +1,7 @@
 package freenet.clients.fcp;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 
 import freenet.node.DarknetPeerNode;
 import freenet.support.SimpleFieldSet;
@@ -28,13 +28,11 @@ public class SendTextMessage extends SendPeerMessage {
 		try {
 			if(dataLength() > 0) {
 				byte[] text = BucketTools.toByteArray(bucket);
-				return pn.sendTextFeed(new String(text, "UTF-8"));
+				return pn.sendTextFeed(new String(text, StandardCharsets.UTF_8));
 			}
 			else {
 				throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Invalid data length", null, false);
 			}
-		} catch (UnsupportedEncodingException e) {
-			throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
 		} catch (IOException e) {
 			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "", null, false);
 		}

@@ -12,31 +12,24 @@ import java.util.Comparator;
  */
 public class ByteArrayWrapper implements Comparable<ByteArrayWrapper> {
 	
-	private final byte[] buf;
-	private int hashCode;
+	private final byte[] data;
+	private final int hashCode;
 	
-	public static final Comparator<ByteArrayWrapper> FAST_COMPARATOR = new Comparator<ByteArrayWrapper>() {
-
-		@Override
-		public int compare(ByteArrayWrapper o1, ByteArrayWrapper o2) {
-			if(o1.hashCode > o2.hashCode) return 1;
-			if(o1.hashCode < o2.hashCode) return -1;
-			return o1.compareTo(o2);
-		}
-		
-	};
+	public static final Comparator<ByteArrayWrapper> FAST_COMPARATOR = Comparator
+			.comparingInt(ByteArrayWrapper::hashCode)
+			.thenComparing(Comparator.naturalOrder());
 	
 	public ByteArrayWrapper(byte[] data) {
-		buf = data;
-		hashCode = Fields.hashCode(buf);
+		this.data = Arrays.copyOf(data, data.length);
+		this.hashCode = Arrays.hashCode(this.data);
 	}
 	
 	@Override
-	public boolean equals(Object o) {
-		if(o instanceof ByteArrayWrapper) {
-			ByteArrayWrapper b = (ByteArrayWrapper) o;
-			if(b.buf == buf) return true;
-			return Arrays.equals(b.buf, buf);
+	public boolean equals(Object other) {
+		if (this == other) return true;
+		if (other instanceof ByteArrayWrapper) {
+			ByteArrayWrapper b = (ByteArrayWrapper) other;
+			return this.hashCode == b.hashCode && Arrays.equals(this.data, b.data);
 		}
 		return false;
 	}
@@ -46,14 +39,15 @@ public class ByteArrayWrapper implements Comparable<ByteArrayWrapper> {
 		return hashCode;
 	}
 	
-	/** DO NOT MODIFY THE RETURNED DATA! */
 	public byte[] get() {
-		return buf;
+		return Arrays.copyOf(data, data.length);
 	}
 
 	@Override
-	public int compareTo(ByteArrayWrapper arg) {
-		if(this == arg) return 0;
-		return Fields.compareBytes(buf, arg.buf);
+	public int compareTo(ByteArrayWrapper other) {
+		if (this == other) {
+			return 0;
+		}
+		return Fields.compareBytes(this.data, other.data);
 	}
 }

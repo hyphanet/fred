@@ -17,7 +17,7 @@ import freenet.support.Logger;
  * @author sajack
  */
 public class VorbisPacketFilter implements CodecPacketFilter {
-	enum State {UNINITIALIZED, IDENTIFICATION_FOUND, COMMENT_FOUND, SETUP_FOUND};
+	enum State {UNINITIALIZED, IDENTIFICATION_FOUND, COMMENT_FOUND, SETUP_FOUND}
 	static final byte[] magicNumber = new byte[] {0x76, 0x6f, 0x72, 0x62, 0x69, 0x73};
 	State currentState = State.UNINITIALIZED;
 

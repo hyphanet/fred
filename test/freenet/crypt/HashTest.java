@@ -7,9 +7,8 @@ import static org.junit.Assert.*;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-
-import net.i2p.util.NativeBigInteger;
 
 import org.bouncycastle.util.encoders.Hex;
 import org.junit.Test;
@@ -17,8 +16,8 @@ import org.junit.Test;
 import junit.framework.TestCase;
 
 public class HashTest {
-	static private byte[] helloWorld = "hello world".getBytes(Charset.forName("UTF-8"));
-	static private byte[] nullArray = null;
+	static private final byte[] helloWorld = "hello world".getBytes(StandardCharsets.UTF_8);
+	static private final byte[] nullArray = null;
 	static private final HashType[] types = {HashType.MD5, HashType.ED2K, HashType.SHA1, 
 	    HashType.TTH, HashType.SHA256, HashType.SHA384, HashType.SHA512};
 	static private final String[] trueHashes = {
@@ -130,16 +129,6 @@ public class HashTest {
 			String hexHash = hash.genHexHash();
 			assertEquals("HashType: "+types[i].name(), trueHashes[i], hexHash);
 		}
-	}
-
-	@Test
-	public void testGetNativeBigIntegerHashByteArrayArray(){
-		for(int i = 0; i < types.length; i++){
-			Hash hash = new Hash(types[i]);
-			NativeBigInteger abcVector = new NativeBigInteger(1, Hex.decode(trueHashes[i]));
-			NativeBigInteger result = hash.genNativeBigIntegerHash(helloWorld);
-			assertEquals("HashType: "+types[i].name(), abcVector, result);
-		}	
 	}
 
 	@Test

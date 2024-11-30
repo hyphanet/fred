@@ -16,6 +16,7 @@ import freenet.client.async.ClientContext;
 import freenet.client.async.ClientLayerPersister;
 import freenet.client.async.ClientRequestScheduler;
 import freenet.client.async.DatastoreChecker;
+import freenet.client.async.HealingDecisionSupplier;
 import freenet.client.async.HealingQueue;
 import freenet.client.async.PersistentStatsPutter;
 import freenet.client.async.SimpleHealingQueue;
@@ -107,9 +108,26 @@ public class NodeClientCore implements Persistable {
 		Logger.registerClass(NodeClientCore.class);
 	}
 
+	/**
+	 * @deprecated Use {@link #getBandwidthStatsPutter()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final PersistentStatsPutter bandwidthStatsPutter;
+
+	/**
+	 * @deprecated Use {@link #getUskManager()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final USKManager uskManager;
 	public final ArchiveManager archiveManager;
+
+	/**
+	 * @deprecated Use {@link #getRequestStarters()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final RequestStarterGroup requestStarters;
 	private final HealingQueue healingQueue;
 	public final MemoryLimitedJobRunner memoryLimitedJobRunner;
@@ -126,7 +144,9 @@ public class NodeClientCore implements Persistable {
 	 * In particular, you must NOT modify anything.</p>
 	 * <p>To produce a form which already contains the password, use {@link PluginRespirator#addFormChild(freenet.support.HTMLNode, String, String)}.</p>
 	 * <p>To validate that the right password was received, use {@link WebInterfaceToadlet#isFormPassword(HTTPRequest)}.</p>
+	 * @deprecated Use {@link #getFormPassword()} instead of accessing this directly
 	 */
+	@Deprecated
 	public final String formPassword;
 
 	final ProgramDirectory downloadsDir;
@@ -136,21 +156,81 @@ public class NodeClientCore implements Persistable {
 	private boolean downloadDisabled;
 	private File[] uploadAllowedDirs;
 	private boolean uploadAllowedEverywhere;
+
+	/**
+	 * @deprecated Use {@link #getTempFilenameGenerator()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but directly accessing it is. */
 	public final FilenameGenerator tempFilenameGenerator;
+
+	/**
+	 * @deprecated Use {@link #getPersistentFilenameGenerator()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but directly accessing it is. */
 	public final FilenameGenerator persistentFilenameGenerator;
+
+	/**
+	 * @deprecated Use {@link #getTempBucketFactory()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but directly accessing it is. */
 	public final TempBucketFactory tempBucketFactory;
+
+	/**
+	 * @deprecated Use {@link #getPersistentTempBucketFactory()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but directly accessing it is. */
 	public final PersistentTempBucketFactory persistentTempBucketFactory;
 	private final DiskSpaceCheckingRandomAccessBufferFactory persistentDiskChecker;
 	public final MaybeEncryptedRandomAccessBufferFactory persistentRAFFactory;
+
+	/**
+	 * @deprecated Use {@link #getClientLayerPersister()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but directly accessing it is. */
 	public final ClientLayerPersister clientLayerPersister;
+
+	/**
+	 * @deprecated Use {@link #getNode()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but directly accessing it is. */
 	public final Node node;
 	public final RequestTracker tracker;
+
+	/**
+	 * @deprecated Use {@link #getNodeStats()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but directly accessing it is. */
 	final NodeStats nodeStats;
+
+	/**
+	 * @deprecated Use {@link #getRandom()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but directly accessing it is. */
 	public final RandomSource random;
 	final ProgramDirectory tempDir;	// Persistent temporary buckets
 	final ProgramDirectory persistentTempDir;
+
+	/**
+	 * @deprecated Use {@link #getAlerts()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but directly accessing it is. */
 	public final UserAlertManager alerts;
 	final TextModeClientInterfaceServer tmci;
+
+	/**
+	 * @deprecated Use {@link #getDirectTMCI()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but directly accessing it is. */
 	TextModeClientInterface directTMCI;
 	private final PersistentRequestRoot fcpPersistentRoot;
 	final FCPServer fcpServer;
@@ -159,6 +239,12 @@ public class NodeClientCore implements Persistable {
 	public final RealCompressor compressor;
 	/** If true, requests are resumed lazily i.e. startup does not block waiting for them. */
 	protected final Persister persister;
+
+	/**
+	 * @deprecated Use {@link #getStoreChecker()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but directly accessing it is. */
 	public final DatastoreChecker storeChecker;
 	/** How much disk space must be free when starting a long-term, unpredictable duration job such
 	 * as a big download? */
@@ -168,6 +254,11 @@ public class NodeClientCore implements Persistable {
 	private long minDiskFreeShortTerm;
 	private final MasterSecret cryptoSecretTransient;
 
+	/**
+	 * @deprecated Use {@link #getClientContext()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but directly accessing it is. */
 	public transient final ClientContext clientContext;
 
 	private static int maxBackgroundUSKFetchers;	// Client stuff that needs to be configged - FIXME
@@ -185,9 +276,9 @@ public class NodeClientCore implements Persistable {
 
 	NodeClientCore(Node node, Config config, SubConfig nodeConfig, SubConfig installConfig, int portNumber, int sortOrder, SimpleFieldSet oldConfig, SubConfig fproxyConfig, SimpleToadletServer toadlets, DatabaseKey databaseKey, MasterSecret persistentSecret) throws NodeInitException {
 		this.node = node;
-		this.tracker = node.tracker;
-		this.nodeStats = node.nodeStats;
-		this.random = node.random;
+		this.tracker = node.getTracker();
+		this.nodeStats = node.getNodeStats();
+		this.random = node.getRandom();
 		this.pluginStores = new PluginStores(node, installConfig);
 
 		nodeConfig.register("lazyStartDatastoreChecker", false, sortOrder++, true, false,
@@ -219,7 +310,7 @@ public class NodeClientCore implements Persistable {
 		lazyStartDatastoreChecker = nodeConfig.getBoolean("lazyStartDatastoreChecker");
 
 		storeChecker =
-				new DatastoreChecker(node, lazyStartDatastoreChecker, node.executor,
+				new DatastoreChecker(node, lazyStartDatastoreChecker, node.getExecutor(),
 						     "Datastore checker");
 		byte[] pwdBuf = new byte[16];
 		random.nextBytes(pwdBuf);
@@ -232,7 +323,7 @@ public class NodeClientCore implements Persistable {
 							  false,
 							  "NodeClientCore.fileForClientStats",
 							  "NodeClientCore.fileForClientStatsLong",
-							  node.ticker, node.getRunDir());
+							  node.getTicker(), node.getRunDir());
 
 		SimpleFieldSet throttleFS = persister.read();
 		if (logMINOR)
@@ -313,8 +404,8 @@ public class NodeClientCore implements Persistable {
 			this.persistentTempBucketFactory =
 					new PersistentTempBucketFactory(persistentTempDir.dir(),
 									"freenet-temp-",
-									node.random,
-									node.fastWeakRandom,
+									node.getRandom(),
+									node.getFastWeakRandom(),
 									nodeConfig.getBoolean(
 											"encryptPersistentTempBuckets"));
 			this.persistentFilenameGenerator = persistentTempBucketFactory.fg;
@@ -431,16 +522,16 @@ public class NodeClientCore implements Persistable {
 
 		cryptoSecretTransient = new MasterSecret();
 		tempBucketFactory =
-				new TempBucketFactory(node.executor, tempFilenameGenerator,
+				new TempBucketFactory(node.getExecutor(), tempFilenameGenerator,
 						      nodeConfig.getLong("maxRAMBucketSize"),
 						      nodeConfig.getLong("RAMBucketPoolSize"),
-						      node.fastWeakRandom,
+						      node.getFastWeakRandom(),
 						      nodeConfig.getBoolean("encryptTempBuckets"),
 						      minDiskFreeShortTerm, cryptoSecretTransient);
 
 		bandwidthStatsPutter = new PersistentStatsPutter();
 
-		clientLayerPersister = new ClientLayerPersister(node.executor, node.ticker,
+		clientLayerPersister = new ClientLayerPersister(node.getExecutor(), node.getTicker(),
 								node, this,
 								persistentTempBucketFactory,
 								tempBucketFactory,
@@ -495,11 +586,12 @@ public class NodeClientCore implements Persistable {
 						false, Node.FORK_ON_CACHEABLE_DEFAULT, false,
 						Compressor.DEFAULT_COMPRESSORDESCRIPTOR, 0, 0,
 						InsertContext.CompatibilityMode.COMPAT_DEFAULT),
-				RequestStarter.PREFETCH_PRIORITY_CLASS, MAX_RUNNING_HEALING_INSERTS);
+				RequestStarter.PREFETCH_PRIORITY_CLASS, MAX_RUNNING_HEALING_INSERTS,
+				new HealingDecisionSupplier(node::getLocation, node::isOpennetEnabled));
 
 		PooledFileRandomAccessBufferFactory raff =
 				new PooledFileRandomAccessBufferFactory(persistentFilenameGenerator,
-									node.fastWeakRandom);
+									node.getFastWeakRandom());
 		persistentDiskChecker =
 				new DiskSpaceCheckingRandomAccessBufferFactory(raff,
 									       persistentTempDir
@@ -521,7 +613,7 @@ public class NodeClientCore implements Persistable {
 				/ 2; // Some disk I/O ... tunable REDFLAG
 		maxMemoryLimitedJobThreads =
 				Math.min(maxMemoryLimitedJobThreads,
-					 node.nodeStats.getThreadLimit() / 20);
+					 node.getNodeStats().getThreadLimit() / 20);
 		maxMemoryLimitedJobThreads = Math.max(1, maxMemoryLimitedJobThreads);
 		// FIXME review thread limits. This isn't just memory, it's CPU and disk as well, so we don't want it too big??
 		// FIXME l10n the errors?
@@ -583,7 +675,7 @@ public class NodeClientCore implements Persistable {
 				new MemoryLimitedJobRunner(
 						nodeConfig.getLong("memoryLimitedJobMemoryLimit"),
 						nodeConfig.getInt("memoryLimitedJobThreadLimit"),
-						node.executor,
+						node.getExecutor(),
 						RequestStarter.NUMBER_OF_PRIORITY_CLASSES);
 		shutdownHook.addEarlyJob(
 				new NativeThread("Shutdown FEC", NativeThread.HIGH_PRIORITY, true) {
@@ -605,11 +697,11 @@ public class NodeClientCore implements Persistable {
 					}
 
 				});
-		clientContext = new ClientContext(node.bootID, clientLayerPersister, node.executor,
+		clientContext = new ClientContext(node.getBootId(), clientLayerPersister, node.getExecutor(),
 						  archiveManager, persistentTempBucketFactory,
 						  tempBucketFactory,
 						  persistentTempBucketFactory, healingQueue,
-						  uskManager, random, node.fastWeakRandom,
+						  uskManager, random, node.getFastWeakRandom(),
 						  node.getTicker(), memoryLimitedJobRunner,
 						  tempFilenameGenerator,
 						  persistentFilenameGenerator, tempBucketFactory,
@@ -646,7 +738,7 @@ public class NodeClientCore implements Persistable {
 			node.setDatabaseAwaitingPassword();
 		}
 
-		node.securityLevels.addPhysicalThreatLevelListener(
+		node.getSecurityLevels().addPhysicalThreatLevelListener(
 				new SecurityLevelListener<PHYSICAL_THREAT_LEVEL>() {
 
 					@Override
@@ -811,7 +903,7 @@ public class NodeClientCore implements Persistable {
 		// FCP (including persistent requests so needs to start before FProxy)
 		try {
 			fcpServer =
-					FCPServer.maybeCreate(node, this, node.config,
+					FCPServer.maybeCreate(node, this, node.getConfig(),
 							      fcpPersistentRoot);
 			clientContext.setDownloadCache(fcpServer);
 			if (!killedDatabase())
@@ -971,7 +1063,7 @@ public class NodeClientCore implements Persistable {
 	 * @throws MasterKeysWrongPasswordException If it needs an encryption key.
 	 */
 	private void initStorage(DatabaseKey databaseKey) throws MasterKeysWrongPasswordException {
-	    clientLayerPersister.setFilesAndLoad(node.nodeDir.dir(), "client.dat",
+	    clientLayerPersister.setFilesAndLoad(node.getNodeDir(), "client.dat",
 	            node.wantEncryptedDatabase(), node.wantNoPersistentDatabase(), databaseKey, clientContext, requestStarters, random);
 	}
 
@@ -1053,12 +1145,12 @@ public class NodeClientCore implements Persistable {
 		storeChecker.start();
 		if(fcpServer != null)
 			fcpServer.maybeStart();
-        node.pluginManager.start();
-        node.ipDetector.ipDetectorManager.start();
+        node.getPluginManager().start();
+        node.getIpDetector().ipDetectorManager.start();
 		if(tmci != null)
 			tmci.start();
 
-		node.executor.execute(new PrioRunnable() {
+		node.getExecutor().execute(new PrioRunnable() {
 
 			@Override
 			public void run() {
@@ -1130,7 +1222,7 @@ public class NodeClientCore implements Persistable {
 		// us to cache it in the datastore. Find the lowest HTL fetching the key in that period,
 		// and use that for purposes of deciding whether to cache it in the store.
 		if(offersOnly) {
-			htl = node.failureTable.minOfferedHTL(key, htl);
+			htl = node.getFailureTable().minOfferedHTL(key, htl);
 			if(logMINOR) Logger.minor(this, "Using old HTL for GetOfferedKey: "+htl);
 		}
 		final long startTime = System.currentTimeMillis();
@@ -1199,9 +1291,9 @@ public class NodeClientCore implements Persistable {
 						long rtt = System.currentTimeMillis() - startTime;
 						double targetLocation=key.toNormalizedDouble();
 						if(isSSK) {
-							node.nodeStats.reportSSKOutcome(rtt, false, realTimeFlag);
+							node.getNodeStats().reportSSKOutcome(rtt, false, realTimeFlag);
 						} else {
-							node.nodeStats.reportCHKOutcome(rtt, false, targetLocation, realTimeFlag);
+							node.getNodeStats().reportCHKOutcome(rtt, false, targetLocation, realTimeFlag);
 						}
 					}
 				} else
@@ -1219,9 +1311,9 @@ public class NodeClientCore implements Persistable {
 						// Count towards RTT even if got a RejectedOverload - but not if timed out.
 						requestStarters.getThrottle(isSSK, false, realTimeFlag).successfulCompletion(rtt);
 						if(isSSK) {
-							node.nodeStats.reportSSKOutcome(rtt, status == RequestSender.SUCCESS, realTimeFlag);
+							node.getNodeStats().reportSSKOutcome(rtt, status == RequestSender.SUCCESS, realTimeFlag);
 						} else {
-							node.nodeStats.reportCHKOutcome(rtt, status == RequestSender.SUCCESS, targetLocation, realTimeFlag);
+							node.getNodeStats().reportCHKOutcome(rtt, status == RequestSender.SUCCESS, targetLocation, realTimeFlag);
 						}
 						if(status == RequestSender.SUCCESS) {
 							Logger.minor(this, "Successful " + (isSSK ? "SSK" : "CHK") + " fetch took "+rtt);
@@ -1405,7 +1497,7 @@ public class NodeClientCore implements Persistable {
 						rejectedOverload = true;
 						long rtt = System.currentTimeMillis() - startTime;
 						double targetLocation=key.getNodeCHK().toNormalizedDouble();
-						node.nodeStats.reportCHKOutcome(rtt, false, targetLocation, realTimeFlag);
+						node.getNodeStats().reportCHKOutcome(rtt, false, targetLocation, realTimeFlag);
 					}
 				} else
 					if(rs.hasForwarded() &&
@@ -1421,7 +1513,7 @@ public class NodeClientCore implements Persistable {
 							requestStarters.requestCompleted(false, false, key.getNodeKey(true), realTimeFlag);
 						// Count towards RTT even if got a RejectedOverload - but not if timed out.
 						requestStarters.getThrottle(false, false, realTimeFlag).successfulCompletion(rtt);
-						node.nodeStats.reportCHKOutcome(rtt, status == RequestSender.SUCCESS, targetLocation, realTimeFlag);
+						node.getNodeStats().reportCHKOutcome(rtt, status == RequestSender.SUCCESS, targetLocation, realTimeFlag);
 						if(status == RequestSender.SUCCESS) {
 							Logger.minor(this, "Successful CHK fetch took "+rtt);
 						}
@@ -1528,7 +1620,7 @@ public class NodeClientCore implements Persistable {
 						requestStarters.rejectedOverload(true, false, realTimeFlag);
 						rejectedOverload = true;
 					}
-					node.nodeStats.reportSSKOutcome(rtt, false, realTimeFlag);
+					node.getNodeStats().reportSSKOutcome(rtt, false, realTimeFlag);
 				} else
 					if(rs.hasForwarded() &&
 						((status == RequestSender.DATA_NOT_FOUND) ||
@@ -1542,7 +1634,7 @@ public class NodeClientCore implements Persistable {
 							requestStarters.requestCompleted(true, false, key.getNodeKey(true), realTimeFlag);
 						// Count towards RTT even if got a RejectedOverload - but not if timed out.
 						requestStarters.getThrottle(true, false, realTimeFlag).successfulCompletion(rtt);
-						node.nodeStats.reportSSKOutcome(rtt, status == RequestSender.SUCCESS, realTimeFlag);
+						node.getNodeStats().reportSSKOutcome(rtt, status == RequestSender.SUCCESS, realTimeFlag);
 					}
 
 				if(rs.getStatus() == RequestSender.SUCCESS)
@@ -1955,7 +2047,7 @@ public class NodeClientCore implements Persistable {
 
 	public void storeConfig() {
 		Logger.normal(this, "Trying to write config to disk", new Exception("debug"));
-		node.config.store();
+		node.getConfig().store();
 	}
 
 	public boolean isTestnetEnabled() {
@@ -1987,7 +2079,7 @@ public class NodeClientCore implements Persistable {
 	}
 
 	public boolean allowDownloadTo(File filename) {
-		PHYSICAL_THREAT_LEVEL physicalThreatLevel = node.securityLevels.getPhysicalThreatLevel();
+		PHYSICAL_THREAT_LEVEL physicalThreatLevel = node.getSecurityLevels().getPhysicalThreatLevel();
 		if(physicalThreatLevel == PHYSICAL_THREAT_LEVEL.MAXIMUM) return false;
 		synchronized(this) {
 			if(downloadAllowedEverywhere) return true;
@@ -2035,7 +2127,7 @@ public class NodeClientCore implements Persistable {
 	}
 
 	public Executor getExecutor() {
-		return node.executor;
+		return node.getExecutor();
 	}
 
 	public File getPersistentTempDir() {
@@ -2095,7 +2187,7 @@ public class NodeClientCore implements Persistable {
 		// slots and CPU. FIXME SECURITY/NETWORK: Reconsider if we ever decide
 		// not to decrement on the originator.
 		short origHTL = node.decrementHTL(null, node.maxHTL());
-		node.peers.closerPeer(null, new HashSet<PeerNode>(), key.toNormalizedDouble(), true, false, -1, null, 2.0, key, origHTL, 0, true, realTime, r, false, System.currentTimeMillis(), node.enableNewLoadManagement(realTime));
+		node.getPeers().closerPeer(null, new HashSet<PeerNode>(), key.toNormalizedDouble(), true, false, -1, null, 2.0, key, origHTL, 0, true, realTime, r, false, System.currentTimeMillis(), node.enableNewLoadManagement(realTime));
 		return r.recentlyFailed();
 	}
 
@@ -2128,6 +2220,66 @@ public class NodeClientCore implements Persistable {
 
     public boolean loadedDatabase() {
         return clientLayerPersister.hasLoaded();
+    }
+
+    public PersistentStatsPutter getBandwidthStatsPutter() {
+        return bandwidthStatsPutter;
+    }
+
+    public USKManager getUskManager() {
+        return uskManager;
+    }
+
+    public RequestStarterGroup getRequestStarters() {
+        return requestStarters;
+    }
+
+    public String getFormPassword() {
+        return formPassword;
+    }
+
+    public FilenameGenerator getTempFilenameGenerator() {
+        return tempFilenameGenerator;
+    }
+
+    public FilenameGenerator getPersistentFilenameGenerator() {
+        return persistentFilenameGenerator;
+    }
+
+    public TempBucketFactory getTempBucketFactory() {
+        return tempBucketFactory;
+    }
+
+    public PersistentTempBucketFactory getPersistentTempBucketFactory() {
+        return persistentTempBucketFactory;
+    }
+
+    public ClientLayerPersister getClientLayerPersister() {
+        return clientLayerPersister;
+    }
+
+    public Node getNode() {
+        return node;
+    }
+
+    public NodeStats getNodeStats() {
+        return nodeStats;
+    }
+
+    public RandomSource getRandom() {
+        return random;
+    }
+
+    public UserAlertManager getAlerts() {
+        return alerts;
+    }
+
+    public DatastoreChecker getStoreChecker() {
+        return storeChecker;
+    }
+
+    public ClientContext getClientContext() {
+        return clientContext;
     }
 
 }

@@ -3,8 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import org.tanukisoftware.wrapper.WrapperListener;
-import org.tanukisoftware.wrapper.WrapperManager;
+import static java.util.concurrent.TimeUnit.MINUTES;
 
 import java.io.File;
 import java.io.IOException;
@@ -29,8 +28,8 @@ import freenet.support.PooledExecutor;
 import freenet.support.ProcessPriority;
 import freenet.support.SimpleFieldSet;
 import freenet.support.io.NativeThread;
-
-import static java.util.concurrent.TimeUnit.MINUTES;
+import org.tanukisoftware.wrapper.WrapperListener;
+import org.tanukisoftware.wrapper.WrapperManager;
 
 /**
  *  @author nextgens
@@ -107,7 +106,7 @@ public class NodeStarter implements WrapperListener {
 		}
 		if(args.length > 1) {
 			System.out.println("Usage: $ java freenet.node.Node <configFile>");
-			return Integer.valueOf(-1);
+			return -1;
 		}
 		String builtWithMessage = "freenet.jar built with freenet-ext.jar Build #" + ExtVersion.buildNumber + " r" + ExtVersion.cvsRevision+" running with ext build "+extBuildNumber+" r" + extRevisionNumber;
 		Logger.normal(this, builtWithMessage);
@@ -131,7 +130,7 @@ public class NodeStarter implements WrapperListener {
 		} catch(IOException e) {
 			System.out.println("Error : " + e);
 			e.printStackTrace();
-			return Integer.valueOf(-1);
+			return -1;
 		}
 
 		// First, set up logging. It is global, and may be shared between several nodes.
@@ -145,7 +144,7 @@ public class NodeStarter implements WrapperListener {
 		} catch(InvalidConfigValueException e) {
 			System.err.println("Error: could not set up logging: " + e.getMessage());
 			e.printStackTrace();
-			return Integer.valueOf(-2);
+			return -2;
 		}
 
 		System.out.println("Starting executor...");
@@ -182,7 +181,6 @@ public class NodeStarter implements WrapperListener {
 		NativeThread plug = new NativeThread(useless, "Plug", NativeThread.MAX_PRIORITY, false);
 		// Not daemon, but doesn't do anything.
 		// Keeps the JVM alive.
-		// DO NOT do anything in the plug thread, if you do you risk the EvilJVMBug.
 		plug.setDaemon(false);
 		plug.start();
 
@@ -363,7 +361,6 @@ public class NodeStarter implements WrapperListener {
 			Thread plug = new Thread(useless, "Plug");
 			// Not daemon, but doesn't do anything.
 			// Keeps the JVM alive.
-			// DO NOT do anything in the plug thread, if you do you risk the EvilJVMBug.
 			plug.setDaemon(false);
 			plug.start();
 		}
@@ -579,7 +576,7 @@ public class NodeStarter implements WrapperListener {
         Node node = new Node(config, params.random, params.random, null, null, params.executor);
 
 		//All testing environments connect the nodes as they want, even if the old setup is restored, it is not desired.
-		node.peers.removeAllPeers();
+		node.getPeers().removeAllPeers();
 
 		return node;
 	}

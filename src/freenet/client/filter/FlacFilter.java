@@ -19,7 +19,7 @@ import freenet.support.Logger.LogLevel;
  */
 public class FlacFilter implements ContentDataFilter {
 	static final byte[] magicNumber = new byte[] {0x66, 0x4C, 0x61, 0x43};
-	enum State {UNINITIALIZED, STREAMINFO_FOUND, METADATA_FOUND, STREAM_FINISHED};
+	enum State {UNINITIALIZED, STREAMINFO_FOUND, METADATA_FOUND, STREAM_FINISHED}
 
 	public void readFilter(
       InputStream input, OutputStream output,
@@ -56,8 +56,8 @@ public class FlacFilter implements ContentDataFilter {
 					boolean firstHalfOfSyncHeaderFound = false;
 					ArrayList<Byte> buffer = new ArrayList<Byte>();
 					int data = 0;
-					buffer.add(Byte.valueOf((byte) ((frameHeader & 0xFF00) >>> 8)));
-					buffer.add(Byte.valueOf((byte) (frameHeader & 0x00FF)));
+					buffer.add((byte) ((frameHeader & 0xFF00) >>> 8));
+					buffer.add((byte) (frameHeader & 0x00FF));
 					boolean running = true;
 					while(running) {
 						try {
@@ -90,10 +90,10 @@ public class FlacFilter implements ContentDataFilter {
 								packet = new FlacFrame(payload);
 							} else {
 								firstHalfOfSyncHeaderFound = false;
-								buffer.add(Byte.valueOf((byte) 0xFF));
+								buffer.add((byte) 0xFF);
 							}
 						}
-						buffer.add(Byte.valueOf((byte) (data & 0xFF)));
+						buffer.add((byte) (data & 0xFF));
 					}
 				}
 				if(currentState == State.UNINITIALIZED && packet instanceof FlacMetadataBlock && ((FlacMetadataBlock) packet).isLastMetadataBlock()) {

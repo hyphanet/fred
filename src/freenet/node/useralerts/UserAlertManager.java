@@ -77,7 +77,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 	private void notifySubscribers(final UserAlert alert) {
 		// Run off-thread, because of locking, and because client
 		// callbacks may take some time
-		core.clientContext.mainExecutor.execute(new Runnable() {
+		core.getClientContext().mainExecutor.execute(new Runnable() {
 			@Override
 			public void run() {
 				for (FCPConnectionHandler subscriber : subscribers)
@@ -233,7 +233,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 		if (userAlert.userCanDismiss()) {
 			HTMLNode dismissFormNode = result.addChild("form", new String[] { "action", "method" }, new String[] { "/alerts/", "post" }).addChild("div");
 			dismissFormNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "disable", String.valueOf(userAlert.hashCode()) });
-			dismissFormNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
+			dismissFormNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.getFormPassword() });
 			dismissFormNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "dismiss-user-alert", userAlert.dismissButtonText() });
 			
 			if (redirectToAfterDisable != null) {
@@ -387,7 +387,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 		subscribers.add(subscriber);
 		// Run off-thread, because of locking, and because client
 		// callbacks may take some time
-		core.clientContext.mainExecutor.execute(new Runnable() {
+		core.getClientContext().mainExecutor.execute(new Runnable() {
 			@Override
 			public void run() {
 				for (UserAlert alert : getAlerts())
@@ -422,7 +422,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 		sb.append("  <link href=\"").append(feedURI).append("\" rel=\"self\"/>\n");
 		sb.append("  <link href=\"").append(startURI).append("\"/>\n");
 		sb.append("  <updated>").append(formatTime(lastUpdated)).append("</updated>\n");
-		sb.append("  <id>urn:node:").append(Base64.encode(core.node.getDarknetPubKeyHash())).append("</id>\n");
+		sb.append("  <id>urn:node:").append(Base64.encode(core.getNode().getDarknetPubKeyHash())).append("</id>\n");
 		sb.append("  <logo>").append("/favicon.ico").append("</logo>\n");
 		UserAlert[] alerts = getAlerts();
 		for(int i = alerts.length - 1; i >= 0; i--) {

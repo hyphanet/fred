@@ -137,7 +137,7 @@ public class NetworkInterface implements Closeable {
 	 * @return List of addresses that we failed to bind to, or null if completely successful.
 	 */
 	public String[] setBindTo(String bindTo, boolean ignoreUnbindableIP6) {
-                if(bindTo == null || bindTo.equals("")) bindTo = NetworkInterface.DEFAULT_BIND_TO;
+                if(bindTo == null || bindTo.isEmpty()) bindTo = NetworkInterface.DEFAULT_BIND_TO;
 		StringTokenizer bindToTokens = new StringTokenizer(bindTo, ",");
 		List<String> bindToTokenList = new ArrayList<String>();
 		List<String> brokenList = null;
@@ -243,7 +243,7 @@ public class NetworkInterface implements Closeable {
 					return null;
 				if (WrapperManager.hasShutdownHookBeenTriggered())
 					return null;
-				if (acceptors.size() == 0) {
+				if (acceptors.isEmpty()) {
 					return null;
 				}
 				socketCondition.awaitUninterruptibly();
@@ -429,7 +429,7 @@ public class NetworkInterface implements Closeable {
 	public boolean isBound() {
 		lock.lock();
 		try {
-			return this.acceptors.size() != 0;
+			return !this.acceptors.isEmpty();
 		} finally {
 			lock.unlock();
 		}
@@ -438,11 +438,11 @@ public class NetworkInterface implements Closeable {
 	public void waitBound() {
 		lock.lock();
 		try {
-			if(acceptors.size() > 0) return;
+			if(!acceptors.isEmpty()) return;
 			while (true) {
 				Logger.error(this, "Network interface isn't bound, waiting");
 				boundCondition.awaitUninterruptibly();
-				if(acceptors.size() > 0) {
+				if(!acceptors.isEmpty()) {
 					Logger.error(this, "Finished waiting, network interface is now bound");
 					return;
 				}

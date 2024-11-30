@@ -40,9 +40,11 @@ public class BANDWIDTH_RATE extends BandwidthManipulator implements Step {
 				// 6Mbps/256kbps - 6Mbps is common in parts of china, as well as being the real value in lots of DSL areas
 				new BandwidthLimit(384*KiB, 16*KiB, "bandwidthConnection6M", false),
 				// 8Mbps/512kbps - UK DSL1 is either 448k up or 832k up
-				new BandwidthLimit(512*KiB, 32*KiB, "bandwidthConnection8M", true),
+				new BandwidthLimit(512*KiB, 32*KiB, "bandwidthConnection8M", false),
 				// 12Mbps/1Mbps - typical DSL2
 				new BandwidthLimit(768*KiB, 64*KiB, "bandwidthConnection12M", false),
+				// Typical DSL as of 2024
+				new BandwidthLimit(768*KiB, 160*KiB, "bandwidthConnectionHalfVDSL", true),
 				// 20Mbps/5Mbps - Slow end of VDSL
 				new BandwidthLimit(1280*KiB, 320*KiB, "bandwidthConnectionVDSL", false),
 				// 100Mbps fibre etc
@@ -77,7 +79,7 @@ public class BANDWIDTH_RATE extends BandwidthManipulator implements Step {
 		boolean addedDefault = false;
 
 		try {
-			BandwidthLimit detected = detectBandwidthLimits(core.node.ipDetector.getBandwidthIndicator());
+			BandwidthLimit detected = detectBandwidthLimits(core.getNode().getIpDetector().getBandwidthIndicator());
 
 			//Detected limits reasonable; add half of both as recommended option.
 			BandwidthLimit usable = new BandwidthLimit(detected.downBytes/2, detected.upBytes/2, "bandwidthDetected", true);
@@ -129,7 +131,7 @@ public class BANDWIDTH_RATE extends BandwidthManipulator implements Step {
 		String up = request.getPartAsStringFailsafe("customUp", 20);
 
 		// Try to parse custom limit first.
-		if(!down.equals("") && !up.equals("")) {
+		if(!down.isEmpty() && !up.isEmpty()) {
 			String failedLimits = attemptSet(up, down);
 
 			if (!failedLimits.isEmpty()) {

@@ -79,8 +79,8 @@ public class StatisticsToadlet extends Toadlet {
 		super(client);
 		this.node = n;
 		this.core = core;
-		stats = node.nodeStats;
-		peers = node.peers;
+		stats = node.getNodeStats();
+		peers = node.getPeers();
 	}
 
 	/**
@@ -122,18 +122,18 @@ public class StatisticsToadlet extends Toadlet {
         if(!ctx.checkFullAccess(this))
             return;
         
-		final SubConfig nodeConfig = node.config.get("node");
+		final SubConfig nodeConfig = node.getConfig().get("node");
 		
 		final String requestPath = request.getPath().substring(path().length());
 
-		if (requestPath.length() > 0) {
+		if (!requestPath.isEmpty()) {
 			if(requestPath.equals("requesters.html") || requestPath.equals("/requesters.html")) {
 				showRequesters(request, ctx);
 				return;
 			}
 		}
 
-		node.clientCore.bandwidthStatsPutter.updateData(node);
+		node.getClientCore().getBandwidthStatsPutter().updateData(node);
 
 		HTMLNode pageNode;
 		
@@ -179,7 +179,7 @@ public class StatisticsToadlet extends Toadlet {
 		// FIXME! We need some nice images
 		final long now = System.currentTimeMillis();
 		double myLocation = node.getLocation();
-		final long nodeUptimeSeconds = (now - node.startupTime) / 1000;
+		final long nodeUptimeSeconds = (now - node.getStartupTime()) / 1000;
 
 		if(ctx.isAllowedFullAccess())
 			contentNode.addChild(ctx.getAlertManager().createSummary());
@@ -234,8 +234,11 @@ public class StatisticsToadlet extends Toadlet {
 				
 				drawLoadBalancingBox(loadStatsInfobox, true);
 				
-				HTMLNode newLoadManagementBox = nextTableCell.addChild("div", "class", "infobox");
-				drawNewLoadManagementBox(newLoadManagementBox);
+				// New load management statistics
+				if(stats.enableNewLoadManagement(true) || stats.enableNewLoadManagement(false)) {
+					HTMLNode newLoadManagementBox = nextTableCell.addChild("div", "class", "infobox");
+					drawNewLoadManagementBox(newLoadManagementBox);
+				}
 								
 				// Psuccess box
 				HTMLNode successRateBox = nextTableCell.addChild("div", "class", "infobox");
@@ -271,7 +274,7 @@ public class StatisticsToadlet extends Toadlet {
 			/* node status overview box */
 			if(advancedMode) {
 				HTMLNode overviewInfobox = nextTableCell.addChild("div", "class", "infobox");
-				drawOverviewBox(overviewInfobox, nodeUptimeSeconds, node.clientCore.bandwidthStatsPutter.getLatestUptimeData().totalUptime, now, swaps, noSwaps);
+				drawOverviewBox(overviewInfobox, nodeUptimeSeconds, node.getClientCore().getBandwidthStatsPutter().getLatestUptimeData().totalUptime, now, swaps, noSwaps);
 			}
 
 			// Peer statistics box
@@ -543,7 +546,7 @@ public class StatisticsToadlet extends Toadlet {
 		
 		loadStatsInfobox.addChild("div", "class", "infobox-header", "Load limiting "+(realTime ? "RealTime" : "Bulk"));
 		HTMLNode loadStatsContent = loadStatsInfobox.addChild("div", "class", "infobox-content");
-		RequestStarterGroup starters = core.requestStarters;
+		RequestStarterGroup starters = core.getRequestStarters();
 		double window = starters.getWindow(realTime);
 		double realWindow = starters.getRealWindow(realTime);
 		HTMLNode loadStatsList = loadStatsContent.addChild("ul");
@@ -560,12 +563,12 @@ public class StatisticsToadlet extends Toadlet {
 	private void drawNewLoadManagementBox(HTMLNode infobox) {
 		infobox.addChild("div", "class", "infobox-header", l10n("newLoadManagementTitle"));
 		HTMLNode content = infobox.addChild("div", "class", "infobox-content");
-		node.nodeStats.drawNewLoadManagementDelayTimes(content);
+		node.getNodeStats().drawNewLoadManagementDelayTimes(content);
 	}
 
 	private void drawRejectReasonsBox(HTMLNode nextTableCell, boolean local) {
 		HTMLNode rejectReasonsTable = new HTMLNode("table");
-		NodeStats stats = node.nodeStats;
+		NodeStats stats = node.getNodeStats();
 		boolean success = local ? stats.getLocalRejectReasonsTable(rejectReasonsTable) :
 			stats.getRejectReasonsTable(rejectReasonsTable);
 		if(!success)
@@ -753,7 +756,7 @@ public class StatisticsToadlet extends Toadlet {
 				// FIXME this is not necessarily the same as the datastore's uptime if we've switched.
 				// Ideally we'd track uptime there too.
 				totalUptimeSeconds = 
-					node.clientCore.bandwidthStatsPutter.getLatestUptimeData().totalUptime;
+					node.getClientCore().getBandwidthStatsPutter().getLatestUptimeData().totalUptime;
 			} catch (StatsNotAvailableException e) {
 				totalAccess = null;
 			}
@@ -1055,33 +1058,33 @@ public class StatisticsToadlet extends Toadlet {
 		if (advancedModeEnabled && activityList != null) {
 			if (numARKFetchers > 0)
 				activityList.addChild("li", "ARK\u00a0Fetch\u00a0Requests:\u00a0" + numARKFetchers);
-			activityList.addChild("li", "BackgroundFetcherByUSKSize:\u00a0" + node.clientCore.uskManager.getBackgroundFetcherByUSKSize());
-			activityList.addChild("li", "temporaryBackgroundFetchersLRUSize:\u00a0" + node.clientCore.uskManager.getTemporaryBackgroundFetchersLRU());
-			activityList.addChild("li", "outputBandwidthLiabilityUsage:\u00a0" + this.fix3p1pct.format(node.nodeStats.getBandwidthLiabilityUsage()));
+			activityList.addChild("li", "BackgroundFetcherByUSKSize:\u00a0" + node.getClientCore().getUskManager().getBackgroundFetcherByUSKSize());
+			activityList.addChild("li", "temporaryBackgroundFetchersLRUSize:\u00a0" + node.getClientCore().getUskManager().getTemporaryBackgroundFetchersLRU());
+			activityList.addChild("li", "outputBandwidthLiabilityUsage:\u00a0" + this.fix3p1pct.format(node.getNodeStats().getBandwidthLiabilityUsage()));
 		}
 		
 	}
 	
 	static void drawBandwidth(HTMLNode activityList, Node node, long nodeUptimeSeconds, boolean isAdvancedModeEnabled) {
-		long[] total = node.collector.getTotalIO();
+		long[] total = node.getCollector().getTotalIO();
 		if(total[0] == 0 || total[1] == 0)
 			return;
 		long total_output_rate = (total[0]) / nodeUptimeSeconds;
 		long total_input_rate = (total[1]) / nodeUptimeSeconds;
 		long totalPayload = node.getTotalPayloadSent();
 		long total_payload_rate = totalPayload / nodeUptimeSeconds;
-		if(node.clientCore == null) throw new NullPointerException();
-		BandwidthStatsContainer stats = node.clientCore.bandwidthStatsPutter.getLatestBWData();
+		if(node.getClientCore() == null) throw new NullPointerException();
+		BandwidthStatsContainer stats = node.getClientCore().getBandwidthStatsPutter().getLatestBWData();
 		if(stats == null) throw new NullPointerException();
 		long overall_total_out = stats.totalBytesOut;
 		long overall_total_in = stats.totalBytesIn;
 		int percent = (int) (100 * totalPayload / total[0]);
-		long[] rate = node.nodeStats.getNodeIOStats();
+		long[] rate = node.getNodeStats().getNodeIOStats();
 		long delta = (rate[5] - rate[2]) / 1000;
 		if(delta > 0) {
 			long output_rate = (rate[3] - rate[0]) / delta;
 			long input_rate = (rate[4] - rate[1]) / delta;
-			SubConfig nodeConfig = node.config.get("node");
+			SubConfig nodeConfig = node.getConfig().get("node");
 			int outputBandwidthLimit = nodeConfig.getInt("outputBandwidthLimit");
 			int inputBandwidthLimit = nodeConfig.getInt("inputBandwidthLimit");
 			if(inputBandwidthLimit == -1) {
@@ -1096,30 +1099,30 @@ public class StatisticsToadlet extends Toadlet {
 		activityList.addChild("li", l10n("totalInput", new String[] { "total" }, new String[] { SizeUtil.formatSize(overall_total_in, true) }));
 		activityList.addChild("li", l10n("totalOutput", new String[] { "total" }, new String[] { SizeUtil.formatSize(overall_total_out, true) } ));
 		if(isAdvancedModeEnabled) {
-			long totalBytesSentCHKRequests = node.nodeStats.getCHKRequestTotalBytesSent();
-			long totalBytesSentSSKRequests = node.nodeStats.getSSKRequestTotalBytesSent();
-			long totalBytesSentCHKInserts = node.nodeStats.getCHKInsertTotalBytesSent();
-			long totalBytesSentSSKInserts = node.nodeStats.getSSKInsertTotalBytesSent();
-			long totalBytesSentOfferedKeys = node.nodeStats.getOfferedKeysTotalBytesSent();
-			long totalBytesSendOffers = node.nodeStats.getOffersSentBytesSent();
-			long totalBytesSentSwapOutput = node.nodeStats.getSwappingTotalBytesSent();
-			long totalBytesSentAuth = node.nodeStats.getTotalAuthBytesSent();
-			long totalBytesSentAckOnly = node.nodeStats.getNotificationOnlyPacketsSentBytes();
-			long totalBytesSentResends = node.nodeStats.getResendBytesSent();
-			long totalBytesSentUOM = node.nodeStats.getUOMBytesSent();
-			long totalBytesSentAnnounce = node.nodeStats.getAnnounceBytesSent();
-			long totalBytesSentAnnouncePayload = node.nodeStats.getAnnounceBytesPayloadSent();
-			long totalBytesSentRoutingStatus = node.nodeStats.getRoutingStatusBytes();
-			long totalBytesSentNetworkColoring = node.nodeStats.getNetworkColoringSentBytes();
-			long totalBytesSentPing = node.nodeStats.getPingSentBytes();
-			long totalBytesSentProbeRequest = node.nodeStats.getProbeRequestSentBytes();
-			long totalBytesSentRouted = node.nodeStats.getRoutedMessageSentBytes();
-			long totalBytesSentDisconn = node.nodeStats.getDisconnBytesSent();
-			long totalBytesSentInitial = node.nodeStats.getInitialMessagesBytesSent();
-			long totalBytesSentChangedIP = node.nodeStats.getChangedIPBytesSent();
-			long totalBytesSentNodeToNode = node.nodeStats.getNodeToNodeBytesSent();
-			long totalBytesSentAllocationNotices = node.nodeStats.getAllocationNoticesBytesSent();
-			long totalBytesSentFOAF = node.nodeStats.getFOAFBytesSent();
+			long totalBytesSentCHKRequests = node.getNodeStats().getCHKRequestTotalBytesSent();
+			long totalBytesSentSSKRequests = node.getNodeStats().getSSKRequestTotalBytesSent();
+			long totalBytesSentCHKInserts = node.getNodeStats().getCHKInsertTotalBytesSent();
+			long totalBytesSentSSKInserts = node.getNodeStats().getSSKInsertTotalBytesSent();
+			long totalBytesSentOfferedKeys = node.getNodeStats().getOfferedKeysTotalBytesSent();
+			long totalBytesSendOffers = node.getNodeStats().getOffersSentBytesSent();
+			long totalBytesSentSwapOutput = node.getNodeStats().getSwappingTotalBytesSent();
+			long totalBytesSentAuth = node.getNodeStats().getTotalAuthBytesSent();
+			long totalBytesSentAckOnly = node.getNodeStats().getNotificationOnlyPacketsSentBytes();
+			long totalBytesSentResends = node.getNodeStats().getResendBytesSent();
+			long totalBytesSentUOM = node.getNodeStats().getUOMBytesSent();
+			long totalBytesSentAnnounce = node.getNodeStats().getAnnounceBytesSent();
+			long totalBytesSentAnnouncePayload = node.getNodeStats().getAnnounceBytesPayloadSent();
+			long totalBytesSentRoutingStatus = node.getNodeStats().getRoutingStatusBytes();
+			long totalBytesSentNetworkColoring = node.getNodeStats().getNetworkColoringSentBytes();
+			long totalBytesSentPing = node.getNodeStats().getPingSentBytes();
+			long totalBytesSentProbeRequest = node.getNodeStats().getProbeRequestSentBytes();
+			long totalBytesSentRouted = node.getNodeStats().getRoutedMessageSentBytes();
+			long totalBytesSentDisconn = node.getNodeStats().getDisconnBytesSent();
+			long totalBytesSentInitial = node.getNodeStats().getInitialMessagesBytesSent();
+			long totalBytesSentChangedIP = node.getNodeStats().getChangedIPBytesSent();
+			long totalBytesSentNodeToNode = node.getNodeStats().getNodeToNodeBytesSent();
+			long totalBytesSentAllocationNotices = node.getNodeStats().getAllocationNoticesBytesSent();
+			long totalBytesSentFOAF = node.getNodeStats().getFOAFBytesSent();
 			long totalBytesSentRemaining = total[0] - 
 				(totalPayload + totalBytesSentCHKRequests + totalBytesSentSSKRequests +
 				totalBytesSentCHKInserts + totalBytesSentSSKInserts +
@@ -1145,14 +1148,14 @@ public class StatisticsToadlet extends Toadlet {
 			activityList.addChild("li", l10n("foafBytes", "total", SizeUtil.formatSize(totalBytesSentFOAF, true)));
 			activityList.addChild("li", l10n("unaccountedBytes", new String[] { "total", "percent" },
 					new String[] { SizeUtil.formatSize(totalBytesSentRemaining, true), Integer.toString((int)(totalBytesSentRemaining*100 / total[0])) }));
-			double sentOverheadPerSecond = node.nodeStats.getSentOverheadPerSecond();
+			double sentOverheadPerSecond = node.getNodeStats().getSentOverheadPerSecond();
 			activityList.addChild("li", l10n("totalOverhead", new String[] { "rate", "percent" }, 
 					new String[] { SizeUtil.formatSize((long)sentOverheadPerSecond), Integer.toString((int)((100 * sentOverheadPerSecond) / total_output_rate)) }));
 		}
 	}
 
 	static HTMLNode drawActivity(HTMLNode activityInfoboxContent, Node node) {
-		RequestTracker tracker = node.tracker;
+		RequestTracker tracker = node.getTracker();
 		int numLocalCHKInserts = tracker.getNumLocalCHKInserts();
 		int numRemoteCHKInserts = tracker.getNumRemoteCHKInserts();
 		int numLocalSSKInserts = tracker.getNumLocalSSKInserts();
@@ -1277,8 +1280,8 @@ public class StatisticsToadlet extends Toadlet {
 		overviewList.addChild("li", "pInstantRejectRequestRT:\u00a0" + fix3p1pct.format(stats.pRejectIncomingInstantlyCHKRequestRT())+" (CHK) "+fix3p1pct.format(stats.pRejectIncomingInstantlySSKRequestRT())+" (SSK)");
 		overviewList.addChild("li", "pInstantRejectInsertRT:\u00a0" + fix3p1pct.format(stats.pRejectIncomingInstantlyCHKInsertRT())+" (CHK) "+fix3p1pct.format(stats.pRejectIncomingInstantlySSKInsertRT())+" (SSK)");
 		overviewList.addChild("li", "unclaimedFIFOSize:\u00a0" + node.getUnclaimedFIFOSize());
-		overviewList.addChild("li", "RAMBucketPoolSize:\u00a0" + SizeUtil.formatSize(core.tempBucketFactory.getRamUsed())+ " / "+ SizeUtil.formatSize(core.tempBucketFactory.getMaxRamUsed()));
-		overviewList.addChild("li", "uptimeAverage:\u00a0" + fix3p1pct.format(node.uptime.getUptime()));
+		overviewList.addChild("li", "RAMBucketPoolSize:\u00a0" + SizeUtil.formatSize(core.getTempBucketFactory().getRamUsed())+ " / "+ SizeUtil.formatSize(core.getTempBucketFactory().getMaxRamUsed()));
+		overviewList.addChild("li", "uptimeAverage:\u00a0" + fix3p1pct.format(node.getUptimeEstimator().getUptime()));
 		
 		long[] decoded = IncomingPacketFilterImpl.getDecodedPackets();
 		if(decoded != null) {
@@ -1394,15 +1397,15 @@ public class StatisticsToadlet extends Toadlet {
 		for(int i=0; i<locations.length; i++){
 			location = locations[i];
 			locationTime = timestamps[i];
-			age = now - locationTime.longValue();
+			age = now - locationTime;
 			if( age > MAX_CIRCLE_AGE_THRESHOLD ) {
 				age = MAX_CIRCLE_AGE_THRESHOLD;
 			}
 			strength = 1 - ((double) age / MAX_CIRCLE_AGE_THRESHOLD );
-			histogramIndex = (int) (Math.floor(location.doubleValue() * HISTOGRAM_LENGTH));
+			histogramIndex = (int) (Math.floor(location * HISTOGRAM_LENGTH));
 			histogram[histogramIndex]++;
 			
-			nodeCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(location.doubleValue(), false, strength), "connected" }, "x");
+			nodeCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(location, false, strength), "connected" }, "x");
 		}
 		nodeCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(myLocation, true, 1.0), "me" }, "x");
 		//

@@ -14,9 +14,11 @@ import java.io.OutputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.junit.Test;
 
 import freenet.client.filter.ContentFilter.FilterStatus;
@@ -113,7 +115,8 @@ public class ContentFilterTest {
 
     private static final String SPAN_WITH_STYLE = "<span style=\"font-family: verdana, sans-serif; color: red;\">";
 
-	private static final String HTML5_TAGS = "<article><details><summary>TLDR</summary><center>Too Long Di<wbr />dn’t Read</center></details></article>";
+	private static final String HTML5_TAGS = "<main><article><details><summary><mark>TLDR</mark></summary><center>Too Long Di<wbr />dn&rsquo;t Read</center></details><section><figure><figcaption>Fig.1</figcaption></figure></article></main>";
+	private static final String HTML5_BDI_RUBY = "<small dir=\"auto\"><bdi>&#x0627;&#x06CC;&#x0631;&#x0627;&#x0646;</bdi>, <bdo><ruby>&#xBD81;<rt>North</rt>&#xD55C;<rt>Korea</rt></ruby><rp>North Korea</rp></ruby></bdo></small>";
 
 	private static final String BASE_HREF = "<base href=\"/"+BASE_KEY+"\">";
 	private static final String BAD_BASE_HREF = "<base href=\"/\">";
@@ -125,8 +128,21 @@ public class ContentFilterTest {
 
     // From CSS spec
 
-    private static final String CSS_SPEC_EXAMPLE1 = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\">\n<HTML>\n  <HEAD>\n  <TITLE>Bach's home page</TITLE>\n  <STYLE type=\"text/css\">\n    body {\n      font-family: \"Gill Sans\", sans-serif;\n      font-size: 12pt;\n      margin: 3em;\n\n    }\n  </STYLE>\n  </HEAD>\n  <BODY>\n    <H1>Bach's home page</H1>\n    <P>Johann Sebastian Bach was a prolific composer.\n  </BODY>\n</HTML>";
+	private static final String CSS_SPEC_EXAMPLE1 = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\">\n<HTML>\n  <HEAD>\n  <TITLE>Bach's home page</TITLE>\n  <STYLE type=\"text/css\">\n    body {\n      font-family: \"Gill Sans\", sans-serif;\n      font-size: 12pt;\n      margin: 3em;\n\n    }\n  </STYLE>\n  </HEAD>\n  <BODY>\n    <H1>Bach's home page</H1>\n    <P>Johann Sebastian Bach was a prolific composer.\n  </BODY>\n</HTML>";
+	private static final String HTML_START_TO_BODY = "<html><head></head><body>";
+	private static final String HTML_BODY_END = "</body></html>";
+	private static final String HTML_VIDEO_TAG = "<video></video>";
+	private static final String HTML_AUDIO_TAG = "<audio></audio>";
+	private static final List<String> HTML_MEDIA_TAG_COMBINATIONS = Arrays.asList(
+			HTML_VIDEO_TAG,
+			HTML_AUDIO_TAG,
+			HTML_VIDEO_TAG + HTML_AUDIO_TAG,
+			HTML_AUDIO_TAG + HTML_AUDIO_TAG);
 
+	private static void testOneHTMLFilter(String html) throws Exception {
+		assertEquals(html, htmlFilter(html));
+	}
+	
     @Test
     public void testHTMLFilter() throws Exception {
         if (TestProperty.VERBOSE) {
@@ -135,7 +151,7 @@ public class ContentFilterTest {
 
         // General sanity checks
         // is "relativization" working?
-        assertEquals(INTERNAL_RELATIVE_LINK, htmlFilter(INTERNAL_RELATIVE_LINK));
+        testOneHTMLFilter(INTERNAL_RELATIVE_LINK);
         assertEquals(INTERNAL_RELATIVE_LINK, htmlFilter(INTERNAL_RELATIVE_LINK, true));
         assertEquals(INTERNAL_RELATIVE_LINK1, htmlFilter(INTERNAL_RELATIVE_LINK1, true));
         assertEquals(INTERNAL_RELATIVE_LINK, htmlFilter(INTERNAL_ABSOLUTE_LINK));
@@ -146,15 +162,15 @@ public class ContentFilterTest {
 
         // regression testing
         // bug #710
-        assertEquals(ANCHOR_TEST, htmlFilter(ANCHOR_TEST));
-        assertEquals(ANCHOR_TEST_EMPTY, htmlFilter(ANCHOR_TEST_EMPTY));
-        assertEquals(ANCHOR_TEST_SPECIAL, htmlFilter(ANCHOR_TEST_SPECIAL));
+        testOneHTMLFilter(ANCHOR_TEST);
+        testOneHTMLFilter(ANCHOR_TEST_EMPTY);
+        testOneHTMLFilter(ANCHOR_TEST_SPECIAL);
         assertEquals(ANCHOR_TEST_SPECIAL2_RESULT, htmlFilter(ANCHOR_TEST_SPECIAL2));
         // bug #2496
-        assertEquals(ANCHOR_RELATIVE1, htmlFilter(ANCHOR_RELATIVE1));
-        assertEquals(ANCHOR_RELATIVE2, htmlFilter(ANCHOR_RELATIVE2));
-        assertEquals(ANCHOR_FALSE_POS1, htmlFilter(ANCHOR_FALSE_POS1));
-        assertEquals(ANCHOR_FALSE_POS2, htmlFilter(ANCHOR_FALSE_POS2));
+        testOneHTMLFilter(ANCHOR_RELATIVE1);
+        testOneHTMLFilter(ANCHOR_RELATIVE2);
+        testOneHTMLFilter(ANCHOR_FALSE_POS1);
+        testOneHTMLFilter(ANCHOR_FALSE_POS2);
         // EVIL HACK TEST for #2496 + #2451
         assertEquals(ANCHOR_MIXED_RESULT, htmlFilter(ANCHOR_MIXED));
         // bug #2451
@@ -165,7 +181,7 @@ public class ContentFilterTest {
         assertTrue(htmlFilter(PREVENT_EXTERNAL_ACCESS_CSS_SIMPLE).contains("div { }"));
         assertTrue(htmlFilter(PREVENT_EXTERNAL_ACCESS_CSS_ESCAPE).contains("div { }"));
         assertTrue(htmlFilter(PREVENT_EXTERNAL_ACCESS_CSS_CASE).contains("div { }"));
-        assertEquals(WHITELIST_STATIC_CONTENT, htmlFilter(WHITELIST_STATIC_CONTENT));
+        testOneHTMLFilter(WHITELIST_STATIC_CONTENT);
         assertEquals(XHTML_VOIDELEMENTC, htmlFilter(XHTML_VOIDELEMENT));
         assertEquals(XHTML_INCOMPLETEDOCUMENTC, htmlFilter(XHTML_INCOMPLETEDOCUMENT));
         assertEquals(XHTML_IMPROPERNESTINGC, htmlFilter(XHTML_IMPROPERNESTING));
@@ -182,18 +198,39 @@ public class ContentFilterTest {
         assertEquals(FRAME_SRC_CHARSET_BADC, htmlFilter(FRAME_SRC_CHARSET_BAD, true));
         assertEquals(FRAME_SRC_CHARSET_BAD1C, htmlFilter(FRAME_SRC_CHARSET_BAD1, true));
 
-        assertEquals(CSS_SPEC_EXAMPLE1, htmlFilter(CSS_SPEC_EXAMPLE1));
+        testOneHTMLFilter(CSS_SPEC_EXAMPLE1);
 
-        assertEquals(SPAN_WITH_STYLE, htmlFilter(SPAN_WITH_STYLE));
-        assertEquals(HTML5_TAGS, htmlFilter(HTML5_TAGS));
+        testOneHTMLFilter(SPAN_WITH_STYLE);
+        testOneHTMLFilter(HTML5_TAGS);
+        testOneHTMLFilter(HTML5_BDI_RUBY);
 
-        assertEquals(BASE_HREF, htmlFilter(BASE_HREF));
+        testOneHTMLFilter(BASE_HREF);
         assertEquals(DELETED_BASE_HREF, htmlFilter(BAD_BASE_HREF));
         assertEquals(DELETED_BASE_HREF, htmlFilter(BAD_BASE_HREF2));
         assertEquals(DELETED_BASE_HREF, htmlFilter(BAD_BASE_HREF3));
         assertEquals(DELETED_BASE_HREF, htmlFilter(BAD_BASE_HREF4));
         assertEquals(DELETED_BASE_HREF, htmlFilter(BAD_BASE_HREF5));
+
     }
+
+    @Test
+    public void testM3UPlayerAddition() throws Exception {
+		// m3u filter is added when there is a video or audio tag
+		for (String content : HTML_MEDIA_TAG_COMBINATIONS) {
+			String expected = HTML_START_TO_BODY
+					+ content
+					+ HTMLFilter.m3uPlayerScriptTagContent()
+					+ HTML_BODY_END;
+			String unparsed = HTML_START_TO_BODY
+					+ content
+					+ HTML_BODY_END;
+			// m3u filter is added
+			assertEquals(expected, htmlFilter(unparsed));
+			// ensure that that’s a script tag
+			String expectedStart = HTML_START_TO_BODY + content + "<script";
+			MatcherAssert.assertThat(htmlFilter(unparsed), Matchers.startsWith(expectedStart));
+		}
+	}
 
     private static final String META_TIME_ONLY = "<meta http-equiv=\"refresh\" content=\"5\">";
     private static final String META_TIME_ONLY_WRONG_CASE = "<meta http-equiv=\"RefResH\" content=\"5\">";

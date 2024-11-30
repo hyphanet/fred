@@ -223,35 +223,14 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 		this.suggestedEdition = uri.suggestedEdition;
 		if(logDEBUG) Logger.debug(this, "Copied: "+toString()+" from "+uri.toString(), new Exception("debug"));
 	}
-	
-	boolean noCacheURI = false;
-	
-	/** Optimize for memory. */
+
+	/**
+	 * @return this FreenetURI instance
+	 * @deprecated mutable data cannot safely be interned
+	 */
+	@Deprecated
 	public FreenetURI intern() {
-		boolean changedAnything = false;
-		byte[] x = extra;
-		if(keyType.equals("CHK"))
-			x = ClientCHK.internExtra(x);
-		else
-			x = ClientSSK.internExtra(x);
-		if(x != extra) changedAnything = true;
-		String[] newMetaStr = null;
-		if(metaStr != null) {
-			newMetaStr = new String[metaStr.length];
-			for(int i=0;i<metaStr.length;i++) {
-				newMetaStr[i] = metaStr[i].intern();
-				if(metaStr[i] != newMetaStr[i]) changedAnything = true;
-			}
-		}
-		String dn = docName == null ? null : docName.intern();
-		if(dn != docName) changedAnything = true;
-		if(!changedAnything) {
-			noCacheURI = true;
-			return this;
-		}
-		FreenetURI u = new FreenetURI(keyType, dn, newMetaStr, routingKey, cryptoKey, extra, suggestedEdition);
-		u.noCacheURI = true;
-		return u;
+		return this;
 	}
 
 	public FreenetURI(String keyType, String docName) {
@@ -326,7 +305,7 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 	}
 
 	// Strip http(s):// and (web+|ext+)freenet: prefix
-	protected final static Pattern URI_PREFIX = Pattern.compile("^(https?://[^/]+/+)?(((ext|web)\\+)?freenet:)?");
+	protected final static Pattern URI_PREFIX = Pattern.compile("^(https?://[^/]+/+)?(((ext|web)\\+)?(freenet|hyphanet|hypha):)?");
 
 	public FreenetURI(String URI) throws MalformedURLException {
 		this(URI, false);
@@ -940,16 +919,21 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 	 * @throws IOException If an error occurred while writing the key.
 	 */
 	private void writeFullBinaryKey(DataOutputStream dos) throws IOException {
-		if(keyType.equals("CHK"))
-			dos.writeByte(CHK);
-		else if(keyType.equals("SSK"))
-			dos.writeByte(SSK);
-		else if(keyType.equals("KSK"))
-			dos.writeByte(KSK);
-		else if(keyType.equals("USK"))
-			throw new MalformedURLException("Cannot write USKs as binary keys");
-		else
-			throw new MalformedURLException("Cannot write key of type " + keyType + " - do not know how");
+		switch (keyType) {
+			case "CHK":
+				dos.writeByte(CHK);
+				break;
+			case "SSK":
+				dos.writeByte(SSK);
+				break;
+			case "KSK":
+				dos.writeByte(KSK);
+				break;
+			case "USK":
+				throw new MalformedURLException("Cannot write USKs as binary keys");
+			default:
+				throw new MalformedURLException("Cannot write key of type " + keyType + " - do not know how");
+		}
 		if(!keyType.equals("KSK")) {
 			if(routingKey.length != 32)
 				throw new MalformedURLException("Routing key must be of length 32");
@@ -1003,7 +987,7 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 		}
 		if(metaStr != null)
 			for(String s : metaStr) {
-				if(s == null || s.equals("")) {
+				if(s == null || s.isEmpty()) {
 					if(logMINOR)
 						Logger.minor(this, "metaString \"" + s + "\": was null or empty");
 					continue;
@@ -1020,7 +1004,7 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 			s = FileUtil.sanitize(s);
 			if(logMINOR)
 				Logger.minor(this, "Sanitized name " + i + " = " + s);
-			if(s.length() > 0) {
+			if(!s.isEmpty()) {
 				if(out.length() > 0)
 					out.append('-');
 				out.append(s);

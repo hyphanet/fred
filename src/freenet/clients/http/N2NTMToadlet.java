@@ -155,7 +155,7 @@ public class N2NTMToadlet extends Toadlet {
 			DarknetPeerNode[] peerNodes = node.getDarknetConnections();
 			if(request.isPartSet(LocalFileBrowserToadlet.selectFile)) {
 				String fnam = request.getPartAsStringFailsafe("filename", 1024);
-				if(fnam != null && fnam.length() > 0) {
+				if(fnam != null && !fnam.isEmpty()) {
 					filename = new File(fnam);
 					if(!(filename.exists() && filename.canRead())) {
 						peerTableInfobox.addChild("#", l10n("noSuchFileOrCannotRead"));
@@ -187,7 +187,7 @@ public class N2NTMToadlet extends Toadlet {
 					} else if(request.isPartSet("n2nm-upload")) {
 						try{
 							HTTPUploadedFile file = request.getUploadedFile("n2nm-upload");
-							if(!file.getFilename().equals("")) {
+							if(!file.getFilename().isEmpty()) {
 								long size = request.getUploadedFile("n2nm-upload").getData().size();
 								if(size > 0) {
 									long limit = maxSize();

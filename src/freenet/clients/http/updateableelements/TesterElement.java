@@ -42,7 +42,7 @@ public class TesterElement extends BaseUpdateableElement {
 		if (status >= maxStatus) {
 			t.cancel();
 		}
-		((SimpleToadletServer) ctx.getContainer()).pushDataManager.updateElement(getUpdaterId(ctx.getUniqueId()));
+		((SimpleToadletServer) ctx.getContainer()).getPushDataManager().updateElement(getUpdaterId(ctx.getUniqueId()));
 	}
 
 	@Override

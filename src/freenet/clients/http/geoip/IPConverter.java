@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -244,7 +245,7 @@ public class IPConverter {
 				String code = line.substring(offset, offset + 2);
 				// Ip
 				String ipcode = line.substring(offset + 2, offset + 7);
-				long ip = decodeBase85(ipcode.getBytes("ISO-8859-1"));
+				long ip = decodeBase85(ipcode.getBytes(StandardCharsets.ISO_8859_1));
 				try {
 					Country country = Country.valueOf(code);
 					codes[i] = (short) country.ordinal();
@@ -344,10 +345,10 @@ public class IPConverter {
 		}
 		if(ip.length != 4) return null;
 		long longip = (
-				((ip[0] << 24) & 0xff000000l) |
-				((ip[1] << 16) & 0x00ff0000l) |
-				((ip[2] <<  8) & 0x0000ff00l) |
-				( ip[3]        & 0x000000ffl));
+				((ip[0] << 24) & 0xff000000L) |
+				((ip[1] << 16) & 0x00ff0000L) |
+				((ip[2] <<  8) & 0x0000ff00L) |
+				( ip[3]        & 0x000000ffL));
 		return locateIP(longip);
 	}
 
@@ -367,7 +368,7 @@ public class IPConverter {
 		int mid;
 		while ((mid = (last - start) / 2) > 0) {
 			int midpos = mid + start;
-			long midip = ips[midpos] & 0xffffffffl;
+			long midip = ips[midpos] & 0xffffffffL;
 			if (longip >= midip) {
 				last = midpos;
 			} else {

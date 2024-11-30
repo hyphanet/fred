@@ -1,11 +1,5 @@
 package freenet.io.comm;
 
-import com.sun.jna.LastErrorException;
-import com.sun.jna.Native;
-import com.sun.jna.Platform;
-import com.sun.jna.Pointer;
-import com.sun.jna.ptr.IntByReference;
-
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -17,8 +11,14 @@ import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
+import java.nio.channels.UnsupportedAddressTypeException;
 import java.util.Random;
 
+import com.sun.jna.LastErrorException;
+import com.sun.jna.Native;
+import com.sun.jna.Platform;
+import com.sun.jna.Pointer;
+import com.sun.jna.ptr.IntByReference;
 import freenet.io.AddressTracker;
 import freenet.io.comm.Peer.LocalAddressException;
 import freenet.node.Node;
@@ -39,7 +39,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 	private Random dropRandom;
 	/** If &gt;0, 1 in _dropProbability chance of dropping a packet; for debugging */
 	private int _dropProbability;
-	// Icky layer violation, but we need to know the Node to work around the EvilJVMBug.
+	// Icky layer violation
 	private final Node node;
         private static volatile boolean logMINOR;
 	private static volatile boolean logDEBUG;
@@ -107,7 +107,9 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 				f.setAccessible(true);
 				ret = f.getInt(fdi);
 			} catch (Exception e) {
-			   Logger.error(UdpSocketHandler.class, e.getMessage(), e);
+				if (logMINOR) { // TODO: Known Java 21 problem.
+					Logger.warning(UdpSocketHandler.class, e.getMessage(), e);
+				}
 			}
 			return ret;
 		}
@@ -157,8 +159,8 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 		if(logMINOR) Logger.minor(this, "Setting IPV6_PREFER_SRC_PUBLIC for port "+ listenPort + " is a "+(r ? "success" : "failure"));
 //		}
 		// Only used for debugging, no need to seed from Yarrow
-		dropRandom = node.fastWeakRandom;
-		tracker = AddressTracker.create(node.lastBootID, node.runDir(), listenPort);
+		dropRandom = node.getFastWeakRandom();
+		tracker = AddressTracker.create(node.getLastBootId(), node.runDir(), listenPort);
 		tracker.startSend(startupTime);
 	}
 
@@ -338,7 +340,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 			boolean isLocal = (!IPUtil.isValidAddress(address, false)) && (IPUtil.isValidAddress(address, true));
 			collector.addInfo(address, port, 0, getHeadersLength(address) + blockToSend.length, isLocal);
 			if(logMINOR) Logger.minor(this, "Sent packet length "+blockToSend.length+" to "+address+':'+port);
-		} catch (IOException e) {
+		} catch (IOException | UnsupportedAddressTypeException e) {
 			if(packet.getAddress() instanceof Inet6Address) {
 				Logger.normal(this, "Error while sending packet to IPv6 address: "+destination+": "+e);
 			} else {
@@ -353,7 +355,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 	// http://www.studenten-ins-netz.net/inhalt/service_faq.html
 	// officially GRE is 1476 and PPPoE is 1492.
 	// unofficially, PPPoE is often 1472 (seen in the wild). Also PPPoATM is sometimes 1472.
-	static final int MAX_ALLOWED_MTU = 1280;
+	static final int MAX_ALLOWED_MTU = 1492;
 	static final int UDPv4_HEADERS_LENGTH = 28;
 	static final int UDPv6_HEADERS_LENGTH = 48;
 	// conservative estimation when AF is not known
@@ -400,7 +402,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 			_started = true;
 			startTime = System.currentTimeMillis();
 		}
-		node.executor.execute(this, "UdpSocketHandler for port "+listenPort);
+		node.getExecutor().execute(this, "UdpSocketHandler for port "+listenPort);
 	}
 
 	public void close() {
@@ -418,7 +420,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 				}
 			}
 		}
-		tracker.storeData(node.bootID, node.runDir(), listenPort);
+		tracker.storeData(node.getBootId(), node.runDir(), listenPort);
 	}
 
 	public int getDropProbability() {

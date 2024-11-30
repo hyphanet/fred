@@ -18,7 +18,7 @@ public class PluginDownLoaderOfficialFreenet extends PluginDownLoaderFreenet {
 		if(desc.uri != null)
 			return desc.uri;
 		else {
-			return node.nodeUpdater.getURI().setDocName(source).setSuggestedEdition(desc.recommendedVersion).sskForUSK();
+			return node.getNodeUpdater().getURI().setDocName(source).setSuggestedEdition(desc.recommendedVersion).sskForUSK();
 		}
 	}
 	

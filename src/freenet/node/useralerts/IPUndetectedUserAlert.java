@@ -27,9 +27,9 @@ public class IPUndetectedUserAlert extends AbstractUserAlert {
 
 	@Override
 	public String getText() {
-		if(node.ipDetector.noDetectPlugins())
+		if(node.getIpDetector().noDetectPlugins())
 			return l10n("noDetectorPlugins");
-		if(node.ipDetector.isDetecting())
+		if(node.getIpDetector().isDetecting())
 			return l10n("detecting");
 		else
 			return l10n("unknownAddress", "port", Integer.toString(node.getDarknetPortNumber())) + ' ' + textPortForwardSuggestion();
@@ -51,7 +51,7 @@ public class IPUndetectedUserAlert extends AbstractUserAlert {
 	public boolean isValid() {
 		if(node.isOpennetEnabled())
 			return false;
-		if(node.peers.countConnectiblePeers() >= 5 && (node.getUptime() < MINUTES.toMillis(1) || node.ipDetector.isDetecting()))
+		if(node.getPeers().countConnectiblePeers() >= 5 && (node.getUptime() < MINUTES.toMillis(1) || node.getIpDetector().isDetecting()))
 			return false;
 		return true;
 	}
@@ -59,22 +59,22 @@ public class IPUndetectedUserAlert extends AbstractUserAlert {
 	@Override
 	public HTMLNode getHTMLText() {
 		HTMLNode textNode = new HTMLNode("div");
-		SubConfig sc = node.config.get("node");
+		SubConfig sc = node.getConfig().get("node");
 		Option<?> o = sc.getOption("tempIPAddressHint");
 		
-		NodeL10n.getBase().addL10nSubstitution(textNode, "IPUndetectedUserAlert."+(node.ipDetector.isDetecting() ? "detectingWithConfigLink" : "unknownAddressWithConfigLink"), 
+		NodeL10n.getBase().addL10nSubstitution(textNode, "IPUndetectedUserAlert."+(node.getIpDetector().isDetecting() ? "detectingWithConfigLink" : "unknownAddressWithConfigLink"),
 				new String[] { "link" },
 				new HTMLNode[] { HTMLNode.link("/config/"+sc.getPrefix()) });
 		
-		int peers = node.peers.getDarknetPeers().length;
+		int peers = node.getPeers().getDarknetPeers().length;
 		if(peers > 0)
 			textNode.addChild("p", l10n("noIPMaybeFromPeers", "number", Integer.toString(peers)));
 		
-		if(node.ipDetector.noDetectPlugins()) {
+		if(node.getIpDetector().noDetectPlugins()) {
 			HTMLNode p = textNode.addChild("p");
 			NodeL10n.getBase().addL10nSubstitution(p, "IPUndetectedUserAlert.loadDetectPlugins", new String[] { "plugins", "config", },
 					new HTMLNode[] { HTMLNode.link("/plugins/"), HTMLNode.link("/config/node") });
-		} else if(!node.ipDetector.hasJSTUN() && !node.ipDetector.isDetecting()) {
+		} else if(!node.getIpDetector().hasJSTUN() && !node.getIpDetector().isDetecting()) {
 			HTMLNode p = textNode.addChild("p");
 			NodeL10n.getBase().addL10nSubstitution(p, "IPUndetectedUserAlert.loadJSTUN", new String[] { "plugins" },
 					new HTMLNode[] { HTMLNode.link("/plugins/") });
@@ -83,7 +83,7 @@ public class IPUndetectedUserAlert extends AbstractUserAlert {
 		addPortForwardSuggestion(textNode);
 		
 		HTMLNode formNode = textNode.addChild("form", new String[] { "action", "method" }, new String[] { "/config/"+sc.getPrefix(), "post" });
-		formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.clientCore.formPassword });
+		formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.getClientCore().getFormPassword() });
 		formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "subconfig", sc.getPrefix() });
 		HTMLNode listNode = formNode.addChild("ul", "class", "config");
 		HTMLNode itemNode = listNode.addChild("li");
@@ -121,7 +121,7 @@ public class IPUndetectedUserAlert extends AbstractUserAlert {
 
 	@Override
 	public short getPriorityClass() {
-		if(node.ipDetector.isDetecting())
+		if(node.getIpDetector().isDetecting())
 			return UserAlert.WARNING;
 		else
 			return UserAlert.ERROR;
@@ -129,9 +129,9 @@ public class IPUndetectedUserAlert extends AbstractUserAlert {
 
 	@Override
 	public String getShortText() {
-		if(node.ipDetector.noDetectPlugins())
+		if(node.getIpDetector().noDetectPlugins())
 			return l10n("noDetectorPlugins");
-		if(node.ipDetector.isDetecting())
+		if(node.getIpDetector().isDetecting())
 			return l10n("detectingShort");
 		else
 			return l10n("unknownAddressShort");

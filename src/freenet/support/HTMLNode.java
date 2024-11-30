@@ -180,7 +180,7 @@ public class HTMLNode implements XMLCharacterClasses, Cloneable {
 	
 	protected boolean checkNamePattern(String str) {
 		// Workaround buggy java regexes, also probably slightly faster.
-		if(str.length() < 1) return false;
+		if(str.isEmpty()) return false;
 		char c;
 		c = str.charAt(0);
 		if((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')) {
@@ -411,7 +411,7 @@ public class HTMLNode implements XMLCharacterClasses, Cloneable {
 		tagBuffer.append(OpenSuffix(name));
 
 		/*insert the contents*/
-		if (children.size() == 0) {
+		if (children.isEmpty()) {
 			if(content==null) {
 			} else {
 				HTMLEncoder.encodeToBuffer(content, tagBuffer);

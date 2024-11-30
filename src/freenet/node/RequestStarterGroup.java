@@ -70,7 +70,7 @@ public class RequestStarterGroup {
 	private final NodeStats stats;
 	RequestStarterGroup(Node node, NodeClientCore core, int portNumber, RandomSource random, Config config, SimpleFieldSet fs, ClientContext ctx) throws InvalidConfigValueException {
 		SubConfig schedulerConfig = config.createSubConfig("node.scheduler");
-		this.stats = core.nodeStats;
+		this.stats = core.getNodeStats();
 		
 		throttleWindowBulk = new ThrottleWindowManager(2.0, fs == null ? null : fs.subset("ThrottleWindow"), node);
 		throttleWindowRT = new ThrottleWindowManager(2.0, fs == null ? null : fs.subset("ThrottleWindowRT"), node);

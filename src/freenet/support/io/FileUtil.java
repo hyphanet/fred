@@ -15,10 +15,10 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
-import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Method;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.Random;
@@ -91,9 +91,9 @@ final public class FileUtil {
 			this.isWindows = win;
 			this.isMac = mac;
 			this.isUnix = unix;
-		};
-	};
-	
+		}
+	}
+
 	public static enum CPUArchitecture {
 	    Unknown,
 	    X86,
@@ -148,19 +148,19 @@ final public class FileUtil {
 
 			// Please adapt sanitizeFileName when adding new OS.
 
-			if(name.indexOf("win") >= 0)
+			if(name.contains("win"))
 				return OperatingSystem.Windows;
 
-			if(name.indexOf("mac") >= 0)
+			if(name.contains("mac"))
 				return OperatingSystem.MacOS;
 
-			if(name.indexOf("linux") >= 0)
+			if(name.contains("linux"))
 				return OperatingSystem.Linux;
 			
-			if(name.indexOf("freebsd") >= 0)
+			if(name.contains("freebsd"))
 				return OperatingSystem.FreeBSD;
 			
-			if(name.indexOf("unix") >= 0)
+			if(name.contains("unix"))
 				return OperatingSystem.GenericUnix;
 			else if(File.separatorChar == '/')
 				return OperatingSystem.GenericUnix;
@@ -231,13 +231,10 @@ final public class FileUtil {
 		long blockUsage = roundup_2n(flen, 4096);
 		// Assume 512 byte filename entries, with 100 bytes overhead, for filename overhead (NTFS)
 		String filename = file.getName();
-		int nameLength;
-		try {
-			nameLength = Math.max(filename.getBytes("UTF-16").length, filename.getBytes("UTF-8").length) + 100;
-		} catch (UnsupportedEncodingException e) {
-			// Impossible.
-			throw new RuntimeException("UTF-16 or UTF-8 charset not supported?!");
-		} 
+		int nameLength = 100 + Math.max(
+			filename.getBytes(StandardCharsets.UTF_16).length,
+			filename.getBytes(StandardCharsets.UTF_8).length
+		);
 		long filenameUsage = roundup_2n(nameLength, 512);
 		// Assume 50 bytes per block tree overhead with 1kB blocks (reiser3 worst case)
 		long extra = (roundup_2n(flen, 1024) / 1024) * 50;
@@ -317,7 +314,7 @@ final public class FileUtil {
 			fis = new FileInputStream(file);
 			skipFully(fis, offset);
 			bis = new BufferedInputStream(fis);
-			isr = new InputStreamReader(bis, "UTF-8");
+			isr = new InputStreamReader(bis, StandardCharsets.UTF_8);
 
 			char[] buf = new char[4096];
 			int length = 0;
@@ -356,7 +353,7 @@ final public class FileUtil {
 	    skipFully(stream, offset);
 	    InputStreamReader reader = null;
 	    try {
-	        reader = new InputStreamReader(stream, "UTF-8");
+	        reader = new InputStreamReader(stream, StandardCharsets.UTF_8);
 	        char[] buf = new char[4096];
 	        int length = 0;
 	        while((length = reader.read(buf)) > 0) {

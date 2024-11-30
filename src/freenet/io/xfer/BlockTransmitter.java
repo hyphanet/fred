@@ -127,7 +127,7 @@ public class BlockTransmitter {
 					BitArray copy;
 					synchronized(_senderThread) {
 						if(_failed || _receivedSendCompletion || _completed) return;
-						if(_unsent.size() == 0) {
+						if(_unsent.isEmpty()) {
 							// Wait for PRB callback to tell us we have more packets.
 							return;
 						}
@@ -181,7 +181,7 @@ public class BlockTransmitter {
 			boolean success = false;
 			boolean complete = false;
 			synchronized (_senderThread) {
-				if(_unsent.size() == 0 && getNumSent() == _prb._packets) {
+				if(_unsent.isEmpty() && getNumSent() == _prb._packets) {
 					//No unsent packets, no unreceived packets
 					sendAllSentNotification();
 					if(maybeAllSent()) {
@@ -287,7 +287,7 @@ public class BlockTransmitter {
 	 * @return True if everything has been sent and we are now just waiting for an
 	 * acknowledgement or timeout from the other side. */
 	public boolean maybeAllSent() {
-		if(blockSendsPending == 0 && _unsent.size() == 0 && getNumSent() == _prb._packets) {
+		if(blockSendsPending == 0 && _unsent.isEmpty() && getNumSent() == _prb._packets) {
 			timeAllSent = System.currentTimeMillis();
 			if(logMINOR)
 				Logger.minor(this, "Sent all blocks, none unsent on "+this);
@@ -608,7 +608,7 @@ public class BlockTransmitter {
 		
 		try {
 			synchronized(_prb) {
-				_unsent = _prb.addListener(myListener = new PartiallyReceivedBlock.PacketReceivedListener() {;
+				_unsent = _prb.addListener(myListener = new PartiallyReceivedBlock.PacketReceivedListener() {
 
 					@Override
 					public void packetReceived(int packetNo) {
@@ -758,8 +758,8 @@ public class BlockTransmitter {
 			}
 		}
 
-	};
-	
+	}
+
 	private int blockSendsPending = 0;
 	
 	private long lastSentPacket = -1;
