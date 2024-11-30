@@ -1,230 +1,308 @@
 package freenet.support;
 
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.NoSuchElementException;
-import java.util.Vector;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * A hashtable that can store several values for each entry.
- *
- * FIXME improve efficiency - map to Object internally and either use a single V or an
- * ArrayList of V. Then take over where we do this in the code e.g. PrioritizedTicker.
+ * <p>
+ * This object is thread-safe, it may be read and updated concurrently.
+ * Access rules are similar to collections from {@link java.util.concurrent} package.
  *
  * @author oskar
  */
-
-public class MultiValueTable<K,V> {
-    private Hashtable<K, Vector<V>> table;
-    private int ies;
+public class MultiValueTable<K, V> {
+    private final Map<K, List<V>> table;
 
     public MultiValueTable() {
-        this(16, 3);
+        table = new ConcurrentHashMap<>();
     }
 
     public MultiValueTable(int initialSize) {
-        this(initialSize, 3);
+        table = new ConcurrentHashMap<>(initialSize);
     }
 
-    public MultiValueTable(int initialSize, int initialEntrySize) {
-        table = new Hashtable<K, Vector<V>>(initialSize);
-        ies = initialEntrySize;
+    /**
+     * Deprecated constructor, please use other variant with only one single size parameter
+     *
+     * @param initialSize table initial size
+     * @param unused      this parameter was used as initial value collection size, and it is not unused anymore.
+     *                    Values collections grow according to Java collection rules.
+     */
+    @Deprecated
+    public MultiValueTable(int initialSize, int unused) {
+        this(initialSize);
     }
 
-    public static <K, V> MultiValueTable<K, V> from (K[] keys, V[] values) {
-      if (keys.length != values.length) {
-        throw new IllegalArgumentException(String.format(
-            "keys and values must contain the same number of values, but there are %d keys and %d values",
-            keys.length,
-            values.length));
-      }
-      MultiValueTable<K, V> table = new MultiValueTable<>();
-      for (int i = 0; i < keys.length; i++) {
-        table.put(keys[i], values[i]);
-      }
-      return table;
+    public static <K, V> MultiValueTable<K, V> from(K[] keys, V[] values) {
+        if (keys.length != values.length) {
+            throw new IllegalArgumentException(String.format(
+                "keys and values must contain the same number of values, but there are %d keys and %d values",
+                keys.length,
+                values.length));
+        }
+        MultiValueTable<K, V> table = new MultiValueTable<>(keys.length);
+        for (int i = 0; i < keys.length; i++) {
+            table.put(keys[i], values[i]);
+        }
+        return table;
+    }
+
+    @SafeVarargs
+    public static <K, V> MultiValueTable<K, V> from(K key, V... values) {
+        return from(key, Arrays.asList(values));
+    }
+
+    public static <K, V> MultiValueTable<K, V> from(K key, Collection<? extends V> values) {
+        MultiValueTable<K, V> table = new MultiValueTable<>(1);
+        table.putAll(key, values);
+        return table;
     }
 
     public void put(K key, V value) {
-        synchronized (table) {
-            Vector<V> v = table.get(key);
-            if (v == null) {
-                v = new Vector<V>(ies);
-                table.put(key, v);
+        this.table.compute(key, (k, previousList) -> {
+            List<V> result;
+            if (previousList == null) {
+                // FIXME: replace with List.of(v) when Java version baseline becomes >= 11
+                result = new ArrayList<>(1);
+            } else {
+                result = new ArrayList<>(previousList.size() + 1);
+                result.addAll(previousList);
             }
-            v.addElement(value);
-        }
+            result.add(value);
+            return Collections.unmodifiableList(result);
+        });
+    }
+
+    public void putAll(K key, Collection<? extends V> elements) {
+        this.table.compute(key, (k, previousList) -> {
+            List<V> result;
+            if (previousList == null) {
+                result = new ArrayList<>(elements.size());
+            } else {
+                result = new ArrayList<>(previousList.size() + elements.size());
+                result.addAll(previousList);
+            }
+            result.addAll(elements);
+            return Collections.unmodifiableList(result);
+        });
+    }
+
+    /**
+     * Returns the first element for this key.
+     * @deprecated use {@link #getFirst(Object)} instead
+     */
+    @Deprecated
+    public V get(K key) {
+        return getFirst(key);
     }
 
     /**
      * Returns the first element for this key.
      */
-    public V get(K key) {
-        synchronized (table) {
-            Vector<V> v = table.get(key);
-            return (v == null ?
-                    null :
-                    v.firstElement());
+    public V getFirst(K key) {
+        List<V> list = this.table.get(key);
+        if (list == null || list.isEmpty()) {
+            return null;
         }
+        return list.get(0);
     }
 
     public boolean containsKey(K key) {
-		synchronized (table) {
-			return table.containsKey(key);
-		}
+        return this.table.containsKey(key);
     }
 
     public boolean containsElement(K key, V value) {
-        synchronized (table) {
-            Vector<V> v = table.get(key);
-            return (v != null) && v.contains(value);
+        List<V> list = this.table.get(key);
+        if (list == null || list.isEmpty()) {
+            return false;
         }
+        return list.contains(value);
     }
 
     /**
-     * Users will have to handle synchronizing.
+     * Returns mapped value collection as {@link Enumeration}.
+     * This enumeration is backed by the immutable collection of mapped values,
+     * see more in the description of {@link #getAllAsList(Object)}.
+     *
+     * @deprecated use other {@link #getAllAsList(Object)} method variant, which provides a {@link List}
+     * @param key key mapping
+     * @return mapped value collection as {@link Enumeration}
      */
+    @Deprecated
     public Enumeration<V> getAll(K key) {
-    	Vector<V> v;
-		synchronized (table) {
-			v = table.get(key);
-		}
-        return (v == null ?
-                new EmptyEnumeration<V>() :
-                v.elements());
+        return Collections.enumeration(getAllAsList(key));
+    }
+
+    /**
+     * Returns mapped value collection as {@link List}.
+     *
+     * @param key key mapping
+     * @return The immutable collection of mapped values.
+     * This {@link List} does not depend on any modifications in the multi-value table.
+     */
+    public List<V> getAllAsList(K key) {
+        return this.table.getOrDefault(key, Collections.emptyList());
     }
 
     /**
      * To be used in for(x : y).
+     *
+     * @return {@link Iterable} for the mapped value collection.
+     * This {@link Iterable} is backed by the immutable collection of mapped values.
+     * Iteration does not depend on any modifications in the multi-value table.
      */
     public Iterable<V> iterateAll(K key) {
-		synchronized (table) {
-			return(table.get(key));
-		}
+        return getAllAsList(key);
     }
 
     public int countAll(K key) {
-    	Vector<V> v;
-		synchronized (table) {
-			v = table.get(key);
-		}
-    	if(v != null)
-        	return v.size();
-        else
-        	return 0;
+        return getAllAsList(key).size();
     }
 
+    /**
+     * Returns mapped value collection as raw {@link Object}
+     *
+     * @param key key mapping
+     * @return a new {@link Vector} of mapped values.
+     * For compatibility reasons this method returns a raw {@link Object},
+     * and the real type of returned value is {@link Vector}.
+     * The returned value is a new modifiable copy of mapped values.
+     * @deprecated this method was used in previous {@code synchronized} implementation variant.
+     * Use other {@link #getAllAsList(Object)})} method variant, which provides a typed {@link List} collection.     *
+     */
+    @Deprecated
     public Object getSync(K key) {
-		synchronized (table) {
-			return table.get(key);
-		}
+        List<V> l = this.table.get(key);
+        if (l == null) {
+            return null;
+        }
+        return new Vector<>(l);
     }
 
+    /**
+     * Returns mapped value collection as array
+     *
+     * @param key key mapping
+     * @return the new array copy of values mapped to provided key or {@code null} if key is missing
+     * @deprecated use {@link #getAllAsList(Object)} with {@link List#toArray()} to obtain the values as object array
+     */
+    @Deprecated
     public Object[] getArray(K key) {
-        synchronized (table) {
-            Vector<V> v = table.get(key);
-            if (v == null)
-                return null;
-            else {
-            	Object[] r = new Object[v.size()];
-                v.copyInto(r);
-                return r;
-            }
+        List<V> l = this.table.get(key);
+        if (l == null) {
+            return null;
         }
+        return l.toArray();
     }
 
     public void remove(K key) {
-		synchronized (table) {
-			table.remove(key);
-		}
+        this.table.remove(key);
     }
 
     public boolean isEmpty() {
-		synchronized (table) {
-			return table.isEmpty();
-		}
+        return this.table.isEmpty();
+    }
+
+    public int size() {
+        return this.table.size();
     }
 
     public void clear() {
-		synchronized (table) {
-			table.clear();
-		}
+        this.table.clear();
     }
 
     public boolean removeElement(K key, V value) {
-        synchronized (table) {
-            Vector<V> v = table.get(key);
-            if (v == null)
-                return false;
-            else {
-                boolean b = v.removeElement(value);
-                if (v.isEmpty())
-                    table.remove(key);
-                return b;
+        boolean[] removed = new boolean[1];
+        this.table.computeIfPresent(key, (k, previousList) -> {
+            if (!previousList.contains(value)) {
+                return previousList;
             }
-        }
+            List<V> result = new ArrayList<>(previousList.size() - 1);
+            for (V v : previousList) {
+                if (Objects.equals(v, value) && !removed[0]) {
+                    removed[0] = true;
+                } else {
+                    result.add(v);
+                }
+            }
+            if (result.isEmpty()) {
+                // null result removes element from Map
+                return null;
+            }
+            return Collections.unmodifiableList(result);
+        });
+        return removed[0];
     }
 
+    /**
+     * Returns table keys as {@link Enumeration}.
+     * This enumeration is backed by the immutable copy of keys, see more in the description of {@link #keySet()}.
+     *
+     * @return table keys as {@link Enumeration}
+     * @deprecated use other {@link #keySet()} method variant, which provides a {@link Set} of keys.
+     */
+    @Deprecated
     public Enumeration<K> keys() {
-		synchronized (table) {
-			return table.keys();
-		}
+        return Collections.enumeration(keySet());
     }
 
+    /**
+     * @return The immutable copy of table keys.
+     * This collection result cannot be modified, and therefore it cannot affect any keys in the multi-value table.
+     * Any following changes in the table keys are not reflected in the returned collection.
+     */
+    public Set<K> keySet() {
+        // FIXME: replace with Set.copyOf() when Java version baseline becomes >= 11
+        return Collections.unmodifiableSet(new HashSet<>(this.table.keySet()));
+    }
+
+    /**
+     * Returns table values as {@link Enumeration}.
+     * This iterates over value collections mapped to all existing keys.
+     * This enumeration is backed by the immutable copy of values, see more in the description of {@link #values()}
+     *
+     * @return table values
+     * @deprecated use other {@link #values()} method variant, which provides a {@link Collection} of values.     *
+     */
+    @Deprecated
     public Enumeration<V> elements() {
-		synchronized (table) {
-			if (table.isEmpty())
-				return new EmptyEnumeration<V>();
-			else
-				return new MultiValueEnumeration();
-		}
+        return Collections.enumeration(values());
     }
 
-  @Override
-  public String toString() {
-    return "[MultiValueTable table=" + table.toString() + "]";
-  }
-
-
-  private static class EmptyEnumeration<E> implements Enumeration<E> {
-        @Override
-        public final boolean hasMoreElements() {
-            return false;
+    /**
+     * @return The immutable copy of table entries.
+     * This collection result cannot be modified, and therefore it cannot affect any entries in the multi-value table.
+     * Each {@link Map.Entry} in the returned collection is also unmodifiable,
+     * and it cannot be used to update entries in this multi-value table.
+     * Any following changes in the table keys are not reflected in the returned collection.
+     */
+    public Collection<V> values() {
+        List<V> allValues = new ArrayList<>();
+        for (List<V> entryValues : this.table.values()) {
+            allValues.addAll(entryValues);
         }
-
-        @Override
-        public final E nextElement() {
-            throw new NoSuchElementException();
-        }
+        return Collections.unmodifiableList(allValues);
     }
 
-    private class MultiValueEnumeration implements Enumeration<V> {
-        private Enumeration<V> current;
-        private Enumeration< Vector<V>> global;
-        public MultiValueEnumeration() {
-			synchronized (table) {
-				global = table.elements();
-			}
-            current =  global.nextElement().elements();
-            step();
-        }
-
-        public final void step() {
-            while (!current.hasMoreElements() && global.hasMoreElements())
-                current = global.nextElement().elements();
-        }
-
-        @Override
-        public final boolean hasMoreElements() {
-            return global.hasMoreElements(); // || current.hasMoreElements();
-        }
-
-        @Override
-        public final V nextElement() {
-            V o = current.nextElement();
-            step();
-            return o;
-        }
+    /**
+     * @return The immutable copy of table entries.
+     * This collection result cannot be modified, and therefore it cannot affect any entries in the multi-value table.
+     * Each {@link Map.Entry} in the returned collection is also unmodifiable,
+     * and it cannot be used to update entries in this multi-value table.
+     * Any following changes of the table keys are not reflected in the returned collection.
+     */
+    public Set<Map.Entry<K, List<V>>> entrySet() {
+        // FIXME: replace with Set.copyOf() when Java version baseline becomes >= 11
+        return Collections.unmodifiableSet(
+            new HashSet<>(
+                Collections.unmodifiableMap(this.table).entrySet()
+            )
+        );
     }
 
+    @Override
+    public String toString() {
+        return "[MultiValueTable table=" + table + "]";
+    }
 }

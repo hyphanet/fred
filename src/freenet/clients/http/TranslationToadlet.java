@@ -55,8 +55,10 @@ public class TranslationToadlet extends Toadlet {
 				return;
 			}
 			byte[] data = sfs.toOrderedString().getBytes(StandardCharsets.UTF_8);
-			MultiValueTable<String, String> head = new MultiValueTable<String, String>();
-			head.put("Content-Disposition", "attachment; filename=\"" + this.base.getL10nOverrideFileName(this.base.getSelectedLanguage()) + '"');
+			MultiValueTable<String, String> head = MultiValueTable.from(
+				"Content-Disposition",
+				"attachment; filename=\"" + this.base.getL10nOverrideFileName(this.base.getSelectedLanguage()) + '"'
+			);
 			ctx.sendReplyHeaders(200, "Found", head, "text/plain; charset=utf-8", data.length);
 			ctx.writeData(data);
 			return;
@@ -278,10 +280,8 @@ public class TranslationToadlet extends Toadlet {
 	}
 	
 	private void redirectTo(ToadletContext ctx, String target) throws ToadletContextClosedException, IOException {
-		MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-		headers.put("Location", target);
+		MultiValueTable<String, String> headers = MultiValueTable.from("Location", target);
 		ctx.sendReplyHeaders(302, "Found", headers, null, 0);
-		return;
 	}
 
 	private HTMLNode _setOrRemoveOverride(String key, boolean isOverriden, boolean showEverything) {
