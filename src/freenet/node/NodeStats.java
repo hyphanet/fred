@@ -283,10 +283,6 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	final StringCounter preemptiveRejectReasons;
 	final StringCounter localPreemptiveRejectReasons;
 
-	// Enable this if you run into hard to debug OOMs.
-	// Disabled to prevent long pauses every 30 seconds.
-	private int aggressiveGCModificator = -1 /*250*/;
-
 	// Peers stats
 	/** Next time to update PeerManagerUserAlert stats */
 	private long nextPeerManagerUserAlertStatsUpdateTime = -1;
