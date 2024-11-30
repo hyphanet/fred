@@ -104,7 +104,7 @@ public class DNSRequester implements Runnable {
         pn.maybeUpdateHandshakeIPs(false);
         try {
             synchronized(this) {
-                wait(1000);  // sleep 1s ...
+                wait(1000 + node.getFastWeakRandom().nextInt(60000));  // sleep 1-61s ...
             }
         } catch (InterruptedException e) {
             // Ignore, just wake up. Just sleeping to not busy wait anyway
