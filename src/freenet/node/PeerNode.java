@@ -782,6 +782,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		if (detectedPeer == null && !nominalPeer.isEmpty()) {
 			sortNominalPeer();
 			detectedPeer = nominalPeer.get(0);
+			updateShortToString();
 		}
 		return detectedPeer;
 	}
