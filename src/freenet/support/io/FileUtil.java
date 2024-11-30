@@ -20,26 +20,20 @@ import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.security.SecureRandom;
 import java.util.Random;
-
-import org.bouncycastle.crypto.BufferedBlockCipher;
-import org.bouncycastle.crypto.engines.AESFastEngine;
-import org.bouncycastle.crypto.io.CipherInputStream;
-import org.bouncycastle.crypto.modes.SICBlockCipher;
-import org.bouncycastle.crypto.params.KeyParameter;
-import org.bouncycastle.crypto.params.ParametersWithIV;
 
 import freenet.client.DefaultMIMETypes;
 import freenet.node.NodeStarter;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.StringValidityChecker;
 import freenet.support.Logger.LogLevel;
+import freenet.support.StringValidityChecker;
+import freenet.support.math.MersenneTwister;
 
 final public class FileUtil {
 
 	public static final int BUFFER_SIZE = 32*1024;
+	private static final Random SEED_GENERATOR = new MersenneTwister(NodeStarter.getGlobalSecureRandom().generateSeed(32));
 
 	/**
 	 * Returns a line reading stream for the content of <code>logfile</code>. The stream will
@@ -795,10 +789,6 @@ final public class FileUtil {
 		}
 	}
 	
-	private static CipherInputStream cis;
-	private static ZeroInputStream zis = new ZeroInputStream();
-	private static long cisCounter;
-	
 	/** Write hard to identify random data to the OutputStream. Does not drain the global secure 
 	 * random number generator, and is significantly faster than it.
 	 * @param os The stream to write to.
@@ -806,52 +796,29 @@ final public class FileUtil {
 	 * @throws IOException If unable to write to the stream.
 	 */
 	public static void fill(OutputStream os, long length) throws IOException {
-	    long remaining = length;
-	    byte[] buffer = new byte[BUFFER_SIZE];
-	    int read = 0;
-	    while ((remaining == -1) || (remaining > 0)) {
-	        synchronized(FileUtil.class) {
-	            if(cis == null || cisCounter > Long.MAX_VALUE/2) {
-	                // Reset it well before the birthday paradox (note this is actually counting bytes).
-	                byte[] key = new byte[16];
-	                byte[] iv = new byte[16];
-	                SecureRandom rng = NodeStarter.getGlobalSecureRandom();
-	                rng.nextBytes(key);
-	                rng.nextBytes(iv);
-	                AESFastEngine e = new AESFastEngine();
-	                SICBlockCipher ctr = new SICBlockCipher(e);
-	                ctr.init(true, new ParametersWithIV(new KeyParameter(key),iv));
-	                cis = new CipherInputStream(zis, new BufferedBlockCipher(ctr));
-	                cisCounter = 0;
-	            }
-	            read = cis.read(buffer, 0, ((remaining > BUFFER_SIZE) || (remaining == -1)) ? BUFFER_SIZE : (int) remaining);
-	            cisCounter += read;
-	        }
-	        if (read == -1) {
-	            if (length == -1) {
-	                return;
-	            }
-	            throw new EOFException("stream reached eof");
-	        }
-	        os.write(buffer, 0, read);
-	        if (remaining > 0)
-	            remaining -= read;
-	    }
-	    
+		long seed;
+		synchronized (SEED_GENERATOR) {
+			seed = SEED_GENERATOR.nextLong();
+		}
+		writeRandomBytes(os, new MersenneTwister(seed), length);
 	}
 
 	/** @deprecated */
 	@Deprecated
-    public static void fill(OutputStream os, Random random, long length) throws IOException {
-        long moved = 0;
-        byte[] buf = new byte[BUFFER_SIZE];
-        while(moved < length) {
-            int toRead = (int)Math.min(BUFFER_SIZE, length - moved);
-            random.nextBytes(buf);
-            os.write(buf, 0, toRead);
-            moved += toRead;
-        }
-    }
+	public static void fill(OutputStream os, Random random, long length) throws IOException {
+		writeRandomBytes(os, random, length);
+	}
+
+	private static void writeRandomBytes(OutputStream os, Random random, long length) throws IOException {
+		byte[] buffer = new byte[(int) Math.min(length, BUFFER_SIZE)];
+		long remaining = length;
+		while (remaining > 0) {
+			random.nextBytes(buffer);
+			int writeLength = (int) Math.min(remaining, BUFFER_SIZE);
+			os.write(buffer, 0, writeLength);
+			remaining -= writeLength;
+		}
+	}
 
     public static boolean equalStreams(InputStream a, InputStream b, long size) throws IOException {
         byte[] aBuffer = new byte[BUFFER_SIZE];
