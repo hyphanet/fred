@@ -173,7 +173,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		try {
 			loadCompletedIdentifiers();
 		} catch (PersistenceDisabledException e) {
-			// The user will know soon enough
+			// The user will know soon enoughUpdate Toadlet.java
 		}
 	}
 	
@@ -1456,7 +1456,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		if(ctx.isAllowedFullAccess())
 			contentNode.addChild(ctx.getAlertManager().createSummary());
 
-		/* navigation bar */For the review see https://github.com/hyphanet/fred/pull/830#issuecomment-2508921971
+		/* navigation bar */
 		InfoboxNode infobox = pageMaker.getInfobox("navbar", l10n("requestNavigation"), null, false);
 		HTMLNode navigationBar = infobox.outer;
 		HTMLNode navigationContent = infobox.content.addChild("ul");
