@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/freenet/fred.svg?branch=next)](https://travis-ci.org/freenet/fred)
+[![Build status](https://img.shields.io/github/check-runs/hyphanet/fred/next?label=build)](https://github.com/hyphanet/fred/actions)
 [![Coverity status](https://scan.coverity.com/projects/2316/badge.svg?flat=1)](https://scan.coverity.com/projects/freenet-fred)
 
 # Freenet
