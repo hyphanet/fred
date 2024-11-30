@@ -94,7 +94,7 @@ public class DNSRequester implements Runnable {
             recentNodeIdentityQueue.clear();
         } else {
             // do not request this node again,
-            // until at least 80% of the other unconnected nodes have been checked
+            // until at least 81% of the other unconnected nodes have been checked
             recentNodeIdentitySet.add(pn.getLocation());
             recentNodeIdentityQueue.offerFirst(pn.getLocation());
             while (recentNodeIdentityQueue.size() > (0.81 * unconnectedNodesLength)) {
