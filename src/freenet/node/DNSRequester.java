@@ -80,9 +80,13 @@ public class DNSRequester implements Runnable {
             }
             lastLogTime = now;
         }
+
+        int unconnectedNodesLength = nodesToCheck.length;
+        if (unconnectedNodesLength == 0) {
+            return; // nothing to do
+        }
         // check a randomly chosen node that has not been checked
         // recently to avoid sending bursts of DNS requests
-        int unconnectedNodesLength = nodesToCheck.length;
         PeerNode pn = nodesToCheck[node.getFastWeakRandom().nextInt(unconnectedNodesLength)];
         if (unconnectedNodesLength < 5) {
             // no need for optimizations: just clear all state
