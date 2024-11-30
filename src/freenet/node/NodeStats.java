@@ -125,7 +125,6 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	private volatile long maxPingTime;
 
 	final Node node;
-	private MemoryChecker myMemoryChecker;
 	public final PeerManager peers;
 
 	final RandomSource hardRandom;
@@ -409,27 +408,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		// Yes it could be in seconds insteed of multiples of 0.12, but we don't want people to play with it :)
 		statsConfig.registerIgnoredOption("aggressiveGC");
 
-		myMemoryChecker = new MemoryChecker(node.getTicker(), aggressiveGCModificator);
-		statsConfig.register("memoryChecker", true, sortOrder++, true, false, "NodeStat.memCheck", "NodeStat.memCheckLong",
-				new BooleanCallback(){
-					@Override
-					public Boolean get() {
-						return myMemoryChecker.isRunning();
-					}
-
-					@Override
-					public void set(Boolean val) throws InvalidConfigValueException {
-						if (get().equals(val))
-					        return;
-
-						if(val)
-							myMemoryChecker.start();
-						else
-							myMemoryChecker.terminate();
-					}
-		});
-		if(statsConfig.getBoolean("memoryChecker"))
-			myMemoryChecker.start();
+		statsConfig.registerIgnoredOption("memoryChecker");
 
 		statsConfig.register("ignoreLocalVsRemoteBandwidthLiability", false, sortOrder++, true, false, "NodeStat.ignoreLocalVsRemoteBandwidthLiability", "NodeStat.ignoreLocalVsRemoteBandwidthLiabilityLong", new BooleanCallback() {
 
