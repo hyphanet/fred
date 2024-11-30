@@ -15,7 +15,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
-import java.lang.reflect.Method;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -720,41 +719,13 @@ final public class FileUtil {
 	** Set owner-only permissions on the given file.
 	*/
 	public static boolean setOwnerPerm(File f, boolean r, boolean w, boolean x) {
-		/* JDK6 replace when we upgrade
-		boolean b = f.setReadable(false, false);
-		b &= f.setWritable(false, false);
-		b &= f.setExecutable(false, false);
-		b &= f.setReadable(r, true);
-		b &= f.setWritable(w, true);
-		b &= f.setExecutable(x, true);
-		return b;
-		*/
-
 		boolean success = true;
-		try {
-
-			String[] methods = {"setReadable", "setWritable", "setExecutable"};
-			boolean[] perms = {r, w, x};
-
-			for (int i=0; i<methods.length; ++i) {
-				Method m = File.class.getDeclaredMethod(methods[i], boolean.class, boolean.class);
-				if (m != null) {
-					success &= (Boolean)m.invoke(f, false, false);
-					success &= (Boolean)m.invoke(f, perms[i], true);
-				}
-			}
-
-		} catch (NoSuchMethodException e) {
-			success = false;
-		} catch (java.lang.reflect.InvocationTargetException e) {
-			success = false;
-		} catch (IllegalAccessException e) {
-			success = false;
-		} catch (ExceptionInInitializerError e) {
-			success = false;
-		} catch (RuntimeException e) {
-			success = false;
-		}
+		success &= f.setReadable(false, false);
+		success &= f.setReadable(r, true);
+		success &= f.setWritable(false, false);
+		success &= f.setWritable(w, true);
+		success &= f.setExecutable(false, false);
+		success &= f.setExecutable(x, true);
 		return success;
 	}
 
