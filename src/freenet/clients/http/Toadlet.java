@@ -381,7 +381,7 @@ public abstract class Toadlet {
 			l10n("tempRedirectWithReason", "reason", msg)+
 			"</h1><a href=\""+HTMLEncoder.encode(location)+"\">" +
 			l10n("clickHere") + "</a></body></html>";
-		byte[] = redirDoc.getBytes(StandardCharsets.UTF_8);
+		byte[] buf = redirDoc.getBytes(StandardCharsets.UTF_8);
 		MultiValueTable<String, String> mvt = MultiValueTable.from("Location", location);
 		ctx.sendReplyHeaders(302, "Found", mvt, "text/html; charset=UTF-8", buf.length);
 		ctx.writeData(buf, 0, buf.length);
