@@ -23,7 +23,6 @@ import freenet.crypt.DSAPublicKey;
 import freenet.keys.Key;
 import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;
-import freenet.node.NodeStats.PeerLoadStats;
 import freenet.node.probe.Error;
 import freenet.node.probe.Type;
 import freenet.support.BitArray;
@@ -474,17 +473,19 @@ public class DMT {
 		addField(UID, Long.class);
 		addField(IS_LOCAL, Boolean.class);
 	}};
-	
+
+	/**
+	 * @deprecated last two NLM related arguments are ignored and can be omitted
+	 */
+	@Deprecated
 	public static Message createFNPRejectedOverload(long id, boolean isLocal, boolean needsLoad, boolean realTimeFlag) {
+		return createFNPRejectedOverload(id, isLocal);
+	}
+
+	public static Message createFNPRejectedOverload(long id, boolean isLocal) {
 		Message msg = new Message(FNPRejectedOverload);
 		msg.set(UID, id);
 		msg.set(IS_LOCAL, isLocal);
-		if(needsLoad) {
-			if(realTimeFlag)
-				msg.setNeedsLoadRT();
-			else
-				msg.setNeedsLoadBulk();
-		}
 		return msg;
 	}
 	
@@ -1722,60 +1723,6 @@ public class DMT {
 		addField(MAX_TRANSFERS_OUT_UPPER_LIMIT, Integer.class);
 		addField(REAL_TIME_FLAG, Boolean.class);
 	}};
-	
-	public static Message createFNPPeerLoadStatus(PeerLoadStats stats) {
-		Message msg;
-		if(stats.expectedTransfersInCHK < 256 && stats.expectedTransfersInSSK < 256 &&
-				stats.expectedTransfersOutCHK < 256 && stats.expectedTransfersOutSSK < 256 &&
-				stats.averageTransfersOutPerInsert < 256 && stats.maxTransfersOut < 256 && 
-				stats.maxTransfersOutLowerLimit < 256 && stats.maxTransfersOutPeerLimit < 256 &&
-				stats.maxTransfersOutUpperLimit < 256) {
-			msg = new Message(FNPPeerLoadStatusByte);
-			msg.set(OTHER_TRANSFERS_OUT_CHK, (byte)stats.expectedTransfersOutCHK);
-			msg.set(OTHER_TRANSFERS_IN_CHK, (byte)stats.expectedTransfersInCHK);
-			msg.set(OTHER_TRANSFERS_OUT_SSK, (byte)stats.expectedTransfersOutSSK);
-			msg.set(OTHER_TRANSFERS_IN_SSK, (byte)stats.expectedTransfersInSSK);
-			msg.set(AVERAGE_TRANSFERS_OUT_PER_INSERT, (byte)stats.averageTransfersOutPerInsert);
-			msg.set(MAX_TRANSFERS_OUT, (byte)stats.maxTransfersOut);
-			msg.set(MAX_TRANSFERS_OUT_PEER_LIMIT, (byte)stats.maxTransfersOutPeerLimit);
-			msg.set(MAX_TRANSFERS_OUT_LOWER_LIMIT, (byte)stats.maxTransfersOutLowerLimit);
-			msg.set(MAX_TRANSFERS_OUT_UPPER_LIMIT, (byte)stats.maxTransfersOutUpperLimit);
-		} else if(stats.expectedTransfersInCHK < 65536 && stats.expectedTransfersInSSK < 65536 &&
-				stats.expectedTransfersOutCHK < 65536 && stats.expectedTransfersOutSSK < 65536 &&
-				stats.averageTransfersOutPerInsert < 65536 && stats.maxTransfersOut < 65536 && 
-				stats.maxTransfersOutLowerLimit < 65536 && stats.maxTransfersOutPeerLimit < 65536 &&
-				stats.maxTransfersOutUpperLimit < 65536) {
-			msg = new Message(FNPPeerLoadStatusShort);
-			msg.set(OTHER_TRANSFERS_OUT_CHK, (short)stats.expectedTransfersOutCHK);
-			msg.set(OTHER_TRANSFERS_IN_CHK, (short)stats.expectedTransfersInCHK);
-			msg.set(OTHER_TRANSFERS_OUT_SSK, (short)stats.expectedTransfersOutSSK);
-			msg.set(OTHER_TRANSFERS_IN_SSK, (short)stats.expectedTransfersInSSK);
-			msg.set(AVERAGE_TRANSFERS_OUT_PER_INSERT, (short)stats.averageTransfersOutPerInsert);
-			msg.set(MAX_TRANSFERS_OUT, (short)stats.maxTransfersOut);
-			msg.set(MAX_TRANSFERS_OUT_PEER_LIMIT, (short)stats.maxTransfersOutPeerLimit);
-			msg.set(MAX_TRANSFERS_OUT_LOWER_LIMIT, (short)stats.maxTransfersOutLowerLimit);
-			msg.set(MAX_TRANSFERS_OUT_UPPER_LIMIT, (short)stats.maxTransfersOutUpperLimit);
-		} else {
-			msg = new Message(FNPPeerLoadStatusInt);
-			msg.set(OTHER_TRANSFERS_OUT_CHK, stats.expectedTransfersOutCHK);
-			msg.set(OTHER_TRANSFERS_IN_CHK, stats.expectedTransfersInCHK);
-			msg.set(OTHER_TRANSFERS_OUT_SSK, stats.expectedTransfersOutSSK);
-			msg.set(OTHER_TRANSFERS_IN_SSK, stats.expectedTransfersInSSK);
-			msg.set(AVERAGE_TRANSFERS_OUT_PER_INSERT, stats.averageTransfersOutPerInsert);
-			msg.set(MAX_TRANSFERS_OUT, stats.maxTransfersOut);
-			msg.set(MAX_TRANSFERS_OUT_PEER_LIMIT, stats.maxTransfersOutPeerLimit);
-			msg.set(MAX_TRANSFERS_OUT_LOWER_LIMIT, stats.maxTransfersOutLowerLimit);
-			msg.set(MAX_TRANSFERS_OUT_UPPER_LIMIT, stats.maxTransfersOutUpperLimit);
-		}
-		msg.set(OUTPUT_BANDWIDTH_LOWER_LIMIT, (int)stats.outputBandwidthLowerLimit);
-		msg.set(OUTPUT_BANDWIDTH_UPPER_LIMIT, (int)stats.outputBandwidthUpperLimit);
-		msg.set(OUTPUT_BANDWIDTH_PEER_LIMIT, (int)stats.outputBandwidthPeerLimit);
-		msg.set(INPUT_BANDWIDTH_LOWER_LIMIT, (int)stats.inputBandwidthLowerLimit);
-		msg.set(INPUT_BANDWIDTH_UPPER_LIMIT, (int)stats.inputBandwidthUpperLimit);
-		msg.set(INPUT_BANDWIDTH_PEER_LIMIT, (int)stats.inputBandwidthPeerLimit);
-		msg.set(REAL_TIME_FLAG, stats.realTime);
-		return msg;
-	}
 	
 	public static final String AVERAGE_TRANSFERS_OUT_PER_INSERT = "averageTransfersOutPerInsert";
 	

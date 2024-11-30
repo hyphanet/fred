@@ -33,9 +33,9 @@ import freenet.support.ByteBufferInputStream;
 import freenet.support.Fields;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.Serializer;
 import freenet.support.ShortBuffer;
-import freenet.support.Logger.LogLevel;
 
 /**
  * A Message which can be read from and written to a DatagramPacket.
@@ -75,9 +75,7 @@ public class Message {
 	public final long localInstantiationTime;
 	final int _receivedByteCount;
 	short priority;
-	private boolean needsLoadRT;
-	private boolean needsLoadBulk;
-	
+
 	public static Message decodeMessageFromPacket(byte[] buf, int offset, int length, PeerContext peer, int overhead) {
 		ByteBufferInputStream bb = new ByteBufferInputStream(buf, offset, length);
 		return decodeMessage(bb, peer, length + overhead, true, false, false);
@@ -179,8 +177,6 @@ public class Message {
 		localInstantiationTime = System.currentTimeMillis();
 		_receivedByteCount = 0;
 		priority = m.priority;
-		needsLoadRT = m.needsLoadRT;
-		needsLoadBulk = m.needsLoadBulk;
 	}
 
 	public boolean getBoolean(String key) {
@@ -404,22 +400,6 @@ public class Message {
 	
 	public void boostPriority() {
 		priority--;
-	}
-
-	public boolean needsLoadRT() {
-		return needsLoadRT;
-	}
-	
-	public boolean needsLoadBulk() {
-		return needsLoadBulk;
-	}
-	
-	public void setNeedsLoadRT() {
-		needsLoadRT = true;
-	}
-	
-	public void setNeedsLoadBulk() {
-		needsLoadBulk = true;
 	}
 
 	/** Clone the message, clear sub-messages and set originator to self. */

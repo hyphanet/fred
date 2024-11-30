@@ -1,5 +1,10 @@
 package freenet.node;
 
+import static java.util.concurrent.TimeUnit.DAYS;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.Arrays;
@@ -39,11 +44,6 @@ import freenet.support.math.DecayingKeyspaceAverage;
 import freenet.support.math.RunningAverage;
 import freenet.support.math.TimeDecayingRunningAverage;
 import freenet.support.math.TrivialRunningAverage;
-
-import static java.util.concurrent.TimeUnit.DAYS;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 
 /** Node (as opposed to NodeClientCore) level statistics. Includes shouldRejectRequest(), but not limited
  * to stuff required to implement that. */
@@ -1430,15 +1430,6 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		
 		double thisAllocation = getPeerLimit(source, bandwidthAvailableOutputUpperLimit - bandwidthAvailableOutputLowerLimit, input, transfersPerInsert, realTimeFlag, peers, peerRequestsSnapshot.calculateSR(ignoreLocalVsRemoteBandwidthLiability, input));
 		
-		if(SEND_LOAD_STATS_NOTICES && source != null) {
-			// FIXME tell local as well somehow?
-			if(!input) {
-				source.onSetMaxOutputTransfers(realTimeFlag, maxOutputTransfers);
-				source.onSetMaxOutputTransfersPeerLimit(realTimeFlag, maxOutputTransfersPeerLimit);
-			}
-			source.onSetPeerAllocation(input, (int)thisAllocation, transfersPerInsert, maxOutputTransfers, realTimeFlag);
-		}
-		
 		// Ignore the upper limit.
 		// Because we reassignToSelf() in various tricky timeout conditions, it is possible to exceed it.
 		// Even if we do we still need to allow the guaranteed allocation for each peer.
@@ -1516,10 +1507,6 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		return "TooManyTransfers: Fair sharing between peers";
 	}
 
-
-
-	static final boolean SEND_LOAD_STATS_NOTICES = true;
-	
 	/**
 	 * @param source The peer.
 	 * @param totalGuaranteedBandwidth The difference between the upper and lower overall
@@ -3554,10 +3541,6 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 		Arrays.sort(entries);
 		return entries;
-	}
-
-	public PeerLoadStats createPeerLoadStats(PeerNode peer, int transfersPerInsert, boolean realTimeFlag) {
-		return new PeerLoadStats(peer, transfersPerInsert, realTimeFlag);
 	}
 
 	public PeerLoadStats parseLoadStats(PeerNode source, Message m) {
