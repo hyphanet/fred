@@ -38,49 +38,69 @@ public final class Fallocate {
   }
 
   public static Fallocate forChannel(FileChannel channel, long final_filesize) {
-    return new Fallocate(channel, getDescriptor(channel), final_filesize);
+    try {
+      return new Fallocate(channel, getDescriptor(channel), final_filesize);
+    } catch (final UnsupportedOperationException exception) {
+      // File descriptor is not supported: fd is null and unavailable
+      return new Fallocate(channel, 0, final_filesize);
+    }
   }
 
   public static Fallocate forChannel(FileChannel channel, FileDescriptor fd, long final_filesize) {
-    return new Fallocate(channel, getDescriptor(fd), final_filesize);
+    try {
+      return new Fallocate(channel, getDescriptor(fd), final_filesize);
+    } catch (final UnsupportedOperationException exception) {
+      // File descriptor is not supported: fd is null and unavailable
+      return new Fallocate(channel, 0, final_filesize);
+    }
   }
 
-  public Fallocate fromOffset(long offset) {
+  public Fallocate fromOffset(long offset) throws IllegalArgumentException {
     if(offset < 0 || offset > final_filesize) throw new IllegalArgumentException();
     this.offset = offset;
     return this;
   }
 
-  public Fallocate keepSize() {
+  public Fallocate keepSize() throws UnsupportedOperationException {
     requireLinux("fallocate keep size");
     mode |= FALLOC_FL_KEEP_SIZE;
     return this;
   }
 
-  private void requireLinux(String feature) {
+  private void requireLinux(String feature) throws UnsupportedOperationException {
     if (!IS_LINUX) {
       throwUnsupported(feature);
     }
   }
 
-  private void throwUnsupported(String feature) {
+  private void throwUnsupported(String feature) throws UnsupportedOperationException {
     throw new UnsupportedOperationException(feature + " is not supported on this file system");
   }
 
   public void execute() throws IOException {
     int errno = 0;
     boolean isUnsupported = false;
-    if (IS_LINUX) {
-      final int result = FallocateHolder.fallocate(fd, mode, offset, final_filesize-offset);
-      errno = result == 0 ? 0 : Native.getLastError();
-    } else if (IS_POSIX) {
-      errno = FallocateHolderPOSIX.posix_fallocate(fd, offset, final_filesize-offset);
+    if (fd != 0) {
+      if (IS_LINUX) {
+        final int result = FallocateHolder.fallocate(fd, mode, offset, final_filesize-offset);
+        errno = result == 0 ? 0 : Native.getLastError();
+      } else if (IS_POSIX) {
+        errno = FallocateHolderPOSIX.posix_fallocate(fd, offset, final_filesize-offset);
+      } else {
+        isUnsupported = true;
+      }
     } else {
-      isUnsupported = true;
+      // fd is null and unavailable
+      if (Platform.isWindows()) {
+        // Windows do not create sparse files by default, so just write a byte at the end.
+        channel.write(ByteBuffer.allocate(1), final_filesize - 1);
+      } else {
+        isUnsupported = true;
+      }
     }
 
     if (isUnsupported || errno != 0) {
-      Logger.normal(this, "fallocate() failed; using legacy method; errno="+errno);
+      Logger.normal(this, "fallocate() failed; using legacy method; errno=" + errno);
       legacyFill(channel, final_filesize, offset);
     }
   }
@@ -101,7 +121,7 @@ public final class Fallocate {
     private static native int posix_fallocate(int fd, long offset, long length);
   }
 
-  private static int getDescriptor(FileChannel channel) {
+  private static int getDescriptor(FileChannel channel) throws UnsupportedOperationException {
     try {
       // sun.nio.ch.FileChannelImpl declares private final java.io.FileDescriptor fd
       final Field field = channel.getClass().getDeclaredField("fd");
@@ -112,7 +132,7 @@ public final class Fallocate {
     }
   }
 
-  private static int getDescriptor(FileDescriptor descriptor) {
+  private static int getDescriptor(FileDescriptor descriptor) throws UnsupportedOperationException {
     try {
       // Oracle java.io.FileDescriptor declares private int fd
       final Field field = descriptor.getClass().getDeclaredField(IS_ANDROID ? "descriptor" : "fd");
