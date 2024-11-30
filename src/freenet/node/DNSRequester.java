@@ -84,12 +84,18 @@ public class DNSRequester implements Runnable {
         // recently to avoid sending bursts of DNS requests
         int unconnectedNodesLength = nodesToCheck.length;
         PeerNode pn = nodesToCheck[node.getFastWeakRandom().nextInt(unconnectedNodesLength)];
-        // do not request this node again,
-        // until at least 80% of the other unconnected nodes have been checked
-        recentNodeIdentitySet.add(pn.getLocation());
-        recentNodeIdentityQueue.offerFirst(pn.getLocation());
-        while (unconnectedNodesLength > 5 && recentNodeIdentityQueue.size() > (0.81 * unconnectedNodesLength)) {
-          recentNodeIdentitySet.remove(recentNodeIdentityQueue.removeLast());
+        if (unconnectedNodesLength < 5) {
+            // no need for optimizations: just clear all state
+            recentNodeIdentitySet.clear();
+            recentNodeIdentityQueue.clear();
+        } else {
+            // do not request this node again,
+            // until at least 80% of the other unconnected nodes have been checked
+            recentNodeIdentitySet.add(pn.getLocation());
+            recentNodeIdentityQueue.offerFirst(pn.getLocation());
+            while (recentNodeIdentityQueue.size() > (0.81 * unconnectedNodesLength)) {
+                recentNodeIdentitySet.remove(recentNodeIdentityQueue.removeLast());
+            }
         }
         //Logger.minor(this, "Node: "+pn);
 
