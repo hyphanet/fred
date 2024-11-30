@@ -70,7 +70,7 @@ class Persister implements Runnable {
 			fos = new FileOutputStream(persistTemp);
 			fs.writeToBigBuffer(fos);
 			fos.close();
-			FileUtil.renameTo(persistTemp, persistTarget);
+			FileUtil.moveTo(persistTemp, persistTarget);
 		} catch (FileNotFoundException e) {
 			Logger.error(this, "Could not store throttle data to disk: " + e, e);
 		} catch (IOException e) {

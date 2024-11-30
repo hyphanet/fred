@@ -19,6 +19,8 @@ import java.lang.reflect.Method;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
@@ -402,67 +404,59 @@ final public class FileUtil {
 			if(fos != null) fos.close();
 		}
 
-		if(FileUtil.renameTo(file, target))
-			return true;
-		else {
+		if (!moveTo(file, target)) {
 			file.delete();
 			return false;
 		}
+		return true;
 	}
 
-        public static boolean renameTo(File orig, File dest) {
-            // Try an atomic rename
-            // Shall we prevent symlink-race-conditions here ?
-            if(orig.equals(dest))
-                throw new IllegalArgumentException("Huh? the two file descriptors are the same!");
-            if(!orig.exists()) {
-            	throw new IllegalArgumentException("Original doesn't exist!");
-            }
-            if (!orig.renameTo(dest)) {
-                // Not supported on some systems (Windows)
-                if (!dest.delete()) {
-                    if (dest.exists()) {
-                        Logger.error("FileUtil", "Could not delete " + dest + " - check permissions");
-                        System.err.println("Could not delete " + dest + " - check permissions");
-                    }
-                }
-                if (!orig.renameTo(dest)) {
-                	String err = "Could not rename " + orig + " to " + dest +
-                    	(dest.exists() ? " (target exists)" : "") +
-                    	(orig.exists() ? " (source exists)" : "") +
-                    	" - check permissions";
-                    Logger.error(FileUtil.class, err);
-                    System.err.println(err);
-                    return false;
-                }
-            }
-            return true;
-        }
+	/**
+	 * @deprecated use {@link #moveTo(File, File)} or {@link #moveTo(File, File, boolean)}
+	 */
+	@Deprecated
+	public static boolean renameTo(File orig, File dest) {
+		return moveTo(orig, dest);
+	}
 
-        /**
-         * Like renameTo(), but can move across filesystems, by copying the data.
-         * @param orig
-         * @param dest
-         * @param overwrite
-         */
-    	public static boolean moveTo(File orig, File dest, boolean overwrite) {
-            if(orig.equals(dest))
-                throw new IllegalArgumentException("Huh? the two file descriptors are the same!");
-            if(!orig.exists()) {
-            	throw new IllegalArgumentException("Original doesn't exist!");
-            }
-            if(dest.exists()) {
-            	if(overwrite)
-            		dest.delete();
-            	else {
-            		System.err.println("Not overwriting "+dest+" - already exists moving "+orig);
-            		return false;
-            	}
-            }
-    		if(!orig.renameTo(dest))
-    		    return copyFile(orig, dest);
-    		else return true;
-    	}
+	/**
+	 * Move or rename a file to a destination file.
+	 *
+	 * @param orig the file to move
+	 * @param dest the destination file
+	 * @param overwrite when true, allows replacing the destination file if it exists
+	 * @return whether the file was successfully moved
+	 */
+	public static boolean moveTo(File orig, File dest, boolean overwrite) {
+		if (!overwrite && dest.exists()) {
+			return false;
+		}
+		return moveTo(orig, dest);
+	}
+
+	/**
+	 * Move or rename a file to a destination file, replacing the destination file if it exists.
+	 * An atomic move is attempted, but not guaranteed. When not supported, the file is moved non-atomically.
+	 *
+	 * @param orig the file to move
+	 * @param dest the destination file
+	 * @return whether the file was successfully moved
+	 */
+	public static boolean moveTo(File orig, File dest) {
+		Path source = orig.toPath();
+		Path target = dest.toPath();
+		try {
+			try {
+				Files.move(source, target, StandardCopyOption.ATOMIC_MOVE);
+			} catch (AtomicMoveNotSupportedException | FileAlreadyExistsException e) {
+				Files.move(source, target, StandardCopyOption.REPLACE_EXISTING);
+			}
+		} catch (IOException e) {
+			Logger.error(FileUtil.class, "Could not move " + orig + " to " + dest + ": " + e);
+			return false;
+		}
+		return true;
+	}
 
     /**
      * Sanitizes the given filename to be valid on the given operating system.

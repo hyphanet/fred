@@ -1943,7 +1943,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 						if(!failed) {
 							// Check the hash.
 							if(MainJarDependenciesChecker.validFile(tmp, expectedHash, size, executable)) {
-								if(FileUtil.renameTo(tmp, saveTo)) {
+								if(FileUtil.moveTo(tmp, saveTo)) {
 									synchronized(UOMDependencyFetcher.this) {
 										if(completed) return;
 										completed = true;

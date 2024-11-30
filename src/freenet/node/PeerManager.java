@@ -1534,14 +1534,14 @@ public class PeerManager {
 							thisFile.delete();
 						} else {
 							if(thisFile.exists()) {
-								FileUtil.renameTo(thisFile, prevFile);
+								FileUtil.moveTo(thisFile, prevFile);
 							}
 						}
 						prevFile = thisFile;
 					}
-					FileUtil.renameTo(f, prevFile);
+					FileUtil.moveTo(f, prevFile);
 				} else {
-					FileUtil.renameTo(f, getBackupFilename(filename, 0));
+					FileUtil.moveTo(f, getBackupFilename(filename, 0));
 				}
 			} catch(IOException e) {
 				try {

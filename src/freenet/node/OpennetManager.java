@@ -338,7 +338,7 @@ public class OpennetManager {
 			fs.writeTo(bw);
 
 			bw.close();
-			FileUtil.renameTo(backup, orig);
+			FileUtil.moveTo(backup, orig);
 		} catch (IOException e) {
 			Closer.close(bw);
 			Closer.close(osr);

@@ -307,7 +307,7 @@ public class AddressTracker {
 			bw.flush();
 			bw.close();
 			fos = null;
-			FileUtil.renameTo(dataBak, data);
+			FileUtil.moveTo(dataBak, data);
 		} catch (IOException e) {
 			Logger.error(this, "Cannot store packet tracker to disk");
 			return;
