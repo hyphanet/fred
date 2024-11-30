@@ -101,10 +101,8 @@ public class DNSRequester implements Runnable {
                 recentNodeIdentitySet.remove(recentNodeIdentityQueue.removeLast());
             }
         }
-        //Logger.minor(this, "Node: "+pn);
 
         // Try new DNS lookup
-        //Logger.minor(this, "Doing lookup on "+pn+" of "+nodesToCheck.length);
         pn.maybeUpdateHandshakeIPs(false);
 
         int nextMaxWaitTime = 1000 + node.getFastWeakRandom().nextInt(60000);
