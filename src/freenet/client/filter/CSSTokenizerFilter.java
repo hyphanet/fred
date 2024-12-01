@@ -327,6 +327,7 @@ class CSSTokenizerFilter {
 		allelementVerifiers.add("text-emphasis-style");
 		allelementVerifiers.add("text-indent");
 		allelementVerifiers.add("text-justify");
+		allelementVerifiers.add("text-orientation");
 		allelementVerifiers.add("text-outline");
 		allelementVerifiers.add("text-overflow");
 		allelementVerifiers.add("text-shadow");
@@ -1686,6 +1687,11 @@ class CSSTokenizerFilter {
 			auxilaryVerifiers[83]=new CSSPropertyVerifier(Arrays.asList("inter-word","inter-ideograph","inter-cluster","distribute","kashida"),null,null,null,true);
 			auxilaryVerifiers[84]=new CSSPropertyVerifier(Arrays.asList("trim"),null,null,null,true);
 			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("auto"),ElementInfo.VISUALMEDIA,null,Arrays.asList("84a83")));
+			allelementVerifiers.remove(element);
+		}
+		else if("text-orientation".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("mixed","upright","sideways","sideways-right"),ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
 		}
 		else if("text-outline".equalsIgnoreCase(element))

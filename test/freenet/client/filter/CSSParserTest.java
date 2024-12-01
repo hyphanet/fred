@@ -994,6 +994,7 @@ public class CSSParserTest {
 		propertyTests.put("#x { dominant-baseline: alphabetic; }", "#x { dominant-baseline: alphabetic; }");
 		propertyTests.put("#x { margin-block: 3px 3%; margin-inline: 5%; margin-inline-end: 4px; margin-inline-start: auto; }", "#x { margin-block: 3px 3%; margin-inline: 5%; margin-inline-end: 4px; margin-inline-start: auto; }");
 		propertyTests.put("#x { padding-block: 3px 3%; padding-inline: 5%; padding-inline-end: 4px; padding-inline-start: 1em; }", "#x { padding-block: 3px 3%; padding-inline: 5%; padding-inline-end: 4px; padding-inline-start: 1em; }");
+		propertyTests.put("#x { text-orientation: upright; }", "#x { text-orientation: upright; }");
 		propertyTests.put("#x { scroll-snap-align: start end; }", "#x { scroll-snap-align: start end; }");
 		propertyTests.put("#x { scroll-snap-stop: always; }", "#x { scroll-snap-stop: always; }");
 		propertyTests.put("#x { scroll-snap-type: both proximity; }", "#x { scroll-snap-type: both proximity; }");
