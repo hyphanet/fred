@@ -63,8 +63,7 @@ class ArchiveHandlerImpl implements ArchiveHandler, Serializable {
 			ArchiveManager manager, ClientContext context) throws ArchiveFailureException,
 			ArchiveRestartException {
 		forceRefetchArchive = false; // now we don't need to force refetch any more
-		ArchiveStoreContext ctx = manager.makeContext(key, archiveType, compressorType, false);
-		manager.extractToCache(key, archiveType, compressorType, bucket, actx, ctx, element, callback, context);
+		manager.extractToCache(key, archiveType, compressorType, bucket, actx, element, callback, context);
 	}
 
 	@Override
