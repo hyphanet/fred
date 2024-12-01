@@ -242,7 +242,7 @@ public class PeerManager {
 		// read the peers file
 		try {
 			while (true) {
-			  peerEntries.add(new SimpleFieldSet(br, false, true));
+				peerEntries.add(new SimpleFieldSet(br, false, true));
 			}
 		} catch(EOFException e) {
 			// End of file, fine
@@ -311,13 +311,13 @@ public class PeerManager {
 			}
 		}
 		if(!droppedOldPeers.isEmpty()) {
-		    try {
-		        node.getClientCore().getAlerts().register(droppedOldPeers);
-		        Logger.error(this, droppedOldPeers.getText());
-		    } catch (Throwable t) {
-		        // Startup MUST complete, don't let client layer problems kill it.
-		        Logger.error(this, "Caught error telling user about dropped peers", t);
-		    }
+			try {
+				node.getClientCore().getAlerts().register(droppedOldPeers);
+				Logger.error(this, droppedOldPeers.getText());
+			} catch (Throwable t) {
+				// Startup MUST complete, don't let client layer problems kill it.
+				Logger.error(this, "Caught error telling user about dropped peers", t);
+			}
 		}
 		return !someBroken;
 	}
