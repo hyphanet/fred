@@ -332,6 +332,7 @@ class CSSTokenizerFilter {
 		allelementVerifiers.add("text-overflow");
 		allelementVerifiers.add("text-shadow");
 		allelementVerifiers.add("text-transform");
+		allelementVerifiers.add("text-underline-offset");
 		allelementVerifiers.add("text-underline-position");
 		allelementVerifiers.add("text-wrap");
 		allelementVerifiers.add("top");
@@ -1714,6 +1715,11 @@ class CSSTokenizerFilter {
 		else if("text-transform".equalsIgnoreCase(element))
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier( Arrays.asList("capitalize","uppercase","lowercase","none","fullwidth","full-size-kana","math-auto"),ElementInfo.VISUALMEDIA));
+			allelementVerifiers.remove(element);
+		}
+		else if("text-underline-offset".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("36")));
 			allelementVerifiers.remove(element);
 		}
 		else if("text-underline-position".equalsIgnoreCase(element))
