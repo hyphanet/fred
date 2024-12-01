@@ -1,12 +1,34 @@
 next:
 
-- Update Gradle to 8.9 thanks to Christophe!
+- Reduce pings and DNS lookups — thanks to bertm for the careful review!
+- Improve SSL: Fix SSL self-signed certificate, update cipher suite, Add HSTS header setting to upgrade FMS links to HTTPS — thanks to torusrxxx!
+- CI: update Gradle wrapper validation to latest version — thanks to qupo1!
+- Add webp filter, thanks to Torusrxxx!
+- Add lots of CSS options — thanks to Torusrxxx!
+- Update Japanese localization, thanks to qupo1!
+- Fix bulk backoff being ignored — thanks to bertm!
+- Fix readme links and code badges — thanks to qupo1!
+- Only prefer the realtime queue to bulk with 90% probability to avoid starving bulk on very fast nodes
+- Remove SHA-256 special case in PluginManager — thanks to bertm!
+- recognize MIME types image/avif, heic, heif (no filters yet) — thanks to Torusrxxx!
+- Ensure that the updater searches for updates from an updated update key without restart.
+- Avoid duplicate files in jar file and and add checks — thanks to Bombe!
+- Avoid unnecessary boxing and unboxing — thanks to Juiceman!
+- Fix bookmark editor indentation on Winterfacey theme and improve directory listing layout — thanks to bertm!
+- Fix update.sh version in dependencies.properties (auto-update)
+- Kill no longer useful MemoryChecker with 🔥 — thanks to Bombe and bertm for the reviews!
+- cleanups: do not check for long gone JVM bugs, do not intern byte arrays, reduce stream handling duplication in FileUtil, replace Logger.OSThread-based PID logging that was always disabled by NOOP — thanks to bertm!
+- Remove code related to NLM load sending — thanks to bertm!
+- Remove unused but dangerous Logger.fatal(...) method — thanks to bertm!
 - replace length = 0 checks with isEmpty() — thanks to Juiceman!
+- Support IPV6_ADDR_PREFERENCES until Java 24 and beyond (move from reflection to unsafe) — thanks to bertm!
+- Improve MultiValueTable — thanks to venfernand!
+- Simplify peers parsing code
+- Add copy of the cryptics general license (2-clause BSD)
+- Update Gradle to 8.11 thanks to Christophe!
 - do not recommend disabling js helpers in fproxy (these are reviewed)
 - add more resilient plugin list exception handling
 - Remove gc meddling that hasn’t been necessary for many Java releases
-- Add webp filter, thanks to Torusrxxx!
-- Update Japanese localization, thanks to qupo1!
 - Fix build info with gradle daemon, thanks to Bombe!
 - Improve IPv6 handling, thanks to Torusrxxx!
 - Hide no longer relevant new load management statistics, thanks to Torusrxxx!
