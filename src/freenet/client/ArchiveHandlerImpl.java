@@ -31,37 +31,25 @@ class ArchiveHandlerImpl implements ArchiveHandler, Serializable {
 	}
 
 	@Override
-	public Bucket get(String internalName, ArchiveContext archiveContext,
-			ArchiveManager manager)
-			throws ArchiveFailureException, ArchiveRestartException,
-			MetadataParseException, FetchException {
-
-		if(forceRefetchArchive) return null;
-
-		Bucket data;
-
-		// Fetch from cache
-		if(logMINOR)
-			Logger.minor(this, "Checking cache: "+key+ ' ' +internalName);
-		if((data = manager.getCached(key, internalName)) != null) {
-			return data;
+	public Bucket get(String internalName, ArchiveContext archiveContext, ArchiveManager manager) {
+		if (forceRefetchArchive) {
+			return null;
 		}
-
-		return null;
+		if (logMINOR) {
+			Logger.minor(this, "Checking cache: " + key + ' ' + internalName);
+		}
+		return manager.getCached(key, internalName);
 	}
 
 	@Override
-	public Bucket getMetadata(ArchiveContext archiveContext,
-			ArchiveManager manager) throws ArchiveFailureException,
-			ArchiveRestartException, MetadataParseException, FetchException {
+	public Bucket getMetadata(ArchiveContext archiveContext, ArchiveManager manager) {
 		return get(".metadata", archiveContext, manager);
 	}
 
 	@Override
 	public void extractToCache(Bucket bucket, ArchiveContext actx,
 			String element, ArchiveExtractCallback callback,
-			ArchiveManager manager, ClientContext context) throws ArchiveFailureException,
-			ArchiveRestartException {
+			ArchiveManager manager, ClientContext context) throws ArchiveFailureException {
 		forceRefetchArchive = false; // now we don't need to force refetch any more
 		manager.extractToCache(key, archiveType, compressorType, bucket, actx, element, callback, context);
 	}
@@ -69,10 +57,6 @@ class ArchiveHandlerImpl implements ArchiveHandler, Serializable {
 	@Override
 	public ARCHIVE_TYPE getArchiveType() {
 		return archiveType;
-	}
-
-	public COMPRESSOR_TYPE getCompressorType() {
-		return compressorType;
 	}
 
 	@Override
