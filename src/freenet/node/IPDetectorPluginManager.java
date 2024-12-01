@@ -372,7 +372,6 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 		node.getTicker().queueTimedJob(new Runnable() {
 			@Override
 			public void run() {
-				freenet.support.Logger.OSThread.logPID(this);
 				tryMaybeRun();
 			}
 		}, MINUTES.toMillis(1));
@@ -718,7 +717,6 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 
 		@Override
 		public void run() {
-			freenet.support.Logger.OSThread.logPID(this);
 			try {
 				realRun();
 			} catch (Throwable t) {
