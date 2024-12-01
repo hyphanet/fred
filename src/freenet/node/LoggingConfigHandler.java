@@ -357,7 +357,6 @@ public class LoggingConfigHandler {
 		
 		@Override
 		public void run() {
-		    freenet.support.Logger.OSThread.logPID(this);
 			fileLoggerHook.waitForSwitch();
 			delete(logDir);
 		}

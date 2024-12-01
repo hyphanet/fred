@@ -1070,7 +1070,6 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		
 		@Override
 		public void run() {
-		    freenet.support.Logger.OSThread.logPID(this);
 			if(logMINOR) Logger.minor(this, "Handling connection");
 			try {
 				ToadletContextImpl.handle(sock, SimpleToadletServer.this, pageMaker, getUserAlertManager(), bookmarkManager);

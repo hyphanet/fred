@@ -68,7 +68,6 @@ public class PrioritizedTicker implements Ticker, Runnable {
 	@Override
 	public void run() {
 		if(logMINOR) Logger.minor(this, "In Ticker.run()");
-		freenet.support.Logger.OSThread.logPID(this);
 		while(true) {
 			try {
 				realRun();

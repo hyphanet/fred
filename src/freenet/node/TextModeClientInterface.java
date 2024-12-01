@@ -116,7 +116,6 @@ public class TextModeClientInterface implements Runnable {
 
     @Override
     public void run() {
-	    freenet.support.Logger.OSThread.logPID(this);
     	try {
     		realRun();
     	} catch (IOException e) {
@@ -426,7 +425,6 @@ public class TextModeClientInterface implements Runnable {
     	n.getTicker().queueTimedJob(new Runnable() {
     		@Override
     		public void run() {
-    		    freenet.support.Logger.OSThread.logPID(this);
     			n.getNodeUpdater().arm();
     		}
     	}, 0);

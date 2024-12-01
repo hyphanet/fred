@@ -3438,7 +3438,6 @@ public class Node implements TimeSkewDetectorCallback {
 
 				@Override
 				public void run() {
-					freenet.support.Logger.OSThread.logPID(this);
 					for(PeerNode pn: peers.myPeers()) {
 						pn.updateVersionRoutablity();
 					}

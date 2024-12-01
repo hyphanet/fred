@@ -279,7 +279,6 @@ public class IPAddressDetector implements Runnable {
 
 	@Override
 	public void run() {
-		freenet.support.Logger.OSThread.logPID(this);
 		while(true) {
 			try {
 				Thread.sleep(interval);

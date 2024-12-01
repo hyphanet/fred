@@ -90,7 +90,6 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
     
     @Override
     public void run() {
-	    freenet.support.Logger.OSThread.logPID(this);
         try {
             realRun();
         } catch (Throwable t) {
@@ -573,7 +572,6 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 
         @Override
         public void run() {
-		    freenet.support.Logger.OSThread.logPID(this);
         	if(logMINOR) Logger.minor(this, "Receiving data for "+CHKInsertHandler.this);
         	// Don't log whether the transfer succeeded or failed as the transfer was initiated by the source therefore could be unreliable evidence.
         	br.receive(new BlockReceiverCompletion() {

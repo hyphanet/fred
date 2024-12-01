@@ -48,7 +48,6 @@ class Persister implements Runnable {
 
 	@Override
 	public void run() {
-		freenet.support.Logger.OSThread.logPID(this);
 		try {
 			persistThrottle();
 		} catch (Throwable t) {

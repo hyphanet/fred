@@ -228,7 +228,6 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 	static final int MAX_HIGH_HTL_FAILURES = 5;
 	
     private void realRun() {
-	    freenet.support.Logger.OSThread.logPID(this);
         if(isSSK && (pubKey == null)) {
         	pubKey = ((NodeSSK)key).getPubKey();
         }

@@ -267,7 +267,6 @@ public class TextModeClientInterfaceServer implements Runnable {
      */
     @Override
     public void run() {
-	    freenet.support.Logger.OSThread.logPID(this);
     	while(true) {
     		int curPort = port;
     		String tempBindTo = this.bindTo;

@@ -102,7 +102,6 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 
 	@Override
 	public void run() {
-		freenet.support.Logger.OSThread.logPID(this);
 		try {
 			realRun();
 		//The last thing that realRun() does is register as a request-sender listener, so any exception here is the end.

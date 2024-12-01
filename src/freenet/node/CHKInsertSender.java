@@ -116,7 +116,6 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 		
 		@Override
 		public void run() {
-			freenet.support.Logger.OSThread.logPID(this);
 			try {
 				this.realRun();
 			} catch (Throwable t) {
@@ -395,7 +394,6 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
     
     @Override
     public void run() {
-	    freenet.support.Logger.OSThread.logPID(this);
     	origTag.startedSender();
         try {
             routeRequests();
@@ -917,7 +915,6 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 		
 		private void waitForBackgroundTransferCompletions() {
 			try {
-				freenet.support.Logger.OSThread.logPID(this);
 				if(logMINOR) Logger.minor(this, "Waiting for background transfer completions: "+this);
 				
 				// We must presently be at such a stage that no more background transfers will be added.

@@ -44,7 +44,6 @@ public class RealCompressor {
                     task = executorService.submit(new PrioRunnable() {
                     @Override
                     public void run() {
-                        freenet.support.Logger.OSThread.logPID(this);
                         try {
                             try {
                                 j.tryCompress(context);

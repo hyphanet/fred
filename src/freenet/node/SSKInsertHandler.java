@@ -81,7 +81,6 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
     
     @Override
     public void run() {
-        freenet.support.Logger.OSThread.logPID(this);
         try {
             realRun();
         } catch (Throwable t) {

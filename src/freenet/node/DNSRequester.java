@@ -51,7 +51,6 @@ public class DNSRequester implements Runnable {
 
     @Override
     public void run() {
-	    freenet.support.Logger.OSThread.logPID(this);
         while(true) {
             try {
                 realRun();
