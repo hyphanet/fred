@@ -238,10 +238,16 @@ class CSSTokenizerFilter {
 		allelementVerifiers.add("list-style-position");
 		allelementVerifiers.add("list-style-type");
 		allelementVerifiers.add("list-style");
-		allelementVerifiers.add("margin-right");
-		allelementVerifiers.add("margin-left");
-		allelementVerifiers.add("margin-top");
+		allelementVerifiers.add("margin-block");
+		allelementVerifiers.add("margin-block-end");
+		allelementVerifiers.add("margin-block-start");
 		allelementVerifiers.add("margin-bottom");
+		allelementVerifiers.add("margin-inline");
+		allelementVerifiers.add("margin-inline-end");
+		allelementVerifiers.add("margin-inline-start");
+		allelementVerifiers.add("margin-left");
+		allelementVerifiers.add("margin-right");
+		allelementVerifiers.add("margin-top");
 		allelementVerifiers.add("margin");
 		allelementVerifiers.add("max-block-size");
 		allelementVerifiers.add("max-height");
@@ -267,10 +273,16 @@ class CSSTokenizerFilter {
 		allelementVerifiers.add("outline");
 		allelementVerifiers.add("overflow");
 		allelementVerifiers.add("overflow-wrap");
-		allelementVerifiers.add("padding-top");
-		allelementVerifiers.add("padding-right");
+		allelementVerifiers.add("padding-block");
+		allelementVerifiers.add("padding-block-end");
+		allelementVerifiers.add("padding-block-start");
 		allelementVerifiers.add("padding-bottom");
+		allelementVerifiers.add("padding-inline");
+		allelementVerifiers.add("padding-inline-end");
+		allelementVerifiers.add("padding-inline-start");
 		allelementVerifiers.add("padding-left");
+		allelementVerifiers.add("padding-right");
+		allelementVerifiers.add("padding-top");
 		allelementVerifiers.add("padding");
 		allelementVerifiers.add("page-break-after");
 		allelementVerifiers.add("page-break-before");
@@ -287,6 +299,10 @@ class CSSTokenizerFilter {
 		allelementVerifiers.add("resize");
 		allelementVerifiers.add("richness");
 		allelementVerifiers.add("right");
+		allelementVerifiers.add("scroll-behavior");
+		allelementVerifiers.add("scroll-snap-align");
+		allelementVerifiers.add("scroll-snap-stop");
+		allelementVerifiers.add("scroll-snap-type");
 		allelementVerifiers.add("speak-header");
 		allelementVerifiers.add("speak-numeral");
 		allelementVerifiers.add("speak-punctuation");
@@ -311,10 +327,12 @@ class CSSTokenizerFilter {
 		allelementVerifiers.add("text-emphasis-style");
 		allelementVerifiers.add("text-indent");
 		allelementVerifiers.add("text-justify");
+		allelementVerifiers.add("text-orientation");
 		allelementVerifiers.add("text-outline");
 		allelementVerifiers.add("text-overflow");
 		allelementVerifiers.add("text-shadow");
 		allelementVerifiers.add("text-transform");
+		allelementVerifiers.add("text-underline-offset");
 		allelementVerifiers.add("text-underline-position");
 		allelementVerifiers.add("text-wrap");
 		allelementVerifiers.add("top");
@@ -367,6 +385,12 @@ class CSSTokenizerFilter {
 		//list-style-type
 		auxilaryVerifiers[35]=new CSSPropertyVerifier(Arrays.asList("disc","circle","square","decimal","decimal-leading-zero","lower-roman","upper-roman","lower-greek","lower-latin","upper-latin","armenian","georgian","lower-alpha","upper-alpha","none","arabic-indic","bengali","cambodian","cjk-decimal","cjk-earthly-branch","cjk-heavenly-stem","cjk-ideographic","devanagari","disclosure-closed","disclosure-open","ethiopic-numeric","gujarati","gurmukhi","hebrew","hiragana","hiragana-iroha","japanese-formal","japanese-informal","kannada","katakana","katakana-iroha","khmer","korean-hangul-formal","korean-hanja-formal","lao","lower-armenian","malayalam","mongolian","myanmar","oriya","persian","simp-chinese-formal","simp-chinese-informal","tamil","telugu","thai","tibetan","trad-chinese-formal","trad-chinese-informal","upper-armenian"),Arrays.asList("st"),null,null,true);
 
+		//margin-width
+		auxilaryVerifiers[36]=new CSSPropertyVerifier(Arrays.asList("auto"),Arrays.asList("le","pe"),null,null,true);
+
+		//padding-width
+		auxilaryVerifiers[40]=new CSSPropertyVerifier(null,Arrays.asList("le","pe"),null,null,true);
+		
 		// <background-clip> <background-origin>
 		auxilaryVerifiers[61]=new CSSPropertyVerifier(Arrays.asList("border-box", "padding-box", "content-box"),null,null,null,true);
 		// <border-radius>
@@ -1193,28 +1217,56 @@ class CSSTokenizerFilter {
 		else if("margin-right".equalsIgnoreCase(element))
 		{
 			//margin-width=Length|Percentage|Auto
-			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("auto"),ElementInfo.VISUALMEDIA,Arrays.asList("le","pe")));
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("36")));
 			allelementVerifiers.remove(element);
 		}
 		else if("margin-left".equalsIgnoreCase(element))
 		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("auto"),ElementInfo.VISUALMEDIA,Arrays.asList("le","pe")));
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("36")));
 			allelementVerifiers.remove(element);
 		}
 		else if("margin-top".equalsIgnoreCase(element))
 		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("auto"),ElementInfo.VISUALMEDIA,Arrays.asList("le","pe")));
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("36")));
 			allelementVerifiers.remove(element);
 		}
 		else if("margin-bottom".equalsIgnoreCase(element))
 		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("auto"),ElementInfo.VISUALMEDIA,Arrays.asList("le","pe")));
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("36")));
+			allelementVerifiers.remove(element);
+		}
+		else if("margin-block".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("36<1,2>")));
+			allelementVerifiers.remove(element);
+		}
+		else if("margin-block-end".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("36")));
+			allelementVerifiers.remove(element);
+		}
+		else if("margin-block-start".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("36")));
+			allelementVerifiers.remove(element);
+		}
+		else if("margin-inline".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("36<1,2>")));
+			allelementVerifiers.remove(element);
+		}
+		else if("margin-inline-end".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("36")));
+			allelementVerifiers.remove(element);
+		}
+		else if("margin-inline-start".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("36")));
 			allelementVerifiers.remove(element);
 		}
 		else if("margin".equalsIgnoreCase(element))
 		{
-			//margin-width
-			auxilaryVerifiers[36]=new CSSPropertyVerifier(Arrays.asList("auto"),Arrays.asList("le","pe"),null,null,true);
 			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("36<1,4>")));
 			allelementVerifiers.remove(element);
 		}
@@ -1328,29 +1380,57 @@ class CSSTokenizerFilter {
 		}
 		else if("padding-top".equalsIgnoreCase(element))
 		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,Arrays.asList("le","pe")));
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("40")));
 			allelementVerifiers.remove(element);
 
 		}
 		else if("padding-right".equalsIgnoreCase(element))
 		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,Arrays.asList("le","pe")));
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("40")));
 			allelementVerifiers.remove(element);
 		}
 		else if("padding-bottom".equalsIgnoreCase(element))
 		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,Arrays.asList("le","pe")));
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("40")));
 			allelementVerifiers.remove(element);
 		}
 		else if("padding-left".equalsIgnoreCase(element))
 		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,Arrays.asList("le","pe")));
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("40")));
+			allelementVerifiers.remove(element);
+		}
+		else if("padding-block".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("40<1,2>")));
+			allelementVerifiers.remove(element);
+		}
+		else if("padding-block-end".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("40")));
+			allelementVerifiers.remove(element);
+		}
+		else if("padding-block-start".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("40")));
+			allelementVerifiers.remove(element);
+		}
+		else if("padding-inline".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("40<1,2>")));
+			allelementVerifiers.remove(element);
+		}
+		else if("padding-inline-end".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("40")));
+			allelementVerifiers.remove(element);
+		}
+		else if("padding-inline-start".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("40")));
 			allelementVerifiers.remove(element);
 		}
 		else if("padding".equalsIgnoreCase(element))
 		{
-			//padding-width
-			auxilaryVerifiers[40]=new CSSPropertyVerifier(null,Arrays.asList("le","pe"),null,null,true);
 			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("40<1,4>")));
 			allelementVerifiers.remove(element);
 		}
@@ -1442,6 +1522,29 @@ class CSSTokenizerFilter {
 		else if("right".equalsIgnoreCase(element))
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("auto"),ElementInfo.VISUALMEDIA,Arrays.asList("le","pe")));
+			allelementVerifiers.remove(element);
+		}
+		else if("scroll-behavior".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("auto","smooth"),ElementInfo.VISUALMEDIA));
+			allelementVerifiers.remove(element);
+		}
+		else if("scroll-snap-align".equalsIgnoreCase(element))
+		{
+			auxilaryVerifiers[82]=new CSSPropertyVerifier(Arrays.asList("none","start","end","center"),null,null,null,true);
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("82<1,2>")));
+			allelementVerifiers.remove(element);
+		}
+		else if("scroll-snap-stop".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("normal","always"),ElementInfo.VISUALMEDIA));
+			allelementVerifiers.remove(element);
+		}
+		else if("scroll-snap-type".equalsIgnoreCase(element))
+		{
+			auxilaryVerifiers[103]=new CSSPropertyVerifier(Arrays.asList("x","y","block","inline","both"),null,null,null,true);
+			auxilaryVerifiers[80]=new CSSPropertyVerifier(Arrays.asList("mandatory","proximity"),null,null,null,true);
+			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("none"),ElementInfo.VISUALMEDIA,null,Arrays.asList("103","103 80")));
 			allelementVerifiers.remove(element);
 		}
 		else if("speak-header".equalsIgnoreCase(element))
@@ -1587,6 +1690,11 @@ class CSSTokenizerFilter {
 			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("auto"),ElementInfo.VISUALMEDIA,null,Arrays.asList("84a83")));
 			allelementVerifiers.remove(element);
 		}
+		else if("text-orientation".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("mixed","upright","sideways","sideways-right"),ElementInfo.VISUALMEDIA));
+			allelementVerifiers.remove(element);
+		}
 		else if("text-outline".equalsIgnoreCase(element))
 		{
 			auxilaryVerifiers[108]=new CSSPropertyVerifier(null,null,Arrays.asList("73 72 72<0,1>"),null,true);
@@ -1607,6 +1715,11 @@ class CSSTokenizerFilter {
 		else if("text-transform".equalsIgnoreCase(element))
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier( Arrays.asList("capitalize","uppercase","lowercase","none","fullwidth","full-size-kana","math-auto"),ElementInfo.VISUALMEDIA));
+			allelementVerifiers.remove(element);
+		}
+		else if("text-underline-offset".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("36")));
 			allelementVerifiers.remove(element);
 		}
 		else if("text-underline-position".equalsIgnoreCase(element))

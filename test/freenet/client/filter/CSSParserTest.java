@@ -992,6 +992,12 @@ public class CSSParserTest {
 		propertyTests.put("#x { text-combine-upright: all; }", "#x { text-combine-upright: all; }");
 		propertyTests.put("#x { text-decoration-thickness: 5px; }", "#x { text-decoration-thickness: 5px; }");
 		propertyTests.put("#x { dominant-baseline: alphabetic; }", "#x { dominant-baseline: alphabetic; }");
+		propertyTests.put("#x { margin-block: 3px 3%; margin-inline: 5%; margin-inline-end: 4px; margin-inline-start: auto; }", "#x { margin-block: 3px 3%; margin-inline: 5%; margin-inline-end: 4px; margin-inline-start: auto; }");
+		propertyTests.put("#x { padding-block: 3px 3%; padding-inline: 5%; padding-inline-end: 4px; padding-inline-start: 1em; }", "#x { padding-block: 3px 3%; padding-inline: 5%; padding-inline-end: 4px; padding-inline-start: 1em; }");
+		propertyTests.put("#x { text-orientation: upright; }", "#x { text-orientation: upright; }");
+		propertyTests.put("#x { scroll-snap-align: start end; }", "#x { scroll-snap-align: start end; }");
+		propertyTests.put("#x { scroll-snap-stop: always; }", "#x { scroll-snap-stop: always; }");
+		propertyTests.put("#x { scroll-snap-type: both proximity; }", "#x { scroll-snap-type: both proximity; }");
 
 		// text-emphasis
 		propertyTests.put("#x { text-emphasis: triangle blue; }", "#x { text-emphasis: triangle blue; }"); // java.lang.NullPointerException
