@@ -287,7 +287,7 @@ public class PeerManager {
 
 		for (PeerNode pn : createdNodes) {
 				if (oldOpennetPeers) {
-					if(!(pn instanceof OpennetPeerNode)) {
+					if (!(pn instanceof OpennetPeerNode)) {
 						Logger.error(this, "Darknet node in old opennet peers?!: "+pn);
 					} else {
 						opennet.addOldOpennetNode((OpennetPeerNode)pn);
@@ -301,7 +301,7 @@ public class PeerManager {
 		} catch(IOException e3) {
 			Logger.error(this, "Ignoring " + e3 + " caught reading " + peersFile, e3);
 		}
-		if(someBroken) {
+		if (someBroken) {
 			try {
 				brokenPeersFile.delete();
 				FileOutputStream fos = new FileOutputStream(brokenPeersFile);
@@ -314,7 +314,7 @@ public class PeerManager {
 				System.err.println("Unable to copy broken peers file.");
 			}
 		}
-		if(!droppedOldPeers.isEmpty()) {
+		if (!droppedOldPeers.isEmpty()) {
 			try {
 				node.getClientCore().getAlerts().register(droppedOldPeers);
 				Logger.error(this, droppedOldPeers.getText());
