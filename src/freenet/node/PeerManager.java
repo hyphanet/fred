@@ -209,19 +209,21 @@ public class PeerManager {
 			if(peersFile.exists())
 				if(readPeers(peersFile, crypto, opennet, oldOpennetPeers)) {
 					String msg;
-					if(oldOpennetPeers)
+					if(oldOpennetPeers) {
 						msg = "Read " + opennet.countOldOpennetPeers() + " old-opennet-peers from " + peersFile;
-					else if(isOpennet)
+					} else if(isOpennet) {
 						msg = "Read " + getOpennetPeers().length + " opennet peers from " + peersFile;
-					else
+					} else {
 						msg = "Read " + getDarknetPeers().length + " darknet peers from " + peersFile;
+					}
 					Logger.normal(this, msg);
 					System.out.println(msg);
 					return;
 				}
 		}
-		if(!isOpennet)
+		if(!isOpennet) {
 			System.out.println("No darknet peers file found.");
+		}
 		// The other cases are less important.
 	}
 
