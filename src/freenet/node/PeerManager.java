@@ -286,12 +286,12 @@ public class PeerManager {
 		}
 
 		for (PeerNode pn : createdNodes) {
-				if(oldOpennetPeers) {
+				if (oldOpennetPeers) {
 					if(!(pn instanceof OpennetPeerNode)) {
 						Logger.error(this, "Darknet node in old opennet peers?!: "+pn);
-                    } else {
+					} else {
 						opennet.addOldOpennetNode((OpennetPeerNode)pn);
-                    }
+					}
 				} else {
 					addPeer(pn, true, false);
                 }
