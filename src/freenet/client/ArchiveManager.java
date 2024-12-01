@@ -20,7 +20,6 @@ import freenet.client.async.ClientContext;
 import freenet.keys.FreenetURI;
 import freenet.support.ExceptionWrapper;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.MutableBoolean;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
@@ -44,7 +43,11 @@ import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 public class ArchiveManager {
 
 	public static final String METADATA_NAME = ".metadata";
-	private static boolean logMINOR;
+
+	private static volatile boolean logMINOR;
+	static {
+		Logger.registerClass(ArchiveManager.class);
+	}
 
 	public enum ARCHIVE_TYPE {
 	    // WARNING: This enum is persisted. Changing member names may break downloads/uploads.
@@ -125,7 +128,6 @@ public class ArchiveManager {
 		this.cache = new ArchiveBucketCache(maxCachedElements, maxCachedData);
 		this.maxArchivedFileSize = maxArchivedFileSize;
 		this.tempBucketFactory = tempBucketFactory;
-		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 	}
 
 	/**
@@ -165,8 +167,6 @@ public class ArchiveManager {
 	 * @throws ArchiveFailureException If we could not extract the data, or it was too big, etc.
 	 */
 	void extractToCache(FreenetURI key, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE ctype, final Bucket data, ArchiveContext archiveContext, String element, ArchiveExtractCallback callback, ClientContext context) throws ArchiveFailureException {
-		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-
 		MutableBoolean gotElement = element != null ? new MutableBoolean() : null;
 
 		if(logMINOR) Logger.minor(this, "Extracting "+key);
