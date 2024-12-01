@@ -125,7 +125,6 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	private volatile long maxPingTime;
 
 	final Node node;
-	private MemoryChecker myMemoryChecker;
 	public final PeerManager peers;
 
 	final RandomSource hardRandom;
@@ -284,10 +283,6 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	final StringCounter preemptiveRejectReasons;
 	final StringCounter localPreemptiveRejectReasons;
 
-	// Enable this if you run into hard to debug OOMs.
-	// Disabled to prevent long pauses every 30 seconds.
-	private int aggressiveGCModificator = -1 /*250*/;
-
 	// Peers stats
 	/** Next time to update PeerManagerUserAlert stats */
 	private long nextPeerManagerUserAlertStatsUpdateTime = -1;
@@ -407,43 +402,9 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		threadLimit = statsConfig.getInt("threadLimit");
 
 		// Yes it could be in seconds insteed of multiples of 0.12, but we don't want people to play with it :)
-		statsConfig.register("aggressiveGC", aggressiveGCModificator, sortOrder++, true, false, "NodeStat.aggressiveGC", "NodeStat.aggressiveGCLong",
-				new IntCallback() {
-					@Override
-					public Integer get() {
-						return aggressiveGCModificator;
-					}
-					@Override
-					public void set(Integer val) throws InvalidConfigValueException {
-						if (get().equals(val))
-					        return;
-						Logger.normal(this, "Changing aggressiveGCModificator to "+val);
-						aggressiveGCModificator = val;
-					}
-		},false);
-		aggressiveGCModificator = statsConfig.getInt("aggressiveGC");
+		statsConfig.registerIgnoredOption("aggressiveGC");
 
-		myMemoryChecker = new MemoryChecker(node.getTicker(), aggressiveGCModificator);
-		statsConfig.register("memoryChecker", true, sortOrder++, true, false, "NodeStat.memCheck", "NodeStat.memCheckLong",
-				new BooleanCallback(){
-					@Override
-					public Boolean get() {
-						return myMemoryChecker.isRunning();
-					}
-
-					@Override
-					public void set(Boolean val) throws InvalidConfigValueException {
-						if (get().equals(val))
-					        return;
-
-						if(val)
-							myMemoryChecker.start();
-						else
-							myMemoryChecker.terminate();
-					}
-		});
-		if(statsConfig.getBoolean("memoryChecker"))
-			myMemoryChecker.start();
+		statsConfig.registerIgnoredOption("memoryChecker");
 
 		statsConfig.register("ignoreLocalVsRemoteBandwidthLiability", false, sortOrder++, true, false, "NodeStat.ignoreLocalVsRemoteBandwidthLiability", "NodeStat.ignoreLocalVsRemoteBandwidthLiabilityLong", new BooleanCallback() {
 
