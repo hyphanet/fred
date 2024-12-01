@@ -209,7 +209,7 @@ public class PeerManager {
 			if(peersFile.exists())
 				if(readPeers(peersFile, crypto, opennet, oldOpennetPeers)) {
 					String msg;
-					if(oldOpennetPeers) {
+					if (oldOpennetPeers) {
 						msg = "Read " + opennet.countOldOpennetPeers() + " old-opennet-peers from " + peersFile;
 					} else if(isOpennet) {
 						msg = "Read " + getOpennetPeers().length + " opennet peers from " + peersFile;
@@ -221,7 +221,7 @@ public class PeerManager {
 					return;
 				}
 		}
-		if(!isOpennet) {
+		if (!isOpennet) {
 			System.out.println("No darknet peers file found.");
 		}
 		// The other cases are less important.
@@ -256,15 +256,15 @@ public class PeerManager {
 		for (SimpleFieldSet fs : peerEntries) {
 			try {
 				createdNodes.add(PeerNode.create(fs, node, crypto, opennet, this));
-			} catch(FSParseException e2) {
+			} catch (FSParseException e2) {
 				Logger.error(this, "Could not parse peer due to broken fieldset syntax: " + e2 + '\n' + fs.toString(), e2);
 				System.err.println("Cannot parse a friend from the peers file due to broken fieldset syntax: "+e2);
 				someBroken = true;
-			} catch(PeerParseException e2) {
+			} catch (PeerParseException e2) {
 				Logger.error(this, "Could not parse peer: " + e2 + '\n' + fs.toString(), e2);
 				System.err.println("Cannot parse a friend from the peers file: "+e2);
 				someBroken = true;
-			} catch(ReferenceSignatureVerificationException e2) {
+			} catch (ReferenceSignatureVerificationException e2) {
 				Logger.error(this, "Could not verify signature of peer: " + e2 + '\n' + fs.toString(), e2);
 				System.err.println("Cannot verify signature of a friend from the peers file: "+e2);
 				someBroken = true;
