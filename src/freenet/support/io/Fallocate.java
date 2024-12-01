@@ -45,15 +45,21 @@ public final class Fallocate {
     return new Fallocate(channel, getDescriptor(fd), final_filesize);
   }
 
-  public Fallocate fromOffset(long offset) throws IllegalArgumentException {
+  /**
+   * @throws IllegalArgumentException
+   */
+  public Fallocate fromOffset(long offset) {
     if(offset < 0 || offset > final_filesize) throw new IllegalArgumentException();
     this.offset = offset;
     return this;
   }
 
-  // This method only works for Linux, do not use it.
+  /**
+   * This method only works for Linux, do not use it.
+   * @throws UnsupportedOperationException
+   */
   @Deprecated
-  public Fallocate keepSize() throws UnsupportedOperationException {
+  public Fallocate keepSize() {
 	if (!IS_LINUX) {
 	  throw new UnsupportedOperationException("fallocate keep size is not supported on this file system");
 	}
@@ -64,7 +70,7 @@ public final class Fallocate {
   public void execute() throws IOException {
     int errno = 0;
     boolean isUnsupported = false;
-    if (fd != 0) {
+    if (fd > 2) {
       if (IS_LINUX) {
         final int result = FallocateHolder.fallocate(fd, mode, offset, final_filesize-offset);
         errno = result == 0 ? 0 : Native.getLastError();
