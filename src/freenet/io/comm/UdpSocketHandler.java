@@ -23,7 +23,6 @@ import freenet.node.Node;
 import freenet.node.PrioRunnable;
 import freenet.support.Logger;
 import freenet.support.io.NativeThread;
-import freenet.support.transport.ip.IPUtil;
 import sun.misc.Unsafe;
 
 public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, PortForwardSensitiveSocketHandler {
@@ -48,7 +47,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 	private final String title;
 	private boolean _started;
 	private long startTime;
-	private final IOStatisticCollector collector;
+	private final IOStatisticCollector ioStatistics;
 
         static {
             Logger.registerClass(UdpSocketHandler.class);
@@ -124,9 +123,9 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 		}
 	}
 
-	public UdpSocketHandler(int listenPort, InetAddress bindToAddress, Node node, long startupTime, String title, IOStatisticCollector collector) throws IOException {
+	public UdpSocketHandler(int listenPort, InetAddress bindToAddress, Node node, long startupTime, String title, IOStatisticCollector ioStatistics) throws IOException {
 		this.node = node;
-		this.collector = collector;
+		this.ioStatistics = ioStatistics;
 		this.title = title;
 		localAddress = new InetSocketAddress(bindToAddress, listenPort);
 		datagramChannel = DatagramChannel.open()
@@ -268,9 +267,8 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 			receiveBuffer.clear();
 			InetSocketAddress remote = (InetSocketAddress) datagramChannel.receive(receiveBuffer);
 			receiveBuffer.flip();
-			int port = remote.getPort();
 			InetAddress address = remote.getAddress();
-			collector.addInfo(address, port, getHeadersLength(address) + receiveBuffer.limit(), 0, isLocal(address));
+            ioStatistics.reportReceivedBytes(address, getHeadersLength(address) + receiveBuffer.limit());
 			return remote;
 		} catch (SocketTimeoutException e1) {
 			return null;
@@ -319,7 +317,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 		try {
 			datagramChannel.send(packet, new InetSocketAddress(address, port));
 			tracker.sentPacketTo(destination);
-			collector.addInfo(address, port, 0, getHeadersLength(address) + blockToSend.length, isLocal(address));
+            ioStatistics.reportSentBytes(address, getHeadersLength(address) + blockToSend.length);
 			if (logMINOR) {
 				Logger.minor(this, "Sent packet length " + blockToSend.length + " to " + address + ':' + port);
 			}
@@ -462,10 +460,6 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 
 	public long getStartTime() {
 		return startTime;
-	}
-
-	private static boolean isLocal(InetAddress address) {
-		return address.isLinkLocalAddress() || address.isLoopbackAddress() || IPUtil.isSiteLocalAddress(address);
 	}
 
 }
