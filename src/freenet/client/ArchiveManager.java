@@ -9,7 +9,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
@@ -33,7 +32,6 @@ import freenet.support.api.BucketFactory;
 import freenet.support.compress.CompressionOutputSizeException;
 import freenet.support.compress.Compressor;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
-import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
 import freenet.support.io.SkipShieldingInputStream;
 import net.contrapunctus.lzma.LzmaInputStream;
@@ -250,39 +248,15 @@ public class ArchiveManager {
 	 * @param element A particular element that the caller is especially interested in, or null.
 	 * @param callback A callback to be called if we find that element, or if we don't.
 	 * @throws ArchiveFailureException If we could not extract the data, or it was too big, etc.
-	 * @throws ArchiveRestartException
-	 * @throws ArchiveRestartException If the request needs to be restarted because the archive
-	 * changed.
 	 */
-	public void extractToCache(FreenetURI key, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE ctype, final Bucket data, ArchiveContext archiveContext, ArchiveStoreContext ctx, String element, ArchiveExtractCallback callback, ClientContext context) throws ArchiveFailureException, ArchiveRestartException {
+	public void extractToCache(FreenetURI key, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE ctype, final Bucket data, ArchiveContext archiveContext, ArchiveStoreContext ctx, String element, ArchiveExtractCallback callback, ClientContext context) throws ArchiveFailureException {
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 
 		MutableBoolean gotElement = element != null ? new MutableBoolean() : null;
 
 		if(logMINOR) Logger.minor(this, "Extracting "+key);
 		ctx.removeAllCachedItems(this); // flush cache anyway
-		final long expectedSize = ctx.getLastSize();
 		final long archiveSize = data.size();
-		/** Set if we need to throw a RestartedException rather than returning success,
-		 * after we have unpacked everything.
-		 */
-		boolean throwAtExit = false;
-		if((expectedSize != -1) && (archiveSize != expectedSize)) {
-			throwAtExit = true;
-			ctx.setLastSize(archiveSize);
-		}
-		byte[] expectedHash = ctx.getLastHash();
-		if(expectedHash != null) {
-			byte[] realHash;
-			try {
-				realHash = BucketTools.hash(data);
-			} catch (IOException e) {
-				throw new ArchiveFailureException("Error reading archive data: "+e, e);
-			}
-			if(!Arrays.equals(realHash, expectedHash))
-				throwAtExit = true;
-			ctx.setLastHash(realHash);
-		}
 
 		if(archiveSize > archiveContext.maxArchiveSize)
 			throw new ArchiveFailureException("Archive too big ("+archiveSize+" > "+archiveContext.maxArchiveSize+")!");
@@ -320,7 +294,7 @@ public class ArchiveManager {
 					public void run() {
 						InputStream is = null;
 						try {
-							Compressor.COMPRESSOR_TYPE.LZMA_NEW.decompress(is = data.getInputStream(), os, data.size(), expectedSize);
+							Compressor.COMPRESSOR_TYPE.LZMA_NEW.decompress(is = data.getInputStream(), os, data.size(), -1);
 						} catch (CompressionOutputSizeException e) {
 							Logger.error(this, "Failed to decompress archive: "+e, e);
 							wrapper.set(e);
@@ -348,10 +322,10 @@ public class ArchiveManager {
 			}
 
 			if(ARCHIVE_TYPE.ZIP == archiveType) {
-				handleZIPArchive(ctx, key, is, element, callback, gotElement, throwAtExit, context);
+				handleZIPArchive(ctx, key, is, element, callback, gotElement, context);
 			} else if(ARCHIVE_TYPE.TAR == archiveType) {
 				 // COMPRESS-449 workaround, see https://freenet.mantishub.io/view.php?id=6921
-				handleTARArchive(ctx, key, new SkipShieldingInputStream(is), element, callback, gotElement, throwAtExit, context);
+				handleTARArchive(ctx, key, new SkipShieldingInputStream(is), element, callback, gotElement, context);
 			} else {
 				throw new ArchiveFailureException("Unknown or unsupported archive algorithm " + archiveType);
 			}
@@ -366,7 +340,7 @@ public class ArchiveManager {
 	}
 	}
 
-	private void handleTARArchive(ArchiveStoreContext ctx, FreenetURI key, InputStream data, String element, ArchiveExtractCallback callback, MutableBoolean gotElement, boolean throwAtExit, ClientContext context) throws ArchiveFailureException, ArchiveRestartException {
+	private void handleTARArchive(ArchiveStoreContext ctx, FreenetURI key, InputStream data, String element, ArchiveExtractCallback callback, MutableBoolean gotElement, ClientContext context) throws ArchiveFailureException {
 		if(logMINOR) Logger.minor(this, "Handling a TAR Archive");
 		TarArchiveInputStream tarIS = null;
 		try {
@@ -439,7 +413,6 @@ outerTAR:		while(true) {
 				generateMetadata(ctx, key, names, gotElement, element, callback, context);
 				trimStoredData();
 			}
-			if(throwAtExit) throw new ArchiveRestartException("Archive changed on re-fetch");
 
 			if((!gotElement.value) && element != null)
 				callback.notInArchive(context);
@@ -451,7 +424,7 @@ outerTAR:		while(true) {
 		}
 	}
 
-	private void handleZIPArchive(ArchiveStoreContext ctx, FreenetURI key, InputStream data, String element, ArchiveExtractCallback callback, MutableBoolean gotElement, boolean throwAtExit, ClientContext context) throws ArchiveFailureException, ArchiveRestartException {
+	private void handleZIPArchive(ArchiveStoreContext ctx, FreenetURI key, InputStream data, String element, ArchiveExtractCallback callback, MutableBoolean gotElement, ClientContext context) throws ArchiveFailureException {
 		if(logMINOR) Logger.minor(this, "Handling a ZIP Archive");
 		ZipInputStream zis = null;
 		try {
@@ -519,7 +492,6 @@ outerZIP:		while(true) {
 				generateMetadata(ctx, key, names, gotElement, element, callback, context);
 				trimStoredData();
 			}
-			if(throwAtExit) throw new ArchiveRestartException("Archive changed on re-fetch");
 
 			if((!gotElement.value) && element != null)
 				callback.notInArchive(context);
