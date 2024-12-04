@@ -1012,6 +1012,11 @@ public class CSSParserTest {
 		propertyTests.put("#x { text-shadow: 1px 1px 2px 1px black; }", "#x { }");
 		// not possible to parse a comma separated list?
 		//propertyTests.put("#x { text-shadow: 1px 1px 2px red, 0 0 1em blue, 0 0 0.2em blue; }", "#x { text-shadow: 1px 1px 2px red, 0 0 1em blue, 0 0 0.2em blue; }");
+
+		// dark mode
+		propertyTests.put(":root { color-scheme: light dark; }", ":root { color-scheme: light dark; }");
+		propertyTests.put(":root { color-scheme: only light; }", ":root { color-scheme: only light; }");
+
 	}
 
 	FilterMIMEType cssMIMEType;

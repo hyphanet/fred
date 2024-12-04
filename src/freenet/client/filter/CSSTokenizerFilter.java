@@ -184,6 +184,7 @@ class CSSTokenizerFilter {
 		allelementVerifiers.add("break-before");
 		allelementVerifiers.add("break-after");
 		allelementVerifiers.add("break-inside");
+		allelementVerifiers.add("color-scheme");
 		allelementVerifiers.add("column-count");
 		allelementVerifiers.add("column-fill");
 		allelementVerifiers.add("column-gap");
@@ -836,6 +837,12 @@ class CSSTokenizerFilter {
 		else if("break-inside".equalsIgnoreCase(element))
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("auto","avoid","avoid-page", "avoid-column"),ElementInfo.VISUALPAGEDMEDIA));
+			allelementVerifiers.remove(element);
+		}
+		else if("color-scheme".equalsIgnoreCase(element))
+		{
+			auxilaryVerifiers[81]=new CSSPropertyVerifier(Arrays.asList("light","dark","only"),null,null,null,true);
+			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("normal"),ElementInfo.VISUALMEDIA,null,Arrays.asList("81<1,3>")));
 			allelementVerifiers.remove(element);
 		}
 				else if("column-count".equalsIgnoreCase(element))
