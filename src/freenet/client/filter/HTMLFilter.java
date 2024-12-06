@@ -19,6 +19,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.MalformedInputException;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -2111,6 +2112,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		private final HashSet<String> uriAttrs;
 		private final HashSet<String> inlineURIAttrs;
 		final HashSet<String> booleanAttrs;
+		private final HashSet<String> allowedRole;
 
 		TagVerifier(String tag, String[] allowedAttrs) {
 			this(tag, allowedAttrs, null, null, null);
@@ -2140,6 +2142,25 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					this.booleanAttrs.add(booleanAttrs[x]);
 				}
 			}
+			// https://w3c.github.io/aria/
+			this.allowedRole = new HashSet<String>(Arrays.asList("alert","alertdialog","application","article",
+				"banner","blockquote","button",
+				"caption","cell","checkbox","code","columnheader","combobox","command","comment","complementary","composite","contentinfo",
+				"definition","deletion","dialog","directory","document",
+				"emphasis",
+				"feed","figure","form",
+				"generic","grid","gridcell","group",
+				"heading",
+				"image","img","input","insertion",
+				"landmark","link","list","listbox","listitem","log",
+				"main","mark","marquee","math","menu","menubar","menuitem","menuitemcheckbox","menuitemradio","meter",
+				"navigation","none","note",
+				"option",
+				"paragraph","presentation","progressbar",
+				"radio","radiogroup","range","region","roletype","row","rowgroup","rowheader",
+				"scrollbar","search","searchbox","section","sectionhead","select","separator","slider","spinbutton","status","strong","structure","subscript","suggestion","superscript","switch",
+				"tab","table","tablist","tabpanel","term","textbox","time","timer","toolbar","tooltip","tree","treegrid","treeitem",
+				"widget","window"));
 		}
 
 		ParsedTag sanitize(ParsedTag t, HTMLParseContext pc) throws DataFilterException {
@@ -2285,6 +2306,13 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				if (x.equals("xml:lang") ||x.equals("lang") || (x.equals("dir") && (o instanceof String) && (((String)o).equalsIgnoreCase("ltr") || ((String)o).equalsIgnoreCase("rtl") || ((String)o).equalsIgnoreCase("auto")))) {
 					if(logDEBUG) Logger.debug(this, "HTML Filter is putting attribute: "+x+" =  "+o);
 					hn.put(x, o);
+				}
+				// ARIA properties
+				// role can be set on any element
+				if (x.equals("role") && o instanceof String) {
+					if(allowedRole.contains((String)o)) {
+						hn.put(x, o);
+					}
 				}
 			}
 			return hn;
