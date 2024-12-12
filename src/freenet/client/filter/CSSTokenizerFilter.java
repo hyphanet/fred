@@ -250,6 +250,7 @@ class CSSTokenizerFilter {
 		allelementVerifiers.add("margin-right");
 		allelementVerifiers.add("margin-top");
 		allelementVerifiers.add("margin");
+		allelementVerifiers.add("math-style");
 		allelementVerifiers.add("max-block-size");
 		allelementVerifiers.add("max-height");
 		allelementVerifiers.add("max-inline-size");
@@ -1258,6 +1259,11 @@ class CSSTokenizerFilter {
 		else if("margin".equalsIgnoreCase(element))
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("36<1,4>")));
+			allelementVerifiers.remove(element);
+		}
+		else if("math-style".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("normal","compact"),ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
 		}
 		else if("max-block-size".equalsIgnoreCase(element))
