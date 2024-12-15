@@ -161,10 +161,10 @@ class CSSTokenizerFilter {
 		allelementVerifiers.add("border-left-width");
 		allelementVerifiers.add("border-right-width");
 		allelementVerifiers.add("border-radius");
-		allelementVerifiers.add("border-top-radius");
-		allelementVerifiers.add("border-bottom-radius");
-		allelementVerifiers.add("border-left-radius");
-		allelementVerifiers.add("border-right-radius");
+		allelementVerifiers.add("border-bottom-left-radius");
+		allelementVerifiers.add("border-bottom-right-radius");
+		allelementVerifiers.add("border-top-left-radius");
+		allelementVerifiers.add("border-top-right-radius");
 		allelementVerifiers.add("border-image-source");
 		allelementVerifiers.add("border-image-slice");
 		allelementVerifiers.add("border-image-width");
@@ -184,6 +184,7 @@ class CSSTokenizerFilter {
 		allelementVerifiers.add("break-before");
 		allelementVerifiers.add("break-after");
 		allelementVerifiers.add("break-inside");
+		allelementVerifiers.add("color-scheme");
 		allelementVerifiers.add("column-count");
 		allelementVerifiers.add("column-fill");
 		allelementVerifiers.add("column-gap");
@@ -249,6 +250,7 @@ class CSSTokenizerFilter {
 		allelementVerifiers.add("margin-right");
 		allelementVerifiers.add("margin-top");
 		allelementVerifiers.add("margin");
+		allelementVerifiers.add("math-style");
 		allelementVerifiers.add("max-block-size");
 		allelementVerifiers.add("max-height");
 		allelementVerifiers.add("max-inline-size");
@@ -393,8 +395,6 @@ class CSSTokenizerFilter {
 		
 		// <background-clip> <background-origin>
 		auxilaryVerifiers[61]=new CSSPropertyVerifier(Arrays.asList("border-box", "padding-box", "content-box"),null,null,null,true);
-		// <border-radius>
-		auxilaryVerifiers[64]=new CSSPropertyVerifier(null,Arrays.asList("le", "pe"),null,null,true);
 
 		// <text-decoration-color>
 		auxilaryVerifiers[73]=new CSSPropertyVerifier(null, Arrays.asList("co"), null, null, true);
@@ -741,27 +741,12 @@ class CSSTokenizerFilter {
 		else if("border-radius".equalsIgnoreCase(element))
 		{
 			auxilaryVerifiers[65]=new CSSPropertyVerifier(Arrays.asList("/"),null,null,null,true);
-			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("64<1,4>", "64<1,4> 65 64<1,4>")));
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("40<1,4>", "40<1,4> 65 40<1,4>")));
 			allelementVerifiers.remove(element);
 		}
-		else if("border-top-radius".equalsIgnoreCase(element))
+		else if("border-bottom-left-radius".equalsIgnoreCase(element) || "border-bottom-right-radius".equalsIgnoreCase(element) || "border-top-left-radius".equalsIgnoreCase(element) || "border-top-right-radius".equalsIgnoreCase(element))
 		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("64<1,2>")));
-			allelementVerifiers.remove(element);
-		}
-		else if("border-bottom-radius".equalsIgnoreCase(element))
-		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("64<1,2>")));
-			allelementVerifiers.remove(element);
-		}
-		else if("border-left-radius".equalsIgnoreCase(element))
-		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("64<1,2>")));
-			allelementVerifiers.remove(element);
-		}
-		else if("border-right-radius".equalsIgnoreCase(element))
-		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("64<1,2>")));
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("40<1,2>")));
 			allelementVerifiers.remove(element);
 		}
 		else if("border-image-source".equalsIgnoreCase(element))
@@ -853,6 +838,12 @@ class CSSTokenizerFilter {
 		else if("break-inside".equalsIgnoreCase(element))
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("auto","avoid","avoid-page", "avoid-column"),ElementInfo.VISUALPAGEDMEDIA));
+			allelementVerifiers.remove(element);
+		}
+		else if("color-scheme".equalsIgnoreCase(element))
+		{
+			auxilaryVerifiers[81]=new CSSPropertyVerifier(Arrays.asList("light","dark","only"),null,null,null,true);
+			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("normal"),ElementInfo.VISUALMEDIA,null,Arrays.asList("81<1,3>")));
 			allelementVerifiers.remove(element);
 		}
 				else if("column-count".equalsIgnoreCase(element))
@@ -1268,6 +1259,11 @@ class CSSTokenizerFilter {
 		else if("margin".equalsIgnoreCase(element))
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("36<1,4>")));
+			allelementVerifiers.remove(element);
+		}
+		else if("math-style".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("normal","compact"),ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
 		}
 		else if("max-block-size".equalsIgnoreCase(element))
