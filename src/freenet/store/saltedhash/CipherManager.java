@@ -77,21 +77,17 @@ public class CipherManager {
 		}
 
 		MessageDigest digest = SHA256.getMessageDigest();
-		try {
-			digest.update(plainKey);
-			digest.update(salt);
+		digest.update(plainKey);
+		digest.update(salt);
 
-			byte[] hashedRoutingKey = digest.digest();
-			assert hashedRoutingKey.length == 0x20;
+		byte[] hashedRoutingKey = digest.digest();
+		assert hashedRoutingKey.length == 0x20;
 
-			synchronized (digestRoutingKeyCache) {
-				digestRoutingKeyCache.put(key, hashedRoutingKey);
-			}
-
-			return hashedRoutingKey;
-		} finally {
-			SHA256.returnMessageDigest(digest);
+		synchronized (digestRoutingKeyCache) {
+			digestRoutingKeyCache.put(key, hashedRoutingKey);
 		}
+
+		return hashedRoutingKey;
 	}
 
 	/**

@@ -116,7 +116,6 @@ public class TextModeClientInterface implements Runnable {
 
     @Override
     public void run() {
-	    freenet.support.Logger.OSThread.logPID(this);
     	try {
     		realRun();
     	} catch (IOException e) {
@@ -381,7 +380,7 @@ public class TextModeClientInterface implements Runnable {
                 // Now calculate filename
                 String fnam = uri.getDocName();
                 fnam = sanitize(fnam);
-                if(fnam.length() == 0) {
+                if(fnam.isEmpty()) {
                     fnam = "freenet-download-"+HexUtil.bytesToHex(BucketTools.hash(data), 0, 10);
                     String ext = DefaultMIMETypes.getExtension(cm.getMIMEType());
                     if((ext != null) && !ext.isEmpty())
@@ -426,7 +425,6 @@ public class TextModeClientInterface implements Runnable {
     	n.getTicker().queueTimedJob(new Runnable() {
     		@Override
     		public void run() {
-    		    freenet.support.Logger.OSThread.logPID(this);
     			n.getNodeUpdater().arm();
     		}
     	}, 0);
@@ -544,7 +542,7 @@ public class TextModeClientInterface implements Runnable {
         	else
         		line = line.substring("PUT:".length()).trim();
             String content;
-            if(line.length() > 0) {
+            if(!line.isEmpty()) {
                 // Single line insert
                 content = line;
             } else {
@@ -592,7 +590,7 @@ public class TextModeClientInterface implements Runnable {
 
         	line = line.trim();
 
-        	if(line.length() < 1) {
+        	if(line.isEmpty()) {
         		printHeader(w);
 			outsb.append("\r\n");
 			w.write(outsb.toString());
@@ -772,7 +770,7 @@ public class TextModeClientInterface implements Runnable {
             }
 
             String content = null;
-            if(key.length() > 0) {
+            if(!key.isEmpty()) {
                 // Filename
             	BufferedReader in;
                 outsb.append("Trying to add peer to node by noderef in ").append(key).append("\r\n");
@@ -1021,7 +1019,7 @@ public class TextModeClientInterface implements Runnable {
 
         	});
         } else {
-        	if(uline.length() > 0)
+        	if(!uline.isEmpty())
         		printHeader(w);
         }
         outsb.append("\r\n");

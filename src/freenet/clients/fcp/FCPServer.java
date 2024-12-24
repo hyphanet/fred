@@ -192,7 +192,6 @@ public class FCPServer implements Runnable, DownloadCache {
 
 	@Override
 	public void run() {
-	    freenet.support.Logger.OSThread.logPID(this);
 		while(true) {
 			try {
 				networkInterface.waitBound();
@@ -909,7 +908,7 @@ public class FCPServer implements Runnable, DownloadCache {
 
 	private File makeReturnFilename(FreenetURI uri, String expectedMimeType, File downloadsDir) {
 		String ext;
-		if((expectedMimeType != null) && (expectedMimeType.length() > 0) &&
+		if((expectedMimeType != null) && !expectedMimeType.isEmpty() &&
 				!expectedMimeType.equals(DefaultMIMETypes.DEFAULT_MIME_TYPE)) {
 			ext = DefaultMIMETypes.getExtension(expectedMimeType);
 		} else ext = null;

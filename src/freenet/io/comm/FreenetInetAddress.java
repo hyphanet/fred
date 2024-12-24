@@ -83,7 +83,7 @@ public class FreenetInetAddress {
 		_address = InetAddress.getByAddress(ba);
 		String name = null;
 		String s = dis.readUTF();
-		if(s.length() > 0)
+		if(!s.isEmpty())
 			name = s;
 		hostname = name;
 	}
@@ -114,7 +114,7 @@ public class FreenetInetAddress {
 		_address = InetAddress.getByAddress(ba);
 		String name = null;
 		String s = dis.readUTF();
-		if(s.length() > 0)
+		if(!s.isEmpty())
 			name = s;
 		hostname = name;
         if(checkHostnameOrIPSyntax && null != hostname) {
@@ -413,7 +413,7 @@ public class FreenetInetAddress {
 		if(primaryIPAddress == null) return null;
 		String s = primaryIPAddress.toString();
 		String addr = s.substring(0, s.indexOf('/')).trim();
-		if(addr.length() == 0)
+		if(addr.isEmpty())
 			return primaryIPAddress.getHostAddress();
 		else
 			return addr;
@@ -450,7 +450,7 @@ public class FreenetInetAddress {
 	}
 
 	public boolean hasHostname() {
-		return hostname != null && hostname.length() > 0;
+		return hostname != null && !hostname.isEmpty();
 	}
 
 	public boolean hasHostnameNoIP() {

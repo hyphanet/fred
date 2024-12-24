@@ -47,7 +47,7 @@ public class BookmarkFeedUserAlert extends AbstractUserAlert {
 		StringBuilder sb = new StringBuilder();
 		sb.append(l10n("peerName")).append(" ").append(name).append("\n");
 		sb.append(l10n("bookmarkURI")).append(" ").append(uri).append("\n");
-		if(description != null && description.length() != 0)
+		if(description != null && !description.isEmpty())
 			sb.append(l10n("bookmarkDescription")).append(" ").append(description);
 		return sb.toString();
 	}
@@ -68,7 +68,7 @@ public class BookmarkFeedUserAlert extends AbstractUserAlert {
 						new String[] { "/static/icon/bookmark-new.png", l10n("addAsABookmark"),
 								l10n("addAsABookmark") });
 		alertNode.addChild("a", "href", "/freenet:" + uri.toString()).addChild("#", name);
-		if (description != null && description.length() != 0) {
+		if (description != null && !description.isEmpty()) {
 			String[] lines = description.split("\n");
 			alertNode.addChild("br");
 			alertNode.addChild("br");

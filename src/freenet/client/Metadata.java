@@ -737,9 +737,7 @@ public class Metadata implements Cloneable, Serializable {
 		MessageDigest md = SHA256.getMessageDigest();
 		md.update(hash);
 		md.update(SPLITKEY);
-		byte[] buf = md.digest();
-		SHA256.returnMessageDigest(md);
-		return buf;
+		return md.digest();
 	}
 
 	public static byte[] getCrossSegmentSeed(HashResult[] hashes, byte[] hashThisLayerOnly) {
@@ -758,9 +756,7 @@ public class Metadata implements Cloneable, Serializable {
 		MessageDigest md = SHA256.getMessageDigest();
 		md.update(hash);
 		md.update(CROSS_SEGMENT_SEED);
-		byte[] buf = md.digest();
-		SHA256.returnMessageDigest(md);
-		return buf;
+		return md.digest();
 	}
 
 	/**
@@ -1317,7 +1313,7 @@ public class Metadata implements Cloneable, Serializable {
     	HashMap<String, Metadata> docs = new HashMap<String, Metadata>();
 		for (Map.Entry<String, Metadata> entry: manifestEntries.entrySet()) {
         	String st = entry.getKey();
-        	if (st.length()>0)
+        	if (!st.isEmpty())
         		docs.put(st, entry.getValue());
         }
         return docs;

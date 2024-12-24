@@ -46,7 +46,6 @@ public class FCPConnectionOutputHandler implements Runnable {
 	
 	@Override
 	public void run() {
-	    freenet.support.Logger.OSThread.logPID(this);
 		try {
 			realRun();
 		} catch (IOException e) {

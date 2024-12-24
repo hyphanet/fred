@@ -49,7 +49,7 @@ public class Inet4AddressMatcher implements AddressMatcher {
 	 * @param cidrHostname
 	 *            The address range this matcher matches
 	 */
-	public Inet4AddressMatcher(String cidrHostname) {
+	public Inet4AddressMatcher(String cidrHostname) throws IllegalArgumentException {
 		int slashPosition = cidrHostname.indexOf('/');
 		if (slashPosition == -1) {
 			address = convertToBytes(cidrHostname);

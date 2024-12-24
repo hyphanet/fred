@@ -3,24 +3,28 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.fail;
 
 import org.junit.Test;
+
+import freenet.crypt.DummyRandomSource;
 
 public class PeerMessageQueueTest {
 	@Test
 	public void testUrgentTimeEmpty() {
-		PeerMessageQueue pmq = new PeerMessageQueue();
+		PeerMessageQueue pmq = new PeerMessageQueue(new DummyRandomSource(1234));
 		assertEquals(Long.MAX_VALUE, pmq.getNextUrgentTime(Long.MAX_VALUE, System.currentTimeMillis()));
 	}
 
 	@Test
 	public void testUrgentTime() {
-		PeerMessageQueue pmq = new PeerMessageQueue();
+		PeerMessageQueue pmq = new PeerMessageQueue(new DummyRandomSource(1234));
 
 		//Constructor might take some time, so grab a range
 		long start = System.currentTimeMillis();
-		MessageItem item = new MessageItem(new byte[1024], null, false, null, (short) 0, false, false);
+		MessageItem item = new MessageItem(new byte[1024], null, false, null, (short) 0);
 		long end = System.currentTimeMillis();
 
 		pmq.queueAndEstimateSize(item, 1024);
@@ -37,11 +41,11 @@ public class PeerMessageQueueTest {
 	 * it. */
 	@Test
 	public void testUrgentTimeQueuedWrong() {
-		PeerMessageQueue pmq = new PeerMessageQueue();
+		PeerMessageQueue pmq = new PeerMessageQueue(new DummyRandomSource(1234));
 
 		//Constructor might take some time, so grab a range
 		long start = System.currentTimeMillis();
-		MessageItem itemUrgent = new MessageItem(new byte[1024], null, false, null, (short) 0, false, false);
+		MessageItem itemUrgent = new MessageItem(new byte[1024], null, false, null, (short) 0);
 		long end = System.currentTimeMillis();
 
 		//Sleep for a little while to get a later timeout
@@ -51,7 +55,7 @@ public class PeerMessageQueueTest {
 
 		}
 
-		MessageItem itemNonUrgent = new MessageItem(new byte[1024], null, false, null, (short) 0, false, false);
+		MessageItem itemNonUrgent = new MessageItem(new byte[1024], null, false, null, (short) 0);
 
 		//Queue the least urgent item first to get the wrong order
 		pmq.queueAndEstimateSize(itemNonUrgent, 1024);
@@ -67,9 +71,9 @@ public class PeerMessageQueueTest {
 
 	@Test
 	public void testGrabQueuedMessageItem() {
-		PeerMessageQueue pmq = new PeerMessageQueue();
+		PeerMessageQueue pmq = new PeerMessageQueue(new DummyRandomSource(1234));
 
-		MessageItem itemUrgent = new MessageItem(new byte[1024], null, false, null, (short) 0, false, false);
+		MessageItem itemUrgent = new MessageItem(new byte[1024], null, false, null, (short) 0);
 
 		//Sleep for a little while to get a later timeout
 		try {
@@ -78,7 +82,7 @@ public class PeerMessageQueueTest {
 
 		}
 
-		MessageItem itemNonUrgent = new MessageItem(new byte[1024], null, false, null, (short) 0, false, false);
+		MessageItem itemNonUrgent = new MessageItem(new byte[1024], null, false, null, (short) 0);
 
 		//Queue the least urgent item first to get the wrong order
 		pmq.queueAndEstimateSize(itemNonUrgent, 1024);

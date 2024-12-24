@@ -129,7 +129,7 @@ public class RAMSaltMigrationTest {
 				blockActuallyStoredList.add(blockInsertedList.get(i));
 			}
 		}
-		assertTrue("Inserts failed, not a single key stored", dummyValueActuallyStoredList.size() > 0);
+		assertTrue("Inserts failed, not a single key stored", !dummyValueActuallyStoredList.isEmpty());
 	}
 
 	/**

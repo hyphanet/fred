@@ -65,25 +65,24 @@ public class DefaultMIMETypes {
 	 */
 	protected static synchronized void addMIMEType(short number, String type, String[] extensions, String outExtension) {
 		addMIMEType(number, type);
-		Short t = Short.valueOf(number);
 		if(extensions != null) {
 			for(String ext : extensions) {
 				ext = ext.toLowerCase();
 				Short s = mimeTypesByExtension.get(ext);
 				if(s != null) {
 					// No big deal
-					Logger.normal(DefaultMIMETypes.class, "Extension "+ext+" assigned to "+byNumber(s.shortValue())+" in preference to "+number+ ':' +type);
+					Logger.normal(DefaultMIMETypes.class, "Extension "+ext+" assigned to "+byNumber(s)+" in preference to "+number+ ':' +type);
 				} else {
 					// If only one, make it primary
 					if((outExtension == null) && (extensions.length == 1))
-						primaryExtensionByMimeNumber.put(t, ext);
-					mimeTypesByExtension.put(ext, t);
+						primaryExtensionByMimeNumber.put(number, ext);
+					mimeTypesByExtension.put(ext, number);
 				}
 			}
-			allExtensionsByMimeNumber.put(t, extensions);
+			allExtensionsByMimeNumber.put(number, extensions);
 		}
 		if(outExtension != null)
-			primaryExtensionByMimeNumber.put(t, outExtension);
+			primaryExtensionByMimeNumber.put(number, outExtension);
 				
 	}
 
@@ -118,9 +117,7 @@ public class DefaultMIMETypes {
 	 * types, in which case it will have to be sent uncompressed.
 	 */
 	public synchronized static short byName(String s) {
-		Short x = mimeTypesByName.get(s);
-		if(x != null) return x.shortValue();
-		else return -1;
+		return mimeTypesByName.getOrDefault(s, (short) -1);
 	}
 	
 	/* From toad's /etc/mime.types
@@ -754,6 +751,10 @@ public class DefaultMIMETypes {
 		addMIMEType((short)619, "audio/speex", "spx");
 		addMIMEType((short)620, "audio/ogg", "oga");
 		addMIMEType((short)621, "audio/flac", "flac");
+		addMIMEType((short)622, "image/webp", "webp");
+		addMIMEType((short)623, "image/avif", "avif");
+		addMIMEType((short)624, "image/heic", "heic");
+		addMIMEType((short)625, "image/heif", "heif");
 	}
 	
 	/** Guess a MIME type from a filename.

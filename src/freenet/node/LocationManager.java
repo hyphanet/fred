@@ -428,7 +428,6 @@ public class LocationManager implements ByteCounter {
 
         @Override
         public void run() {
-            freenet.support.Logger.OSThread.logPID(this);
 		    Thread.currentThread().setName("SwapRequestSender");
             while(true) {
                 try {
@@ -556,7 +555,6 @@ public class LocationManager implements ByteCounter {
 
         @Override
         public void run() {
-		    freenet.support.Logger.OSThread.logPID(this);
             MessageDigest md = SHA256.getMessageDigest();
 
             boolean reachedEnd = false;
@@ -694,8 +692,6 @@ public class LocationManager implements ByteCounter {
                 announceLocChange(true, true, false);
                 node.writeNodeFile();
             }
-
-            SHA256.returnMessageDigest(md);
         } catch (Throwable t) {
             Logger.error(this, "Caught "+t, t);
         } finally {
@@ -718,7 +714,6 @@ public class LocationManager implements ByteCounter {
 
         @Override
         public void run() {
-		    freenet.support.Logger.OSThread.logPID(this);
             long uid = r.nextLong();
             if(!lock()) return;
             boolean reachedEnd = false;

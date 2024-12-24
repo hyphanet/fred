@@ -51,12 +51,12 @@ public class SizeUtilTest {
 	public void testFormatSizeLong() {
 		Long methodLong;
 		methodLong = Long.valueOf(valAndExpected[0][0]);
-		assertEquals(SizeUtil.formatSize(methodLong.longValue()),
+		assertEquals(SizeUtil.formatSize(methodLong),
 				"1 "+valAndExpected[0][1]);
 		
 		for(int i = 1; i < valAndExpected.length; i++) {
 			methodLong = Long.valueOf(valAndExpected[i][0]);
-			assertEquals(SizeUtil.formatSize(methodLong.longValue()),
+			assertEquals(SizeUtil.formatSize(methodLong),
 					"1.0 "+valAndExpected[i][1]); }
 	}
 
@@ -73,7 +73,7 @@ public class SizeUtilTest {
 		for(int i = 1; i < valAndExpected.length; i++) {
 			methodLong = Long.valueOf(valAndExpected[i][0]);
 			for(int j = 0; j < 4; j++)
-				assertEquals(SizeUtil.formatSize(methodLong.longValue()+(methodLong.longValue()*j/4)),
+				assertEquals(SizeUtil.formatSize(methodLong +(methodLong *j/4)),
 						actualValue[j]+" "+valAndExpected[i][1]);
 			}
 	}

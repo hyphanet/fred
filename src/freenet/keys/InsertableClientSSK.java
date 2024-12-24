@@ -3,11 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.keys;
 
-import org.bouncycastle.crypto.digests.SHA256Digest;
-import org.bouncycastle.crypto.params.DSAPrivateKeyParameters;
-import org.bouncycastle.crypto.signers.DSASigner;
-import org.bouncycastle.crypto.signers.HMacDSAKCalculator;
-
 import java.io.IOException;
 import java.math.BigInteger;
 import java.net.MalformedURLException;
@@ -29,6 +24,10 @@ import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.compress.InvalidCompressionCodecException;
 import freenet.support.math.MersenneTwister;
+import org.bouncycastle.crypto.digests.SHA256Digest;
+import org.bouncycastle.crypto.params.DSAPrivateKeyParameters;
+import org.bouncycastle.crypto.signers.DSASigner;
+import org.bouncycastle.crypto.signers.HMacDSAKCalculator;
 
 /** A ClientSSK that has a private key and therefore can be inserted. */
 public class InsertableClientSSK extends ClientSSK {
@@ -120,100 +119,96 @@ public class InsertableClientSSK extends ClientSSK {
 		}
 		// Pad it
 		MessageDigest md256 = SHA256.getMessageDigest();
+		byte[] data;
+		// First pad it
+		if (compressedData.length != SSKBlock.DATA_LENGTH) {
+			// Hash the data
+			if (compressedData.length != 0)
+				md256.update(compressedData);
+			byte[] digest = md256.digest();
+			MersenneTwister mt = new MersenneTwister(digest);
+			data = Arrays.copyOf(compressedData, SSKBlock.DATA_LENGTH);
+			if (compressedData.length > data.length) {
+				throw new RuntimeException("compressedData.length = " + compressedData.length + " but data.length="
+						+ data.length);
+			}
+			Util.randomBytes(mt, data, compressedData.length, SSKBlock.DATA_LENGTH - compressedData.length);
+		} else {
+			data = compressedData;
+		}
+
+		// Implicit hash of data
+		byte[] origDataHash = md256.digest(data);
+
+		Rijndael aes;
 		try {
-			byte[] data;
-			// First pad it
-			if (compressedData.length != SSKBlock.DATA_LENGTH) {
-				// Hash the data
-				if (compressedData.length != 0)
-					md256.update(compressedData);
-				byte[] digest = md256.digest();
-				MersenneTwister mt = new MersenneTwister(digest);
-				data = Arrays.copyOf(compressedData, SSKBlock.DATA_LENGTH);
-				if (compressedData.length > data.length) {
-					throw new RuntimeException("compressedData.length = " + compressedData.length + " but data.length="
-							+ data.length);
-				}
-				Util.randomBytes(mt, data, compressedData.length, SSKBlock.DATA_LENGTH - compressedData.length);
-			} else {
-				data = compressedData;
-			}
+			aes = new Rijndael(256, 256);
+		} catch (UnsupportedCipherException e) {
+			throw new Error("256/256 Rijndael not supported!");
+		}
 
-			// Implicit hash of data
-			byte[] origDataHash = md256.digest(data);
+		// Encrypt data. Data encryption key = H(plaintext data).
 
-			Rijndael aes;
-			try {
-				aes = new Rijndael(256, 256);
-			} catch (UnsupportedCipherException e) {
-				throw new Error("256/256 Rijndael not supported!");
-			}
+		aes.initialize(origDataHash);
+		PCFBMode pcfb = PCFBMode.create(aes, origDataHash);
 
-			// Encrypt data. Data encryption key = H(plaintext data).
+		pcfb.blockEncipher(data, 0, data.length);
 
-			aes.initialize(origDataHash);
-			PCFBMode pcfb = PCFBMode.create(aes, origDataHash);
+		byte[] encryptedDataHash = md256.digest(data);
 
-			pcfb.blockEncipher(data, 0, data.length);
+		// Create headers
 
-			byte[] encryptedDataHash = md256.digest(data);
-
-			// Create headers
-
-			byte[] headers = new byte[SSKBlock.TOTAL_HEADERS_LENGTH];
-			// First two bytes = hash ID
-			int x = 0;
-			headers[x++] = (byte) (KeyBlock.HASH_SHA256 >> 8);
-			headers[x++] = (byte) (KeyBlock.HASH_SHA256);
-			// Then crypto ID
-			headers[x++] = (byte) (Key.ALGO_AES_PCFB_256_SHA256 >> 8);
-			headers[x++] = Key.ALGO_AES_PCFB_256_SHA256;
-			// Then E(H(docname))
-			// Copy to headers
-			System.arraycopy(ehDocname, 0, headers, x, ehDocname.length);
-			x += ehDocname.length;
-			// Now the encrypted headers
-			byte[] encryptedHeaders = Arrays.copyOf(origDataHash, SSKBlock.ENCRYPTED_HEADERS_LENGTH);
-			int y = origDataHash.length;
-			short len = (short) compressedData.length;
-			if (asMetadata)
-				len |= 32768;
-			encryptedHeaders[y++] = (byte) (len >> 8);
-			encryptedHeaders[y++] = (byte) len;
-			encryptedHeaders[y++] = (byte) (compressionAlgo >> 8);
-			encryptedHeaders[y++] = (byte) compressionAlgo;
-			if (encryptedHeaders.length != y)
-				throw new IllegalStateException("Have more bytes to generate encoding SSK");
-			aes.initialize(cryptoKey);
-			pcfb.reset(ehDocname);
-			pcfb.blockEncipher(encryptedHeaders, 0, encryptedHeaders.length);
-			System.arraycopy(encryptedHeaders, 0, headers, x, encryptedHeaders.length);
-			x += encryptedHeaders.length;
-			// Generate implicit overall hash.
-			md256.update(headers, 0, x);
-			md256.update(encryptedDataHash);
-			byte[] overallHash = md256.digest();
-			// Now sign it
-			DSASigner dsa = new DSASigner(new HMacDSAKCalculator(new SHA256Digest()));
-			dsa.init(true, new DSAPrivateKeyParameters(privKey.getX(), Global.getDSAgroupBigAParameters()));
-			BigInteger[] sig = dsa.generateSignature(Global.truncateHash(overallHash));
-			// Pack R and S into 32 bytes each, and copy to headers.
-			// Then create and return the ClientSSKBlock.
-			byte[] rBuf = truncate(sig[0].toByteArray(), SSKBlock.SIG_R_LENGTH);
-			byte[] sBuf = truncate(sig[1].toByteArray(), SSKBlock.SIG_S_LENGTH);
-			System.arraycopy(rBuf, 0, headers, x, rBuf.length);
-			x += rBuf.length;
-			System.arraycopy(sBuf, 0, headers, x, sBuf.length);
-			x += sBuf.length;
-			if (x != SSKBlock.TOTAL_HEADERS_LENGTH)
-				throw new IllegalStateException("Too long");
-			try {
-				return new ClientSSKBlock(data, headers, this, !logMINOR);
-			} catch (SSKVerifyException e) {
-				throw (AssertionError)new AssertionError("Impossible encoding error").initCause(e);
-			}
-		} finally {
-			SHA256.returnMessageDigest(md256);
+		byte[] headers = new byte[SSKBlock.TOTAL_HEADERS_LENGTH];
+		// First two bytes = hash ID
+		int x = 0;
+		headers[x++] = (byte) (KeyBlock.HASH_SHA256 >> 8);
+		headers[x++] = (byte) (KeyBlock.HASH_SHA256);
+		// Then crypto ID
+		headers[x++] = (byte) (Key.ALGO_AES_PCFB_256_SHA256 >> 8);
+		headers[x++] = Key.ALGO_AES_PCFB_256_SHA256;
+		// Then E(H(docname))
+		// Copy to headers
+		System.arraycopy(ehDocname, 0, headers, x, ehDocname.length);
+		x += ehDocname.length;
+		// Now the encrypted headers
+		byte[] encryptedHeaders = Arrays.copyOf(origDataHash, SSKBlock.ENCRYPTED_HEADERS_LENGTH);
+		int y = origDataHash.length;
+		short len = (short) compressedData.length;
+		if (asMetadata)
+			len |= 32768;
+		encryptedHeaders[y++] = (byte) (len >> 8);
+		encryptedHeaders[y++] = (byte) len;
+		encryptedHeaders[y++] = (byte) (compressionAlgo >> 8);
+		encryptedHeaders[y++] = (byte) compressionAlgo;
+		if (encryptedHeaders.length != y)
+			throw new IllegalStateException("Have more bytes to generate encoding SSK");
+		aes.initialize(cryptoKey);
+		pcfb.reset(ehDocname);
+		pcfb.blockEncipher(encryptedHeaders, 0, encryptedHeaders.length);
+		System.arraycopy(encryptedHeaders, 0, headers, x, encryptedHeaders.length);
+		x += encryptedHeaders.length;
+		// Generate implicit overall hash.
+		md256.update(headers, 0, x);
+		md256.update(encryptedDataHash);
+		byte[] overallHash = md256.digest();
+		// Now sign it
+		DSASigner dsa = new DSASigner(new HMacDSAKCalculator(new SHA256Digest()));
+		dsa.init(true, new DSAPrivateKeyParameters(privKey.getX(), Global.getDSAgroupBigAParameters()));
+		BigInteger[] sig = dsa.generateSignature(Global.truncateHash(overallHash));
+		// Pack R and S into 32 bytes each, and copy to headers.
+		// Then create and return the ClientSSKBlock.
+		byte[] rBuf = truncate(sig[0].toByteArray(), SSKBlock.SIG_R_LENGTH);
+		byte[] sBuf = truncate(sig[1].toByteArray(), SSKBlock.SIG_S_LENGTH);
+		System.arraycopy(rBuf, 0, headers, x, rBuf.length);
+		x += rBuf.length;
+		System.arraycopy(sBuf, 0, headers, x, sBuf.length);
+		x += sBuf.length;
+		if (x != SSKBlock.TOTAL_HEADERS_LENGTH)
+			throw new IllegalStateException("Too long");
+		try {
+			return new ClientSSKBlock(data, headers, this, !logMINOR);
+		} catch (SSKVerifyException e) {
+			throw (AssertionError)new AssertionError("Impossible encoding error").initCause(e);
 		}
 	}
 

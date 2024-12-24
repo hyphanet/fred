@@ -46,7 +46,7 @@ public abstract class WebInterfaceToadlet extends Toadlet implements LinkEnabled
 	 */
 	protected String normalizePath(String path) {
 		String result = path.substring(_path.length());
-		if (result.length() == 0) {
+		if (result.isEmpty()) {
 			return "/";
 		}
 		if (result.endsWith("/")) {

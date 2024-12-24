@@ -1,5 +1,10 @@
 package freenet.node;
 
+import static java.util.concurrent.TimeUnit.DAYS;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.Arrays;
@@ -39,11 +44,6 @@ import freenet.support.math.DecayingKeyspaceAverage;
 import freenet.support.math.RunningAverage;
 import freenet.support.math.TimeDecayingRunningAverage;
 import freenet.support.math.TrivialRunningAverage;
-
-import static java.util.concurrent.TimeUnit.DAYS;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 
 /** Node (as opposed to NodeClientCore) level statistics. Includes shouldRejectRequest(), but not limited
  * to stuff required to implement that. */
@@ -125,7 +125,6 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	private volatile long maxPingTime;
 
 	final Node node;
-	private MemoryChecker myMemoryChecker;
 	public final PeerManager peers;
 
 	final RandomSource hardRandom;
@@ -284,10 +283,6 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	final StringCounter preemptiveRejectReasons;
 	final StringCounter localPreemptiveRejectReasons;
 
-	// Enable this if you run into hard to debug OOMs.
-	// Disabled to prevent long pauses every 30 seconds.
-	private int aggressiveGCModificator = -1 /*250*/;
-
 	// Peers stats
 	/** Next time to update PeerManagerUserAlert stats */
 	private long nextPeerManagerUserAlertStatsUpdateTime = -1;
@@ -407,43 +402,9 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		threadLimit = statsConfig.getInt("threadLimit");
 
 		// Yes it could be in seconds insteed of multiples of 0.12, but we don't want people to play with it :)
-		statsConfig.register("aggressiveGC", aggressiveGCModificator, sortOrder++, true, false, "NodeStat.aggressiveGC", "NodeStat.aggressiveGCLong",
-				new IntCallback() {
-					@Override
-					public Integer get() {
-						return aggressiveGCModificator;
-					}
-					@Override
-					public void set(Integer val) throws InvalidConfigValueException {
-						if (get().equals(val))
-					        return;
-						Logger.normal(this, "Changing aggressiveGCModificator to "+val);
-						aggressiveGCModificator = val;
-					}
-		},false);
-		aggressiveGCModificator = statsConfig.getInt("aggressiveGC");
+		statsConfig.registerIgnoredOption("aggressiveGC");
 
-		myMemoryChecker = new MemoryChecker(node.getTicker(), aggressiveGCModificator);
-		statsConfig.register("memoryChecker", true, sortOrder++, true, false, "NodeStat.memCheck", "NodeStat.memCheckLong",
-				new BooleanCallback(){
-					@Override
-					public Boolean get() {
-						return myMemoryChecker.isRunning();
-					}
-
-					@Override
-					public void set(Boolean val) throws InvalidConfigValueException {
-						if (get().equals(val))
-					        return;
-
-						if(val)
-							myMemoryChecker.start();
-						else
-							myMemoryChecker.terminate();
-					}
-		});
-		if(statsConfig.getBoolean("memoryChecker"))
-			myMemoryChecker.start();
+		statsConfig.registerIgnoredOption("memoryChecker");
 
 		statsConfig.register("ignoreLocalVsRemoteBandwidthLiability", false, sortOrder++, true, false, "NodeStat.ignoreLocalVsRemoteBandwidthLiability", "NodeStat.ignoreLocalVsRemoteBandwidthLiabilityLong", new BooleanCallback() {
 
@@ -1430,15 +1391,6 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		
 		double thisAllocation = getPeerLimit(source, bandwidthAvailableOutputUpperLimit - bandwidthAvailableOutputLowerLimit, input, transfersPerInsert, realTimeFlag, peers, peerRequestsSnapshot.calculateSR(ignoreLocalVsRemoteBandwidthLiability, input));
 		
-		if(SEND_LOAD_STATS_NOTICES && source != null) {
-			// FIXME tell local as well somehow?
-			if(!input) {
-				source.onSetMaxOutputTransfers(realTimeFlag, maxOutputTransfers);
-				source.onSetMaxOutputTransfersPeerLimit(realTimeFlag, maxOutputTransfersPeerLimit);
-			}
-			source.onSetPeerAllocation(input, (int)thisAllocation, transfersPerInsert, maxOutputTransfers, realTimeFlag);
-		}
-		
 		// Ignore the upper limit.
 		// Because we reassignToSelf() in various tricky timeout conditions, it is possible to exceed it.
 		// Even if we do we still need to allow the guaranteed allocation for each peer.
@@ -1516,10 +1468,6 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		return "TooManyTransfers: Fair sharing between peers";
 	}
 
-
-
-	static final boolean SEND_LOAD_STATS_NOTICES = true;
-	
 	/**
 	 * @param source The peer.
 	 * @param totalGuaranteedBandwidth The difference between the upper and lower overall
@@ -3554,10 +3502,6 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 		Arrays.sort(entries);
 		return entries;
-	}
-
-	public PeerLoadStats createPeerLoadStats(PeerNode peer, int transfersPerInsert, boolean realTimeFlag) {
-		return new PeerLoadStats(peer, transfersPerInsert, realTimeFlag);
 	}
 
 	public PeerLoadStats parseLoadStats(PeerNode source, Message m) {

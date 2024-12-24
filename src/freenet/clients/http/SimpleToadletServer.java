@@ -1004,7 +1004,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 			for(ToadletElement te: toadlets) {
 				if(path.startsWith(te.prefix))
 					return te.t;
-				if(te.prefix.length() > 0 && te.prefix.charAt(te.prefix.length()-1) == '/') {
+				if(!te.prefix.isEmpty() && te.prefix.charAt(te.prefix.length()-1) == '/') {
 					if(path.equals(te.prefix.substring(0, te.prefix.length()-1))) {
 						URI newURI;
 						try {
@@ -1070,7 +1070,6 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		
 		@Override
 		public void run() {
-		    freenet.support.Logger.OSThread.logPID(this);
 			if(logMINOR) Logger.minor(this, "Handling connection");
 			try {
 				ToadletContextImpl.handle(sock, SimpleToadletServer.this, pageMaker, getUserAlertManager(), bookmarkManager);

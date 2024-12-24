@@ -199,9 +199,10 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		if(path.endsWith("myref.fref")) {
 			SimpleFieldSet fs = getNoderef();
 			String noderefString = fs.toOrderedStringWithBase64();
-			MultiValueTable<String, String> extraHeaders = new MultiValueTable<String, String>();
-			// Force download to disk
-			extraHeaders.put("Content-Disposition", "attachment; filename=myref.fref");
+			MultiValueTable<String, String> extraHeaders = MultiValueTable.from(
+				// Force download to disk
+				"Content-Disposition", "attachment; filename=myref.fref"
+			);
 			writeReply(ctx, 200, "application/x-freenet-reference", "OK", extraHeaders, noderefString);
 			return;
 		}
@@ -503,7 +504,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 								//i now points to the proper location (equal, insertion point, or end-of-list)
 								//maybe better called "reverseGroup"?
 								List<PeerNodeStatus> peerGroup;
-								if (i<max && locations.get(i).doubleValue()==location) {
+								if (i<max && locations.get(i) ==location) {
 									peerGroup=peerGroups.get(i);
 								} else {
 									peerGroup=new ArrayList<PeerNodeStatus>();
@@ -567,7 +568,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 						foafRow.addChild("td", String.valueOf(peersWithFriend.size()));
 						HTMLNode locationCell=foafRow.addChild("td", "class", "peer-location");
 						for (PeerNodeStatus peerNodeStatus : peersWithFriend) {
-							String address=((peerNodeStatus.getPeerAddress() != null) ? (peerNodeStatus.getPeerAddress() + ':' + peerNodeStatus.getPeerPort()) : (l10n("unknownAddress")));
+							String address=((peerNodeStatus.getPeerAddress() != null) ? peerNodeStatus.getPeerAddressAndPort() : (l10n("unknownAddress")));
 							locationCell.addChild("i", address);
 							locationCell.addChild("br");
 						}
@@ -669,7 +670,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			}
 			
 			StringBuilder ref = null;
-			if (urltext.length() > 0) {
+			if (!urltext.isEmpty()) {
 				// fetch reference from a URL
 				BufferedReader in = null;
 				try {
@@ -687,7 +688,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				} finally {
 					Closer.close(in);
 				}
-			} else if (reftext.length() > 0) {
+			} else if (!reftext.isEmpty()) {
 				// read from post data or file upload
 				// this slightly scary looking regexp chops any extra characters off the beginning or ends of lines and removes extra line breaks
 				ref = new StringBuilder(reftext.replaceAll(".*?((?:[\\w,\\.]+\\=[^\r\n]+?)|(?:End))[ \\t]*(?:\\r?\\n)+", "$1\n"));
@@ -737,7 +738,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				PeerAdditionReturnCodes result=addNewNode(nodesToAdd[i].trim().concat("\nEnd"), privateComment, trust, visibility);
 				//Store the result
 				Integer prev = results.get(result);
-				if(prev == null) prev = Integer.valueOf(0);
+				if(prev == null) prev = 0;
 				results.put(result, prev+1);
 			}
 			
@@ -993,7 +994,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			country.renderFlagIcon(addressRow);
 		}
 
-		addressRow.addChild("#", ((peerNodeStatus.getPeerAddress() != null) ? (peerNodeStatus.getPeerAddress() + ':' + peerNodeStatus.getPeerPort()) : (l10n("unknownAddress"))) + pingTime);
+		addressRow.addChild("#", ((peerNodeStatus.getPeerAddress() != null) ? peerNodeStatus.getPeerAddressAndPort() : (l10n("unknownAddress"))) + pingTime);
 
 		// version column
 		if (peerNodeStatus.getStatusValue() != PeerManager.PEER_NODE_STATUS_NEVER_CONNECTED && (peerNodeStatus.isPublicInvalidVersion() || peerNodeStatus.isPublicReverseInvalidVersion())) {  // Don't draw attention to a version problem if NEVER CONNECTED
@@ -1154,7 +1155,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			String messageName = entry.getKey();
 			Long messageCount = entry.getValue();
 			messageNames.add(messageName);
-			messageCounts.put(messageName, new Long[] { messageCount, Long.valueOf(0) });
+			messageCounts.put(messageName, new Long[] { messageCount, 0L});
 		}
 		for (Map.Entry<String,Long> entry : peerNodeStatus.getLocalMessagesSent().entrySet() ) {
 			String messageName =  entry.getKey();
@@ -1164,7 +1165,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			}
 			Long[] existingCounts = messageCounts.get(messageName);
 			if (existingCounts == null) {
-				messageCounts.put(messageName, new Long[] { Long.valueOf(0), messageCount });
+				messageCounts.put(messageName, new Long[] {0L, messageCount });
 			} else {
 				existingCounts[1] = messageCount;
 			}

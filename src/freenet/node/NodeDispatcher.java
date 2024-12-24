@@ -289,9 +289,6 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 	private void rejectRequest(Message m, ByteCounter ctr) {
 		long uid = m.getLong(DMT.UID);
 		Message msg = DMT.createFNPRejectedOverload(uid, true, false, false);
-		// Send the load status anyway, hopefully this is a temporary problem.
-		msg.setNeedsLoadBulk();
-		msg.setNeedsLoadRT();
 		try {
 			m.getSource().sendAsync(msg, null, ctr);
 		} catch (NotConnectedException e) {
@@ -846,8 +843,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 	private boolean handleRoutedRejected(Message m) {
 		if(!node.enableRoutedPing()) return true;
 		long id = m.getLong(DMT.UID);
-		Long lid = Long.valueOf(id);
-		RoutedContext rc = routedContexts.get(lid);
+		RoutedContext rc = routedContexts.get(id);
 		if(rc == null) {
 			// Gah
 			Logger.error(this, "Unrecognized FNPRoutedRejected");
@@ -886,12 +882,11 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		if(logMINOR) Logger.minor(this, "handleRouted("+m+ ')');
 
 		long id = m.getLong(DMT.UID);
-		Long lid = Long.valueOf(id);
 		short htl = m.getShort(DMT.HTL);
 		byte[] identity = ((ShortBuffer) m.getObject(DMT.NODE_IDENTITY)).getData();
 		if(source != null) htl = source.decrementHTL(htl);
 		RoutedContext ctx;
-		ctx = routedContexts.get(lid);
+		ctx = routedContexts.get(id);
 		if(ctx != null) {
 			try {
 				source.sendAsync(DMT.createFNPRoutedRejected(id, htl), null, nodeStats.routedMessageCtr);
@@ -902,7 +897,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		}
 		ctx = new RoutedContext(m, source, identity);
 		synchronized (routedContexts) {
-			routedContexts.put(lid, ctx);
+			routedContexts.put(id, ctx);
 		}
 		// source == null => originated locally, keep full htl
 		double target = m.getDouble(DMT.TARGET_LOCATION);
@@ -930,8 +925,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		if(!node.enableRoutedPing()) return true;
 		long id = m.getLong(DMT.UID);
 		if(logMINOR) Logger.minor(this, "Got reply: "+m);
-		Long lid = Long.valueOf(id);
-		RoutedContext ctx = routedContexts.get(lid);
+		RoutedContext ctx = routedContexts.get(id);
 		if(ctx == null) {
 			Logger.error(this, "Unrecognized routed reply: "+m);
 			return false;

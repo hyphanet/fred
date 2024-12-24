@@ -38,17 +38,18 @@ import java.util.MissingResourceException;
 import java.util.Random;
 import java.util.Set;
 
-import freenet.config.*;
-import freenet.node.diagnostics.*;
-import freenet.node.useralerts.*;
-import freenet.support.io.*;
-import org.tanukisoftware.wrapper.WrapperManager;
-
 import freenet.client.FetchContext;
 import freenet.clients.fcp.FCPMessage;
 import freenet.clients.fcp.FeedMessage;
 import freenet.clients.http.SecurityLevelsToadlet;
 import freenet.clients.http.SimpleToadletServer;
+import freenet.config.Dimension;
+import freenet.config.EnumerableOptionCallback;
+import freenet.config.FreenetFilePersistentConfig;
+import freenet.config.InvalidConfigValueException;
+import freenet.config.NodeNeedRestartException;
+import freenet.config.PersistentConfig;
+import freenet.config.SubConfig;
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.ECDH;
 import freenet.crypt.MasterSecret;
@@ -91,6 +92,8 @@ import freenet.node.NodeDispatcher.NodeDispatcherCallback;
 import freenet.node.OpennetManager.ConnectionType;
 import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
 import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
+import freenet.node.diagnostics.DefaultNodeDiagnostics;
+import freenet.node.diagnostics.NodeDiagnostics;
 import freenet.node.probe.Listener;
 import freenet.node.probe.Type;
 import freenet.node.stats.DataStoreInstanceType;
@@ -98,6 +101,13 @@ import freenet.node.stats.DataStoreStats;
 import freenet.node.stats.NotAvailNodeStoreStats;
 import freenet.node.stats.StoreCallbackStats;
 import freenet.node.updater.NodeUpdateManager;
+import freenet.node.useralerts.JVMVersionAlert;
+import freenet.node.useralerts.MeaningfulNodeNameUserAlert;
+import freenet.node.useralerts.NotEnoughNiceLevelsUserAlert;
+import freenet.node.useralerts.PeersOffersUserAlert;
+import freenet.node.useralerts.SimpleUserAlert;
+import freenet.node.useralerts.TimeSkewDetectedUserAlert;
+import freenet.node.useralerts.UserAlert;
 import freenet.pluginmanager.ForwardPort;
 import freenet.pluginmanager.PluginManager;
 import freenet.store.BlockMetadata;
@@ -136,10 +146,12 @@ import freenet.support.api.ShortCallback;
 import freenet.support.api.StringCallback;
 import freenet.support.io.ArrayBucketFactory;
 import freenet.support.io.Closer;
+import freenet.support.io.DatastoreUtil;
 import freenet.support.io.FileUtil;
 import freenet.support.io.NativeThread;
 import freenet.support.math.MersenneTwister;
 import freenet.support.transport.ip.HostnameSyntaxException;
+import org.tanukisoftware.wrapper.WrapperManager;
 
 /**
  * @author amphibian
@@ -3389,13 +3401,7 @@ public class Node implements TimeSkewDetectorCallback {
 			throw new NodeInitException(NodeInitException.EXIT_COULD_NOT_START_UPDATER, "Could not start Updater: "+e);
 		}
 
-		/* TODO: Make sure that this is called BEFORE any instances of HTTPFilter are created.
-		 * HTTPFilter uses checkForGCJCharConversionBug() which returns the value of the static
-		 * variable jvmHasGCJCharConversionBug - and this is initialized in the following function.
-		 * If this is not possible then create a separate function to check for the GCJ bug and
-		 * call this function earlier.
-		 */
-		checkForEvilJVMBugs();
+		warnIfNotUsingWrapper();
 
 		if(!NativeThread.HAS_ENOUGH_NICE_LEVELS)
 			clientCore.getAlerts().register(new NotEnoughNiceLevelsUserAlert());
@@ -3432,7 +3438,6 @@ public class Node implements TimeSkewDetectorCallback {
 
 				@Override
 				public void run() {
-					freenet.support.Logger.OSThread.logPID(this);
 					for(PeerNode pn: peers.myPeers()) {
 						pn.updateVersionRoutablity();
 					}
@@ -3440,94 +3445,15 @@ public class Node implements TimeSkewDetectorCallback {
 			}, transition - now);
 	}
 
-
-	private static boolean jvmHasGCJCharConversionBug=false;
-
-	private void checkForEvilJVMBugs() {
-		// Now check whether we are likely to get the EvilJVMBug.
-		// If we are running a Sun/Oracle or Blackdown JVM, on Linux, and LD_ASSUME_KERNEL is not set, then we are.
-
-		String jvmVendor = System.getProperty("java.vm.vendor");
-		String jvmSpecVendor = System.getProperty("java.specification.vendor","");
-		String javaVersion = System.getProperty("java.version");
-		String jvmName = System.getProperty("java.vm.name");
-		String osName = System.getProperty("os.name");
-		String osVersion = System.getProperty("os.version");
-
-		boolean isOpenJDK = false;
-		//boolean isOracle = false;
-
-		if(logMINOR) Logger.minor(this, "JVM vendor: "+jvmVendor+", JVM name: "+jvmName+", JVM version: "+javaVersion+", OS name: "+osName+", OS version: "+osVersion);
-
-		if(jvmName.startsWith("OpenJDK ")) {
-			isOpenJDK = true;
-		}
-		
-		//Add some checks for "Oracle" to futureproof against them renaming from "Sun".
-		//Should have no effect because if a user has downloaded a new enough file for Oracle to have changed the name these bugs shouldn't apply.
-		//Still, one never knows and this code might be extended to cover future bugs.
-		if((!isOpenJDK) && (jvmVendor.startsWith("Sun ") || jvmVendor.startsWith("Oracle ")) || (jvmVendor.startsWith("The FreeBSD Foundation") && (jvmSpecVendor.startsWith("Sun ") || jvmSpecVendor.startsWith("Oracle "))) || (jvmVendor.startsWith("Apple "))) {
-			//isOracle = true;
-			// Sun/Oracle bugs
-
-			// Spurious OOMs
-			// http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4855795
-			// http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=2138757
-			// http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=2138759
-			// Fixed in 1.5.0_10 and 1.4.2_13
-
-			boolean is150 = javaVersion.startsWith("1.5.0_");
-			boolean is160 = javaVersion.startsWith("1.6.0_");
-
-			if(is150 || is160) {
-				String[] split = javaVersion.split("_");
-				String secondPart = split[1];
-				if(secondPart.contains("-")) {
-					split = secondPart.split("-");
-					secondPart = split[0];
-				}
-				int subver = Integer.parseInt(secondPart);
-
-				Logger.minor(this, "JVM version: "+javaVersion+" subver: "+subver+" from "+secondPart);
-
-			}
-
-		} else if (jvmVendor.startsWith("Apple ") || jvmVendor.startsWith("\"Apple ")) {
-			//Note that Sun/Oracle does not produce VMs for the Macintosh operating system, dont ask the user to find one...
-		} else if(!isOpenJDK) {
-			if(jvmVendor.startsWith("Free Software Foundation")) {
-				// GCJ/GIJ.
-				try {
-					javaVersion = System.getProperty("java.version").split(" ")[0].replaceAll("[.]","");
-					int jvmVersionInt = Integer.parseInt(javaVersion);
-
-					if(jvmVersionInt <= 422 && jvmVersionInt >= 100) // make sure that no bogus values cause true
-						jvmHasGCJCharConversionBug=true;
-				}
-
-				catch(Throwable t) {
-					Logger.error(this, "GCJ version check is broken!", t);
-				}
-				clientCore.getAlerts().register(new SimpleUserAlert(true, l10n("usingGCJTitle"), l10n("usingGCJ"), l10n("usingGCJTitle"), UserAlert.WARNING));
-			}
-		}
-
+	private void warnIfNotUsingWrapper() {
 		if(!isUsingWrapper() && !skipWrapperWarning) {
 			clientCore.getAlerts().register(new SimpleUserAlert(true, l10n("notUsingWrapperTitle"), l10n("notUsingWrapper"), l10n("notUsingWrapperShort"), UserAlert.WARNING));
 		}
-		
-		// Unfortunately debian's version of OpenJDK appears to have segfaulting issues.
-		// Which presumably are exploitable.
-		// So we can't recommend people switch just yet. :(
-		
-//		if(isOracle && Rijndael.AesCtrProvider == null) {
-//			if(!(FileUtil.detectedOS == FileUtil.OperatingSystem.Windows || FileUtil.detectedOS == FileUtil.OperatingSystem.MacOS))
-//				clientCore.alerts.register(new SimpleUserAlert(true, l10n("usingOracleTitle"), l10n("usingOracle"), l10n("usingOracleTitle"), UserAlert.WARNING));
-//		}
 	}
 
+	@Deprecated
 	public static boolean checkForGCJCharConversionBug() {
-		return jvmHasGCJCharConversionBug; // should be initialized on early startup
+		return false;
 	}
 
 	private String l10n(String key) {
@@ -4287,7 +4213,7 @@ public class Node implements TimeSkewDetectorCallback {
 	 * Handle a received node to node message
 	 */
 	public void receivedNodeToNodeMessage(Message m, PeerNode src) {
-		int type = ((Integer) m.getObject(DMT.NODE_TO_NODE_MESSAGE_TYPE)).intValue();
+		int type = (Integer) m.getObject(DMT.NODE_TO_NODE_MESSAGE_TYPE);
 		ShortBuffer messageData = (ShortBuffer) m.getObject(DMT.NODE_TO_NODE_MESSAGE_DATA);
 		receivedNodeToNodeMessage(src, type, messageData, false);
 	}

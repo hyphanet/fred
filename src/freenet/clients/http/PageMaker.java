@@ -243,7 +243,7 @@ public final class PageMaker {
 	}
 	
 	public HTMLNode createBackLink(ToadletContext toadletContext, String name) {
-		String referer = toadletContext.getHeaders().get("referer");
+		String referer = toadletContext.getHeaders().getFirst("referer");
 		if (referer != null) {
 			return new HTMLNode("a", new String[] { "href", "title" }, new String[] { referer, name }, name);
 		}

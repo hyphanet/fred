@@ -226,7 +226,6 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 
 	@Override
 	public void run() {
-	    freenet.support.Logger.OSThread.logPID(this);
             while(true) {
                 try {
                     realRun();
@@ -248,7 +247,6 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 
 		@Override
 		public void run() {
-		    freenet.support.Logger.OSThread.logPID(this);
 		    // FIXME ? key is not known for inserts here
 		    if (key != null)
 		    	stats.reportOutgoingLocalRequestLocation(key.toNormalizedDouble());

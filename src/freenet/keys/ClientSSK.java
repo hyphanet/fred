@@ -74,27 +74,23 @@ public class ClientSSK extends ClientKey {
 		if(cryptoKey.length != CRYPTO_KEY_LENGTH)
 			throw new MalformedURLException("Decryption key wrong length: "+cryptoKey.length+" should be "+CRYPTO_KEY_LENGTH);
 		MessageDigest md = SHA256.getMessageDigest();
+		if (pubKey != null) {
+			byte[] pubKeyAsBytes = pubKey.asBytes();
+			md.update(pubKeyAsBytes);
+			byte[] otherPubKeyHash = md.digest();
+			if (!Arrays.equals(otherPubKeyHash, pubKeyHash))
+				throw new IllegalArgumentException();
+		}
+		this.cryptoKey = cryptoKey;
+		md.update(docName.getBytes(StandardCharsets.UTF_8));
+		byte[] buf = md.digest();
 		try {
-			if (pubKey != null) {
-				byte[] pubKeyAsBytes = pubKey.asBytes();
-				md.update(pubKeyAsBytes);
-				byte[] otherPubKeyHash = md.digest();
-				if (!Arrays.equals(otherPubKeyHash, pubKeyHash))
-					throw new IllegalArgumentException();
-			}
-			this.cryptoKey = cryptoKey;
-			md.update(docName.getBytes(StandardCharsets.UTF_8));
-			byte[] buf = md.digest();
-			try {
-				Rijndael aes = new Rijndael(256, 256);
-				aes.initialize(cryptoKey);
-				aes.encipher(buf, buf);
-				ehDocname = buf;
-			} catch (UnsupportedCipherException e) {
-				throw new Error(e);
-			}
-		} finally {
-			SHA256.returnMessageDigest(md);
+			Rijndael aes = new Rijndael(256, 256);
+			aes.initialize(cryptoKey);
+			aes.encipher(buf, buf);
+			ehDocname = buf;
+		} catch (UnsupportedCipherException e) {
+			throw new Error(e);
 		}
 		if(ehDocname == null)
 			throw new NullPointerException();
@@ -147,11 +143,12 @@ public class ClientSSK extends ClientKey {
 		extra[4] = (byte) KeyBlock.HASH_SHA256;
 		return extra;
 	}
-	
-	static final byte[] STANDARD_EXTRA = getExtraBytes(Key.ALGO_AES_PCFB_256_SHA256);
-	
+
+	/**
+	 * @return the provided argument
+	 * @deprecated mutable data cannot safely be interned
+	 */
 	public static byte[] internExtra(byte[] buf) {
-		if(Arrays.equals(buf, STANDARD_EXTRA)) return STANDARD_EXTRA;
 		return buf;
 	}
 

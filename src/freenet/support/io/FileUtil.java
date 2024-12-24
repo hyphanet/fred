@@ -3,7 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.io;
 
-import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.File;
@@ -305,32 +304,11 @@ final public class FileUtil {
      * @throws IOException if an I/O error occurs
      */
 	public static StringBuilder readUTF(File file, long offset) throws FileNotFoundException, IOException {
-		StringBuilder result = new StringBuilder();
-		FileInputStream fis = null;
-		BufferedInputStream bis = null;
-		InputStreamReader isr = null;
-
-		try {
-			fis = new FileInputStream(file);
-			skipFully(fis, offset);
-			bis = new BufferedInputStream(fis);
-			isr = new InputStreamReader(bis, StandardCharsets.UTF_8);
-
-			char[] buf = new char[4096];
-			int length = 0;
-
-			while((length = isr.read(buf)) > 0) {
-				result.append(buf, 0, length);
-			}
-
-		} finally {
-			Closer.close(isr);
-			Closer.close(bis);
-			Closer.close(fis);
+		try (FileInputStream fis = new FileInputStream(file)) {
+			return readUTF(fis, offset);
 		}
-		return result;
 	}
-	
+
 	/**
 	 * Reads the entire content of a stream as UTF-8 and returns it.
 	 * @param stream The stream to read
@@ -349,20 +327,16 @@ final public class FileUtil {
 	 * @throws IOException if an I/O error occurs
 	 */
 	public static StringBuilder readUTF(InputStream stream, long offset) throws IOException {
-	    StringBuilder result = new StringBuilder();
 	    skipFully(stream, offset);
-	    InputStreamReader reader = null;
-	    try {
-	        reader = new InputStreamReader(stream, StandardCharsets.UTF_8);
+	    try (InputStreamReader reader = new InputStreamReader(stream, StandardCharsets.UTF_8)) {
+	        StringBuilder result = new StringBuilder();
 	        char[] buf = new char[4096];
-	        int length = 0;
-	        while((length = reader.read(buf)) > 0) {
+	        int length;
+	        while ((length = reader.read(buf)) > 0) {
 	            result.append(buf, 0, length);
 	        }
-	    } finally {
-	        Closer.close(reader);
+	        return result;
 	    }
-	    return result;
 	}
 
 	/**
@@ -377,25 +351,14 @@ final public class FileUtil {
 		}
 	}
 
-	public static boolean writeTo(InputStream input, File target) throws FileNotFoundException, IOException {
-		DataInputStream dis = null;
-		FileOutputStream fos = null;
+	public static boolean writeTo(InputStream input, File target) throws IOException {
 		File file = File.createTempFile("temp", ".tmp", target.getParentFile());
-		if(logMINOR)
-			Logger.minor(FileUtil.class, "Writing to "+file+" to be renamed to "+target);
+		if(logMINOR) {
+			Logger.minor(FileUtil.class, "Writing to " + file + " to be renamed to " + target);
+		}
 
-		try {
-			dis = new DataInputStream(input);
-			fos = new FileOutputStream(file);
-
-			int len = 0;
-			byte[] buffer = new byte[4096];
-			while ((len = dis.read(buffer)) > 0) {
-				fos.write(buffer, 0, len);
-			}
-		} finally {
-			if(dis != null) dis.close();
-			if(fos != null) fos.close();
+		try (FileOutputStream fos = new FileOutputStream(target)) {
+			copy(input, fos, -1);
 		}
 
 		if(FileUtil.renameTo(file, target))
@@ -616,20 +579,15 @@ final public class FileUtil {
 	 *             if an I/O error occurs
 	 */
 	public static void copy(InputStream source, OutputStream destination, long length) throws IOException {
-		long remaining = length;
-		byte[] buffer = new byte[BUFFER_SIZE];
-		int read = 0;
-		while ((remaining == -1) || (remaining > 0)) {
-			read = source.read(buffer, 0, ((remaining > BUFFER_SIZE) || (remaining == -1)) ? BUFFER_SIZE : (int) remaining);
-			if (read == -1) {
-				if (length == -1) {
-					return;
-				}
-				throw new EOFException("stream reached eof");
-			}
+		long remaining = length == -1 ? Long.MAX_VALUE : length;
+		byte[] buffer = new byte[(int) Math.min(remaining, BUFFER_SIZE)];
+		int read;
+		while (remaining > 0 && (read = source.read(buffer, 0, (int) Math.min(remaining, BUFFER_SIZE))) != -1) {
 			destination.write(buffer, 0, read);
-			if (remaining > 0)
-				remaining -= read;
+			remaining -= read;
+		}
+		if (remaining > 0 && length != -1) {
+			throw new EOFException("stream reached eof");
 		}
 	}
 	

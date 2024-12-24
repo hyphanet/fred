@@ -7,6 +7,7 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.l10n.NodeL10n;
 import freenet.node.NodeClientCore;
 import freenet.support.HTMLNode;
+import freenet.support.SizeUtil;
 import freenet.support.api.HTTPRequest;
 
 import java.io.File;
@@ -274,7 +275,7 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 			}
 		}
 
-		if (path.length() == 0) {
+		if (path.isEmpty()) {
 			if (lastSuccessful != null && lastSuccessful.isDirectory() && allowedDir(lastSuccessful)) {
 				path = lastSuccessful.getAbsolutePath();
 			} else {
@@ -333,7 +334,7 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 					return firstFile.getName().compareToIgnoreCase(secondFile.getName());
 				}
 			});
-			HTMLNode listingTable = listingDiv.addChild("table");
+			HTMLNode listingTable = listingDiv.addChild("table", "class", "directory-listing");
 			HTMLNode headerRow = listingTable.addChild("tr");
 			headerRow.addChild("th");
 			headerRow.addChild("th", l10n("fileHeader"));
@@ -406,13 +407,13 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 						
 						fileRow.addChild("td", currentFile.getName());
 						fileRow.addChild("td", "class", "right-align",
-						        String.valueOf(currentFile.length()));
+						        SizeUtil.formatSize(currentFile.length(), true));
 					} else {
 						fileRow.addChild("td");
 						fileRow.addChild("td", "class", "unreadable-file",
 						        currentFile.getName());
 						fileRow.addChild("td", "class", "right-align",
-						        String.valueOf(currentFile.length()));
+						        SizeUtil.formatSize(currentFile.length(), true));
 					}
 				}
 			}

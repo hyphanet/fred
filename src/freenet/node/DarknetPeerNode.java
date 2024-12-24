@@ -472,7 +472,7 @@ public class DarknetPeerNode extends PeerNode {
 			synchronized(extraPeerDataFileNumbers) {
 				extraPeerDataFileNumbers.add(fileNumber);
 			}
-			readResult = readExtraPeerDataFile(extraPeerDataFile, fileNumber.intValue());
+			readResult = readExtraPeerDataFile(extraPeerDataFile, fileNumber);
 			if(!readResult) {
 				gotError = true;
 			}
@@ -733,7 +733,7 @@ public class DarknetPeerNode extends PeerNode {
 			localFileNumbers = extraPeerDataFileNumbers.toArray(new Integer[extraPeerDataFileNumbers.size()]);
 		}
 		for (Integer localFileNumber : localFileNumbers) {
-			deleteExtraPeerDataFile(localFileNumber.intValue());
+			deleteExtraPeerDataFile(localFileNumber);
 		}
 		extraPeerDataPeerDir.delete();
 	}
@@ -826,7 +826,7 @@ public class DarknetPeerNode extends PeerNode {
 		}
 		Arrays.sort(localFileNumbers);
 		for (Integer localFileNumber : localFileNumbers) {
-			rereadExtraPeerDataFile(localFileNumber.intValue());
+			rereadExtraPeerDataFile(localFileNumber);
 		}
 	}
 
@@ -1064,7 +1064,7 @@ public class DarknetPeerNode extends PeerNode {
 					sb.append(' ');
 					sb.append(getName());
 					sb.append('\n');
-					if(comment != null && comment.length() > 0) {
+					if(comment != null && !comment.isEmpty()) {
 						sb.append(l10n("commentLabel"));
 						sb.append(' ');
 						sb.append(comment);
@@ -1305,7 +1305,7 @@ public class DarknetPeerNode extends PeerNode {
 			sb.append(' ');
 			sb.append(userToString());
 			sb.append('\n');
-			if(comment != null && comment.length() > 0) {
+			if(comment != null && !comment.isEmpty()) {
 				sb.append(l10n("commentLabel"));
 				sb.append(' ');
 				sb.append(comment);
@@ -1333,7 +1333,7 @@ public class DarknetPeerNode extends PeerNode {
 			row.addChild("td").addChild("#", l10n("senderLabel"));
 			row.addChild("td").addChild("#", getName());
 			row = table.addChild("tr");
-			if(comment != null && comment.length() > 0) {
+			if(comment != null && !comment.isEmpty()) {
 				row.addChild("td").addChild("#", l10n("commentLabel"));
 				addComment(row.addChild("td"));
 			}
@@ -1520,7 +1520,7 @@ public class DarknetPeerNode extends PeerNode {
 			}
 		}
 		int newFileNumber = fileNumber;
-		if (merged.size() > 0) {
+		if (!merged.isEmpty()) {
 			// update the text
 			fs.putOverwrite("text", Base64.encodeUTF8(newText));
 			// persist the alert

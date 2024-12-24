@@ -9,12 +9,6 @@ import java.security.MessageDigest;
 import java.security.Provider;
 import java.util.Arrays;
 
-import javax.crypto.Cipher;
-import javax.crypto.Mac;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
-
 import freenet.crypt.BlockCipher;
 import freenet.crypt.CTRBlockCipher;
 import freenet.crypt.JceLoader;
@@ -33,6 +27,11 @@ import freenet.support.io.ArrayBucket;
 import freenet.support.io.ArrayBucketFactory;
 import freenet.support.io.BucketTools;
 import freenet.support.math.MersenneTwister;
+import javax.crypto.Cipher;
+import javax.crypto.Mac;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 
 /**
  * @author amphibian
@@ -142,7 +141,6 @@ public class ClientCHKBlock implements ClientKeyBlock {
         byte[] dkey = key.cryptoKey;
         // Check: IV == hash of decryption key
         byte[] predIV = md256.digest(dkey);
-        SHA256.returnMessageDigest(md256); md256 = null;
         // Extract the IV
         byte[] iv = Arrays.copyOf(hbuf, 32);
         if(!Arrays.equals(iv, predIV))
@@ -496,9 +494,7 @@ public class ClientCHKBlock implements ClientKeyBlock {
         // Now calculate the final hash
         md256.update(header);
         byte[] finalHash = md256.digest(cdata);
-        
-        SHA256.returnMessageDigest(md256);
-        
+
         // Now convert it into a ClientCHK
         ClientCHK finalKey = new ClientCHK(finalHash, encKey, asMetadata, cryptoAlgorithm, compressionAlgorithm);
         
@@ -570,9 +566,7 @@ public class ClientCHKBlock implements ClientKeyBlock {
         // Now calculate the final hash
         md256.update(header);
         byte[] finalHash = md256.digest(cdata);
-        
-        SHA256.returnMessageDigest(md256);
-        
+
         // Now convert it into a ClientCHK
         ClientCHK finalKey = new ClientCHK(finalHash, encKey, asMetadata, cryptoAlgorithm, compressionAlgorithm);
         
@@ -631,9 +625,7 @@ public class ClientCHKBlock implements ClientKeyBlock {
         // Now calculate the final hash
         md256.update(header);
         byte[] finalHash = md256.digest(data);
-        
-        SHA256.returnMessageDigest(md256);
-        
+
         // Now convert it into a ClientCHK
         key = new ClientCHK(finalHash, encKey, asMetadata, cryptoAlgorithm, compressionAlgorithm);
         

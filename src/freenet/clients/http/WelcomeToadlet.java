@@ -59,10 +59,8 @@ public class WelcomeToadlet extends Toadlet {
     }
     
     void redirectToRoot(ToadletContext ctx) throws ToadletContextClosedException, IOException {
-        MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-        headers.put("Location", "/");
+        MultiValueTable<String, String> headers = MultiValueTable.from("Location", "/");
         ctx.sendReplyHeaders(302, "Found", headers, null, 0);
-        return;
     }
 
     private void addCategoryToList(BookmarkCategory cat, HTMLNode list, boolean noActiveLinks, ToadletContext ctx) {
@@ -71,7 +69,7 @@ public class WelcomeToadlet extends Toadlet {
 		}
 
         List<BookmarkItem> items = cat.getItems();
-        if (items.size() > 0) {
+        if (!items.isEmpty()) {
             // FIXME CSS noborder ...
             HTMLNode table = list.addChild("li").addChild("table", new String[]{"border", "style"}, new String[]{"0", "border: none"});
             for (int i = 0; i < items.size(); i++) {
@@ -97,7 +95,7 @@ public class WelcomeToadlet extends Toadlet {
                     item.getVisibleName());
                 
                 String explain = item.getShortDescription();
-                if(explain != null && explain.length() > 0) {
+                if(explain != null && !explain.isEmpty()) {
                 	cell.addChild("#", " (");
                 	cell.addChild("#", explain);
                 	cell.addChild("#", ")");
@@ -167,7 +165,7 @@ public class WelcomeToadlet extends Toadlet {
         if(!ctx.checkFullAccess(this))
             return;
 
-        if (request.getPartAsStringFailsafe("updateconfirm", 32).length() > 0) {
+        if (!request.getPartAsStringFailsafe("updateconfirm", 32).isEmpty()) {
         	if(!ctx.checkFormPassword(request)) return;
             // false for no navigation bars, because that would be very silly
             PageNode page = ctx.getPageMaker().getPageNode(l10n("updatingTitle"), ctx);
@@ -179,7 +177,7 @@ public class WelcomeToadlet extends Toadlet {
             writeHTMLReply(ctx, 200, "OK", pageNode.generate());
             Logger.normal(this, "Node is updating/restarting");
             node.getNodeUpdater().arm();
-        } else if (request.getPartAsStringFailsafe("update", 32).length() > 0) {
+        } else if (!request.getPartAsStringFailsafe("update", 32).isEmpty()) {
         	PageNode page = ctx.getPageMaker().getPageNode(l10n("nodeUpdateConfirmTitle"), ctx);
             HTMLNode pageNode = page.outer;
             HTMLNode contentNode = page.content;
@@ -303,8 +301,10 @@ public class WelcomeToadlet extends Toadlet {
             return;
         } else if (request.isPartSet("shutdownconfirm")) {
         	if(!ctx.checkFormPassword(request)) return;
-            MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-            headers.put("Location", "/?terminated&formPassword=" + ctx.getFormPassword());
+            MultiValueTable<String, String> headers = MultiValueTable.from(
+                "Location",
+                "/?terminated&formPassword=" + ctx.getFormPassword()
+            );
             ctx.sendReplyHeaders(302, "Found", headers, null, 0);
             node.getTicker().queueTimedJob(new Runnable() {
 
@@ -327,8 +327,10 @@ public class WelcomeToadlet extends Toadlet {
             return;
         } else if (request.isPartSet("restartconfirm")) {
         	if(!ctx.checkFormPassword(request)) return;
-            MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-            headers.put("Location", "/?restarted&formPassword=" + ctx.getFormPassword());
+            MultiValueTable<String, String> headers = MultiValueTable.from(
+                "Location",
+                "/?restarted&formPassword=" + ctx.getFormPassword()
+            );
             ctx.sendReplyHeaders(302, "Found", headers, null, 0);
             node.getTicker().queueTimedJob(new Runnable() {
 
@@ -442,7 +444,7 @@ public class WelcomeToadlet extends Toadlet {
                 }
                 sendRestartingPage(ctx);
                 return;
-            } else if (request.getParam("newbookmark").length() > 0) {
+            } else if (!request.getParam("newbookmark").isEmpty()) {
             	PageNode page = ctx.getPageMaker().getPageNode(l10n("confirmAddBookmarkTitle"), ctx);
                 HTMLNode pageNode = page.outer;
                 HTMLNode contentNode = page.content;
@@ -505,7 +507,7 @@ public class WelcomeToadlet extends Toadlet {
         HTMLNode pageNode = page.outer;
         HTMLNode contentNode = page.content;
 
-        String useragent = ctx.getHeaders().get("user-agent");
+        String useragent = ctx.getHeaders().getFirst("user-agent");
 
         if (useragent != null) {
             useragent = useragent.toLowerCase();

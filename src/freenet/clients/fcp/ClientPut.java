@@ -236,7 +236,6 @@ public class ClientPut extends ClientPutBase {
 				is = data.getInputStream();
 				SHA256.hash(is, md);
 			} catch (IOException e) {
-				SHA256.returnMessageDigest(md);
 				Logger.error(this, "Got IOE: " + e.getMessage(), e);
 				throw new MessageInvalidException(ProtocolErrorMessage.COULD_NOT_READ_FILE,
 						"Unable to access file: " + e, identifier, global);
@@ -244,7 +243,6 @@ public class ClientPut extends ClientPutBase {
 				Closer.close(is);
 			}
 			foundHash = md.digest();
-			SHA256.returnMessageDigest(md);
 
 			if(logMINOR) Logger.minor(this, "FileHash result : we found " + Base64.encode(foundHash) + " and were given " + Base64.encode(saltedHash) + '.');
 

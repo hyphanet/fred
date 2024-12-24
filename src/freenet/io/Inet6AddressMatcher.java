@@ -19,8 +19,6 @@ package freenet.io;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.util.Arrays;
-import java.util.StringTokenizer;
-
 import freenet.io.AddressIdentifier.AddressType;
 
 /**
@@ -40,7 +38,7 @@ public class Inet6AddressMatcher implements AddressMatcher {
 	private byte[] address;
 	private byte[] netmask;
 
-	public Inet6AddressMatcher(String pattern) {
+	public Inet6AddressMatcher(String pattern) throws IllegalArgumentException {
 		if (pattern.indexOf('/') != -1) {
 			address = convertToBytes(pattern.substring(0, pattern.indexOf('/')));
 			String netmaskString = pattern.substring(pattern.indexOf('/') + 1).trim();
@@ -66,18 +64,72 @@ public class Inet6AddressMatcher implements AddressMatcher {
 		}
 	}
 
-	private byte[] convertToBytes(String address) {
-		StringTokenizer addressTokens = new StringTokenizer(address, ":");
-		if (addressTokens.countTokens() != 8) {
-			throw new IllegalArgumentException(address + " is not an IPv6 address.");
-		}
-		byte[] addressBytes = new byte[16];
+	private byte[] convertToBytes(String address) throws IllegalArgumentException {
+		String[] addressTokens = address.split(":", -1); // Don't let Java discard trailing empty string, to distinguish "1:2:3:4:5:6:7:" and "1:2:3:4:5:6:7::" 
+		int tokenPosition = 0;
+		byte[] addressBytes = new byte[16]; // Part before ::
+		byte[] addressBytesEnd = new byte[16]; // Part after ::, in reverse order
 		int count = 0;
-		while (addressTokens.hasMoreTokens()) {
-			int addressWord = Integer.parseInt(addressTokens.nextToken(), 16);
-			addressBytes[count * 2] = (byte) ((addressWord >> 8) & 0xff);
-			addressBytes[count * 2 + 1] = (byte) (addressWord & 0xff);
-			count++;
+		int endCount = -1;
+		if(address.startsWith(":")) {
+			if(address.startsWith("::")) {
+				if(address == "::") {
+					return addressBytes; // Return 0:0:0:0:0:0:0:0
+				}
+				tokenPosition=2; // This is an empty token, could be mistaken as duplicate ::
+				endCount = 0;
+			} else {
+				throw new IllegalArgumentException(address + " is not an IPv6 address.");
+			}
+		}
+		while (tokenPosition < addressTokens.length) {
+			String token = addressTokens[tokenPosition];
+			tokenPosition++;
+			if(!token.isEmpty() ) {
+				int addressWord;
+				try {
+					addressWord = Integer.parseInt(token, 16);
+				} catch(NumberFormatException e) {
+					throw new IllegalArgumentException(address + " is not an IPv6 address.");
+				}
+				// Enforce limits
+				if(addressWord < 0 || addressWord > 0xffff) {
+					throw new IllegalArgumentException(address + " is not an IPv6 address.");
+				}
+				if(endCount == -1) {
+					if(count >= 8) {
+						throw new IllegalArgumentException(address + " is not an IPv6 address.");
+					}
+					addressBytes[count * 2] = (byte) ((addressWord >> 8) & 0xff);
+					addressBytes[count * 2 + 1] = (byte) (addressWord & 0xff);
+					count++;
+				} else {
+					if(count + endCount >= 7) {
+						throw new IllegalArgumentException(address + " is not an IPv6 address.");
+					}
+					addressBytesEnd[endCount * 2] = (byte) ((addressWord >> 8) & 0xff);
+					addressBytesEnd[endCount * 2 + 1] = (byte) (addressWord & 0xff);
+					endCount++;
+				}
+			} else if(endCount == -1) {
+				if(count >= 8 || tokenPosition == addressTokens.length) {
+					// Catch the case "1:2:3:4:5:6:7:8::", let "1:2:3:4:5:6:7::" go
+					throw new IllegalArgumentException(address + " is not an IPv6 address.");
+				}
+				endCount = 0;
+			} else if(endCount > 0 || tokenPosition != addressTokens.length){ 
+				throw new IllegalArgumentException(address + " is not an IPv6 address.");
+			}
+		}
+		if(endCount != -1) { // Copy the end part to the end of main part
+			for(int index = count; index < 8 - endCount; index++) {
+				addressBytes[index * 2] = 0;
+				addressBytes[index * 2 + 1] = 0;
+			}
+			for(int index = 0; index < endCount; index++) {
+				addressBytes[(8 - endCount + index) * 2] = addressBytesEnd[index * 2];
+				addressBytes[(8 - endCount + index) * 2 + 1] = addressBytesEnd[index * 2 + 1];
+			}
 		}
 		return addressBytes;
 	}
@@ -94,7 +146,7 @@ public class Inet6AddressMatcher implements AddressMatcher {
 		return true;
 	}
 
-	public static boolean matches(String pattern, InetAddress address) {
+	public static boolean matches(String pattern, InetAddress address) throws IllegalArgumentException {
 		return new Inet6AddressMatcher(pattern).matches(address);
 	}
 

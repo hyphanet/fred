@@ -126,7 +126,7 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherStorage
         try {
             // Completion via truncation.
             if(isFinalFetch && cb instanceof FileGetCompletionCallback && 
-                    (decompressors == null || decompressors.size() == 0) &&
+                    (decompressors == null || decompressors.isEmpty()) &&
                     !fetchContext.filterData) {
                 FileGetCompletionCallback fileCallback = ((FileGetCompletionCallback)cb);
                 File targetFile = fileCallback.getCompletionFile();

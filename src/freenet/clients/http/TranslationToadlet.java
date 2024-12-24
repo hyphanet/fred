@@ -55,8 +55,10 @@ public class TranslationToadlet extends Toadlet {
 				return;
 			}
 			byte[] data = sfs.toOrderedString().getBytes(StandardCharsets.UTF_8);
-			MultiValueTable<String, String> head = new MultiValueTable<String, String>();
-			head.put("Content-Disposition", "attachment; filename=\"" + this.base.getL10nOverrideFileName(this.base.getSelectedLanguage()) + '"');
+			MultiValueTable<String, String> head = MultiValueTable.from(
+				"Content-Disposition",
+				"attachment; filename=\"" + this.base.getL10nOverrideFileName(this.base.getSelectedLanguage()) + '"'
+			);
 			ctx.sendReplyHeaders(200, "Found", head, "text/plain; charset=utf-8", data.length);
 			ctx.writeData(data);
 			return;
@@ -248,7 +250,7 @@ public class TranslationToadlet extends Toadlet {
 		
 		boolean toTranslateOnly = request.isPartSet("toTranslateOnly");
 		
-		if(request.getPartAsStringFailsafe("translation_update", 32).length() > 0){
+		if(!request.getPartAsStringFailsafe("translation_update", 32).isEmpty()){
 			String key = request.getPartAsStringFailsafe("key", 256);
 			this.base.setOverride(key, new String(BucketTools.toByteArray(request.getPart("trans")), StandardCharsets.UTF_8).trim());
 			
@@ -267,7 +269,7 @@ public class TranslationToadlet extends Toadlet {
 			
 			redirectTo(ctx, TOADLET_URL+"?translation_updated="+key+ (toTranslateOnly ? "&toTranslateOnly" : ""));
 			return;
-		} else if(request.getPartAsStringFailsafe("remove_confirmed", 32).length() > 0) {
+		} else if(!request.getPartAsStringFailsafe("remove_confirmed", 32).isEmpty()) {
 			String key = request.getPartAsStringFailsafe("remove_confirm", 256).trim();
 			this.base.setOverride(key, "");
 			
@@ -278,10 +280,8 @@ public class TranslationToadlet extends Toadlet {
 	}
 	
 	private void redirectTo(ToadletContext ctx, String target) throws ToadletContextClosedException, IOException {
-		MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-		headers.put("Location", target);
+		MultiValueTable<String, String> headers = MultiValueTable.from("Location", target);
 		ctx.sendReplyHeaders(302, "Found", headers, null, 0);
-		return;
 	}
 
 	private HTMLNode _setOrRemoveOverride(String key, boolean isOverriden, boolean showEverything) {
