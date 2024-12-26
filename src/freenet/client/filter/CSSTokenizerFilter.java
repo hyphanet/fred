@@ -358,8 +358,7 @@ class CSSTokenizerFilter {
 		allelementVerifiers.add("word-wrap");
 		allelementVerifiers.add("writing-mode");
 		allelementVerifiers.add("z-index");
-
-
+		allelementVerifiers.add("zoom");
 	}
 
 	/*
@@ -1818,6 +1817,11 @@ class CSSTokenizerFilter {
 		else if("z-index".equalsIgnoreCase(element))
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("auto"),ElementInfo.VISUALMEDIA,Arrays.asList("in")));
+			allelementVerifiers.remove(element);
+		}
+		else if("zoom".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("normal"),ElementInfo.VISUALMEDIA,Arrays.asList("re","pe")));
 			allelementVerifiers.remove(element);
 		}
 		else if("transition-delay".equalsIgnoreCase(element))
