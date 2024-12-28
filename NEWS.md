@@ -68,6 +68,12 @@ dark-mode. The MIME types image/avif, heic, and heif are now known
 Also the `:checked` selector is now supported, so freesites can have
 some CSS-based interactivity.
 
+There’s one loss: Chrome removed Theora support in 2024 and Firefox
+followed suit in version 130 (which [broke brasilian banking OTPs](https://bugzilla.mozilla.org/show_bug.cgi?id=1930548) ).
+Firefox ESR (128) will still get support until may 27th 2025. Until
+then we need sanitation for modern video formats like vp8 or vp9 and
+webm to keep our video on demand (streaming) working.
+
 ## User experience
 
 There are two improvements of the interface itself: Qupo1 updated the
