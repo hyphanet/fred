@@ -440,11 +440,6 @@ public class ToadletContextImpl implements ToadletContext {
 		mvt.put("x-content-security-policy", contentSecurityPolicy);
 		mvt.put("x-webkit-csp", contentSecurityPolicy);
 		mvt.put("x-frame-options", allowFrames ? "SAMEORIGIN" : "DENY");
-		String HSTS = SSL.getHSTSHeader();
-		if(!HSTS.isEmpty() && !mvt.containsKey("strict-transport-security")) {
-			// SSL enabled, set strict-transport-security so that the user agent upgrade future requests to SSL.
-			mvt.put("strict-transport-security", HSTS);
-		}
 		StringBuilder buf = new StringBuilder(1024);
 		buf.append("HTTP/1.1 ");
 		buf.append(replyCode);
