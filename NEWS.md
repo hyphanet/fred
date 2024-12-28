@@ -74,6 +74,9 @@ There are two improvements of the interface itself: Qupo1 updated the
 Japanese localization and bertm polished the bookmark editor and
 directory listing in the Winterfacey theme.
 
+And thanks to Bombe the Freemail plugin now has a settings page for
+the SMTP and IMAP address and port to use.
+
 The defunct new load management statistics are now gone — thanks to
 Torusrxxx. These were just distracting.
 
@@ -157,6 +160,10 @@ later.
 - Fix readme links and code badges — thanks to qupo1!
 - Support IPV6_ADDR_PREFERENCES until Java 24 and beyond (move from reflection to unsafe) — thanks to bertm!
 - Add copy of the cryptics general license (2-clause BSD)
+
+## Plugins
+
+- Freemail plugin: add settings page, thanks to Bombe!
 
 
 1498:
