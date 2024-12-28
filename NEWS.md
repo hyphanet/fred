@@ -6,7 +6,7 @@ next:
 
 # User changelog
 
-This release mainly brings five types of improvements:
+This release mainly brings improvements in five areas:
 
 - improved privacy protection
 - optimized and fixed networking layer
