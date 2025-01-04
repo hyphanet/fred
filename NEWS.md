@@ -35,11 +35,12 @@ and Torusrxxx improved IPv6 handling.
 
 ## Website
 
-Torusrxxx also added webp support to the content sanitation (filters),
-so you can now use webp images on freesites and depending on the study
-reduce the storage by around 30%. Minimizing storage is more critical
-on Hyphanet compared to the clearnet, so webp can improve performance
-for all sites.
+Torusrxxx also added initial webp support (still todo: lossless and
+animation) to the content sanitation (filters), so you can now use
+webp images on freesites and depending on the study reduce the storage
+by around 30%. Minimizing storage is more critical on Hyphanet
+compared to the clearnet, so webp can improve performance for all
+sites.
 
 In addition to webp, Torusrxxx also added support for more CSS
 keywords: border-{top,bottom}-{left,right}-radius, color-scheme,
