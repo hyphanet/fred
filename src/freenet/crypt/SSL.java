@@ -86,7 +86,7 @@ public class SSL {
 	}
 
 	public static String getHSTSHeader() {
-		if(available() && HSTSMaxAge > 0)
+		if(enable && available() && HSTSMaxAge > 0)
 			return "max-age=" + HSTSMaxAge;
 		else
 			return "";
@@ -119,11 +119,16 @@ public class SSL {
 							} catch(Exception e) {
 								enable = false;
 								e.printStackTrace(System.out);
+								Logger.error(this, "SSL could not be enabled", e);
 								throwConfigError("SSL could not be enabled", e);
 							}
 						else {
 							ssf = null;
-							keyStore = null;
+							try {
+								keystore.load(null, keyStorePass.toCharArray());
+							} catch (Exception e) {
+								// Just clear the key store
+							}
 						}
 					}
 				}
@@ -147,6 +152,7 @@ public class SSL {
 						} catch(Exception e) {
 							keyStore = oldKeyStore;
 							e.printStackTrace(System.out);
+							Logger.error(this, "Keystore file could not be changed", e);
 							throwConfigError("Keystore file could not be changed", e);
 						}
 					}
@@ -171,6 +177,7 @@ public class SSL {
 						} catch(Exception e) {
 							keyStorePass = oldKeyStorePass;
 							e.printStackTrace(System.out);
+							Logger.error(this, "Keystore password could not be changed", e);
 							throwConfigError("Keystore password could not be changed", e);
 						}
 					}
@@ -198,6 +205,7 @@ public class SSL {
 						} catch(Exception e) {
 							keyPass = oldKeyPass;
 							e.printStackTrace(System.out);
+							Logger.error(this, "Private key password could not be changed", e);
 							throwConfigError("Private key password could not be changed", e);
 						}
 					}
