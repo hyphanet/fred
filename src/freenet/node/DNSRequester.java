@@ -81,28 +81,26 @@ public class DNSRequester implements Runnable {
         }
 
         int unconnectedNodesLength = nodesToCheck.length;
-        if (unconnectedNodesLength == 0) {
-            return; // nothing to do
-        }
-        // check a randomly chosen node that has not been checked
-        // recently to avoid sending bursts of DNS requests
-        PeerNode pn = nodesToCheck[node.getFastWeakRandom().nextInt(unconnectedNodesLength)];
-        if (unconnectedNodesLength < 5) {
-            // no need for optimizations: just clear all state
-            recentNodeIdentitySet.clear();
-            recentNodeIdentityQueue.clear();
-        } else {
-            // do not request this node again,
-            // until at least 81% of the other unconnected nodes have been checked
-            recentNodeIdentitySet.add(pn.getLocation());
-            recentNodeIdentityQueue.offerFirst(pn.getLocation());
-            while (recentNodeIdentityQueue.size() > (0.81 * unconnectedNodesLength)) {
-                recentNodeIdentitySet.remove(recentNodeIdentityQueue.removeLast());
+        if (unconnectedNodesLength > 0) {
+            // check a randomly chosen node that has not been checked
+            // recently to avoid sending bursts of DNS requests
+            PeerNode pn = nodesToCheck[node.getFastWeakRandom().nextInt(unconnectedNodesLength)];
+            if (unconnectedNodesLength < 5) {
+                // no need for optimizations: just clear all state
+                recentNodeIdentitySet.clear();
+                recentNodeIdentityQueue.clear();
+            } else {
+                // do not request this node again,
+                // until at least 81% of the other unconnected nodes have been checked
+                recentNodeIdentitySet.add(pn.getLocation());
+                recentNodeIdentityQueue.offerFirst(pn.getLocation());
+                while (recentNodeIdentityQueue.size() > (0.81 * unconnectedNodesLength)) {
+                    recentNodeIdentitySet.remove(recentNodeIdentityQueue.removeLast());
+                }
             }
+            // Try new DNS lookup
+            pn.maybeUpdateHandshakeIPs(false);
         }
-
-        // Try new DNS lookup
-        pn.maybeUpdateHandshakeIPs(false);
 
         int nextMaxWaitTime = 1000 + node.getFastWeakRandom().nextInt(60000);
         try {

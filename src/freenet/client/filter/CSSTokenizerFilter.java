@@ -358,8 +358,7 @@ class CSSTokenizerFilter {
 		allelementVerifiers.add("word-wrap");
 		allelementVerifiers.add("writing-mode");
 		allelementVerifiers.add("z-index");
-
-
+		allelementVerifiers.add("zoom");
 	}
 
 	/*
@@ -429,7 +428,7 @@ class CSSTokenizerFilter {
 		auxilaryVerifiers[115] = new CSSPropertyVerifier(Arrays.asList("none"),null,null,Arrays.asList("100a101a102"));
 		auxilaryVerifiers[116] = new CSSPropertyVerifier(Arrays.asList("blink"), null, null, null, true);
 		// <text-decoration-style>
-		auxilaryVerifiers[104] = new CSSPropertyVerifier(Arrays.asList("solid", "double", "dotted", "dashed", "wave"), null, null, null, true);
+		auxilaryVerifiers[104] = new CSSPropertyVerifier(Arrays.asList("solid", "double", "dotted", "dashed", "wavy"), null, null, null, true);
 
 		// <text-emphasis-style>
 		auxilaryVerifiers[105]=new CSSPropertyVerifier(Arrays.asList("filled","open"),null,null,null,true);
@@ -1818,6 +1817,11 @@ class CSSTokenizerFilter {
 		else if("z-index".equalsIgnoreCase(element))
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("auto"),ElementInfo.VISUALMEDIA,Arrays.asList("in")));
+			allelementVerifiers.remove(element);
+		}
+		else if("zoom".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("normal"),ElementInfo.VISUALMEDIA,Arrays.asList("re","pe")));
 			allelementVerifiers.remove(element);
 		}
 		else if("transition-delay".equalsIgnoreCase(element))
