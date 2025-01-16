@@ -134,35 +134,44 @@ class CSSTokenizerFilter {
 		allelementVerifiers.add("border-bottom-color");
 		allelementVerifiers.add("border-right-color");
 		allelementVerifiers.add("border-left-color");
+		allelementVerifiers.add("border-block-end-color");
+		allelementVerifiers.add("border-block-start-color");
+		allelementVerifiers.add("border-inline-end-color");
+		allelementVerifiers.add("border-inline-start-color");
 		allelementVerifiers.add("border-spacing");
 		allelementVerifiers.add("border-style");
 		allelementVerifiers.add("border-top-style");
 		allelementVerifiers.add("border-bottom-style");
 		allelementVerifiers.add("border-left-style");
 		allelementVerifiers.add("border-right-style");
+		allelementVerifiers.add("border-block-end-style");
+		allelementVerifiers.add("border-block-start-style");
+		allelementVerifiers.add("border-inline-end-style");
+		allelementVerifiers.add("border-inline-start-style");
 		allelementVerifiers.add("border-left");
 		allelementVerifiers.add("border-top");
 		allelementVerifiers.add("border-right");
 		allelementVerifiers.add("border-bottom");
-		allelementVerifiers.add("border-top-color");
-		allelementVerifiers.add("border-right-color");
-		allelementVerifiers.add("border-bottom-color");
-		allelementVerifiers.add("border-left-color");
-		allelementVerifiers.add("border-top-style");
-		allelementVerifiers.add("border-right-style");
-		allelementVerifiers.add("border-bottom-style");
 		allelementVerifiers.add("border-top-width");
 		allelementVerifiers.add("border-right-width");
 		allelementVerifiers.add("border-bottom-width");
 		allelementVerifiers.add("border-left-width");
 		allelementVerifiers.add("border-width");
-		allelementVerifiers.add("border-top-width");
+		allelementVerifiers.add("border-block-end-width");
+		allelementVerifiers.add("border-block-start-width");
 		allelementVerifiers.add("border-bottom-width");
+		allelementVerifiers.add("border-inline-end-width");
+		allelementVerifiers.add("border-inline-start-width");
 		allelementVerifiers.add("border-left-width");
 		allelementVerifiers.add("border-right-width");
+		allelementVerifiers.add("border-top-width");
 		allelementVerifiers.add("border-radius");
 		allelementVerifiers.add("border-bottom-left-radius");
 		allelementVerifiers.add("border-bottom-right-radius");
+		allelementVerifiers.add("border-end-end-radius");
+		allelementVerifiers.add("border-end-start-radius");
+		allelementVerifiers.add("border-start-end-radius");
+		allelementVerifiers.add("border-start-start-radius");
 		allelementVerifiers.add("border-top-left-radius");
 		allelementVerifiers.add("border-top-right-radius");
 		allelementVerifiers.add("border-image-source");
@@ -375,13 +384,11 @@ class CSSTokenizerFilter {
 		auxilaryVerifiers[4]=new CSSPropertyVerifier(Arrays.asList("left","center","right"),null,null,null,true);
 		auxilaryVerifiers[5]=new CSSPropertyVerifier(Arrays.asList("top","center","bottom"),null,null,null,true);
 		//<border-color>
-		auxilaryVerifiers[11]=new CSSPropertyVerifier(Arrays.asList("transparent"),Arrays.asList("co"),null,null,true);
+		auxilaryVerifiers[11]=new CSSPropertyVerifier(null, Arrays.asList("co"), null, null, true);
 		//<border-style>
 		auxilaryVerifiers[13]=new CSSPropertyVerifier(Arrays.asList("none","hidden","dotted","dashed","solid","double","groove","ridge","inset","outset"),Arrays.asList("le"),null,null,true);
 		//<border-width>
 		auxilaryVerifiers[14]=new CSSPropertyVerifier(Arrays.asList("thin","medium","thick"),Arrays.asList("le"),null,null,true);
-		//<border-top-color>
-		auxilaryVerifiers[15]=new CSSPropertyVerifier(Arrays.asList("transparent"),Arrays.asList("co"),null,null,true);
 
 		//list-style-type
 		auxilaryVerifiers[35]=new CSSPropertyVerifier(Arrays.asList("disc","circle","square","decimal","decimal-leading-zero","lower-roman","upper-roman","lower-greek","lower-latin","upper-latin","armenian","georgian","lower-alpha","upper-alpha","none","arabic-indic","bengali","cambodian","cjk-decimal","cjk-earthly-branch","cjk-heavenly-stem","cjk-ideographic","devanagari","disclosure-closed","disclosure-open","ethiopic-numeric","gujarati","gurmukhi","hebrew","hiragana","hiragana-iroha","japanese-formal","japanese-informal","kannada","katakana","katakana-iroha","khmer","korean-hangul-formal","korean-hanja-formal","lao","lower-armenian","malayalam","mongolian","myanmar","oriya","persian","simp-chinese-formal","simp-chinese-informal","tamil","telugu","thai","tibetan","trad-chinese-formal","trad-chinese-informal","upper-armenian"),Arrays.asList("st"),null,null,true);
@@ -394,15 +401,12 @@ class CSSTokenizerFilter {
 		
 		// <background-clip> <background-origin>
 		auxilaryVerifiers[61]=new CSSPropertyVerifier(Arrays.asList("border-box", "padding-box", "content-box"),null,null,null,true);
-
-		// <text-decoration-color>
-		auxilaryVerifiers[73]=new CSSPropertyVerifier(null, Arrays.asList("co"), null, null, true);
 		
 		// <shadow>
 		auxilaryVerifiers[71]=new CSSPropertyVerifier(Arrays.asList("inset"), null, null, null, true);
 		auxilaryVerifiers[72]=new CSSPropertyVerifier(null, Arrays.asList("le"), null, null, true);
 		auxilaryVerifiers[74]=new CSSPropertyVerifier(null, null, Arrays.asList("72<1,4>"), null, true);
-		auxilaryVerifiers[75]=new CSSPropertyVerifier(null, null, Arrays.asList("71a74a73"), null, true);
+		auxilaryVerifiers[75]=new CSSPropertyVerifier(null, null, Arrays.asList("71a74a11"), null, true);
 
 		// <border-image-source>
 		auxilaryVerifiers[76]=new CSSPropertyVerifier(Arrays.asList("none"),Arrays.asList("ur"),null,null,true);
@@ -416,7 +420,7 @@ class CSSTokenizerFilter {
 		auxilaryVerifiers[78]=new CSSPropertyVerifier(null,null,Arrays.asList("70<1,2>"),null,true);
 
 		// <text-shadow>
-		auxilaryVerifiers[79]=new CSSPropertyVerifier(null, null, Arrays.asList("73 72 72 72","73 72 72","72 72 72 73","72 72 73","72 72"), null, true);
+		auxilaryVerifiers[79]=new CSSPropertyVerifier(null, null, Arrays.asList("11 72 72 72","11 72 72","72 72 72 11","72 72 11","72 72"), null, true);
 
 		// <spacing-limit>
 		auxilaryVerifiers[85]=new CSSPropertyVerifier(Arrays.asList("normal"), Arrays.asList("le","pe"), null, null, true);
@@ -573,27 +577,6 @@ class CSSTokenizerFilter {
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,Arrays.asList("co"),Arrays.asList("11<1,4>")));
 			allelementVerifiers.remove(element);
-
-		}
-		else if("border-top-color".equalsIgnoreCase(element))
-		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(null, null, Arrays.asList("11"), ElementInfo.VISUALMEDIA, true));
-			allelementVerifiers.remove(element);
-		}
-		else if("border-bottom-color".equalsIgnoreCase(element))
-		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(null, null, Arrays.asList("11"), ElementInfo.VISUALMEDIA, true));
-			allelementVerifiers.remove(element);
-		}
-		else if("border-left-color".equalsIgnoreCase(element))
-		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(null, null, Arrays.asList("11"), ElementInfo.VISUALMEDIA, true));
-			allelementVerifiers.remove(element);
-		}
-		else if("border-right-color".equalsIgnoreCase(element))
-		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(null, null, Arrays.asList("11"), ElementInfo.VISUALMEDIA, true));
-			allelementVerifiers.remove(element);
 		}
 		else if("border-spacing".equalsIgnoreCase(element))
 		{
@@ -606,105 +589,21 @@ class CSSTokenizerFilter {
 			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("13<1,4>")));
 			allelementVerifiers.remove(element);
 		}
-		else if("border-top-style".equalsIgnoreCase(element))
+		else if("border-top-style".equalsIgnoreCase(element) || "border-bottom-style".equalsIgnoreCase(element) || "border-left-style".equalsIgnoreCase(element) || "border-right-style".equalsIgnoreCase(element)
+				|| "border-block-end-style".equalsIgnoreCase(element) || "border-block-start-style".equalsIgnoreCase(element) || "border-inline-end-style".equalsIgnoreCase(element) || "border-inline-start-style".equalsIgnoreCase(element))
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(null, null, Arrays.asList("13"), ElementInfo.VISUALMEDIA, true));
 			allelementVerifiers.remove(element);
 		}
-		else if("border-bottom-style".equalsIgnoreCase(element))
+		else if("border-left".equalsIgnoreCase(element) || "border-right".equalsIgnoreCase(element) || "border-top".equalsIgnoreCase(element) || "border-bottom".equalsIgnoreCase(element))
 		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(null, null, Arrays.asList("13"), ElementInfo.VISUALMEDIA, true));
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("13a14a11")));
 			allelementVerifiers.remove(element);
 		}
-		else if("border-left-style".equalsIgnoreCase(element))
+		else if("border-top-color".equalsIgnoreCase(element) || "border-bottom-color".equalsIgnoreCase(element) || "border-left-color".equalsIgnoreCase(element) || "border-right-color".equalsIgnoreCase(element)
+				|| "border-inline-end-color".equalsIgnoreCase(element) || "border-inline-start-color".equalsIgnoreCase(element) || "border-block-start-color".equalsIgnoreCase(element) || "border-block-end-color".equalsIgnoreCase(element))
 		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(null, null, Arrays.asList("13"), ElementInfo.VISUALMEDIA, true));
-			allelementVerifiers.remove(element);
-		}
-		else if("border-right-style".equalsIgnoreCase(element))
-		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(null, null, Arrays.asList("13"), ElementInfo.VISUALMEDIA, true));
-			allelementVerifiers.remove(element);
-		}
-		else if("border-left".equalsIgnoreCase(element))
-		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("13a14a15")));
-			allelementVerifiers.remove(element);
-		}
-		else if("border-top".equalsIgnoreCase(element))
-		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("13a14a15")));
-			allelementVerifiers.remove(element);
-		}
-		else if("border-right".equalsIgnoreCase(element))
-		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("13a14a15")));
-			allelementVerifiers.remove(element);
-		}
-		else if("border-bottom".equalsIgnoreCase(element))
-		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("13a14a15")));
-			allelementVerifiers.remove(element);
-		}
-		else if("border-top-color".equalsIgnoreCase(element))
-		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("transparent"),ElementInfo.VISUALMEDIA,Arrays.asList("co")));
-			allelementVerifiers.remove(element);
-
-		}
-		else if("border-right-color".equalsIgnoreCase(element))
-		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("transparent"),ElementInfo.VISUALMEDIA,Arrays.asList("co")));
-			allelementVerifiers.remove(element);
-		}
-		else if("border-bottom-color".equalsIgnoreCase(element))
-		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("transparent"),ElementInfo.VISUALMEDIA,Arrays.asList("co")));
-			allelementVerifiers.remove(element);
-		}
-		else if("border-left-color".equalsIgnoreCase(element))
-		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("transparent"),ElementInfo.VISUALMEDIA,Arrays.asList("co")));
-			allelementVerifiers.remove(element);
-		}
-		else if("border-top-style".equalsIgnoreCase(element))
-		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("none","hidden","dotted","dashed","solid","double","groove","ridge","inset","outset"),ElementInfo.VISUALMEDIA));
-			allelementVerifiers.remove(element);
-		}
-		else if("border-right-style".equalsIgnoreCase(element))
-		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("none","hidden","dotted","dashed","solid","double","groove","ridge","inset","outset"),ElementInfo.VISUALMEDIA));
-			allelementVerifiers.remove(element);
-		}
-		else if("border-bottom-style".equalsIgnoreCase(element))
-		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("none","hidden","dotted","dashed","solid","double","groove","ridge","inset","outset"),ElementInfo.VISUALMEDIA));
-			allelementVerifiers.remove(element);
-		}
-		else if("border-left-style".equalsIgnoreCase(element))
-		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("none","hidden","dotted","dashed","solid","double","groove","ridge","inset","outset"),ElementInfo.VISUALMEDIA));
-			allelementVerifiers.remove(element);
-		}
-		else if("border-top-width".equalsIgnoreCase(element))
-		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("thin","medium","thick"),ElementInfo.VISUALMEDIA,Arrays.asList("le")));
-			allelementVerifiers.remove(element);
-		}
-		else if("border-right-width".equalsIgnoreCase(element))
-		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("thin","medium","thick"),ElementInfo.VISUALMEDIA,Arrays.asList("le")));
-			allelementVerifiers.remove(element);
-		}
-		else if("border-bottom-width".equalsIgnoreCase(element))
-		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("thin","medium","thick"),ElementInfo.VISUALMEDIA,Arrays.asList("le")));
-			allelementVerifiers.remove(element);
-		}
-		else if("border-left-width".equalsIgnoreCase(element))
-		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("thin","medium","thick"),ElementInfo.VISUALMEDIA,Arrays.asList("le")));
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,Arrays.asList("co")));
 			allelementVerifiers.remove(element);
 		}
 		else if("border-width".equalsIgnoreCase(element))
@@ -712,29 +611,15 @@ class CSSTokenizerFilter {
 			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("14<1,4>")));
 			allelementVerifiers.remove(element);
 		}
-		else if("border-top-width".equalsIgnoreCase(element))
-		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("14")));
-			allelementVerifiers.remove(element);
-		}
-		else if("border-bottom-width".equalsIgnoreCase(element))
-		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("14")));
-			allelementVerifiers.remove(element);
-		}
-		else if("border-left-width".equalsIgnoreCase(element))
-		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("14")));
-			allelementVerifiers.remove(element);
-		}
-		else if("border-right-width".equalsIgnoreCase(element))
+		else if("border-top-width".equalsIgnoreCase(element) || "border-bottom-width".equalsIgnoreCase(element) || "border-left-width".equalsIgnoreCase(element) || "border-right-width".equalsIgnoreCase(element)
+				|| "border-block-end-width".equalsIgnoreCase(element) || "border-block-start-width".equalsIgnoreCase(element) || "border-inline-end-width".equalsIgnoreCase(element) || "border-inline-start-width".equalsIgnoreCase(element))
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("14")));
 			allelementVerifiers.remove(element);
 		}
 		else if("border".equalsIgnoreCase(element))
 		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("13a14a15")));
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("13a14a11")));
 			allelementVerifiers.remove(element);
 		}
 		else if("border-radius".equalsIgnoreCase(element))
@@ -743,7 +628,8 @@ class CSSTokenizerFilter {
 			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("40<1,4>", "40<1,4> 65 40<1,4>")));
 			allelementVerifiers.remove(element);
 		}
-		else if("border-bottom-left-radius".equalsIgnoreCase(element) || "border-bottom-right-radius".equalsIgnoreCase(element) || "border-top-left-radius".equalsIgnoreCase(element) || "border-top-right-radius".equalsIgnoreCase(element))
+		else if("border-bottom-left-radius".equalsIgnoreCase(element) || "border-bottom-right-radius".equalsIgnoreCase(element) || "border-top-left-radius".equalsIgnoreCase(element) || "border-top-right-radius".equalsIgnoreCase(element)
+				|| "border-start-end-radius".equalsIgnoreCase(element) || "border-start-start-radius".equalsIgnoreCase(element) || "border-end-end-radius".equalsIgnoreCase(element) || "border-end-start-radius".equalsIgnoreCase(element))
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("40<1,2>")));
 			allelementVerifiers.remove(element);
@@ -883,7 +769,7 @@ class CSSTokenizerFilter {
 			// border-style
 			auxilaryVerifiers[55] = new CSSPropertyVerifier(null,null,null,Arrays.asList("13<1,4>"));
 			// color || transparent 13
-						elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("54a55a15")));
+						elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("54a55a11")));
 			allelementVerifiers.remove(element);
 				}
 				else if("column-span".equalsIgnoreCase(element))
@@ -1611,13 +1497,13 @@ class CSSTokenizerFilter {
 		}
 		else if("text-decoration".equalsIgnoreCase(element))
 		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("115a73a104a116")));
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("115a11a104a116")));
 			allelementVerifiers.remove(element);
 
 		}
 		else if("text-decoration-color".equalsIgnoreCase(element))
 		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("73")));
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("11")));
 			allelementVerifiers.remove(element);
 
 		}
@@ -1649,12 +1535,12 @@ class CSSTokenizerFilter {
 		}
 		else if("text-emphasis".equalsIgnoreCase(element))
 		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("73a107")));
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("11a107")));
 			allelementVerifiers.remove(element);
 		}
 		else if("text-emphasis-color".equalsIgnoreCase(element))
 		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("73")));
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("11")));
 			allelementVerifiers.remove(element);
 
 		}
@@ -1692,8 +1578,8 @@ class CSSTokenizerFilter {
 		}
 		else if("text-outline".equalsIgnoreCase(element))
 		{
-			auxilaryVerifiers[108]=new CSSPropertyVerifier(null,null,Arrays.asList("73 72 72<0,1>"),null,true);
-			auxilaryVerifiers[109]=new CSSPropertyVerifier(null,null,Arrays.asList("72 72<0,1> 73"),null,true);
+			auxilaryVerifiers[108]=new CSSPropertyVerifier(null,null,Arrays.asList("11 72 72<0,1>"),null,true);
+			auxilaryVerifiers[109]=new CSSPropertyVerifier(null,null,Arrays.asList("72 72<0,1> 11"),null,true);
 			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("none"),ElementInfo.VISUALMEDIA,null,Arrays.asList("108a109")));
 			allelementVerifiers.remove(element);
 		}
