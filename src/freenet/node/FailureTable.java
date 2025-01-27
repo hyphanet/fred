@@ -75,11 +75,13 @@ public class FailureTable {
 	 * Maximum time for any FailureTable i.e. for this period after a DNF, we will avoid the node that 
 	 * DNFed. */
 	static final long REJECT_TIME = MINUTES.toMillis(3);
+	static final long REJECT_TIME_BEFORE_BUILD_1498 = MINUTES.toMillis(5);
 	/** Maximum time for a RecentlyFailed. I.e. until this period expires, we take a request into account
 	 * when deciding whether we have recently failed to this peer. If we get a DNF, we use this figure.
 	 * If we get a RF, we use what it tells us, which can be less than this. Most other failures use
 	 * shorter periods. */
 	static final long RECENTLY_FAILED_TIME = MINUTES.toMillis(5);
+	static final long RECENTLY_FAILED_TIME_BEFORE_BUILD_1498 = MINUTES.toMillis(30);
 	/** After 1 hour we forget about an entry completely */
 	static final long MAX_LIFETIME = MINUTES.toMillis(60);
 	/** Offers expire after 10 minutes */
@@ -115,12 +117,15 @@ public class FailureTable {
 	 */
 	public void onFailed(Key key, PeerNode routedTo, short htl, long rfTimeout, long ftTimeout) {
 		if(ftTimeout < 0 || ftTimeout > REJECT_TIME) {
-			Logger.error(this, "Bogus timeout "+ftTimeout, new Exception("error"));
+			if (ftTimeout > 0 && rfTimeout > REJECT_TIME_BEFORE_BUILD_1498) { // only log an error if the time is invalid for 1497, too
+				Logger.error(this, "Bogus timeout "+ftTimeout, new Exception("error"));
+            }
 			ftTimeout = Math.max(Math.min(REJECT_TIME, ftTimeout), 0);
 		}
 		if(rfTimeout < 0 || rfTimeout > RECENTLY_FAILED_TIME) {
-			if(rfTimeout > 0)
+			if(rfTimeout > 0 && rfTimeout > RECENTLY_FAILED_TIME_BEFORE_BUILD_1498) { // only log an error if the time is invalid for 1497, too
 				Logger.error(this, "Bogus timeout "+rfTimeout, new Exception("error"));
+			}
 			rfTimeout = Math.max(Math.min(RECENTLY_FAILED_TIME, rfTimeout), 0);
 		}
 		if(!(node.isEnableULPRDataPropagation() || node.isEnablePerNodeFailureTables())) return;
