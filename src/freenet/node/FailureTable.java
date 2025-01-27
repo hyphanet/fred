@@ -117,13 +117,13 @@ public class FailureTable {
 	 */
 	public void onFailed(Key key, PeerNode routedTo, short htl, long rfTimeout, long ftTimeout) {
 		if(ftTimeout < 0 || ftTimeout > REJECT_TIME) {
-			if (ftTimeout > 0 && rfTimeout > REJECT_TIME_BEFORE_BUILD_1498) { // only log an error if the time is invalid for 1497, too
+			if (ftTimeout > REJECT_TIME_BEFORE_BUILD_1498) { // only log an error if the time is invalid for 1497, too
 				Logger.error(this, "Bogus timeout "+ftTimeout, new Exception("error"));
             }
 			ftTimeout = Math.max(Math.min(REJECT_TIME, ftTimeout), 0);
 		}
 		if(rfTimeout < 0 || rfTimeout > RECENTLY_FAILED_TIME) {
-			if(rfTimeout > 0 && rfTimeout > RECENTLY_FAILED_TIME_BEFORE_BUILD_1498) { // only log an error if the time is invalid for 1497, too
+			if(rfTimeout > RECENTLY_FAILED_TIME_BEFORE_BUILD_1498) { // only log an error if the time is invalid for 1497, too
 				Logger.error(this, "Bogus timeout "+rfTimeout, new Exception("error"));
 			}
 			rfTimeout = Math.max(Math.min(RECENTLY_FAILED_TIME, rfTimeout), 0);
