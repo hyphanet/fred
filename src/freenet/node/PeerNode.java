@@ -4105,7 +4105,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	}
 
 	static final long MAX_RTO = SECONDS.toMillis(60);
-	static final long MIN_RTO = SECONDS.toMillis(1);
+	static final long MIN_RTO = 50;
 	private int consecutiveRTOBackoffs;
 
 	// Clock generally has 20ms granularity or better, right?
@@ -4135,9 +4135,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 				reportedRTT = true;
 				if(logMINOR) Logger.minor(this, "Received first packet on "+shortToString()+" setting RTO to "+RTO);
 				if(oldRTO > RTO) {
-					// We have backed off
+					// After resetting RTO and starting from scratch,
+					// RTO is lower again, so the old time may have
+					// been inflated by temorary failure.
 					if(logMINOR) Logger.minor(this, "Received first packet after backing off on resend. RTO is "+RTO+" but was "+oldRTO);
-					// FIXME: do something???
 				}
 			} else {
 				// Update
@@ -4145,9 +4146,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 				SRTT = 0.875 * SRTT + 0.125 * t;
 				RTO = SRTT + Math.max(CLOCK_GRANULARITY, RTTVAR * 4);
 				// RFC 2988 specifies a 1 second minimum RTT, mostly due to legacy issues,
-				// but given that Freenet is mostly used on very slow upstream links, it 
-				// probably makes sense for us too for now, to avoid excessive retransmits.
-				// FIXME !!!
+				// but given that ping times inside a country (where we expect most friend-connections)
+				// are at a max of 50ms in 2025, we use 50ms to reduce the effect of packet loss.
 				if(RTO < MIN_RTO)
 					RTO = MIN_RTO;
 				if(RTO > MAX_RTO)
