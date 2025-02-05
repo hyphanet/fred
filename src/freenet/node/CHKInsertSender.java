@@ -991,9 +991,9 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 					
 					if(logMINOR) Logger.minor(this, "Waiting: transfer completion=" + completedTransfers + " notification="+completedNotifications); 
 					try {
-						backgroundTransfers.wait(SECONDS.toMillis(100));
+						backgroundTransfers.wait(SECONDS.toMillis(10));
 					} catch (InterruptedException e) {
-						// Ignore
+						// Ignore: the thread was correctly woken up.
 					}
 				}				
 			}

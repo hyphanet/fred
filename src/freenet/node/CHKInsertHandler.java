@@ -197,7 +197,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
             synchronized(sender) {
                 try {
                 	if(sender.getStatus() == CHKInsertSender.NOT_FINISHED)
-                		sender.wait(5000);
+                		sender.wait(500);
                 } catch (InterruptedException e) {
                     // Cool, probably this is because the receive failed...
                 }
