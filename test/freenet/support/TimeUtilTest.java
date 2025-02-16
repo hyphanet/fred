@@ -218,10 +218,14 @@ public class TimeUtilTest {
 
 	@Test
 	public void testToMillis_unknownFormat() {
-		try {
-			TimeUtil.toMillis("15250284452w3q7h12m55.807s");
-		} catch (NumberFormatException e) {
-				assertNotNull(e);
-		}
+		assertThrows(NumberFormatException.class, () -> TimeUtil.toMillis("15250284452w3q7h12m55.807s"));
+	}
+
+	@Test
+	public void testToMillis_fractionalMillis() {
+		assertEquals(100, TimeUtil.toMillis("0.1s"));
+		assertEquals(10, TimeUtil.toMillis("0.01s"));
+		assertEquals(1, TimeUtil.toMillis("0.001s"));
+		assertEquals(0, TimeUtil.toMillis("0.0001s"));
 	}
 }
