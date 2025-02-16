@@ -3190,7 +3190,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	/** Calculated as per RFC 2988 */
 	@Override
 	public synchronized double averagePingTimeCorrected() {
-		return RTO; 
+		return RTO;
 	}
 
 	@Override
