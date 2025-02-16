@@ -1158,7 +1158,7 @@ public class Node implements TimeSkewDetectorCallback {
 			fs.writeTo(fos);
 			fos.close();
 			fos = null;
-			FileUtil.renameTo(backup, orig);
+			FileUtil.moveTo(backup, orig);
 		} catch (IOException ioe) {
 			Logger.error(this, "IOE :"+ioe.getMessage(), ioe);
 			return;

@@ -462,7 +462,7 @@ public class NodeUpdateManager {
 				fos = null;
 				for (int i = 0; i < 10; i++) {
 					// FIXME add a callback in case it's being used on Windows.
-					if (FileUtil.renameTo(temp, directory.file(filename))) {
+					if (FileUtil.moveTo(temp, directory.file(filename))) {
 						System.out.println("Successfully fetched " + filename
 								+ " for version " + Version.buildNumber());
 						break;

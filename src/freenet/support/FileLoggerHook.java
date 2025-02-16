@@ -452,7 +452,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 	        				"Closing alt on change caught " + e);
 	        	}
 	        	if(previousFile != null && latestFile.exists())
-	        		FileUtil.renameTo(latestFile, previousFile);
+	        		FileUtil.moveTo(latestFile, previousFile);
 	        	latestFile.delete();
 	        	altLogStream = openNewLogFile(latestFile, false);
 	        }
@@ -620,7 +620,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 		long lastStartTime = -1;
 		File oldFile = null;
         if(latestFile.exists())
-        	FileUtil.renameTo(latestFile, previousFile);
+        	FileUtil.moveTo(latestFile, previousFile);
 
 		for(File f: files) {
 			String name = f.getName();
@@ -693,7 +693,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 				if(numericSameDateFilename == null || !numericSameDateFilename.exists()) {
 					if(numericSameDateFilename != null) {
 						System.out.println("Renaming to: "+numericSameDateFilename);
-						FileUtil.renameTo(currentFilename, numericSameDateFilename);
+						FileUtil.moveTo(currentFilename, numericSameDateFilename);
 					}
 					break;
 				}

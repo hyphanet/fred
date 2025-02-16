@@ -248,7 +248,7 @@ public abstract class BaseFileBucket implements RandomAccessBucket {
 			if(renaming) {
 			    // getOutputStream() creates the file as a marker, so DON'T check for its existence, 
 			    // even if createFileOnly() is true.
-			    if(!FileUtil.renameTo(tempfile, file)) {
+			    if(!FileUtil.moveTo(tempfile, file)) {
 			        tempfile.delete();
 			        if(logMINOR)
 			            Logger.minor(this, "Deleted, cannot rename file for "+this);

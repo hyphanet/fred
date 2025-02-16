@@ -433,7 +433,7 @@ public class BaseL10n {
 			fos.close();
 			fos = null;
 
-			FileUtil.renameTo(tempFile, finalFile);
+			FileUtil.moveTo(tempFile, finalFile);
 			Logger.normal(this.getClass(), "Override file saved successfully!");
 		} catch (IOException e) {
 			Logger.error(this.getClass(), "Error while saving the translation override: " + e.getMessage(), e);
