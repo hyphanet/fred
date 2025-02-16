@@ -852,8 +852,8 @@ public class PeerMessageQueue {
 				>= queuesByPriority[DMT.PRIORITY_REALTIME_DATA].getNextUrgentTime(Long.MAX_VALUE, 0)) {
 			tryRealtimeFirst = true;
 		} else {
-			// 10% chance to use bulk in case of a draw to avoid starving the bulk queue.
-			tryRealtimeFirst = this.fastWeakRandom.nextInt(10) > 0;
+			// 2% chance to use bulk in case of a draw to avoid starving the bulk queue.
+			tryRealtimeFirst = this.fastWeakRandom.nextInt(50) > 0;
 		}
 		
 		
