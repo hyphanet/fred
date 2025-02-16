@@ -164,7 +164,7 @@ public class CryptByteBufferTest {
             byte[] buffer = Hex.decode(plainText[i]);
             byte[] plaintextCopy = buffer.clone();
             crypt.encrypt(buffer, 0, buffer.length);
-            assertThat((Object) buffer, not(equalTo(plaintextCopy)));
+            assertThat(buffer, not(equalTo(plaintextCopy)));
             crypt.decrypt(buffer, 0, buffer.length);
             assertThat("CryptByteBufferType: "+type.name(),
                     plaintextCopy, equalTo(buffer));
@@ -255,9 +255,9 @@ public class CryptByteBufferTest {
                     // Once we have initialised the cipher, it is treated as a stream.
                     // Repeated encryption of the same data will return different ciphertext, 
                     // as it is treated as a later point in the stream.
-                    assertThat((Object) ciphertext1, not(equalTo(ciphertext2)));
-                    assertThat((Object) ciphertext1, not(equalTo(ciphertext3)));
-                    assertThat((Object) ciphertext2, not(equalTo(ciphertext3)));
+                    assertThat(ciphertext1, not(equalTo(ciphertext2)));
+                    assertThat(ciphertext1, not(equalTo(ciphertext3)));
+                    assertThat(ciphertext2, not(equalTo(ciphertext3)));
                 }
                 
                 ByteBuffer decipheredtext1 = crypt.decryptCopy(ciphertext1);
@@ -330,9 +330,9 @@ public class CryptByteBufferTest {
             assertThat(buf, equalTo(cloneBuf)); // Plaintext not modified.
             plaintext.position(header);
             ciphertext.position(header);
-            assertThat((Object) ciphertextBuf, not(equalTo(copyCiphertextBuf)));
+            assertThat(ciphertextBuf, not(equalTo(copyCiphertextBuf)));
             Arrays.fill(buf, (byte)0);
-            assertThat((Object) buf, not(equalTo(cloneBuf)));
+            assertThat(buf, not(equalTo(cloneBuf)));
             crypt.decrypt(ciphertext, plaintext);
             assertThat(buf, equalTo(cloneBuf));
         }
