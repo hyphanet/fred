@@ -3,7 +3,10 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.useralerts;
 
+import java.lang.ref.WeakReference;
+
 import freenet.clients.fcp.FCPMessage;
+import freenet.node.PeerNode;
 import freenet.support.HTMLNode;
 
 public interface UserAlert {
@@ -23,6 +26,13 @@ public interface UserAlert {
 	 * Content of alert (plain text).
 	 */
 	public String getText();
+
+	/**
+	 * Content of the body of the alert (no metadata).
+	 */
+	default public String getMessageText() {
+		return getText();
+	}
 
 	/**
 	 * Content of alert (HTML).
@@ -50,6 +60,18 @@ public interface UserAlert {
 	
 	public String dismissButtonText();
 	
+	public default String replyButtonText() {
+		return dismissButtonText();
+	};
+
+	public default boolean canReply() {
+		return false;
+	}
+
+	public default WeakReference<PeerNode> getSourceNode() {
+		return null;
+	}
+
 	public boolean shouldUnregisterOnDismiss();
 	
 	/**

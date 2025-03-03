@@ -88,8 +88,23 @@ public class N2NTMUserAlert extends AbstractUserAlert {
 	}
 
 	@Override
+	public boolean canReply() {
+		return true;
+	}
+
+	@Override
+	public WeakReference<PeerNode> getSourceNode() {
+		return peerRef;
+	}
+
+	@Override
 	public String dismissButtonText() {
 		return l10n("delete");
+	}
+
+	@Override
+	public String replyButtonText() {
+		return l10n("reply");
 	}
 
 	private String l10n(String key) {
@@ -122,6 +137,7 @@ public class N2NTMUserAlert extends AbstractUserAlert {
 		return receivedTime;
 	}
 
+	@Override
 	public String getMessageText() {
 		return messageText;
 	}
