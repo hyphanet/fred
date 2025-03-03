@@ -7,6 +7,7 @@ import static java.util.Arrays.stream;
 
 import java.io.IOException;
 import java.io.StringWriter;
+import java.lang.ref.WeakReference;
 import java.text.Format;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -37,6 +38,7 @@ import com.sun.org.apache.xml.internal.serializer.OutputPropertiesFactory;
 import freenet.clients.fcp.FCPConnectionHandler;
 import freenet.l10n.NodeL10n;
 import freenet.node.NodeClientCore;
+import freenet.node.PeerNode;
 import freenet.support.Base64;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
@@ -243,9 +245,33 @@ public class UserAlertManager implements Comparator<UserAlert> {
 		userAlertNode.addChild("div", "class", "infobox-header", userAlert.getTitle());
 		HTMLNode alertContentNode = userAlertNode.addChild("div", "class", "infobox-content");
 		alertContentNode.addChild(userAlert.getHTMLText());
+		if (userAlert.canReply()) {
+			alertContentNode.addChild(renderReplyButton(userAlert, userAlert.getSourceNode()));
+		}
 		alertContentNode.addChild(renderDismissButton(userAlert, null));
 
 		return userAlertNode;
+	}
+
+	public HTMLNode renderReplyButton(UserAlert userAlert, WeakReference<PeerNode> peerNode) {
+		HTMLNode form = new HTMLNode("form",
+					new String[]{"method", "action"},
+					new String[]{"post", "/send_n2ntm/"});
+			form.addChild("input",
+					new String[]{"hidden", "name", "value"},
+					new String[]{"true", "replyTo", userAlert.getMessageText()
+							.replaceAll("\n", "NEWLINE")});
+			form.addChild("input",
+					new String[]{"hidden", "name", "value"},
+					new String[]{"true", "peernode_hashcode", Integer.valueOf(peerNode.get().hashCode()).toString()});
+			form.addChild("input",
+					new String[] { "type", "name", "value" },
+					new String[] { "hidden", "formPassword", core.getFormPassword()});
+			form.addChild("button",
+					new String[]{"type"},
+					new String[]{"submit"},
+					l10n("reply"));
+			return form;
 	}
 
 	public HTMLNode renderDismissButton(UserAlert userAlert, String redirectToAfterDisable) {
