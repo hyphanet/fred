@@ -144,6 +144,20 @@ public class N2NTMToadlet extends Toadlet {
 			return;
 		}
 
+		if (request.isPartSet("replyTo")) {
+			String message = request.getPartAsStringFailsafe("replyTo", 1024 * 1024);
+			message = message.trim();
+			message = message.replaceAll("NEWLINE", "\n");
+			if (!message.isEmpty()) {
+				message = "\n> " + String.join("\n> ", message.split("\n")) + "\n\n";
+				message = message.replaceAll("\n> >", "\n>>")
+						.substring(1); // strip the initial linebreak again
+			}
+			String input_hashcode_string = request.getPartAsStringFailsafe("peernode_hashcode", 1024);
+			createWriteN2NTMForm(ctx, input_hashcode_string, message);
+			return;
+		}
+
 		if (request.isPartSet("n2nm-upload") || request.isPartSet(LocalFileBrowserToadlet.selectFile) || request.isPartSet("send")) {
 			File filename = null;
 			String message = request.getPartAsStringFailsafe("message", 1024 * 1024);
