@@ -99,6 +99,16 @@ li.alert-summary-text-minor {
 	background: url(information-16.png) left center no-repeat;
 }
 
+/*
+ * Alerts Page
+ */
+
+div.dismiss-all-alerts-container {
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+  margin: 5px 10px;
+}
 
 /* statusbar */
 

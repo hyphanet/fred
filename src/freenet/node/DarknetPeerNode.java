@@ -14,6 +14,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.lang.ref.WeakReference;
 import java.net.MalformedURLException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -39,6 +40,7 @@ import freenet.io.xfer.BulkTransmitter;
 import freenet.io.xfer.PartiallyReceivedBulk;
 import freenet.keys.FreenetURI;
 import freenet.l10n.NodeL10n;
+import freenet.node.useralerts.AbstractNodeToNodeFileOfferUserAlert;
 import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.BookmarkFeedUserAlert;
 import freenet.node.useralerts.DownloadFeedUserAlert;
@@ -1019,7 +1021,17 @@ public class DarknetPeerNode extends PeerNode {
 		}
 
 		protected void onReceiveFailure() {
-			UserAlert alert = new AbstractUserAlert() {
+			UserAlert alert = new AbstractNodeToNodeFileOfferUserAlert() {
+				@Override
+				public WeakReference<PeerNode> getPeerRef() {
+					return myRef;
+				}
+
+				@Override
+				public String getSourceNodeName() {
+					return myName;
+				}
+
 				@Override
 				public String dismissButtonText() {
 					return NodeL10n.getBase().getString("UserAlert.hide");
@@ -1112,7 +1124,16 @@ public class DarknetPeerNode extends PeerNode {
 		}
 
 		private void onReceiveSuccess() {
-			UserAlert alert = new AbstractUserAlert() {
+			UserAlert alert = new AbstractNodeToNodeFileOfferUserAlert() {
+				@Override
+				public WeakReference<PeerNode> getPeerRef() {
+					return myRef;
+				}
+
+				@Override
+				public String getSourceNodeName() {
+					return myName;
+				}
 				@Override
 				public String dismissButtonText() {
 					return NodeL10n.getBase().getString("UserAlert.hide");
@@ -1185,7 +1206,17 @@ public class DarknetPeerNode extends PeerNode {
 
 		/** Ask the user whether (s)he wants to download a file from a direct peer */
 		public UserAlert askUserUserAlert() {
-			return new AbstractUserAlert() {
+			return new AbstractNodeToNodeFileOfferUserAlert() {
+				@Override
+				public WeakReference<PeerNode> getPeerRef() {
+					return myRef;
+				}
+
+				@Override
+				public String getSourceNodeName() {
+					return myName;
+				}
+
 				@Override
 				public String dismissButtonText() {
 					return null; // Cannot hide, but can reject

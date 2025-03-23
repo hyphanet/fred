@@ -10,7 +10,7 @@ import freenet.node.DarknetPeerNode;
 import freenet.node.PeerNode;
 import freenet.support.HTMLNode;
 
-public class DownloadFeedUserAlert extends AbstractUserAlert {
+public class DownloadFeedUserAlert extends AbstractUserAlert implements NodeToNodeMessageUserAlert {
 	private final WeakReference<PeerNode> peerRef;
 	private final FreenetURI uri;
 	private final int fileNumber;
@@ -103,5 +103,15 @@ public class DownloadFeedUserAlert extends AbstractUserAlert {
 		if(pn != null)
 			sourceNodeName = pn.getName();
 		return true;
+	}
+
+	@Override
+	public WeakReference<PeerNode> getPeerRef() {
+		return peerRef;
+	}
+
+	@Override
+	public String getSourceNodeName() {
+		return sourceNodeName;
 	}
 }
