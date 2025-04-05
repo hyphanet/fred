@@ -278,7 +278,7 @@ public class NewPacketFormat implements PacketFormat {
 					}
 				}
 
-				synchronized(sendBufferLock) {
+				synchronized(receiveBufferSizeLock) {
 					receiveBufferUsed -= recvBuffer.messageLength;
 					if(logDEBUG) Logger.debug(this, "Removed " + recvBuffer.messageLength + " from buffer. Total is now " + receiveBufferUsed);
 				}
@@ -299,7 +299,7 @@ public class NewPacketFormat implements PacketFormat {
 				wakeUp = true;
 			if(addedAck) {
 				if(!wakeUp) {
-					synchronized(sendBufferLock) {
+					synchronized(receiveBufferSizeLock) {
 						if(receiveBufferUsed > MAX_RECEIVE_BUFFER_SIZE / 2)
 							wakeUp = true;
 					}
