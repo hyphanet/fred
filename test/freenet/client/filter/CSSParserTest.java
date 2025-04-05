@@ -753,6 +753,7 @@ public class CSSParserTest {
 		propertyTests.put("#inner { float: right; width: 130px; color: blue }", "#inner { float: right; width: 130px; color: blue }");
 		propertyTests.put(".abc { z-index: auto; } h1 p { z-index: 3; } h2 p { z-index: inherit }", ".abc { z-index: auto; } h1 p { z-index: 3; } h2 p { z-index: inherit }");
 		propertyTests.put("blockquote { direction: rtl; unicode-bidi: BIDI-OVERRIDE }", "blockquote { direction: rtl; unicode-bidi: BIDI-OVERRIDE }");
+		propertyTests.put("div { border-inline-start-color: transparent; border-inline-start-style: dotted; border-inline-start-width: thick; }", "div { border-inline-start-color: transparent; border-inline-start-style: dotted; border-inline-start-width: thick; }");
 
 		// Visual details
 		propertyTests.put("p { width: 100px } h1,h2,h3 { width: 150% } body { width: auto }", "p { width: 100px } h1,h2,h3 { width: 150% } body { width: auto }");

@@ -1169,7 +1169,7 @@ public class PluginManager {
 		if (tempPluginFile.length() == 0) {
 			throw new PluginNotFoundException("downloaded zero length file");
 		}
-		if (!FileUtil.renameTo(tempPluginFile, pluginFile)) {
+		if (!FileUtil.moveTo(tempPluginFile, pluginFile)) {
 			Logger.error(this, "could not rename temp file to plugin file");
 			throw new PluginNotFoundException("could not rename temp file to plugin file");
 		}

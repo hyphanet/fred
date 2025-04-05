@@ -454,7 +454,7 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
 
             // We are still here so it worked.
 
-            if(!FileUtil.renameTo(tempFile, completionFile))
+            if(!FileUtil.moveTo(tempFile, completionFile))
                 throw new FetchException(FetchExceptionMode.BUCKET_ERROR, "Failed to rename from temp file "+tempFile);
 
             // Success!
