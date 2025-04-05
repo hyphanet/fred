@@ -97,6 +97,7 @@ task compileVersion (type: JavaCompile) {
 task buildJar(type: Jar) {
     dependsOn compileVersion, processResources
     from(processResources)
+    from(sourceSets.main.java)
     from(compileJava.destinationDirectory) {
         exclude 'freenet/node/Version.class'
         exclude 'freenet/node/Version$1.class'
