@@ -45,37 +45,37 @@ public class InetAddressIpv6FirstComparator implements Comparator<InetAddress> {
 		} else if (arg0.isLinkLocalAddress() && !arg1.isLinkLocalAddress()) {
 			return 1;
 		}
-		// prefer reachable over unreachable addresses. This is usually a ping. TODO: This actually pings all advertised ip addresses. Is that OK? Do we need a maximum number of accepted addresses to prevent abuse as DDoS? 
+        // calculate hashCode only once; used multiple times later
 		int a = arg0.hashCode();
 		int b = arg1.hashCode();
-		Boolean reachable0 = reachabilityCache.get(a);
-		Boolean reachable1 = reachabilityCache.get(b);
-		if (reachable0 == null) {
-			try {
-				reachable0 = arg0.isReachable((int) DEFAULT_MAX_PING_TIME);
-			} catch (IOException e) {
-				reachable0 = false;
-			}
-			reachabilityCache.put(a, reachable0);
-		}
-		if (reachable1 == null) {
-			try {
-				reachable1 = arg1.isReachable((int) DEFAULT_MAX_PING_TIME);
-			} catch (IOException e) {
-				reachable1 = false;
-			}
-			reachabilityCache.put(b, reachable1);
-		}
-		if (reachable0 && !reachable1) {
-			return -1;
-		} else if (!reachable0 && reachable1) {
-			return 1;
-		}
-		// among routable addresses prefer LAN addresses over global addresses, because they should stay within VPNs
+		// prefer LAN addresses *if they are routable* over global addresses, because they should stay within VPNs
 		if (!arg0.isSiteLocalAddress() && arg1.isSiteLocalAddress()) {
-			return -1;
+			// prefer reachable over unreachable addresses. This is usually a ping. TODO: This actually pings all advertised ip addresses. Is that OK? Do we need a maximum number of accepted addresses to prevent abuse as DDoS? 
+			Boolean reachable1 = reachabilityCache.get(b);
+			if (reachable1 == null) {
+				try {
+					reachable1 = arg1.isReachable((int) DEFAULT_MAX_PING_TIME);
+				} catch (IOException e) {
+					reachable1 = false;
+				}
+				reachabilityCache.put(b, reachable1);
+			}
+			if (reachable1) {
+				return -1;
+			}
 		} else if (arg0.isSiteLocalAddress() && !arg1.isSiteLocalAddress()) {
-			return 1;
+			Boolean reachable0 = reachabilityCache.get(a);
+			if (reachable0 == null) {
+				try {
+					reachable0 = arg0.isReachable((int) DEFAULT_MAX_PING_TIME);
+				} catch (IOException e) {
+					reachable0 = false;
+				}
+				reachabilityCache.put(a, reachable0);
+			}
+			if (reachable0) {
+				return 1;
+			}
 		}
 		byte[] bytes0 = arg0.getAddress();
 		byte[] bytes1 = arg1.getAddress();
