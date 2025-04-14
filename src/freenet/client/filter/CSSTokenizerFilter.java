@@ -237,6 +237,7 @@ class CSSTokenizerFilter {
 		allelementVerifiers.add("hanging-punctuation");
 		allelementVerifiers.add("height");
 		allelementVerifiers.add("inline-size");
+		allelementVerifiers.add("isolation");
 		allelementVerifiers.add("justify-content");
 		allelementVerifiers.add("justify-items");
 		allelementVerifiers.add("justify-self");
@@ -274,6 +275,7 @@ class CSSTokenizerFilter {
 		allelementVerifiers.add("nav-right");
 		allelementVerifiers.add("nav-up");
 		allelementVerifiers.add("object-fit");
+		allelementVerifiers.add("object-position");
 		allelementVerifiers.add("opacity");
 		allelementVerifiers.add("order");
 		allelementVerifiers.add("orphans");
@@ -305,11 +307,14 @@ class CSSTokenizerFilter {
 		allelementVerifiers.add("pitch");
 		allelementVerifiers.add("play-during");
 		allelementVerifiers.add("punctuation-trim");
+		allelementVerifiers.add("pointer-events");
 		allelementVerifiers.add("position");
 		allelementVerifiers.add("quotes");
 		allelementVerifiers.add("resize");
 		allelementVerifiers.add("richness");
 		allelementVerifiers.add("right");
+		allelementVerifiers.add("rotate");
+		allelementVerifiers.add("row-gap");
 		allelementVerifiers.add("scroll-behavior");
 		allelementVerifiers.add("scroll-snap-align");
 		allelementVerifiers.add("scroll-snap-stop");
@@ -996,15 +1001,7 @@ class CSSTokenizerFilter {
 			auxilaryVerifiers[29]=new CSSPropertyVerifier(Arrays.asList("normal","bold","bolder","lighter","100","200","300","400","500","600","700","800","900"),null,null,null,true);
 			//30-32
 			auxilaryVerifiers[30]=new CSSPropertyVerifier(null,null,Arrays.asList("27a28a29"),null,true);
-			/*
 			//font-size
-			auxilaryVerifiers[31]=new CSSPropertyVerifier(Arrays.asList("xx-small","x-small","small","medium","large","x-large","xx-large","larger","smaller"),null,null,true);
-			//line-height
-			auxilaryVerifiers[32]=new CSSPropertyVerifier(Arrays.asList("normal"),Arrays.asList("le","pe","re","in"),null,true);
-
-			auxilaryVerifiers[55]=new CSSPropertyVerifier(Arrays.asList("/"),null,null,true);
-			auxilaryVerifiers[56]=new CSSPropertyVerifier(null,null,Arrays.asList("55 32"),true);
-			 */
 			auxilaryVerifiers[31]=new FontPartPropertyVerifier();
 			//font-family
 			auxilaryVerifiers[59]=new FontPropertyVerifier(true);
@@ -1016,7 +1013,6 @@ class CSSTokenizerFilter {
 			auxilaryVerifiers[54]=new CSSPropertyVerifier(null,null,Arrays.asList("53 53<0,"+ElementInfo.UPPERLIMIT+">"),true);
 			 */
 			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("caption","icon","menu","message-box","small-caption","status-bar"),ElementInfo.VISUALMEDIA,null,Arrays.asList("30<0,1>[1,3] 31<0,1>[1,3] 59"),false,true));
-			//elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("caption","icon","menu","message-box","small-caption","status-bar"),ElementInfo.VISUALMEDIA,null,Arrays.asList("31<1,1>[1,3]")));
 			allelementVerifiers.remove(element);
 		}
 		else if("hanging-punctuation".equalsIgnoreCase(element))
@@ -1036,7 +1032,13 @@ class CSSTokenizerFilter {
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("auto"),ElementInfo.VISUALMEDIA,Arrays.asList("le","pe")));
 			allelementVerifiers.remove(element);
-		} else if ("justify-content".equalsIgnoreCase(element)) {
+		}
+		else if("isolation".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("auto","isolate"),ElementInfo.VISUALMEDIA));
+			allelementVerifiers.remove(element);
+		}
+		else if ("justify-content".equalsIgnoreCase(element)) {
 			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("121a124"), true,true));
 			allelementVerifiers.remove(element);
 		} else if ("justify-items".equalsIgnoreCase(element)) {
@@ -1212,6 +1214,10 @@ class CSSTokenizerFilter {
 			elementVerifiers.put(element, new CSSPropertyVerifier(Arrays.asList("contain","cover","fill","none","scale-down"), ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
 		}
+		else if("object-position".equalsIgnoreCase(element)) {
+			elementVerifiers.put(element, new CSSPropertyVerifier(null, ElementInfo.VISUALPAGEDMEDIA,null,Arrays.asList("4a5a40","4a40 5a40","5a40 4a40","4 40 5 40","5 40 4 40")));
+			allelementVerifiers.remove(element);
+		}
 		else if("opacity".equalsIgnoreCase(element))
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALPAGEDMEDIA,Arrays.asList("re")));
@@ -1385,6 +1391,11 @@ class CSSTokenizerFilter {
 			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("static","relative","absolute","fixed","sticky"),ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
 		}
+		else if("pointer-events".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("auto","none"),ElementInfo.VISUALMEDIA));
+			allelementVerifiers.remove(element);
+		}
 		else if("quotes".equalsIgnoreCase(element))
 		{
 			auxilaryVerifiers[46]=new CSSPropertyVerifier(null,Arrays.asList("st"),null,null,true);
@@ -1403,6 +1414,19 @@ class CSSTokenizerFilter {
 		else if("right".equalsIgnoreCase(element))
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("auto"),ElementInfo.VISUALMEDIA,Arrays.asList("le","pe")));
+			allelementVerifiers.remove(element);
+		}
+		else if("rotate".equalsIgnoreCase(element))
+		{
+			auxilaryVerifiers[141] = new CSSPropertyVerifier(null, Arrays.asList("in", "re"), null, null, true);
+			auxilaryVerifiers[73]=new CSSPropertyVerifier(null,Arrays.asList("an"),null,null,true);
+			auxilaryVerifiers[15]=new CSSPropertyVerifier(Arrays.asList("x","y","z"),null,null,null,true);
+			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("none"),ElementInfo.VISUALMEDIA,null,Arrays.asList("73","15 73","141 141 141 73")));
+			allelementVerifiers.remove(element);
+		}
+		else if("row-gap".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("normal"),ElementInfo.VISUALMEDIA,Arrays.asList("le","pe")));
 			allelementVerifiers.remove(element);
 		}
 		else if("scroll-behavior".equalsIgnoreCase(element))

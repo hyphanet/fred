@@ -998,7 +998,9 @@ public class CSSParserTest {
 		propertyTests.put("#x { text-orientation: upright; }", "#x { text-orientation: upright; }");
 		propertyTests.put("#x { scroll-snap-align: start end; }", "#x { scroll-snap-align: start end; }");
 		propertyTests.put("#x { scroll-snap-stop: always; }", "#x { scroll-snap-stop: always; }");
-		propertyTests.put("#x { scroll-snap-type: both proximity; }", "#x { scroll-snap-type: both proximity; }");
+		propertyTests.put("#x { scroll-snap-type: both proximity; } #y { scroll-snap-type: x; }", "#x { scroll-snap-type: both proximity; } #y { scroll-snap-type: x; }");
+		propertyTests.put("#box1:hover {rotate: 90deg;} #box2:hover {rotate: y 180deg;} #box3:hover {rotate: 1 2 1 360deg;} #box4:hover {rotate: none;}", "#box1:hover {rotate: 90deg;} #box2:hover {rotate: y 180deg;} #box3:hover {rotate: 1 2 1 360deg;} #box4:hover {rotate: none;}");
+		propertyTests.put("#a {object-position: top;} #b {object-position: 25% 75%;} #c {object-position: 1cm top;} #d {object-position: bottom 10px right 20px;}", "#a {object-position: top;} #b {object-position: 25% 75%;} #c {object-position: 1cm top;} #d {object-position: bottom 10px right 20px;}");
 
 		// text-emphasis
 		propertyTests.put("#x { text-emphasis: triangle blue; }", "#x { text-emphasis: triangle blue; }"); // java.lang.NullPointerException
