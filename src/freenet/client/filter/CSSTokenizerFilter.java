@@ -531,11 +531,6 @@ class CSSTokenizerFilter {
 			allelementVerifiers.remove(element);
 
 		}
-		else if("background-position".equalsIgnoreCase(element))
-		{       // FIXME: css3 http://www.w3.org/TR/css3-background/#background-position
-			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("2 3?","4a5")));
-			allelementVerifiers.remove(element);
-		}
 		else if("background-repeat".equalsIgnoreCase(element))
 		{
 			auxilaryVerifiers[57] = new CSSPropertyVerifier(Arrays.asList("repeat","space","round","no-repeat"),null,null,null,true);
@@ -1214,8 +1209,8 @@ class CSSTokenizerFilter {
 			elementVerifiers.put(element, new CSSPropertyVerifier(Arrays.asList("contain","cover","fill","none","scale-down"), ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
 		}
-		else if("object-position".equalsIgnoreCase(element)) {
-			elementVerifiers.put(element, new CSSPropertyVerifier(null, ElementInfo.VISUALPAGEDMEDIA,null,Arrays.asList("4a5a40","4a40 5a40","5a40 4a40","4 40 5 40","5 40 4 40")));
+		else if("background-position".equalsIgnoreCase(element) || "object-position".equalsIgnoreCase(element)) {
+			elementVerifiers.put(element, new CSSPropertyVerifier(null, ElementInfo.VISUALPAGEDMEDIA,null,Arrays.asList("4a5a40","40 40","4 5","5 4","4 40 5 40","5 40 4 40")));
 			allelementVerifiers.remove(element);
 		}
 		else if("opacity".equalsIgnoreCase(element))

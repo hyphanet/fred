@@ -1000,7 +1000,10 @@ public class CSSParserTest {
 		propertyTests.put("#x { scroll-snap-stop: always; }", "#x { scroll-snap-stop: always; }");
 		propertyTests.put("#x { scroll-snap-type: both proximity; } #y { scroll-snap-type: x; }", "#x { scroll-snap-type: both proximity; } #y { scroll-snap-type: x; }");
 		propertyTests.put("#box1:hover {rotate: 90deg;} #box2:hover {rotate: y 180deg;} #box3:hover {rotate: 1 2 1 360deg;} #box4:hover {rotate: none;}", "#box1:hover {rotate: 90deg;} #box2:hover {rotate: y 180deg;} #box3:hover {rotate: 1 2 1 360deg;} #box4:hover {rotate: none;}");
+		propertyTests.put("#a {rotate: 1;} #b {rotate: 0.1;} #c {rotate: 1 2 3 4;} #d {rotate: x;}", "#a {} #b {} #c {} #d {}");
 		propertyTests.put("#a {object-position: top;} #b {object-position: 25% 75%;} #c {object-position: 1cm top;} #d {object-position: bottom 10px right 20px;}", "#a {object-position: top;} #b {object-position: 25% 75%;} #c {object-position: 1cm top;} #d {object-position: bottom 10px right 20px;}");
+		propertyTests.put("#a {background-position: top;} #b {background-position: 25% 75%;} #c {background-position: 1cm top;} #d {background-position: bottom 10px right 20px;}", "#a {background-position: top;} #b {background-position: 25% 75%;} #c {background-position: 1cm top;} #d {background-position: bottom 10px right 20px;}");
+		propertyTests.put("#a {object-position: top top;} #b {object-position: 25% top 75% left;} #c {object-position: left 10px right 20px;} #d {object-position: top right bottom left;}", "#a {} #b {} #c {} #d {}");
 
 		// text-emphasis
 		propertyTests.put("#x { text-emphasis: triangle blue; }", "#x { text-emphasis: triangle blue; }"); // java.lang.NullPointerException
