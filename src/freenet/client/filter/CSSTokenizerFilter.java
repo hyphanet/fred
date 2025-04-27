@@ -710,17 +710,17 @@ class CSSTokenizerFilter {
 			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("auto"),ElementInfo.VISUALMEDIA,Arrays.asList("sh")));
 			allelementVerifiers.remove(element);
 		}
-				else if("break-after".equalsIgnoreCase(element))
+		else if("break-after".equalsIgnoreCase(element) || "page-break-after".equalsIgnoreCase(element))
 		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("auto","always","avoid","left","right", "page", "column", "avoid-page", "avoid-column" ),ElementInfo.VISUALPAGEDMEDIA));
+			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("auto", "always", "avoid", "all", "left", "right", "recto", "verso", "page", "column", "avoid-page", "avoid-column"),ElementInfo.VISUALPAGEDMEDIA));
 			allelementVerifiers.remove(element);
 		}
-		else if("break-before".equalsIgnoreCase(element))
+		else if("break-before".equalsIgnoreCase(element) || "page-break-before".equalsIgnoreCase(element))
 		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("auto","always","avoid","left","right", "page", "column", "avoid-page", "avoid-column" ),ElementInfo.VISUALPAGEDMEDIA));
+			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("auto", "always", "avoid", "all", "left", "right", "recto", "verso", "page", "column", "avoid-page", "avoid-column"),ElementInfo.VISUALPAGEDMEDIA));
 			allelementVerifiers.remove(element);
 		}
-		else if("break-inside".equalsIgnoreCase(element))
+		else if("break-inside".equalsIgnoreCase(element) || "page-break-inside".equalsIgnoreCase(element))
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("auto","avoid","avoid-page", "avoid-column"),ElementInfo.VISUALPAGEDMEDIA));
 			allelementVerifiers.remove(element);
@@ -1228,7 +1228,7 @@ class CSSTokenizerFilter {
 		}
 		else if("outline-color".equalsIgnoreCase(element))
 		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("invert"),ElementInfo.VISUALINTERACTIVEMEDIA,Arrays.asList("co")));
+			elementVerifiers.put(element,new CSSPropertyVerifier(null, ElementInfo.VISUALINTERACTIVEMEDIA,Arrays.asList("co")));
 			allelementVerifiers.remove(element);
 		} else if ("outline-offset".equalsIgnoreCase(element)) {
 			elementVerifiers.put(element, new CSSPropertyVerifier(null, ElementInfo.VISUALMEDIA, Arrays.asList("le")));
@@ -1314,21 +1314,6 @@ class CSSTokenizerFilter {
 		else if("padding".equalsIgnoreCase(element))
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("40<1,4>")));
-			allelementVerifiers.remove(element);
-		}
-		else if("page-break-after".equalsIgnoreCase(element))
-		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("auto","always","avoid","left","right"),ElementInfo.VISUALPAGEDMEDIA));
-			allelementVerifiers.remove(element);
-		}
-		else if("page-break-before".equalsIgnoreCase(element))
-		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("auto","always","avoid","left","right"),ElementInfo.VISUALPAGEDMEDIA));
-			allelementVerifiers.remove(element);
-		}
-		else if("page-break-inside".equalsIgnoreCase(element))
-		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("auto","avoid"),ElementInfo.VISUALPAGEDMEDIA));
 			allelementVerifiers.remove(element);
 		}
 		else if("pause-after".equalsIgnoreCase(element))
