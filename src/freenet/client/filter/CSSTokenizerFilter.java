@@ -4658,21 +4658,7 @@ class CSSTokenizerFilter {
 				ParsedCounter counter = (ParsedCounter)value[0];
 				if(counter.listType != null) {
 					HashSet<String> listStyleType=new HashSet<String>();
-					listStyleType.add("disc");
-					listStyleType.add("circle");
-					listStyleType.add("square");
-					listStyleType.add("decimal");
-					listStyleType.add("decimal-leading-zero");
-					listStyleType.add("lower-roman");
-					listStyleType.add("upper-roman");
-					listStyleType.add("lower-greek");
-					listStyleType.add("lower-latin");
-					listStyleType.add("upper-latin");
-					listStyleType.add("armenian");
-					listStyleType.add("georgian");
-					listStyleType.add("lower-alpha");
-					listStyleType.add("upper-alpha");
-					listStyleType.add("none");
+					listStyleType.addAll(Arrays.asList("disc","circle","square","decimal","decimal-leading-zero","lower-roman","upper-roman","lower-greek","lower-latin","upper-latin","armenian","georgian","lower-alpha","upper-alpha","none","arabic-indic","bengali","cambodian","cjk-decimal","cjk-earthly-branch","cjk-heavenly-stem","cjk-ideographic","devanagari","disclosure-closed","disclosure-open","ethiopic-numeric","gujarati","gurmukhi","hebrew","hiragana","hiragana-iroha","japanese-formal","japanese-informal","kannada","katakana","katakana-iroha","khmer","korean-hangul-formal","korean-hanja-formal","lao","lower-armenian","malayalam","mongolian","myanmar","oriya","persian","simp-chinese-formal","simp-chinese-informal","tamil","telugu","thai","tibetan","trad-chinese-formal","trad-chinese-informal","upper-armenian"));
 					if(!listStyleType.contains(counter.listType.getDecoded())) return false;
 				}
 				if(counter.separatorString != null && !(ElementInfo.ALLOW_ALL_VALID_STRINGS || ElementInfo.isValidStringDecoded(counter.separatorString.getDecoded())))
