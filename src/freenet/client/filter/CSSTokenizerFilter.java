@@ -152,6 +152,10 @@ class CSSTokenizerFilter {
 		allelementVerifiers.add("border-top");
 		allelementVerifiers.add("border-right");
 		allelementVerifiers.add("border-bottom");
+		allelementVerifiers.add("border-block-end");
+		allelementVerifiers.add("border-block-start");
+		allelementVerifiers.add("border-inline-end");
+		allelementVerifiers.add("border-inline-start");
 		allelementVerifiers.add("border-top-width");
 		allelementVerifiers.add("border-right-width");
 		allelementVerifiers.add("border-bottom-width");
@@ -595,7 +599,8 @@ class CSSTokenizerFilter {
 			elementVerifiers.put(element,new CSSPropertyVerifier(null, null, Arrays.asList("13"), ElementInfo.VISUALMEDIA, true));
 			allelementVerifiers.remove(element);
 		}
-		else if("border-left".equalsIgnoreCase(element) || "border-right".equalsIgnoreCase(element) || "border-top".equalsIgnoreCase(element) || "border-bottom".equalsIgnoreCase(element))
+		else if("border-left".equalsIgnoreCase(element) || "border-right".equalsIgnoreCase(element) || "border-top".equalsIgnoreCase(element) || "border-bottom".equalsIgnoreCase(element)
+				|| "border-block-end".equalsIgnoreCase(element) || "border-block-start".equalsIgnoreCase(element) || "border-inline-end".equalsIgnoreCase(element) || "border-inline-start".equalsIgnoreCase(element))
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("13a14a11")));
 			allelementVerifiers.remove(element);

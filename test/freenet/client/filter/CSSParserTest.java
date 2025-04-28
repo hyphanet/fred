@@ -1004,6 +1004,7 @@ public class CSSParserTest {
 		propertyTests.put("#a {object-position: top;} #b {object-position: 25% 75%;} #c {object-position: 1cm top;} #d {object-position: bottom 10px right 20px;}", "#a {object-position: top;} #b {object-position: 25% 75%;} #c {object-position: 1cm top;} #d {object-position: bottom 10px right 20px;}");
 		propertyTests.put("#a {background-position: top;} #b {background-position: 25% 75%;} #c {background-position: 1cm top;} #d {background-position: bottom 10px right 20px;}", "#a {background-position: top;} #b {background-position: 25% 75%;} #c {background-position: 1cm top;} #d {background-position: bottom 10px right 20px;}");
 		propertyTests.put("#a {object-position: top top;} #b {object-position: 25% top 75% left;} #c {object-position: left 10px right 20px;} #d {object-position: top right bottom left;}", "#a {} #b {} #c {} #d {}");
+		propertyTests.put("td { border-inline-end: 2px dotted; border-block-start: medium dashed blue }", "td { border-inline-end: 2px dotted; border-block-start: medium dashed blue }");
 
 		// text-emphasis
 		propertyTests.put("#x { text-emphasis: triangle blue; }", "#x { text-emphasis: triangle blue; }"); // java.lang.NullPointerException
