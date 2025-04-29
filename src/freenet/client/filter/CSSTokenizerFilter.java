@@ -294,6 +294,11 @@ class CSSTokenizerFilter {
 		allelementVerifiers.add("overflow-wrap");
 		allelementVerifiers.add("overflow-x");
 		allelementVerifiers.add("overflow-y");
+		allelementVerifiers.add("overscroll-behavior");
+		allelementVerifiers.add("overscroll-behavior-block");
+		allelementVerifiers.add("overscroll-behavior-inline");
+		allelementVerifiers.add("overscroll-behavior-x");
+		allelementVerifiers.add("overscroll-behavior-y");
 		allelementVerifiers.add("padding-block");
 		allelementVerifiers.add("padding-block-end");
 		allelementVerifiers.add("padding-block-start");
@@ -1195,9 +1200,24 @@ class CSSTokenizerFilter {
 			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALINTERACTIVEMEDIA,Arrays.asList("le"),Arrays.asList("37a38a39")));
 			allelementVerifiers.remove(element);
 		}
-		else if("overflow".equalsIgnoreCase(element) || "overflow-x".equalsIgnoreCase(element) || "overflow-y".equalsIgnoreCase(element) || "overflow-block".equalsIgnoreCase(element) || "overflow-inline".equalsIgnoreCase(element))
+		else if("overflow".equalsIgnoreCase(element))
+		{
+			auxilaryVerifiers[32]=new CSSPropertyVerifier(Arrays.asList("visible","hidden","scroll","auto","clip"),null,null,null,true);
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("32<1,2>")));
+		}
+		else if("overflow-x".equalsIgnoreCase(element) || "overflow-y".equalsIgnoreCase(element) || "overflow-block".equalsIgnoreCase(element) || "overflow-inline".equalsIgnoreCase(element))
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("visible","hidden","scroll","auto","clip"),ElementInfo.VISUALMEDIA));
+			allelementVerifiers.remove(element);
+		}
+		else if("overscroll-behavior".equalsIgnoreCase(element))
+		{
+			auxilaryVerifiers[64]=new CSSPropertyVerifier(Arrays.asList("auto","contain","none"),null,null,null,true);
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("64<1,2>")));
+		}
+		else if("overscroll-behavior-x".equalsIgnoreCase(element) || "overscroll-behavior-y".equalsIgnoreCase(element) || "overscroll-behavior-block".equalsIgnoreCase(element) || "overscroll-behavior-inline".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("auto","contain","none"),ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
 		}
 		else if("padding-top".equalsIgnoreCase(element) || "padding-right".equalsIgnoreCase(element) || "padding-bottom".equalsIgnoreCase(element) || "padding-left".equalsIgnoreCase(element)
