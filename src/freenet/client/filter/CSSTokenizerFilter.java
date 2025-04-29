@@ -289,7 +289,11 @@ class CSSTokenizerFilter {
 		allelementVerifiers.add("outline-width");
 		allelementVerifiers.add("outline");
 		allelementVerifiers.add("overflow");
+		allelementVerifiers.add("overflow-block");
+		allelementVerifiers.add("overflow-inline");
 		allelementVerifiers.add("overflow-wrap");
+		allelementVerifiers.add("overflow-x");
+		allelementVerifiers.add("overflow-y");
 		allelementVerifiers.add("padding-block");
 		allelementVerifiers.add("padding-block-end");
 		allelementVerifiers.add("padding-block-start");
@@ -1260,7 +1264,7 @@ class CSSTokenizerFilter {
 			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALINTERACTIVEMEDIA,Arrays.asList("le"),Arrays.asList("37a38a39")));
 			allelementVerifiers.remove(element);
 		}
-		else if("overflow".equalsIgnoreCase(element))
+		else if("overflow".equalsIgnoreCase(element) || "overflow-x".equalsIgnoreCase(element) || "overflow-y".equalsIgnoreCase(element) || "overflow-block".equalsIgnoreCase(element) || "overflow-inline".equalsIgnoreCase(element))
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(Arrays.asList("visible","hidden","scroll","auto","clip"),ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
