@@ -329,6 +329,28 @@ class CSSTokenizerFilter {
 		allelementVerifiers.add("rotate");
 		allelementVerifiers.add("row-gap");
 		allelementVerifiers.add("scroll-behavior");
+		allelementVerifiers.add("scroll-margin");
+		allelementVerifiers.add("scroll-margin-block");
+		allelementVerifiers.add("scroll-margin-block-end");
+		allelementVerifiers.add("scroll-margin-block-start");
+		allelementVerifiers.add("scroll-margin-bottom");
+		allelementVerifiers.add("scroll-margin-inline");
+		allelementVerifiers.add("scroll-margin-inline-end");
+		allelementVerifiers.add("scroll-margin-inline-start");
+		allelementVerifiers.add("scroll-margin-left");
+		allelementVerifiers.add("scroll-margin-right");
+		allelementVerifiers.add("scroll-margin-top");
+		allelementVerifiers.add("scroll-padding");
+		allelementVerifiers.add("scroll-padding-block");
+		allelementVerifiers.add("scroll-padding-block-end");
+		allelementVerifiers.add("scroll-padding-block-start");
+		allelementVerifiers.add("scroll-padding-bottom");
+		allelementVerifiers.add("scroll-padding-inline");
+		allelementVerifiers.add("scroll-padding-inline-end");
+		allelementVerifiers.add("scroll-padding-inline-start");
+		allelementVerifiers.add("scroll-padding-left");
+		allelementVerifiers.add("scroll-padding-right");
+		allelementVerifiers.add("scroll-padding-top");
 		allelementVerifiers.add("scroll-snap-align");
 		allelementVerifiers.add("scroll-snap-stop");
 		allelementVerifiers.add("scroll-snap-type");
@@ -1101,18 +1123,22 @@ class CSSTokenizerFilter {
 			allelementVerifiers.remove(element);
 		}
 		else if("margin-right".equalsIgnoreCase(element) || "margin-left".equalsIgnoreCase(element) || "margin-top".equalsIgnoreCase(element) || "margin-bottom".equalsIgnoreCase(element)
-				|| "margin-block-end".equalsIgnoreCase(element) || "margin-block-start".equalsIgnoreCase(element) || "margin-inline-end".equalsIgnoreCase(element) || "margin-inline-start".equalsIgnoreCase(element))
+				|| "margin-block-end".equalsIgnoreCase(element) || "margin-block-start".equalsIgnoreCase(element) || "margin-inline-end".equalsIgnoreCase(element) || "margin-inline-start".equalsIgnoreCase(element)
+				|| "scroll-padding-right".equalsIgnoreCase(element) || "scroll-padding-left".equalsIgnoreCase(element) || "scroll-padding-top".equalsIgnoreCase(element) || "scroll-padding-bottom".equalsIgnoreCase(element)
+				|| "scroll-padding-block-end".equalsIgnoreCase(element) || "scroll-padding-block-start".equalsIgnoreCase(element) || "scroll-padding-inline-end".equalsIgnoreCase(element) || "scroll-padding-inline-start".equalsIgnoreCase(element))
 		{
 			//margin-width=Length|Percentage|Auto
+			// scroll-padding-* can have value auto, so it is the same as margin-*; scroll-margin-* can't have value auto, so it is the same as padding-*
 			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("36")));
 			allelementVerifiers.remove(element);
 		}
-		else if("margin-block".equalsIgnoreCase(element) || "margin-inline".equalsIgnoreCase(element))
+		else if("margin-block".equalsIgnoreCase(element) || "margin-inline".equalsIgnoreCase(element)
+				|| "scroll-padding-block".equalsIgnoreCase(element) || "scroll-padding-inline".equalsIgnoreCase(element))
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("36<1,2>")));
 			allelementVerifiers.remove(element);
 		}
-		else if("margin".equalsIgnoreCase(element))
+		else if("margin".equalsIgnoreCase(element) || "scroll-padding".equalsIgnoreCase(element))
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("36<1,4>")));
 			allelementVerifiers.remove(element);
@@ -1220,18 +1246,22 @@ class CSSTokenizerFilter {
 			allelementVerifiers.remove(element);
 		}
 		else if("padding-top".equalsIgnoreCase(element) || "padding-right".equalsIgnoreCase(element) || "padding-bottom".equalsIgnoreCase(element) || "padding-left".equalsIgnoreCase(element)
-				|| "padding-block-end".equalsIgnoreCase(element) || "padding-block-start".equalsIgnoreCase(element) || "padding-inline-end".equalsIgnoreCase(element) || "padding-inline-start".equalsIgnoreCase(element))
+				|| "padding-block-end".equalsIgnoreCase(element) || "padding-block-start".equalsIgnoreCase(element) || "padding-inline-end".equalsIgnoreCase(element) || "padding-inline-start".equalsIgnoreCase(element)
+				|| "scroll-margin-top".equalsIgnoreCase(element) || "scroll-margin-right".equalsIgnoreCase(element) || "scroll-margin-bottom".equalsIgnoreCase(element) || "scroll-margin-left".equalsIgnoreCase(element)
+				|| "scroll-margin-block-end".equalsIgnoreCase(element) || "scroll-margin-block-start".equalsIgnoreCase(element) || "scroll-margin-inline-end".equalsIgnoreCase(element) || "scroll-margin-inline-start".equalsIgnoreCase(element))
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("40")));
 			allelementVerifiers.remove(element);
 		}
-		else if("padding-block".equalsIgnoreCase(element) || "padding-inline".equalsIgnoreCase(element))
+		else if("padding-block".equalsIgnoreCase(element) || "padding-inline".equalsIgnoreCase(element)
+				|| "scroll-margin-block".equalsIgnoreCase(element) || "scroll-margin-inline".equalsIgnoreCase(element))
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("40<1,2>")));
 			allelementVerifiers.remove(element);
 		}
-		else if("padding".equalsIgnoreCase(element))
+		else if("padding".equalsIgnoreCase(element) || "scroll-margin".equalsIgnoreCase(element))
 		{
+			// scroll-padding-* can have value auto, so it is the same as margin-*; scroll-margin-* can't have value auto, so it is the same as padding-*
 			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("40<1,4>")));
 			allelementVerifiers.remove(element);
 		}
