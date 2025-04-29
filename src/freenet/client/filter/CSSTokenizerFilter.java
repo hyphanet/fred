@@ -554,9 +554,8 @@ class CSSTokenizerFilter {
 		}
 		else if("background-size".equalsIgnoreCase(element))
 		{
-			auxilaryVerifiers[61] = new CSSPropertyVerifier(Arrays.asList("auto"),Arrays.asList("le", "pe"),null,null,true);
 			auxilaryVerifiers[62] = new CSSPropertyVerifier(Arrays.asList("cover", "contain"), null, null, null, true);
-			auxilaryVerifiers[63] = new CSSPropertyVerifier(null, null, Arrays.asList("61<1,2>", "62"), null, true);
+			auxilaryVerifiers[63] = new CSSPropertyVerifier(null, null, Arrays.asList("36<1,2>", "62"), null, true);
 			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,Arrays.asList("63<1,65535>"), true,true));
 			allelementVerifiers.remove(element);
 		}
