@@ -82,24 +82,6 @@ class CSSTokenizerFilter {
 		}
 	}
 
-
-	//Function to merge two arrays into third array.
-	public static <T> T[] concat(T[] a, T[] b) {
-		final int alen = a.length;
-		final int blen = b.length;
-		if (alen == 0) {
-			return b;
-		}
-		if (blen == 0) {
-			return a;
-		}
-		@SuppressWarnings("unchecked") final T[] result = (T[]) java.lang.reflect.Array.newInstance(a.getClass().getComponentType(), alen + blen);
-		System.arraycopy(a, 0, result, 0, alen);
-		System.arraycopy(b, 0, result, alen, blen);
-		return result;
-	}
-
-
 	/* To save the memory, only those Verifier objects would be created which are actually present in the CSS document.
 	 * allelementVerifiers contains all the CSS property tags as String. All loaded Verifier objects are stored in elementVerifier.
 	 * When retrieving a Verifier object, first it is searched in elementVerifiers to see if it is already loaded.
@@ -1732,6 +1714,7 @@ class CSSTokenizerFilter {
 
 	}
 
+	// FIXME: CSS minimizer often remove space between token and !important
 	private int checkImportant(ParsedWord[] words) {
 		if(words.length == 0) return 0;
 		if(words.length >= 1 && words[words.length-1] instanceof SimpleParsedWord) {
