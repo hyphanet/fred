@@ -166,4 +166,5 @@ function initMonthlyLimit() {
 
 checkChange('knowSomeone', data = {'checked': 'checkDarknet', 'unchecked': 'noDarknet'});
 checkChange('setPassword', data = {'checked': 'givePassword', 'unchecked': ''});
+checkChange('donateDiskSpace', data = {'checked': 'chooseStoreSize', 'unchecked': ''});
 initMonthlyLimit();

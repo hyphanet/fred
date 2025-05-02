@@ -119,6 +119,10 @@ public class DATASTORE_SIZE implements Step {
 		_setDatastoreSize(selectedStoreSize, true, config, callback);
 	}
 
+	public static void setDatastoreSize(String selectedStoreSize, boolean chooseSaltHash, Config config, Object callback) {
+		_setDatastoreSize(selectedStoreSize, chooseSaltHash, config, callback);
+	}
+
 	private static void _setDatastoreSize(
 			String selectedStoreSize,
 			boolean chooseSaltHash,
