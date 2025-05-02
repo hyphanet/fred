@@ -110,6 +110,8 @@ class CSSTokenizerFilter {
 		allelementVerifiers.add("background-image");
 		allelementVerifiers.add("background-origin");
 		allelementVerifiers.add("background-position");
+		allelementVerifiers.add("background-position-x");
+		allelementVerifiers.add("background-position-y");
 		allelementVerifiers.add("background-repeat");
 		allelementVerifiers.add("background-size");
 		allelementVerifiers.add("background");
