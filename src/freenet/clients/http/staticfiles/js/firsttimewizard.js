@@ -77,7 +77,7 @@ slideToggler = (function() {
             instance = (new Date).getTime() - init;
             step = start + disp * instance / time;
 
-            if (instance <= time) {
+            if (time > 1 && instance <= time) {
                 el.style.height = step + 'px';
             } else {
                 el.style.cssText = "display: " + (end === 0 ? 'none' : 'block');
