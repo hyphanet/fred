@@ -268,10 +268,21 @@ public class Node implements TimeSkewDetectorCallback {
 
 	public <T extends StorableBlock> void closeOldStore(StoreCallback<T> old) {
 		FreenetStore<T> store = old.getStore();
+		_closeOldStore(store);
+	}
+
+	private static <T extends StorableBlock> void _closeOldStore(FreenetStore<T> store) {
 		if(store instanceof SaltedHashFreenetStore) {
 			SaltedHashFreenetStore<T> saltstore = (SaltedHashFreenetStore<T>) store;
 			saltstore.close();
 			saltstore.destruct();
+		} else if (store instanceof CachingFreenetStore) {
+			store.close();
+			FreenetStore<T> underlyingStore = store.getUnderlyingStore();
+			if (underlyingStore instanceof SaltedHashFreenetStore) {
+				SaltedHashFreenetStore<T> saltStore = (SaltedHashFreenetStore<T>) underlyingStore;
+				saltStore.destruct();
+			}
 		}
 	}
 
