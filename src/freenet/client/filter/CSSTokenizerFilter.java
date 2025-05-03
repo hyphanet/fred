@@ -82,6 +82,26 @@ class CSSTokenizerFilter {
 		}
 	}
 
+
+   //Function to merge two arrays into third array.
+	// Unused and deprecated
+	@Deprecated
+	public static <T> T[] concat(T[] a, T[] b) {
+		final int alen = a.length;
+		final int blen = b.length;
+		if (alen == 0) {
+			return b;
+		}
+		if (blen == 0) {
+			return a;
+		}
+		@SuppressWarnings("unchecked") final T[] result = (T[]) java.lang.reflect.Array.newInstance(a.getClass().getComponentType(), alen + blen);
+		System.arraycopy(a, 0, result, 0, alen);
+		System.arraycopy(b, 0, result, alen, blen);
+		return result;
+	}
+
+
 	/* To save the memory, only those Verifier objects would be created which are actually present in the CSS document.
 	 * allelementVerifiers contains all the CSS property tags as String. All loaded Verifier objects are stored in elementVerifier.
 	 * When retrieving a Verifier object, first it is searched in elementVerifiers to see if it is already loaded.
@@ -3791,7 +3811,7 @@ class CSSTokenizerFilter {
 		public final boolean allowCommaDelimiters;
 
 		public final Set<String> allowedValues; //immutable HashSet for all String constants that this CSS property can assume like "auto"
-												// Defaulting Keywords ("initial", "inherit" and "unset") are always accepted
+												// Defaulting Keywords ("initial", "inherit", "unset", "revert", "revert-layer") are always accepted
 		public final Set<String> allowedMedia; // immutable HashSet for all valid Media for this CSS property.
 
 		/*
