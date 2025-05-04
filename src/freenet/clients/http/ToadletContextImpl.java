@@ -435,6 +435,8 @@ public class ToadletContextImpl implements ToadletContext {
 		} else {
 			mvt.put("connection", "keep-alive");
 		}
+		mvt.put("cross-origin-embedder-policy", "require-corp");
+		mvt.put("cross-origin-opener-policy", "same-origin");
 		String contentSecurityPolicy = generateCSP(allowScripts, allowFrames);
 		mvt.put("content-security-policy", contentSecurityPolicy);
 		mvt.put("x-content-security-policy", contentSecurityPolicy);
