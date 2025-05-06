@@ -305,7 +305,8 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				overviewList.addChild("li", "backedOffPercent:\u00a0" + fix1.format(backedOffPercent));
 				overviewList.addChild("li", "pInstantReject:\u00a0" + fix1.format(stats.pRejectIncomingInstantly()));
 				nextTableCell = overviewTableRow.addChild("td");
-				
+
+				ctx.reportServerTiming("NodeStatusOverview");
 				// Activity box
 				int numARKFetchers = node.getNumARKFetchers();
 				
@@ -321,6 +322,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				}
 				
 				nextTableCell = overviewTableRow.addChild("td", "class", "last");
+				ctx.reportServerTiming("Activity");
 				
 				// Peer statistics box
 				HTMLNode peerStatsInfobox = nextTableCell.addChild("div", "class", "infobox");
@@ -367,6 +369,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 					if(total > 0)
 						title.addChild("#", ": "+total);
 				}
+				ctx.reportServerTiming("PeerStatistics");
 				// END OVERVIEW TABLE
 			}
 			
@@ -484,6 +487,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				if(peerForm != null) {
 					drawPeerActionSelectBox(peerForm, advancedMode);
 				}
+				ctx.reportServerTiming("PeerTable");
 			}
 			// END PEER TABLE
 
@@ -577,6 +581,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				if (transitiveCount>0) {
 					peerTableInfoboxContent.addChild("i", l10n("secondDegreeAlsoOurs", "count", Integer.toString(transitiveCount)));
 				}
+				ctx.reportServerTiming("FOAFTable");
 			}
 			// END FOAF TABLE
 

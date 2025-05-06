@@ -82,6 +82,12 @@ public class ToadletContextImpl implements ToadletContext {
 	
 	/** The unique id of the request*/
 	private final String uniqueId;
+
+	/** Is Server-Timing enabled? This is only enabled when the client has full access to the node. */
+	private final boolean enableServerTiming;
+	/** The time when the request was created, used to calculate server timing*/
+	private Date lastServerTimingDate;
+	private String serverTimingHeader;
 	
 	private URI uri;
 
@@ -120,6 +126,14 @@ public class ToadletContextImpl implements ToadletContext {
 		this.bookmarkManager = bookmarkManager;
 		//Generate an unique id
 		uniqueId=String.valueOf(Math.random());
+		this.serverTimingHeader = "";
+		if(!container.publicGatewayMode() || container.isAllowedFullAccess(remoteAddr)) {
+			this.lastServerTimingDate = new Date();
+			this.enableServerTiming = true;
+		} else {
+			this.lastServerTimingDate = null;
+			this.enableServerTiming = false;
+		}
 	}
 	
 	private void close() {
@@ -236,6 +250,11 @@ public class ToadletContextImpl implements ToadletContext {
 				// SSL enabled, set strict-transport-security so that the user agent upgrade future requests to SSL.
 				mvt.put("strict-transport-security", HSTS);
 			}
+		}
+
+		if (enableServerTiming) {
+			reportServerTiming("sendReplyHeaders");
+			mvt.put("server-timing", serverTimingHeader);
 		}
 		sendReplyHeaders(sockOutputStream, replyCode, replyDescription, mvt, mimeType, contentLength, mTime, shouldDisconnect, enableJavascript, allowFrames);
 	}
@@ -891,5 +910,18 @@ public class ToadletContextImpl implements ToadletContext {
 	@Override
 	public REFILTER_POLICY getReFilterPolicy() {
 		return container.getReFilterPolicy();
+	}
+
+	@Override
+	public void reportServerTiming(String name)
+	{
+		if(enableServerTiming) {
+			Date now = new Date();
+			long time = now.getTime() - lastServerTimingDate.getTime();
+			if(!serverTimingHeader.isEmpty())
+				serverTimingHeader += ",";
+			serverTimingHeader += name + ";dur=" + time;
+			lastServerTimingDate = now;
+		}
 	}
 }

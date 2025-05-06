@@ -151,6 +151,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 	}
 
 	private void handleDownload(ToadletContext context, Bucket data, BucketFactory bucketFactory, String mimeType, String requestedMimeType, String forceString, boolean forceDownload, String basePath, FreenetURI key, String extras, String referrer, boolean downloadLink, ToadletContext ctx, NodeClientCore core, boolean dontFreeData, String maybeCharset) throws ToadletContextClosedException, IOException {
+		context.reportServerTiming("handleDownload");
 		if(logMINOR)
 			Logger.minor(FProxyToadlet.class, "handleDownload(data.size="+data.size()+", mimeType="+mimeType+", requestedMimeType="+requestedMimeType+", forceDownload="+forceDownload+", basePath="+basePath+", key="+key);
 		String extrasNoMime = extras; // extras will not include MIME type to start with - REDFLAG maybe it should be an array
@@ -679,6 +680,9 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			} catch (FetchException e) {
             fe = e;
 			}
+
+			ctx.reportServerTiming("FProxyFetchWaiterCreated");
+
 			if(fetch != null)
 			while(true) {
 			fr = fetch.getResult(!canSendProgress);
@@ -699,6 +703,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				}
 
 				if(logMINOR) Logger.minor(this, "Found data");
+				ctx.reportServerTiming("FoundData");
 				data = new NoFreeBucket(fr.data);
 				mimeType = fr.mimeType;
 				fetch.close(); // Not waiting any more, but still locked the results until sent

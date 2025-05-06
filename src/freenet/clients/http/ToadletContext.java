@@ -223,5 +223,9 @@ public interface ToadletContext {
 	/** What to do when we find cached data on the global queue but it's already been 
 	 * filtered, and we want a filtered copy. */
 	REFILTER_POLICY getReFilterPolicy();
-}
 
+	/** Report a server timing event has happened.
+	 * @param name name of the metric that is sent to the client, cannot contain "," ";" or space.
+	 */
+	void reportServerTiming(String name);
+}
