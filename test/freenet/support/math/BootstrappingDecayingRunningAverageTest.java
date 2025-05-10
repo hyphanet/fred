@@ -44,6 +44,7 @@ public class BootstrappingDecayingRunningAverageTest {
         average.report(Double.POSITIVE_INFINITY);
         average.report(Double.NaN);
         assertThat(average.countReports(), equalTo(1L));
+        assertThat(average.currentValue(), equalTo(0.0));
     }
 
     @Test
