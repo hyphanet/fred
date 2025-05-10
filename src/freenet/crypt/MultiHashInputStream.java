@@ -11,19 +11,18 @@ import freenet.support.Logger;
 
 public class MultiHashInputStream extends FilterInputStream {
 
-	// Bit flags for generateHashes
 	private Digester[] digesters;
 	private long readBytes;
 	
 	class Digester {
 		HashType hashType;
 		MessageDigest digest;
-		
+
 		Digester(HashType hashType) throws NoSuchAlgorithmException {
 			this.hashType= hashType;
 			digest = hashType.get();
 		}
-		
+
 		HashResult getResult() {
 			HashResult result = new HashResult(hashType, digest.digest());
 			hashType.recycle(digest);
@@ -31,7 +30,7 @@ public class MultiHashInputStream extends FilterInputStream {
 			return result;
 		}
 	}
-	
+
 	public MultiHashInputStream(InputStream proxy, long generateHashes) {
 		super(proxy);
 		ArrayList<Digester> digesters = new ArrayList<Digester>();
@@ -56,7 +55,7 @@ public class MultiHashInputStream extends FilterInputStream {
 		readBytes += ret;
 		return ret;
 	}
-	
+
 	@Override
 	public int read(byte[] buf) throws IOException {
 		return read(buf, 0, buf.length);
@@ -73,7 +72,7 @@ public class MultiHashInputStream extends FilterInputStream {
 		readBytes++;
 		return ret;
 	}
-	
+
 	@Override
 	public long skip(long length) throws IOException {
 		byte[] buf = new byte[(int)Math.min(32768, length)];
@@ -86,7 +85,21 @@ public class MultiHashInputStream extends FilterInputStream {
 		}
 		return skipped;
 	}
-	
+
+	@Override
+	public boolean markSupported() {
+		return false;
+	}
+
+	@Override
+	public void reset() throws IOException {
+		throw new IOException("mark/reset not supported");
+	}
+
+	@Override
+	public void mark(int readlimit) {
+	}
+
 	public HashResult[] getResults() {
 		HashResult[] results = new HashResult[digesters.length];
 		for(int i=0;i<digesters.length;i++)
