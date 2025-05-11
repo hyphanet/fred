@@ -101,15 +101,14 @@ public class WAVFilter extends RIFFFilter {
 			}
 			ctx.hasdata = true;
 		} else if(ID[0] == 'f' && ID[1] == 'a' && ID[2] == 'c' && ID[3] == 't') {
-			if(size < 4) {
-				throw new DataFilterException(l10n("invalidTitle"), l10n("invalidTitle"), "fact chunk must contain at least 4 bytes");
-			}
-			// Just dwSampleLength (Number of samples) here, pass through
-			output.write(ID);
-			writeLittleEndianInt(output, size);
-			passthroughBytes(input, output, size);
-			if((size & 1) != 0) { // Add padding if necessary
-				output.writeByte(input.readByte());
+			if(size != 4) {
+				// It should be 4 bytes, so don't know what to do with the data other than discarding it.
+				writeJunkChunk(input, output, size);
+			} else {
+				// Just dwSampleLength (Number of samples) here, pass through
+				output.write(ID);
+				writeLittleEndianInt(output, size);
+				passthroughBytes(input, output, size);
 			}
 		} else {
 			// Unknown block
