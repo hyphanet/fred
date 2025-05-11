@@ -566,7 +566,8 @@ public class PproxyToadlet extends Toadlet {
 		p.addChild("#", l10n("loadOfficialPluginText"));
 		
 		for (Entry<String, List<OfficialPluginDescription>> groupPlugins : availablePlugins.entrySet()) {
-			List<OfficialPluginDescription> notLoadedPlugins = getNotLoadedPlugins(pm, groupPlugins.getValue());
+			List<OfficialPluginDescription> notLoadedPlugins = retainOnlySupportedPlugins(
+					getNotLoadedPlugins(pm, groupPlugins.getValue()));
 			if (notLoadedPlugins.isEmpty()) {
 				continue;
 			}
@@ -579,9 +580,6 @@ public class PproxyToadlet extends Toadlet {
 		HTMLNode pluginGroupNode = addOfficialForm.addChild("div", "class", "plugin-group");
 		pluginGroupNode.addChild("div", "class", "plugin-group-title", l10n("pluginGroupTitle", "pluginGroup", groupPlugins.getKey()));
 		for (OfficialPluginDescription pluginDescription : notLoadedPlugins) {
-			if (pluginDescription.unsupported) {
-				continue;
-			}
 			HTMLNode pluginNode = pluginGroupNode.addChild("div", "class", "plugin");
 			HTMLNode option = pluginNode.addChild("input",
 					new String[] { "type", "name", "value", "id" },
@@ -609,6 +607,16 @@ public class PproxyToadlet extends Toadlet {
 			}
 		}
 		return notLoadedPlugins;
+	}
+
+	private List<OfficialPluginDescription> retainOnlySupportedPlugins(List<OfficialPluginDescription> plugins) {
+		List<OfficialPluginDescription> supportedPlugins = new ArrayList<OfficialPluginDescription>();
+		for (OfficialPluginDescription plugin : plugins) {
+			if (!plugin.unsupported) {
+				supportedPlugins.add(plugin);
+			}
+		}
+		return supportedPlugins;
 	}
 
 	private void showUnofficialPluginLoader(ToadletContext toadletContext, HTMLNode contentNode) {
