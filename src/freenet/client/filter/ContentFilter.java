@@ -127,7 +127,7 @@ public class ContentFilter {
 		
 		// WAV - has a filter
 		register(new FilterMIMEType("audio/vnd.wave", "wav", new String[] {"audio/x-wav", "audio/wav", "audio/wave"},
-				new String[0], true, false, new WAVFilter(), true, true, false, true, false, false,
+				new String[0], true, true, new WAVFilter(), false, false, false, false, false, false,
 				l10n("audioWAVReadAdvice"), false, null, null, false));
 
 		// ICO needs filtering.
