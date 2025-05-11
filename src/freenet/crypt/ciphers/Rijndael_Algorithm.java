@@ -822,18 +822,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 	 * @param blockSize  The block size in bytes of this Rijndael.
 	 * @exception  InvalidKeyException  If the key is invalid.
 	 */
-	//TODO: This method doesn't really need synchronization. The only reason
-	//I can see for it to be synchronized is that it will consume 100% CPU (due to
-	//heavy calculations) when called. Probably should be unsynchronized if we
-	//want better support for dual+ CPU machines. /Iakin 2003-10-12
-	//Concur:  the class has no fields which are not final, and does
-	//not reference fields of any other classes.  Control over how
-	//many simultaneous makeKey invocations should be allowed is
-	//a problem the callers should resolve among themselves.
-	//It is a fact that allowing no more than one makeKey on any given
-	//CPU will result in fewer cache misses.  -- ejhuff 2003-10-12
-	static synchronized Object makeKey(byte[] k, int blockSize)
-	throws InvalidKeyException {
+	static Object makeKey(byte[] k, int blockSize) throws InvalidKeyException {
 		if (RDEBUG) trace(IN, "makeKey("+k+", "+blockSize+ ')');
 		if (k == null)
 			throw new InvalidKeyException("Empty key");
