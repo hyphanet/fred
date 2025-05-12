@@ -29,7 +29,7 @@ public class AEADCryptBucket implements Bucket, Serializable {
     private static final long serialVersionUID = 1L;
     private final Bucket underlying;
     private final byte[] key;
-    private boolean readOnly;
+    private volatile boolean readOnly;
     static final int OVERHEAD = AEADOutputStream.AES_OVERHEAD;
     
     public AEADCryptBucket(Bucket underlying, byte[] key) {
@@ -50,9 +50,8 @@ public class AEADCryptBucket implements Bucket, Serializable {
 
     @Override
     public OutputStream getOutputStreamUnbuffered() throws IOException {
-        synchronized(this) {
-            if(readOnly)
-                throw new IOException("Read only");
+        if (readOnly) {
+            throw new IOException("Read only");
         }
         OutputStream os = underlying.getOutputStreamUnbuffered();
         return AEADOutputStream.createAES(os, key, NodeStarter.getGlobalSecureRandom());
@@ -79,12 +78,12 @@ public class AEADCryptBucket implements Bucket, Serializable {
     }
 
     @Override
-    public synchronized boolean isReadOnly() {
+    public boolean isReadOnly() {
         return readOnly;
     }
 
     @Override
-    public synchronized void setReadOnly() {
+    public void setReadOnly() {
         readOnly = true;
     }
 
