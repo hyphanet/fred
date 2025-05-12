@@ -447,7 +447,7 @@ public class ToadletContextImpl implements ToadletContext {
 		buf.append(replyDescription);
 		buf.append("\r\n");
 		for (Map.Entry<String, List<String>> entry : mvt.entrySet()) {
-			String key = fixKey(entry.getKey());
+			String key = entry.getKey();
 			List<String> list = entry.getValue();
 			for (String s : list) {
 				buf.append(key);
@@ -499,24 +499,6 @@ public class ToadletContextImpl implements ToadletContext {
 		SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'",Locale.US);
 		sdf.setTimeZone(TZ_UTC);
 		return sdf.parse(httpDate);
-	}
-	
-	/** Fix key case to be conformant to HTTP expectations.
-	 * Note that HTTP is case insensitive on header names, but we may as well
-	 * send something as close to the spec as possible in case of broken clients... 
-	 */
-	private static String fixKey(String key) {
-		StringBuilder sb = new StringBuilder(key.length());
-		char prev = 0;
-		for(int i=0;i<key.length();i++) {
-			char c = key.charAt(i);
-			if((i == 0) || (prev == '-')) {
-				c = Character.toUpperCase(c);
-			}
-			sb.append(c);
-			prev = c;
-		}
-		return sb.toString();
 	}
 	
 	/**
