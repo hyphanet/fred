@@ -110,11 +110,4 @@ public abstract class CryptoKey implements CryptoElement, Serializable {
 		return b.toString();
 	}
 
-	public static void main(String[] args) throws Exception {
-		for (;;) {
-			CryptoKey kp = CryptoKey.read(System.in);
-			System.err.println("-+ " + kp.verboseToString());
-		}
-	}
-
 }
