@@ -23,7 +23,6 @@ import java.util.Random;
 
 import freenet.crypt.ciphers.Rijndael;
 import freenet.support.Fields;
-import freenet.support.HexUtil;
 import freenet.support.Loader;
 import freenet.support.Logger;
 import freenet.support.math.MersenneTwister;
@@ -329,39 +328,6 @@ public class Util {
 			//throw new UnsupportedCipherException(""+e);
 			e.printStackTrace();
 			return null;
-		}
-	}
-
-	public static void main(String[] args) throws Exception {
-		if ((args.length == 0) || args[0].equals("write")) {
-			writeMPI(new BigInteger("9"), System.out);
-			writeMPI(new BigInteger("1234567890123456789"), System.out);
-			writeMPI(new BigInteger("100200300400500600700800900"), System.out);
-		} else if (args[0].equals("read")) {
-			System.out.println("9");
-			System.out.println(readMPI(System.in));
-			System.out.println("1234567890123456789");
-			System.out.println(readMPI(System.in));
-			System.out.println("100200300400500600700800900");
-			System.out.println(readMPI(System.in));
-		} else if (args[0].equals("write-mpi")) {
-			writeMPI(new BigInteger(args[1]), System.out);
-		} else if (args[0].equals("read-mpi")) {
-			System.err.println(readMPI(System.in));
-		} else if (args[0].equals("keygen")) {
-			byte[] entropy = readMPI(System.in).toByteArray();
-			byte[] key =
-				new byte[(args.length > 1 ? Integer.parseInt(args[1]) : 16)];
-			makeKey(entropy, key, 0, key.length);
-			System.err.println(HexUtil.bytesToHex(key, 0, key.length));
-		} else if (args[0].equals("shatest")) {
-			synchronized (ctx) {
-				ctx.digest();
-				ctx.update((byte) 'a');
-				ctx.update((byte) 'b');
-				ctx.update((byte) 'c');
-				System.err.println(HexUtil.bytesToHex(ctx.digest()));
-			}
 		}
 	}
 
