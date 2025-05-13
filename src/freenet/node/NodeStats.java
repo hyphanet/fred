@@ -7,10 +7,14 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import freenet.config.InvalidConfigValueException;
 import freenet.config.NodeNeedRestartException;
@@ -290,12 +294,9 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	private static final long peerManagerUserAlertStatsUpdateInterval = 1000;  // 1 second
 
 	// Backoff stats
-	final Hashtable<String, TrivialRunningAverage> avgMandatoryBackoffTimesRT;
-	final Hashtable<String, TrivialRunningAverage> avgMandatoryBackoffTimesBulk;
-	final Hashtable<String, TrivialRunningAverage> avgRoutingBackoffTimesRT;
-	final Hashtable<String, TrivialRunningAverage> avgRoutingBackoffTimesBulk;
-	final Hashtable<String, TrivialRunningAverage> avgTransferBackoffTimesRT;
-	final Hashtable<String, TrivialRunningAverage> avgTransferBackoffTimesBulk;
+	private final BackoffStats mandatoryBackoffStats = new BackoffStats();
+	private final BackoffStats routingBackoffStats = new BackoffStats();
+	private final BackoffStats transferBackoffStats = new BackoffStats();
 
 	// Database stats
 	final Hashtable<String, TrivialRunningAverage> avgDatabaseJobExecutionTimes;
@@ -561,13 +562,6 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 		hourlyStatsRT = new HourlyStats(node);
 		hourlyStatsBulk = new HourlyStats(node);
-
-		avgMandatoryBackoffTimesRT = new Hashtable<String, TrivialRunningAverage>();
-		avgMandatoryBackoffTimesBulk = new Hashtable<String, TrivialRunningAverage>();
-		avgRoutingBackoffTimesRT = new Hashtable<String, TrivialRunningAverage>();
-		avgRoutingBackoffTimesBulk = new Hashtable<String, TrivialRunningAverage>();
-		avgTransferBackoffTimesRT = new Hashtable<String, TrivialRunningAverage>();
-		avgTransferBackoffTimesBulk = new Hashtable<String, TrivialRunningAverage>();
 
 		avgDatabaseJobExecutionTimes = new Hashtable<String, TrivialRunningAverage>();
 		
@@ -3017,78 +3011,15 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	}
 
 	public void reportMandatoryBackoff(String backoffType, long backoffTimeMilliSeconds, boolean realtime) {
-		TrivialRunningAverage avg;
-		if(realtime) {
-			synchronized (avgMandatoryBackoffTimesRT) {
-				avg = avgMandatoryBackoffTimesRT.get(backoffType);
-
-				if (avg == null) {
-					avg = new TrivialRunningAverage();
-					avgMandatoryBackoffTimesRT.put(backoffType, avg);
-				}
-			}
-		} else {
-			synchronized (avgMandatoryBackoffTimesBulk) {
-				avg = avgMandatoryBackoffTimesBulk.get(backoffType);
-
-				if (avg == null) {
-					avg = new TrivialRunningAverage();
-					avgMandatoryBackoffTimesBulk.put(backoffType, avg);
-				}
-			}
-		}
-		avg.report(backoffTimeMilliSeconds);
+		mandatoryBackoffStats.report(backoffType, backoffTimeMilliSeconds, realtime);
 	}
 
 	public void reportRoutingBackoff(String backoffType, long backoffTimeMilliSeconds, boolean realtime) {
-		TrivialRunningAverage avg;
-
-		if(realtime) {
-			synchronized (avgRoutingBackoffTimesRT) {
-				avg = avgRoutingBackoffTimesRT.get(backoffType);
-
-				if (avg == null) {
-					avg = new TrivialRunningAverage();
-					avgRoutingBackoffTimesRT.put(backoffType, avg);
-				}
-			}
-		} else {
-			synchronized (avgRoutingBackoffTimesBulk) {
-				avg = avgRoutingBackoffTimesBulk.get(backoffType);
-
-				if (avg == null) {
-					avg = new TrivialRunningAverage();
-					avgRoutingBackoffTimesBulk.put(backoffType, avg);
-				}
-			}
-		}
-
-		avg.report(backoffTimeMilliSeconds);
+		routingBackoffStats.report(backoffType, backoffTimeMilliSeconds, realtime);
 	}
 
 	public void reportTransferBackoff(String backoffType, long backoffTimeMilliSeconds, boolean realtime) {
-		TrivialRunningAverage avg;
-
-		if (realtime) {
-			synchronized (avgTransferBackoffTimesRT) {
-				avg = avgTransferBackoffTimesRT.get(backoffType);
-
-				if (avg == null) {
-					avg = new TrivialRunningAverage();
-					avgTransferBackoffTimesRT.put(backoffType, avg);
-				}
-			}
-		} else {
-			synchronized (avgTransferBackoffTimesBulk) {
-				avg = avgTransferBackoffTimesBulk.get(backoffType);
-
-				if (avg == null) {
-					avg = new TrivialRunningAverage();
-					avgTransferBackoffTimesBulk.put(backoffType, avg);
-				}
-			}
-		}
-		avg.report(backoffTimeMilliSeconds);
+		transferBackoffStats.report(backoffType, backoffTimeMilliSeconds, realtime);
 	}
 
 	/**
@@ -3399,94 +3330,15 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	}
 
 	public TimedStats[] getMandatoryBackoffStatistics(boolean realtime) {
-
-		if (realtime) {
-			TimedStats[] entries = new TimedStats[avgMandatoryBackoffTimesRT.size()];
-			int i = 0;
-
-			synchronized (avgMandatoryBackoffTimesRT) {
-				for (Map.Entry<String, TrivialRunningAverage> entry : avgMandatoryBackoffTimesRT.entrySet()) {
-					TrivialRunningAverage avg = entry.getValue();
-					entries[i++] = new TimedStats(entry.getKey(), avg.countReports(), (long) avg.currentValue(), (long) avg.totalValue());
-				}
-			}
-
-			Arrays.sort(entries);
-			return entries;
-		} else {
-			TimedStats[] entries = new TimedStats[avgMandatoryBackoffTimesBulk.size()];
-			int i = 0;
-
-			synchronized (avgMandatoryBackoffTimesBulk) {
-				for (Map.Entry<String, TrivialRunningAverage> entry : avgMandatoryBackoffTimesBulk.entrySet()) {
-					TrivialRunningAverage avg = entry.getValue();
-					entries[i++] = new TimedStats(entry.getKey(), avg.countReports(), (long) avg.currentValue(), (long) avg.totalValue());
-				}
-			}
-
-			Arrays.sort(entries);
-			return entries;
-		}
+		return mandatoryBackoffStats.getStatistics(realtime);
 	}
 
 	public TimedStats[] getRoutingBackoffStatistics(boolean realtime) {
-		if (realtime) {
-			TimedStats[] entries = new TimedStats[avgRoutingBackoffTimesRT.size()];
-			int i = 0;
-
-			synchronized (avgRoutingBackoffTimesRT) {
-				for (Map.Entry<String, TrivialRunningAverage> entry : avgRoutingBackoffTimesRT.entrySet()) {
-					TrivialRunningAverage avg = entry.getValue();
-					entries[i++] = new TimedStats(entry.getKey(), avg.countReports(), (long) avg.currentValue(), (long) avg.totalValue());
-				}
-			}
-
-			Arrays.sort(entries);
-			return entries;
-		} else {
-			TimedStats[] entries = new TimedStats[avgRoutingBackoffTimesBulk.size()];
-			int i = 0;
-
-			synchronized (avgRoutingBackoffTimesBulk) {
-				for (Map.Entry<String, TrivialRunningAverage> entry : avgRoutingBackoffTimesBulk.entrySet()) {
-					TrivialRunningAverage avg = entry.getValue();
-					entries[i++] = new TimedStats(entry.getKey(), avg.countReports(), (long) avg.currentValue(), (long) avg.totalValue());
-				}
-			}
-
-			Arrays.sort(entries);
-			return entries;
-		}
+		return routingBackoffStats.getStatistics(realtime);
 	}
 
 	public TimedStats[] getTransferBackoffStatistics(boolean realtime) {
-		if (realtime) {
-			TimedStats[] entries = new TimedStats[avgTransferBackoffTimesRT.size()];
-			int i = 0;
-
-			synchronized (avgTransferBackoffTimesRT) {
-				for (Map.Entry<String, TrivialRunningAverage> entry : avgTransferBackoffTimesRT.entrySet()) {
-					TrivialRunningAverage avg = entry.getValue();
-					entries[i++] = new TimedStats(entry.getKey(), avg.countReports(), (long) avg.currentValue(), (long) avg.totalValue());
-				}
-			}
-
-			Arrays.sort(entries);
-			return entries;
-		} else {
-			TimedStats[] entries = new TimedStats[avgTransferBackoffTimesBulk.size()];
-			int i = 0;
-
-			synchronized (avgTransferBackoffTimesBulk) {
-				for (Map.Entry<String, TrivialRunningAverage> entry : avgTransferBackoffTimesBulk.entrySet()) {
-					TrivialRunningAverage avg = entry.getValue();
-					entries[i++] = new TimedStats(entry.getKey(), avg.countReports(), (long) avg.currentValue(), (long) avg.totalValue());
-				}
-			}
-
-			Arrays.sort(entries);
-			return entries;
-		}
+		return transferBackoffStats.getStatistics(realtime);
 	}
 
 	public TimedStats[] getDatabaseJobExecutionStatistics() {
@@ -3764,4 +3616,27 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		return usedBytes / upperLimit;
 	}
 
+	private static class BackoffStats {
+		private final Map<String, TrivialRunningAverage> avgRealtimeBackoff = new ConcurrentHashMap<>();
+		private final Map<String, TrivialRunningAverage> avgBulkBackoff = new ConcurrentHashMap<>();
+
+		void report(String backoffType, long backoffTimeMilliSeconds, boolean realtime) {
+			getMap(realtime)
+					.computeIfAbsent(backoffType, k -> new TrivialRunningAverage())
+					.report(backoffTimeMilliSeconds);
+		}
+
+		TimedStats[] getStatistics(boolean realtime) {
+			List<TimedStats> stats = new ArrayList<>();
+			getMap(realtime).forEach((backoffType, avg) -> stats.add(
+				new TimedStats(backoffType, avg.countReports(), (long) avg.currentValue(), (long) avg.totalValue())
+			));
+			Collections.sort(stats);
+			return stats.toArray(new TimedStats[0]);
+		}
+
+		private Map<String, TrivialRunningAverage> getMap(boolean realtime) {
+			return realtime ? avgRealtimeBackoff : avgBulkBackoff;
+		}
+	}
 }
