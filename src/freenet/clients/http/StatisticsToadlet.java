@@ -16,15 +16,15 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import freenet.client.async.ClientRequester;
 import freenet.client.HighLevelSimpleClient;
+import freenet.client.async.ClientRequester;
 import freenet.config.SubConfig;
 import freenet.crypt.ciphers.Rijndael;
 import freenet.io.comm.IncomingPacketFilterImpl;
 import freenet.io.xfer.BlockReceiver;
 import freenet.io.xfer.BlockTransmitter;
-import freenet.l10n.NodeL10n;
 import freenet.keys.FreenetURI;
+import freenet.l10n.NodeL10n;
 import freenet.node.Location;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
@@ -482,9 +482,8 @@ public class StatisticsToadlet extends Toadlet {
 			overviewTableRow = overviewTable.addChild("tr");
 			nextTableCell = overviewTableRow.addChild("td", "class", "first");
 			// specialisation box
-			int[] incomingRequestCountArray = new int[1];
-			int[] incomingRequestLocation = stats.getIncomingRequestLocation(incomingRequestCountArray);
-			int incomingRequestsCount = incomingRequestCountArray[0];
+			int[] incomingRequestLocation = stats.getIncomingRequestLocation();
+			int incomingRequestsCount = Arrays.stream(incomingRequestLocation).sum();
 			
 			if(incomingRequestsCount > 0) {
 				HTMLNode nodeSpecialisationInfobox = nextTableCell.addChild("div", "class", "infobox");
@@ -494,12 +493,10 @@ public class StatisticsToadlet extends Toadlet {
 			}
 			
 			nextTableCell = overviewTableRow.addChild("td");
-			int[] outgoingLocalRequestCountArray = new int[1];
-			int[] outgoingLocalRequestLocation = stats.getOutgoingLocalRequestLocation(outgoingLocalRequestCountArray);
-			int outgoingLocalRequestsCount = outgoingLocalRequestCountArray[0];
-			int[] outgoingRequestCountArray = new int[1];
-			int[] outgoingRequestLocation = stats.getOutgoingRequestLocation(outgoingRequestCountArray);
-			int outgoingRequestsCount = outgoingRequestCountArray[0];
+			int[] outgoingLocalRequestLocation = stats.getOutgoingLocalRequestLocation();
+			int outgoingLocalRequestsCount = Arrays.stream(outgoingLocalRequestLocation).sum();
+			int[] outgoingRequestLocation = stats.getOutgoingRequestLocation();
+			int outgoingRequestsCount = Arrays.stream(outgoingRequestLocation).sum();
 			
 			if(outgoingLocalRequestsCount > 0 && outgoingRequestsCount > 0) {
 				HTMLNode nodeSpecialisationInfobox = nextTableCell.addChild("div", "class", "infobox");
