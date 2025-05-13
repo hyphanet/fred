@@ -11,7 +11,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -299,7 +298,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	private final BackoffStats transferBackoffStats = new BackoffStats();
 
 	// Database stats
-	final Hashtable<String, TrivialRunningAverage> avgDatabaseJobExecutionTimes;
+	private final Map<String, TrivialRunningAverage> avgDatabaseJobExecutionTimes = new ConcurrentHashMap<>();
 	public final DecayingKeyspaceAverage avgClientCacheCHKLocation;
 	public final DecayingKeyspaceAverage avgCacheCHKSuccess;
 	public final DecayingKeyspaceAverage avgSlashdotCacheCHKSucess;
@@ -562,8 +561,6 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 		hourlyStatsRT = new HourlyStats(node);
 		hourlyStatsBulk = new HourlyStats(node);
-
-		avgDatabaseJobExecutionTimes = new Hashtable<String, TrivialRunningAverage>();
 		
 		if(!NodeStarter.isTestingVM()) {
 			// Normal mode
@@ -2994,20 +2991,9 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	}
 
 	public void reportDatabaseJob(String jobType, long executionTimeMiliSeconds) {
-		jobType = sanitizeDBJobType(jobType);
-
-		TrivialRunningAverage avg;
-
-		synchronized(avgDatabaseJobExecutionTimes) {
-			avg = avgDatabaseJobExecutionTimes.get(jobType);
-
-			if(avg == null) {
-				avg = new TrivialRunningAverage();
-				avgDatabaseJobExecutionTimes.put(jobType, avg);
-			}
-		}
-
-		avg.report(executionTimeMiliSeconds);
+		avgDatabaseJobExecutionTimes
+				.computeIfAbsent(sanitizeDBJobType(jobType), k -> new TrivialRunningAverage())
+				.report(executionTimeMiliSeconds);
 	}
 
 	public void reportMandatoryBackoff(String backoffType, long backoffTimeMilliSeconds, boolean realtime) {
@@ -3342,18 +3328,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	}
 
 	public TimedStats[] getDatabaseJobExecutionStatistics() {
-		TimedStats[] entries = new TimedStats[avgDatabaseJobExecutionTimes.size()];
-		int i = 0;
-
-		synchronized(avgDatabaseJobExecutionTimes) {
-			for(Map.Entry<String, TrivialRunningAverage> entry : avgDatabaseJobExecutionTimes.entrySet()) {
-				TrivialRunningAverage avg = entry.getValue();
-				entries[i++] = new TimedStats(entry.getKey(), avg.countReports(), (long) avg.currentValue(), (long) avg.totalValue());
-			}
-		}
-
-		Arrays.sort(entries);
-		return entries;
+		return getStatistics(avgDatabaseJobExecutionTimes);
 	}
 
 	public PeerLoadStats parseLoadStats(PeerNode source, Message m) {
@@ -3627,16 +3602,20 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		}
 
 		TimedStats[] getStatistics(boolean realtime) {
-			List<TimedStats> stats = new ArrayList<>();
-			getMap(realtime).forEach((backoffType, avg) -> stats.add(
-				new TimedStats(backoffType, avg.countReports(), (long) avg.currentValue(), (long) avg.totalValue())
-			));
-			Collections.sort(stats);
-			return stats.toArray(new TimedStats[0]);
+			return NodeStats.getStatistics(getMap(realtime));
 		}
 
 		private Map<String, TrivialRunningAverage> getMap(boolean realtime) {
 			return realtime ? avgRealtimeBackoff : avgBulkBackoff;
 		}
+	}
+
+	private static TimedStats[] getStatistics(Map<String, TrivialRunningAverage> averages) {
+		List<TimedStats> stats = new ArrayList<>();
+		averages.forEach((key, avg) -> stats.add(
+				new TimedStats(key, avg.countReports(), (long) avg.currentValue(), (long) avg.totalValue())
+		));
+		Collections.sort(stats);
+		return stats.toArray(new TimedStats[0]);
 	}
 }
