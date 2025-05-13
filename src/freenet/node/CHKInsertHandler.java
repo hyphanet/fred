@@ -26,8 +26,8 @@ import freenet.store.KeyCollisionException;
 import freenet.support.HexUtil;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.ShortBuffer;
 import freenet.support.Logger.LogLevel;
+import freenet.support.ShortBuffer;
 import freenet.support.io.NativeThread;
 
 /**
@@ -116,14 +116,6 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 		} catch (SyncSendWaitedTooLongException e) {
 			Logger.error(this, "Unable to send "+accepted+" in a reasonable time to "+source);
 			return;
-		}
-		
-		if(tag.shouldSlowDown()) {
-			try {
-				source.sendAsync(DMT.createFNPRejectedOverload(uid, false, false, realTimeFlag), null, this);
-			} catch (NotConnectedException e) {
-				// Ignore.
-			}
 		}
 		
         // Source will send us a DataInsert
