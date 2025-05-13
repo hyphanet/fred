@@ -89,12 +89,5 @@ public class DSAPrivateKey extends CryptoKey {
 			throw new IllegalBase64Exception("Probably a pubkey");
 		return new DSAPrivateKey(y, group);
 	}
-
-//    public static void main(String[] args) throws Exception {
-//        Yarrow y=new Yarrow();
-//        DSAPrivateKey p=new DSAPrivateKey(Global.DSAgroupC, y);
-//        DSAPublicKey pk=new DSAPublicKey(Global.DSAgroupC, p);
-//        p.write(System.out);
-//    }
 }
 
