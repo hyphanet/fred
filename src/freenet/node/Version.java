@@ -444,19 +444,4 @@ public class Version {
 			&& (v.length >= 4);
 	}
 
-	public static void main(String[] args) throws Throwable {
-		System.out.println(
-			"Freenet: "
-				+ nodeName
-				+ ' '
-                    + nodeVersion
-				+ " (protocol "
-				+ protocolVersion
-				+ ") build "
-				+ buildNumber
-				+ " (last good build: "
-				+ lastGoodBuild()
-				+ ") "
-				+ cvsRevision);
-	}
 }
