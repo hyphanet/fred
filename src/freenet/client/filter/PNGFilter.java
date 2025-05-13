@@ -7,13 +7,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.EOFException;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.URI;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.zip.CRC32;
 
@@ -22,9 +19,6 @@ import freenet.support.HexUtil;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
-import freenet.support.api.Bucket;
-import freenet.support.io.Closer;
-import freenet.support.io.FileBucket;
 
 /**
  * Content filter for PNG's. Only allows valid chunks (valid CRC, known chunk type).
@@ -332,29 +326,6 @@ public class PNGFilter implements ContentDataFilter {
 
 	private String l10n(String key) {
 		return NodeL10n.getBase().getString("PNGFilter." + key);
-	}
-
-	public static void main(String arg[]) throws Throwable {
-		final File fin = new File("/tmp/test.png");
-		final File fout = new File("/tmp/test2.png");
-		fout.delete();
-		final Bucket inputBucket = new FileBucket(fin, true, false, false, false);
-		final Bucket outputBucket = new FileBucket(fout, false, true, false, false);
-		InputStream inputStream = null;
-		OutputStream outputStream = null;
-		try {
-			inputStream = inputBucket.getInputStream();
-			outputStream = outputBucket.getOutputStream();
-			Logger.setupStdoutLogging(LogLevel.MINOR, "");
-
-			ContentFilter.filter(inputStream, outputStream, "image/png",
-					new URI("http://127.0.0.1:8888/"), null, null, null, null);
-		} finally {
-			Closer.close(inputStream);
-			Closer.close(outputStream);
-			inputBucket.free();
-			outputBucket.free();
-		}
 	}
 
 	private void throwError(String shortReason, String reason) throws DataFilterException {
