@@ -3,10 +3,13 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.filter;
 
+import static freenet.l10n.BaseL10n.LANGUAGE.ENGLISH;
 import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.startsWith;
 import static org.junit.Assert.*;
 
+import freenet.l10n.BaseL10n;
+import freenet.l10n.BaseL10nTest;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -138,6 +141,10 @@ public class ContentFilterTest {
 			HTML_AUDIO_TAG,
 			HTML_VIDEO_TAG + HTML_AUDIO_TAG,
 			HTML_AUDIO_TAG + HTML_AUDIO_TAG);
+
+    static {
+        GenericReadFilterCallback.setBaseL10n(BaseL10nTest.createTestL10n(ENGLISH));
+    }
 
 	private static void testOneHTMLFilter(String html) throws Exception {
 		assertEquals(html, htmlFilter(html));

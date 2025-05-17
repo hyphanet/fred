@@ -1,5 +1,7 @@
 package freenet.clients.http.utils;
 
+import freenet.l10n.BaseL10n;
+import freenet.l10n.BaseL10nTest;
 import java.util.Locale;
 import java.util.Map;
 
@@ -7,6 +9,7 @@ import com.mitchellbosecke.pebble.extension.Function;
 import com.mitchellbosecke.pebble.template.EvaluationContext;
 import org.junit.Test;
 
+import static freenet.l10n.BaseL10n.LANGUAGE.ENGLISH;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -57,7 +60,8 @@ public class L10nExtensionTest {
 		};
 	}
 
-	private final L10nExtension l10nExtension = new L10nExtension();
+	private final BaseL10n l10n = BaseL10nTest.createTestL10n(ENGLISH);
+	private final L10nExtension l10nExtension = new L10nExtension(l10n);
 	private final Function l10nFunction = l10nExtension.getFunctions().get("l10n");
 
 }
