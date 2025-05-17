@@ -202,11 +202,8 @@ test {
     // no inner class
     include 'freenet/**/*Test.class'
     exclude 'freenet/**/*$*Test.class'
-    workingDir = layout.buildDirectory.dir("classes/java/test/")
     scanForTestClasses = false
     systemProperties += [
-        "test.l10npath_test": "freenet/l10n/",
-        "test.l10npath_main": "../main/freenet/l10n/"
 //	"test.extensive":
 //	"test.verbose":
 //	"test.benchmark":
