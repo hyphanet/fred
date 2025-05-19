@@ -2897,9 +2897,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	String previousRoutingBackoffReasonRT;
 	String previousRoutingBackoffReasonBulk;
 	/* percent of time this peer is backed off */
-	public final RunningAverage backedOffPercent;
-	public final RunningAverage backedOffPercentRT;
-	public final RunningAverage backedOffPercentBulk;
+	private final RunningAverage backedOffPercent;
+	private final RunningAverage backedOffPercentRT;
+	private final RunningAverage backedOffPercentBulk;
 	/* time of last sample */
 	private long lastSampleTime = Long.MAX_VALUE;
 	
@@ -5687,4 +5687,13 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	protected final byte[] getPubKeyHash() {
 	    return peerECDSAPubKeyHash;
 	}
+
+	RunningAverage getBackedOffPercentRT() {
+		return backedOffPercentRT;
+	}
+
+	RunningAverage getBackedOffPercentBulk() {
+		return backedOffPercentBulk;
+	}
+
 }
