@@ -177,7 +177,6 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			}
 			if(isSniffedAsFeed(data) && !(mimeType.startsWith("application/rss+xml"))) {
 				PageNode page = context.getPageMaker().getPageNode(l10n("dangerousRSSTitle"), context);
-				HTMLNode pageNode = page.getOuterNode();
 				HTMLNode contentNode = page.getContentNode();
 
 				HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-alert");
@@ -222,7 +221,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				NodeL10n.getBase().addL10nSubstitution(option, "FProxyToadlet.backToFProxy", new String[] { "link" },
 						new HTMLNode[] { HTMLNode.link("/") });
 
-				byte[] pageBytes = pageNode.generate().getBytes(StandardCharsets.UTF_8);
+				byte[] pageBytes = page.generate().getBytes(StandardCharsets.UTF_8);
 				context.sendReplyHeaders(200, "OK", new MultiValueTable<String, String>(), "text/html; charset=utf-8", pageBytes.length);
 				context.writeData(pageBytes);
 				return;
@@ -567,7 +566,6 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			key = new FreenetURI(ks);
 		} catch (MalformedURLException e) {
 			PageNode page = ctx.getPageMaker().getPageNode(l10n("invalidKeyTitle"), ctx);
-			HTMLNode pageNode = page.getOuterNode();
 			HTMLNode contentNode = page.getContentNode();
 
 			HTMLNode errorInfobox = contentNode.addChild("div", "class", "infobox infobox-error");
@@ -580,7 +578,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			errorContent.addChild("br");
 			addHomepageLink(errorContent);
 
-			this.writeHTMLReply(ctx, 400, l10n("invalidKeyTitle"), pageNode.generate());
+			this.writeHTMLReply(ctx, 400, l10n("invalidKeyTitle"), page.generate());
 			return;
 		}
 
@@ -714,7 +712,6 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				boolean isJsEnabled=ctx.getContainer().isFProxyJavascriptEnabled() && ua != null && !ua.contains("AppleWebKit/");
 				boolean isWebPushingEnabled = false;
 				PageNode page = ctx.getPageMaker().getPageNode(l10n("fetchingPageTitle"), ctx);
-				HTMLNode pageNode = page.getOuterNode();
 				String location = getLink(key, requestedMimeType, maxSize, httprequest.getParam("force", null), httprequest.isParameterSet("forcedownload"), maxRetries, overrideSize);
 				HTMLNode headNode=page.getHeadNode();
 				if(isJsEnabled){
@@ -761,7 +758,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 
 				MultiValueTable<String, String> retHeaders = new MultiValueTable<>();
 				//retHeaders.put("Refresh", "2; url="+location);
-				writeHTMLReply(ctx, 200, "OK", retHeaders, pageNode.generate());
+				writeHTMLReply(ctx, 200, "OK", retHeaders, page.generate());
 				fr.close();
 				fetch.close();
 				return;
@@ -833,7 +830,6 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 					getLink(e.newURI, requestedMimeType, maxSize, httprequest.getParam("force", null), httprequest.isParameterSet("forcedownload"), maxRetries, overrideSize));
 			} else if(e.mode == FetchExceptionMode.TOO_BIG) {
 				PageNode page = ctx.getPageMaker().getPageNode(l10n("fileInformationTitle"), ctx);
-				HTMLNode pageNode = page.getOuterNode();
 				HTMLNode contentNode = page.getContentNode();
 
 				HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-information");
@@ -872,10 +868,9 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				//option = optionTable.addChild("tr").addChild("td", "colspan", "2");
 				optionList.addChild("li").addChild(ctx.getPageMaker().createBackLink(ctx, l10n("goBackToPrev")));
 
-				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+				writeHTMLReply(ctx, 200, "OK", page.generate());
 			} else {
 				PageNode page = ctx.getPageMaker().getPageNode(e.getShortMessage(), ctx);
-				HTMLNode pageNode = page.getOuterNode();
 				HTMLNode contentNode = page.getContentNode();
 
 				HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-error");
@@ -970,7 +965,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 
 				optionList.addChild("li").addChild(ctx.getPageMaker().createBackLink(ctx, l10n("goBackToPrev")));
 				this.writeHTMLReply(ctx, (e.mode == FetchExceptionMode.NOT_IN_ARCHIVE) ? 404 : 500 /* close enough - FIXME probably should depend on status code */,
-						"Internal Error", pageNode.generate());
+						"Internal Error", page.generate());
 			}
 		} catch (SocketException e) {
 			// Probably irrelevant

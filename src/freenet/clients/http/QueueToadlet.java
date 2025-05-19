@@ -286,7 +286,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					new String[] { "type", "name", "value" },
 					new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.no") });
 
-				this.writeHTMLReply(ctx, 200, "OK", page.getOuterNode().generate());
+				this.writeHTMLReply(ctx, 200, "OK", page.generate());
 				return;
 			} else if(request.isPartSet("remove_request") && !request.getPartAsStringFailsafe("remove_request", 128).isEmpty()) {
 				// Remove all requested (i.e. selected) requests from the queue, regardless of
@@ -504,7 +504,6 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				boolean displaySuccessBox = !success.isEmpty();
 
 				PageNode page = ctx.getPageMaker().getPageNode(l10n("downloadFiles"), ctx);
-				HTMLNode pageNode = page.getOuterNode();
 				HTMLNode contentNode = page.getContentNode();
 
 				HTMLNode alertContent = ctx.getPageMaker().getInfobox(
@@ -534,7 +533,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				}
 				alertContent.addChild("a", "href", path(),
 					NodeL10n.getBase().getString("Toadlet.returnToQueuepage"));
-				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+				writeHTMLReply(ctx, 200, "OK", page.generate());
 				return;
 			} else if (request.isPartSet("change_priority_top")) {
 				handleChangePriority(request, ctx, "_top");
@@ -868,7 +867,6 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				return;
 			} else if (request.isPartSet("recommend_request")) {
 				PageNode page = ctx.getPageMaker().getPageNode(l10n("recommendAFileToFriends"), ctx);
-				HTMLNode pageNode = page.getOuterNode();
 				HTMLNode contentNode = page.getContentNode();
 				HTMLNode infoboxContent = ctx.getPageMaker().getInfobox("#", l10n("recommendAFileToFriends"), contentNode, "recommend-file", true);
 				HTMLNode form = ctx.addFormChild(infoboxContent, path(), "recommendForm2");
@@ -917,7 +915,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					new String[]{"type", "name", "value"},
 					new String[]{"submit", "recommend_uri", l10n("recommend")});
 
-				this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+				this.writeHTMLReply(ctx, 200, "OK", page.generate());
 				return;
 			} else if(request.isPartSet("recommend_uri")) {
 				String description = request.getPartAsStringFailsafe("description", 32768);
@@ -970,7 +968,6 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 	private void downloadDisallowedPage (NotAllowedException e, String downloadPath, ToadletContext ctx)
 		throws IOException, ToadletContextClosedException {
 		PageNode page = ctx.getPageMaker().getPageNode(l10n("downloadFiles"), ctx);
-		HTMLNode pageNode = page.getOuterNode();
 		HTMLNode contentNode = page.getContentNode();
 		Logger.warning(this, e.toString());
 		HTMLNode alert = ctx.getPageMaker().getInfobox("infobox-alert",
@@ -978,7 +975,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		alert.addChild("ul", l10n("downloadDisallowed", "directory", downloadPath));
 		alert.addChild("a", "href", path(),
 			NodeL10n.getBase().getString("Toadlet.returnToQueuepage"));
-		writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+		writeHTMLReply(ctx, 200, "OK", page.generate());
 	}
 
 	private File getDownloadsDir (String downloadPath) throws NotAllowedException {
@@ -997,7 +994,6 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 
 	private void sendConfirmPanicPage(ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		PageNode page = ctx.getPageMaker().getPageNode(l10n("confirmPanicButtonPageTitle"), ctx);
-		HTMLNode pageNode = page.getOuterNode();
 		HTMLNode contentNode = page.getContentNode();
 
 		HTMLNode content = ctx.getPageMaker().getInfobox("infobox-error",
@@ -1019,14 +1015,13 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		else
 			content.addChild("p").addChild("a", "href", path(), l10n("backToDownloadsPage"));
 
-		writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+		writeHTMLReply(ctx, 200, "OK", page.generate());
 	}
 
 	private void sendPersistenceDisabledError(ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		String title = l10n("awaitingPasswordTitle"+(uploads ? "Uploads" : "Downloads"));
 		if(core.getNode().awaitingPassword()) {
 			PageNode page = ctx.getPageMaker().getPageNode(title, ctx);
-			HTMLNode pageNode = page.getOuterNode();
 			HTMLNode contentNode = page.getContentNode();
 
 			HTMLNode infoboxContent = ctx.getPageMaker().getInfobox("infobox-error", title, contentNode, null, true);
@@ -1035,7 +1030,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 
 			addHomepageLink(infoboxContent);
 
-			writeHTMLReply(ctx, 500, "Internal Server Error", pageNode.generate());
+			writeHTMLReply(ctx, 500, "Internal Server Error", page.generate());
 			return;
 
 		}
@@ -1059,7 +1054,6 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 	private void writeError(String header, String message, ToadletContext context, boolean returnToQueuePage, boolean returnToInsertPage) throws ToadletContextClosedException, IOException {
 		PageMaker pageMaker = context.getPageMaker();
 		PageNode page = pageMaker.getPageNode(header, context);
-		HTMLNode pageNode = page.getOuterNode();
 		HTMLNode contentNode = page.getContentNode();
 		if(context.isAllowedFullAccess())
 			contentNode.addChild(context.getAlertManager().createSummary());
@@ -1069,7 +1063,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			NodeL10n.getBase().addL10nSubstitution(infoboxContent.addChild("div"), "QueueToadlet.returnToQueuePage", new String[] { "link" }, new HTMLNode[] { HTMLNode.link(path()) });
 		else if(returnToInsertPage)
 			NodeL10n.getBase().addL10nSubstitution(infoboxContent.addChild("div"), "QueueToadlet.tryAgainUploadFilePage", new String[] { "link" }, new HTMLNode[] { HTMLNode.link(FileInsertWizardToadlet.PATH) });
-		writeHTMLReply(context, 400, "Bad request", pageNode.generate());
+		writeHTMLReply(context, 400, "Bad request", page.generate());
 	}
 
 	public void handleMethodGET(URI uri, final HTTPRequest request, final ToadletContext ctx)

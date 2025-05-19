@@ -31,7 +31,6 @@ public class StartupToadlet extends Toadlet {
 		else {
 			String desc = NodeL10n.getBase().getString("StartupToadlet.title");
 			PageNode page = ctx.getPageMaker().getPageNode(desc, ctx, new RenderParameters().renderStatus(false).renderNavigationLinks(false).renderModeSwitch(false));
-			HTMLNode pageNode = page.getOuterNode();
 			HTMLNode headNode = page.getHeadNode();
 			headNode.addChild("meta", new String[]{"http-equiv", "content"}, new String[]{"refresh", "1; url="});
 			HTMLNode contentNode = page.getContentNode();
@@ -47,7 +46,7 @@ public class StartupToadlet extends Toadlet {
 			WelcomeToadlet.maybeDisplayWrapperLogfile(ctx, contentNode);
 
 			//TODO: send a Retry-After header ?
-			writeHTMLReply(ctx, 503, desc, pageNode.generate());
+			writeHTMLReply(ctx, 503, desc, page.generate());
 		}
 	}
 

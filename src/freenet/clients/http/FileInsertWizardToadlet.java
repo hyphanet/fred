@@ -65,7 +65,6 @@ public class FileInsertWizardToadlet extends Toadlet implements LinkEnabledCallb
 		final PageMaker pageMaker = ctx.getPageMaker();
 
 		PageNode page = pageMaker.getPageNode(l10n("pageTitle"), ctx);
-		HTMLNode pageNode = page.getOuterNode();
 		HTMLNode contentNode = page.getContentNode();
 
 		/* add alert summary box */
@@ -75,7 +74,7 @@ public class FileInsertWizardToadlet extends Toadlet implements LinkEnabledCallb
 		if(ctx.isAdvancedModeEnabled())
 			contentNode.addChild(createFilterBox(pageMaker, ctx));
 		
-		writeHTMLReply(ctx, 200, "OK", null, pageNode.generate());
+		writeHTMLReply(ctx, 200, "OK", null, page.generate());
 	}
 	
 	private HTMLNode createInsertBox (PageMaker pageMaker, ToadletContext ctx, boolean isAdvancedModeEnabled) {

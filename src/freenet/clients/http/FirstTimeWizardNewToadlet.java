@@ -87,7 +87,7 @@ public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
                 new PageMaker.RenderParameters().renderNavigationLinks(false).renderStatus(false));
         page.addCustomStyleSheet("/static/first-time-wizard.css");
         addChild(page.getContentNode(), "first-time-wizard", model, l10nPrefix);
-        this.writeHTMLReply(ctx, 200, "OK", page.getOuterNode().generate());
+        this.writeHTMLReply(ctx, 200, "OK", page.generate());
     }
 
     @Override

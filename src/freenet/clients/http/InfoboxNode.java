@@ -21,6 +21,14 @@ public class InfoboxNode {
 		this.content = content;
 	}
 
+	/**
+	 * Calls {@link HTMLNode#generate()} on the
+	 * {@link #getOuterNode() outer node} and returns the generated HTML.
+	 */
+	public String generate() {
+		return outer.generate();
+	}
+
 	public HTMLNode getOuterNode() {
 		return outer;
 	}

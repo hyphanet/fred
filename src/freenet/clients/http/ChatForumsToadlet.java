@@ -20,7 +20,6 @@ public class ChatForumsToadlet extends Toadlet implements LinkEnabledCallback {
 
 	public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		PageNode page = ctx.getPageMaker().getPageNode(l10n("title"), ctx);
-		HTMLNode pageNode = page.getOuterNode();
 		HTMLNode contentNode = page.getContentNode();
 		
 		contentNode.addChild(ctx.getAlertManager().createSummary());
@@ -45,7 +44,7 @@ public class ChatForumsToadlet extends Toadlet implements LinkEnabledCallback {
 				   HTMLNode.link("/USK@nwa8lHa271k2QvJ8aa0Ov7IHAV-DFOCFgmDt3X6BpCI,DuQSUZiI~agF8c-6tjsFFGuZ8eICrzWCILB60nT8KKo,AQACAAE/sone/-72/")});
 		contentBox.addChild("p", l10n("content2"));
 		
-		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+		this.writeHTMLReply(ctx, 200, "OK", page.generate());
 	}
 
 	private static String l10n(String string) {

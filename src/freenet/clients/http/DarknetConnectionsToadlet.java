@@ -232,7 +232,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 				}
 			}
 			N2NTMToadlet.createN2NTMSendForm( pageNode, ctx.isAdvancedModeEnabled(), contentNode, ctx, peers);
-			writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+			writeHTMLReply(ctx, 200, "OK", page.generate());
 			return;
 		} else if (request.isPartSet("doAction") && request.getPartAsStringFailsafe("action",25).equals("update_notes")) {
 			//int hashcode = Integer.decode(request.getParam("node")).intValue();
@@ -407,7 +407,6 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 					}else{
 						if(logMINOR) Logger.minor(this, "Refusing to remove : node_"+pn.hashCode()+" (trying to prevent network churn) : let's display the warning message.");
 						PageNode page = ctx.getPageMaker().getPageNode(l10n("confirmRemoveNodeTitle"), ctx);
-						HTMLNode pageNode = page.getOuterNode();
 						HTMLNode contentNode = page.getContentNode();
 						HTMLNode content =ctx.getPageMaker().getInfobox("infobox-warning", l10n("confirmRemoveNodeWarningTitle"), contentNode, "darknet-remove-node", true);
 						content.addChild("p").addChild("#",
@@ -418,7 +417,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 						removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "remove", l10n("remove") });
 						removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "forceit", l10n("forceRemove") });
 
-						writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+						writeHTMLReply(ctx, 200, "OK", page.generate());
 						return; // FIXME: maybe it breaks multi-node removing
 					}				
 				} else {

@@ -25,7 +25,7 @@ public class PushTesterToadlet extends Toadlet {
 		for (int i = 0; i < 600; i++) {
 			pageNode.getContentNode().addChild(new TesterElement(ctx, String.valueOf(i), 100));
 		}
-		writeHTMLReply(ctx, 200, "OK", pageNode.getOuterNode().generate());
+		writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
 
 	@Override

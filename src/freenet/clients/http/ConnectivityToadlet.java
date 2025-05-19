@@ -53,7 +53,6 @@ public class ConnectivityToadlet extends Toadlet {
 		PageMaker pageMaker = ctx.getPageMaker();
 		
 		PageNode page = pageMaker.getPageNode(NodeL10n.getBase().getString("ConnectivityToadlet.title"), ctx);
-		HTMLNode pageNode = page.getOuterNode();
 		HTMLNode contentNode = page.getContentNode();
 
 		/* add alert summary box */
@@ -190,7 +189,7 @@ public class ConnectivityToadlet extends Toadlet {
 		
 		}
 		
-		writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+		writeHTMLReply(ctx, 200, "OK", page.generate());
 	}
 	
 	private String l10nConn(String string) {

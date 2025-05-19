@@ -178,7 +178,6 @@ public class BookmarkEditorToadlet extends Toadlet {
 		String editorTitle = NodeL10n.getBase().getString("BookmarkEditorToadlet.title");
 		String error = NodeL10n.getBase().getString("BookmarkEditorToadlet.error");
 		PageNode page = pageMaker.getPageNode(editorTitle, ctx);
-		HTMLNode pageNode = page.getOuterNode();
 		HTMLNode content = page.getContentNode();
 		String originalBookmark = req.getParam("bookmark");
 		if(!req.getParam("action").isEmpty() && !originalBookmark.isEmpty()) {
@@ -189,7 +188,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 			} catch(URLEncodedFormatException e) {
 				pageMaker.getInfobox("infobox-error", error, content, "bookmark-url-decode-error", false).
 					addChild("#", NodeL10n.getBase().getString("BookmarkEditorToadlet.urlDecodeError"));
-				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+				writeHTMLReply(ctx, 200, "OK", page.generate());
 				return;
 			}
 			Bookmark bookmark;
@@ -202,7 +201,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 			if(bookmark == null) {
 				pageMaker.getInfobox("infobox-error", error, content, "bookmark-does-not-exist", false).
 					addChild("#", NodeL10n.getBase().getString("BookmarkEditorToadlet.bookmarkDoesNotExist", new String[]{"bookmark"}, new String[]{bookmarkPath}));
-				this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+				this.writeHTMLReply(ctx, 200, "OK", page.generate());
 				return;
 			} else
 				if("del".equals(action)) {
@@ -328,9 +327,9 @@ public class BookmarkEditorToadlet extends Toadlet {
 		addDefaultBookmarksForm.addChild("input", new String[]{"type", "name", "value"}, new String[]{"submit", "AddDefaultBookmarks", NodeL10n.getBase().getString("BookmarkEditorToadlet.addDefaultBookmarks")});
 
 		if(logDEBUG)
-			Logger.debug(this, "Returning:\n"+pageNode.generate());
+			Logger.debug(this, "Returning:\n"+page.generate());
 		
-		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+		this.writeHTMLReply(ctx, 200, "OK", page.generate());
 	}
 
 	public void handleMethodPOST(URI uri, HTTPRequest req, ToadletContext ctx)
@@ -338,7 +337,6 @@ public class BookmarkEditorToadlet extends Toadlet {
 		PageMaker pageMaker = ctx.getPageMaker();
 		BookmarkManager bookmarkManager = ctx.getBookmarkManager();
 		PageNode page = pageMaker.getPageNode(NodeL10n.getBase().getString("BookmarkEditorToadlet.title"), ctx);
-		HTMLNode pageNode = page.getOuterNode();
 		HTMLNode content = page.getContentNode();
 
 		if(req.isPartSet("AddDefaultBookmarks")) {
@@ -358,7 +356,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 			if(bookmark == null && !req.isPartSet("cancelCut")) {
 				pageMaker.getInfobox("infobox-error", NodeL10n.getBase().getString("BookmarkEditorToadlet.error"), content, "bookmark-error", false).
 					addChild("#", NodeL10n.getBase().getString("BookmarkEditorToadlet.bookmarkDoesNotExist", new String[]{"bookmark"}, new String[]{bookmarkPath}));
-				this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+				this.writeHTMLReply(ctx, 200, "OK", page.generate());
 				return;
 			}
 
@@ -436,7 +434,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 		HTMLNode addDefaultBookmarksForm = ctx.addFormChild(content, "", "AddDefaultBookmarks");
 		addDefaultBookmarksForm.addChild("input", new String[]{"type", "name", "value"}, new String[]{"submit", "AddDefaultBookmarks", NodeL10n.getBase().getString("BookmarkEditorToadlet.addDefaultBookmarks")});
 
-		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+		this.writeHTMLReply(ctx, 200, "OK", page.generate());
 	}
 
 	@Override

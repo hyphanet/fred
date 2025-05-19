@@ -29,7 +29,6 @@ public class SimpleHelpToadlet extends Toadlet {
 
 		
 		PageNode page = ctx.getPageMaker().getPageNode("Freenet " + NodeL10n.getBase().getString("FProxyToadlet.help"), ctx);
-		HTMLNode pageNode = page.getOuterNode();
 		HTMLNode contentNode = page.getContentNode();
 		
 		if(ctx.isAllowedFullAccess())
@@ -58,7 +57,7 @@ public class SimpleHelpToadlet extends Toadlet {
 		helpScreenContent3.addChild("#", NodeL10n.getBase().getString("SimpleHelpToadlet.connectivityText"));
 		
 		
-		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+		this.writeHTMLReply(ctx, 200, "OK", page.generate());
 		
 	}
 

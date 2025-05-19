@@ -24,7 +24,6 @@ public class DecodeToadlet extends Toadlet {
 	public void handleMethodGET(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 	    
 		PageNode page = ctx.getPageMaker().getPageNode("Redirect to Decoded link", ctx);
-		HTMLNode pageNode = page.getOuterNode();
 		HTMLNode contentNode = page.getContentNode();
 		
 		if(ctx.isAllowedFullAccess())
@@ -39,7 +38,7 @@ public class DecodeToadlet extends Toadlet {
 		ctx.getPageMaker().getInfobox("infobox-warning", "Decode Link", contentNode, "decode-not-redirected", true).
 		    addChild("a", "href", keyToFetch, "Click Here to be re-directed");
 
-		this.writeHTMLReply(ctx, 301, "Moved Permanently\nLocation: "+ keyToFetch, pageNode.generate());
+		this.writeHTMLReply(ctx, 301, "Moved Permanently\nLocation: "+ keyToFetch, page.generate());
 	}
 
 	@Override

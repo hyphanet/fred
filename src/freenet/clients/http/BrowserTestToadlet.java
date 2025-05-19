@@ -181,7 +181,6 @@ public class BrowserTestToadlet extends Toadlet {
 		if (request.isParameterSet("wontload")) return;
 
 		PageNode page = ctx.getPageMaker().getPageNode("Freenet browser testing tool", ctx);
-		HTMLNode pageNode = page.getOuterNode();
 		HTMLNode contentNode = page.getContentNode();
 
 		if(ctx.isAllowedFullAccess())
@@ -211,7 +210,7 @@ public class BrowserTestToadlet extends Toadlet {
 			 .addChild("script", "type", "text/javascript")
 			 .addChild("%", "document.getElementById('JSTEST').src = '/static/themes/clean/warning.png';");
 
-		this.writeHTMLReply(ctx, 200, "OK", null,pageNode.generate(), true);
+		this.writeHTMLReply(ctx, 200, "OK", null, page.generate(), true);
 	}
 
 	@Override
