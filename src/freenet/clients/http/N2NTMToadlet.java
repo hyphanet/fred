@@ -75,7 +75,7 @@ public class N2NTMToadlet extends Toadlet {
 			}
 			HashMap<String, String> peers = new HashMap<String, String>();
 			peers.put(input_hashcode_string, peernode_name);
-			createN2NTMSendForm(page.getOuterNode(), ctx.isAdvancedModeEnabled(), contentNode, ctx, peers);
+			createN2NTMSendForm(ctx.isAdvancedModeEnabled(), contentNode, ctx, peers);
 			this.writeHTMLReply(ctx, 200, "OK", page.generate());
 			return;
 		}
@@ -266,7 +266,7 @@ public class N2NTMToadlet extends Toadlet {
 		node.addChild("p", message);
 	}
 
-	public static void createN2NTMSendForm(HTMLNode pageNode, boolean advancedMode,
+	public static void createN2NTMSendForm(boolean advancedMode,
 			HTMLNode contentNode, ToadletContext ctx, HashMap<String, String> peers)
 			throws ToadletContextClosedException, IOException {
 		HTMLNode infobox = contentNode.addChild("div", new String[] { "class",

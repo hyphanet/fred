@@ -218,7 +218,6 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 	protected void handleAltPost(URI uri, HTTPRequest request, ToadletContext ctx, boolean logMINOR) throws ToadletContextClosedException, IOException, RedirectException {
 		if (request.isPartSet("doSendMessageToPeers")) {
 			PageNode page = ctx.getPageMaker().getPageNode(l10n("sendMessageTitle"), ctx);
-			HTMLNode pageNode = page.getOuterNode();
 			HTMLNode contentNode = page.getContentNode();
 			DarknetPeerNode[] peerNodes = node.getDarknetConnections();
 			HashMap<String, String> peers = new HashMap<String, String>();
@@ -231,7 +230,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 					}
 				}
 			}
-			N2NTMToadlet.createN2NTMSendForm( pageNode, ctx.isAdvancedModeEnabled(), contentNode, ctx, peers);
+			N2NTMToadlet.createN2NTMSendForm(ctx.isAdvancedModeEnabled(), contentNode, ctx, peers);
 			writeHTMLReply(ctx, 200, "OK", page.generate());
 			return;
 		} else if (request.isPartSet("doAction") && request.getPartAsStringFailsafe("action",25).equals("update_notes")) {
