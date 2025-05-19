@@ -37,6 +37,10 @@ public class PageHelper {
 
 	/**
 	 * After getPageContent has been called, returns page outer HTMLNode.
+	 * <p>
+	 * If you are getting the outer node with the sole purpose of generating
+	 * its HTML, use {@link #generate()} instead.
+	 *
 	 * @return page outer node used to render entire page.
 	 */
 	public HTMLNode getPageOuter() {
@@ -44,6 +48,20 @@ public class PageHelper {
 			throw new NullPointerException("pageNode was not initialized. getPageContent must be called first.");
 		}
 		return pageNode.getOuterNode();
+	}
+
+	/**
+	 * Generates the page’s HTML.
+	 * <p>
+	 * {@link #getPageContent(String)} must be called before this method.
+	 *
+	 * @return The page’s HTML
+	 */
+	public String generate() {
+		if (pageNode == null) {
+			throw new NullPointerException("pageNode was not initialized. getPageContent must be called first.");
+		}
+		return pageNode.generate();
 	}
 
 	public HTMLNode getInfobox(String category, String header, HTMLNode parent, String title, boolean isUnique) {
