@@ -366,7 +366,7 @@ public class PproxyToadlet extends Toadlet {
 				HTMLNode pageNode = page.getOuterNode();
 				if (loadingPlugins.hasNext()) {
 					/* okay, add a refresh. */
-					page.headNode.addChild("meta", new String[] { "http-equiv", "content" }, new String[] { "refresh", "10; url=" });
+					page.getHeadNode().addChild("meta", new String[] { "http-equiv", "content" }, new String[] { "refresh", "10; url=" });
 				}
 				HTMLNode contentNode = page.getContentNode();
 

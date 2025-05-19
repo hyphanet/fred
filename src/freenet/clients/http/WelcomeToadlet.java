@@ -601,7 +601,7 @@ public class WelcomeToadlet extends Toadlet {
         // Tell the user that the node is restarting
         PageNode page = ctx.getPageMaker().getPageNode("Node Restart", ctx, new RenderParameters().renderNavigationLinks(false));
         HTMLNode pageNode = page.getOuterNode();
-        HTMLNode headNode = page.headNode;
+        HTMLNode headNode = page.getHeadNode();
         headNode.addChild("meta", new String[]{"http-equiv", "content"}, new String[]{"refresh", "20; url="});
         HTMLNode contentNode = page.getContentNode();
         ctx.getPageMaker().getInfobox("infobox-information", l10n("restartingTitle"), contentNode, "shutdown-progressing", true).

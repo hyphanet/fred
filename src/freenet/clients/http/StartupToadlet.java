@@ -32,7 +32,7 @@ public class StartupToadlet extends Toadlet {
 			String desc = NodeL10n.getBase().getString("StartupToadlet.title");
 			PageNode page = ctx.getPageMaker().getPageNode(desc, ctx, new RenderParameters().renderStatus(false).renderNavigationLinks(false).renderModeSwitch(false));
 			HTMLNode pageNode = page.getOuterNode();
-			HTMLNode headNode = page.headNode;
+			HTMLNode headNode = page.getHeadNode();
 			headNode.addChild("meta", new String[]{"http-equiv", "content"}, new String[]{"refresh", "1; url="});
 			HTMLNode contentNode = page.getContentNode();
 
