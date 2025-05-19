@@ -57,8 +57,8 @@ public class ExternalLinkToadlet extends Toadlet {
 		//Only render status and navigation bars if the user has completed the wizard.
 		boolean renderBars = node.getClientCore().getToadletContainer().fproxyHasCompletedWizard();
 		PageNode page = ctx.getPageMaker().getPageNode(l10n("confirmExternalLinkTitle"), ctx, new RenderParameters().renderNavigationLinks(renderBars).renderStatus(renderBars));
-		HTMLNode pageNode = page.outer;
-		HTMLNode contentNode = page.content;
+		HTMLNode pageNode = page.getOuterNode();
+		HTMLNode contentNode = page.getContentNode();
 		HTMLNode warnboxContent = ctx.getPageMaker().getInfobox("infobox-warning",
 			l10n("confirmExternalLinkSubTitle"), contentNode, "confirm-external-link", true);
 		HTMLNode externalLinkForm = ctx.addFormChild(warnboxContent, PATH, "confirmExternalLinkForm");

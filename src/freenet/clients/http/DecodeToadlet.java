@@ -24,8 +24,8 @@ public class DecodeToadlet extends Toadlet {
 	public void handleMethodGET(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 	    
 		PageNode page = ctx.getPageMaker().getPageNode("Redirect to Decoded link", ctx);
-		HTMLNode pageNode = page.outer;
-		HTMLNode contentNode = page.content;
+		HTMLNode pageNode = page.getOuterNode();
+		HTMLNode contentNode = page.getContentNode();
 		
 		if(ctx.isAllowedFullAccess())
 			contentNode.addChild(ctx.getAlertManager().createSummary());

@@ -193,8 +193,8 @@ public class PproxyToadlet extends Toadlet {
 					pm.removeCachedCopy(pluginSpecification);
 				}
 				PageNode page = pageMaker.getPageNode(l10n("plugins"), ctx);
-				HTMLNode pageNode = page.outer;
-				HTMLNode contentNode = page.content;
+				HTMLNode pageNode = page.getOuterNode();
+				HTMLNode contentNode = page.getContentNode();
 				HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-success");
 				infobox.addChild("div", "class", "infobox-header", l10n("pluginUnloaded"));
 				HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
@@ -208,8 +208,8 @@ public class PproxyToadlet extends Toadlet {
 				return;
 			}if (!request.getPartAsStringFailsafe("unload", MAX_PLUGIN_NAME_LENGTH).isEmpty()) {
 				PageNode page = pageMaker.getPageNode(l10n("plugins"), ctx);
-				HTMLNode pageNode = page.outer;
-				HTMLNode contentNode = page.content;
+				HTMLNode pageNode = page.getOuterNode();
+				HTMLNode contentNode = page.getContentNode();
 				HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-query");
 				infobox.addChild("div", "class", "infobox-header", l10n("unloadPluginTitle"));
 				HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
@@ -228,8 +228,8 @@ public class PproxyToadlet extends Toadlet {
 				return;
 			} else if (!request.getPartAsStringFailsafe("reload", MAX_PLUGIN_NAME_LENGTH).isEmpty()) {
 				PageNode page = pageMaker.getPageNode(l10n("plugins"), ctx);
-				HTMLNode pageNode = page.outer;
-				HTMLNode contentNode = page.content;
+				HTMLNode pageNode = page.getOuterNode();
+				HTMLNode contentNode = page.getContentNode();
 				HTMLNode reloadContent = pageMaker.getInfobox("infobox infobox-query", l10n("reloadPluginTitle"), contentNode, "plugin-reload", true);
 				reloadContent.addChild("p", l10n("reloadExplanation"));
 				reloadContent.addChild("p", l10n("reloadWarning"));
@@ -363,12 +363,12 @@ public class PproxyToadlet extends Toadlet {
 
 				PageNode page = ctx.getPageMaker().getPageNode(l10n("plugins"), ctx);
 				boolean advancedModeEnabled = ctx.isAdvancedModeEnabled();
-				HTMLNode pageNode = page.outer;
+				HTMLNode pageNode = page.getOuterNode();
 				if (loadingPlugins.hasNext()) {
 					/* okay, add a refresh. */
 					page.headNode.addChild("meta", new String[] { "http-equiv", "content" }, new String[] { "refresh", "10; url=" });
 				}
-				HTMLNode contentNode = page.content;
+				HTMLNode contentNode = page.getContentNode();
 
 				contentNode.addChild(ctx.getAlertManager().createSummary());
 

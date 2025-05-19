@@ -21,4 +21,12 @@ public class InfoboxNode {
 		this.content = content;
 	}
 
+	public HTMLNode getOuterNode() {
+		return outer;
+	}
+
+	public HTMLNode getContentNode() {
+		return content;
+	}
+
 }

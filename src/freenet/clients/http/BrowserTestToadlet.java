@@ -181,8 +181,8 @@ public class BrowserTestToadlet extends Toadlet {
 		if (request.isParameterSet("wontload")) return;
 
 		PageNode page = ctx.getPageMaker().getPageNode("Freenet browser testing tool", ctx);
-		HTMLNode pageNode = page.outer;
-		HTMLNode contentNode = page.content;
+		HTMLNode pageNode = page.getOuterNode();
+		HTMLNode contentNode = page.getContentNode();
 
 		if(ctx.isAllowedFullAccess())
 			contentNode.addChild(ctx.getAlertManager().createSummary());

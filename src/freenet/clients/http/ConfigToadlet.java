@@ -193,8 +193,8 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 		if (request.isPartSet("confirm-reset-to-defaults")) {
 			PageNode page = ctx.getPageMaker().getPageNode(
 					l10n("confirmResetTitle"), ctx);
-			HTMLNode pageNode = page.outer;
-			HTMLNode contentNode = page.content;
+			HTMLNode pageNode = page.getOuterNode();
+			HTMLNode contentNode = page.getContentNode();
 
 			HTMLNode content = ctx.getPageMaker().getInfobox("infobox-warning",
 					l10n("confirmResetTitle"), contentNode, "reset-confirm",
@@ -363,8 +363,8 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 
 		PageNode page = ctx.getPageMaker().getPageNode(l10n("appliedTitle"),
 				ctx);
-		HTMLNode pageNode = page.outer;
-		HTMLNode contentNode = page.content;
+		HTMLNode pageNode = page.getOuterNode();
+		HTMLNode contentNode = page.getContentNode();
 
 		if (errbuf.length() == 0) {
 			HTMLNode content = ctx.getPageMaker().getInfobox("infobox-success",
@@ -431,8 +431,8 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 
 		PageNode page = ctx.getPageMaker().getPageNode(
 				NodeL10n.getBase().getString("ConfigToadlet.fullTitle"), ctx);
-		HTMLNode pageNode = page.outer;
-		HTMLNode contentNode = page.content;
+		HTMLNode pageNode = page.getOuterNode();
+		HTMLNode contentNode = page.getContentNode();
 
 		contentNode.addChild(ctx.getAlertManager().createSummary());
 

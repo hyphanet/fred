@@ -235,7 +235,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			if(request.isPartSet("delete_request") && !request.getPartAsStringFailsafe("delete_request", 128).isEmpty()) {
 				// Confirm box
 				PageNode page = ctx.getPageMaker().getPageNode(l10n("confirmDeleteTitle"), ctx);
-				HTMLNode inner = page.content;
+				HTMLNode inner = page.getContentNode();
 				HTMLNode content = ctx.getPageMaker().getInfobox("infobox-warning", l10n("confirmDeleteTitle"), inner, "confirm-delete-title", true);
 				
 				HTMLNode deleteNode = new HTMLNode("p");
@@ -286,7 +286,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					new String[] { "type", "name", "value" },
 					new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.no") });
 
-				this.writeHTMLReply(ctx, 200, "OK", page.outer.generate());
+				this.writeHTMLReply(ctx, 200, "OK", page.getOuterNode().generate());
 				return;
 			} else if(request.isPartSet("remove_request") && !request.getPartAsStringFailsafe("remove_request", 128).isEmpty()) {
 				// Remove all requested (i.e. selected) requests from the queue, regardless of
@@ -504,8 +504,8 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				boolean displaySuccessBox = !success.isEmpty();
 
 				PageNode page = ctx.getPageMaker().getPageNode(l10n("downloadFiles"), ctx);
-				HTMLNode pageNode = page.outer;
-				HTMLNode contentNode = page.content;
+				HTMLNode pageNode = page.getOuterNode();
+				HTMLNode contentNode = page.getContentNode();
 
 				HTMLNode alertContent = ctx.getPageMaker().getInfobox(
 					(displayFailureBox ? "infobox-warning" : "infobox-info"),
@@ -868,8 +868,8 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				return;
 			} else if (request.isPartSet("recommend_request")) {
 				PageNode page = ctx.getPageMaker().getPageNode(l10n("recommendAFileToFriends"), ctx);
-				HTMLNode pageNode = page.outer;
-				HTMLNode contentNode = page.content;
+				HTMLNode pageNode = page.getOuterNode();
+				HTMLNode contentNode = page.getContentNode();
 				HTMLNode infoboxContent = ctx.getPageMaker().getInfobox("#", l10n("recommendAFileToFriends"), contentNode, "recommend-file", true);
 				HTMLNode form = ctx.addFormChild(infoboxContent, path(), "recommendForm2");
 				
@@ -970,8 +970,8 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 	private void downloadDisallowedPage (NotAllowedException e, String downloadPath, ToadletContext ctx)
 		throws IOException, ToadletContextClosedException {
 		PageNode page = ctx.getPageMaker().getPageNode(l10n("downloadFiles"), ctx);
-		HTMLNode pageNode = page.outer;
-		HTMLNode contentNode = page.content;
+		HTMLNode pageNode = page.getOuterNode();
+		HTMLNode contentNode = page.getContentNode();
 		Logger.warning(this, e.toString());
 		HTMLNode alert = ctx.getPageMaker().getInfobox("infobox-alert",
 			l10n("downloadFiles"), contentNode, "grouped-downloads", true);
@@ -997,8 +997,8 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 
 	private void sendConfirmPanicPage(ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		PageNode page = ctx.getPageMaker().getPageNode(l10n("confirmPanicButtonPageTitle"), ctx);
-		HTMLNode pageNode = page.outer;
-		HTMLNode contentNode = page.content;
+		HTMLNode pageNode = page.getOuterNode();
+		HTMLNode contentNode = page.getContentNode();
 
 		HTMLNode content = ctx.getPageMaker().getInfobox("infobox-error",
 			l10n("confirmPanicButtonPageTitle"), contentNode, "confirm-panic", true).
@@ -1026,8 +1026,8 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		String title = l10n("awaitingPasswordTitle"+(uploads ? "Uploads" : "Downloads"));
 		if(core.getNode().awaitingPassword()) {
 			PageNode page = ctx.getPageMaker().getPageNode(title, ctx);
-			HTMLNode pageNode = page.outer;
-			HTMLNode contentNode = page.content;
+			HTMLNode pageNode = page.getOuterNode();
+			HTMLNode contentNode = page.getContentNode();
 
 			HTMLNode infoboxContent = ctx.getPageMaker().getInfobox("infobox-error", title, contentNode, null, true);
 
@@ -1059,8 +1059,8 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 	private void writeError(String header, String message, ToadletContext context, boolean returnToQueuePage, boolean returnToInsertPage) throws ToadletContextClosedException, IOException {
 		PageMaker pageMaker = context.getPageMaker();
 		PageNode page = pageMaker.getPageNode(header, context);
-		HTMLNode pageNode = page.outer;
-		HTMLNode contentNode = page.content;
+		HTMLNode pageNode = page.getOuterNode();
+		HTMLNode contentNode = page.getContentNode();
 		if(context.isAllowedFullAccess())
 			contentNode.addChild(context.getAlertManager().createSummary());
 		HTMLNode infoboxContent = pageMaker.getInfobox("infobox-error", header, contentNode, "queue-error", false);
@@ -1143,8 +1143,8 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 							long reallyQueued = core.getRequestStarters().chkFetchSchedulerBulk.countQueuedRequests() + core.getRequestStarters().chkFetchSchedulerRT.countQueuedRequests();
 							Logger.minor(this, "Total queued CHK requests (including transient): "+reallyQueued);
 							PageNode page = pageMaker.getPageNode(l10n("title"), ctx);
-							pageNode = page.outer;
-							HTMLNode contentNode = page.content;
+							pageNode = page.getOuterNode();
+							HTMLNode contentNode = page.getContentNode();
 							/* add alert summary box */
 							if(ctx.isAllowedFullAccess())
 								contentNode.addChild(ctx.getAlertManager().createSummary());
@@ -1449,8 +1449,8 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				") "+l10n("titleDownloads");
 
 		PageNode page = pageMaker.getPageNode(pageName, ctx);
-		HTMLNode pageNode = page.outer;
-		HTMLNode contentNode = page.content;
+		HTMLNode pageNode = page.getOuterNode();
+		HTMLNode contentNode = page.getContentNode();
 
 		/* add alert summary box */
 		if(ctx.isAllowedFullAccess())
@@ -1458,8 +1458,8 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 
 		/* navigation bar */
 		InfoboxNode infobox = pageMaker.getInfobox("navbar", l10n("requestNavigation"), null, false);
-		HTMLNode navigationBar = infobox.outer;
-		HTMLNode navigationContent = infobox.content.addChild("ul");
+		HTMLNode navigationBar = infobox.getOuterNode();
+		HTMLNode navigationContent = infobox.getContentNode().addChild("ul");
 		boolean includeNavigationBar = false;
 		if (!completedDownloadToTemp.isEmpty()) {
 			navigationContent.addChild("li").addChild("a", "href", "#completedDownloadToTemp", l10n("completedDtoTemp", new String[]{ "size" }, new String[]{ String.valueOf(completedDownloadToTemp.size()) }));
@@ -1783,8 +1783,8 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 
 	private HTMLNode sendEmptyQueuePage(ToadletContext ctx, PageMaker pageMaker) {
 	PageNode page = pageMaker.getPageNode(l10n("title"+(uploads?"Uploads":"Downloads")), ctx);
-	HTMLNode pageNode = page.outer;
-	HTMLNode contentNode = page.content;
+	HTMLNode pageNode = page.getOuterNode();
+	HTMLNode contentNode = page.getContentNode();
 	/* add alert summary box */
 	if(ctx.isAllowedFullAccess())
 	    contentNode.addChild(ctx.getAlertManager().createSummary());
@@ -1933,8 +1933,8 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 
 	private HTMLNode createPanicBox(PageMaker pageMaker, ToadletContext ctx) {
 		InfoboxNode infobox = pageMaker.getInfobox("infobox-alert", l10n("panicButtonTitle"), "panic-button", true);
-		HTMLNode panicBox = infobox.outer;
-		HTMLNode panicForm = ctx.addFormChild(infobox.content, path(), "queuePanicForm");
+		HTMLNode panicBox = infobox.getOuterNode();
+		HTMLNode panicForm = ctx.addFormChild(infobox.getContentNode(), path(), "queuePanicForm");
 		panicForm.addChild("#", (SimpleToadletServer.noConfirmPanic ? l10n("panicButtonNoConfirmation") : l10n("panicButtonWithConfirmation")) + ' ');
 		panicForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "panic", l10n("panicButton") });
 		return panicBox;
@@ -1995,8 +1995,8 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 	private HTMLNode createBulkDownloadForm(ToadletContext ctx, PageMaker pageMaker) {
 		InfoboxNode infobox = pageMaker.getInfobox(
 			l10n("downloadFiles"), "grouped-downloads", true);
-		HTMLNode downloadBox = infobox.outer;
-		HTMLNode downloadBoxContent = infobox.content;
+		HTMLNode downloadBox = infobox.getOuterNode();
+		HTMLNode downloadBoxContent = infobox.getContentNode();
 		HTMLNode downloadForm = ctx.addFormChild(downloadBoxContent, path(), "queueDownloadForm");
 		downloadForm.addChild("#", l10n("downloadFilesInstructions"));
 		downloadForm.addChild("br");

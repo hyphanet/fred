@@ -250,8 +250,8 @@ public abstract class ConnectionsToadlet extends Toadlet {
 
 		PageNode page = ctx.getPageMaker().getPageNode(getPageTitle(titleCountString), ctx);
 		final boolean advancedMode = ctx.isAdvancedModeEnabled();
-		HTMLNode pageNode = page.outer;
-		HTMLNode contentNode = page.content;
+		HTMLNode pageNode = page.getOuterNode();
+		HTMLNode contentNode = page.getContentNode();
 		
 		// FIXME! We need some nice images
 		long now = System.currentTimeMillis();
@@ -743,8 +743,8 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			}
 			
 			PageNode page = ctx.getPageMaker().getPageNode(l10n("reportOfNodeAddition"), ctx);
-			HTMLNode pageNode = page.outer;
-			HTMLNode contentNode = page.content;
+			HTMLNode pageNode = page.getOuterNode();
+			HTMLNode contentNode = page.getContentNode();
 			
 			//We create a table to show the results
 			HTMLNode detailedStatusBox=new HTMLNode("table");
@@ -1210,8 +1210,8 @@ public abstract class ConnectionsToadlet extends Toadlet {
 	 */
 	protected void sendErrorPage(ToadletContext ctx, int code, String desc, String message, boolean returnToAddFriends) throws ToadletContextClosedException, IOException {
 		PageNode page = ctx.getPageMaker().getPageNode(desc, ctx);
-		HTMLNode pageNode = page.outer;
-		HTMLNode contentNode = page.content;
+		HTMLNode pageNode = page.getOuterNode();
+		HTMLNode contentNode = page.getContentNode();
 		
 		HTMLNode infoboxContent = ctx.getPageMaker().getInfobox("infobox-error", desc, contentNode, null, true);
 		infoboxContent.addChild("#", message);

@@ -32,7 +32,7 @@ public class PageHelper {
 	 */
 	public HTMLNode getPageContent(String title) {
 		pageNode = toadletContext.getPageMaker().getPageNode(title, toadletContext, new RenderParameters().renderNavigationLinks(false).renderStatus(false));
-		return pageNode.content;
+		return pageNode.getContentNode();
 	}
 
 	/**
@@ -43,7 +43,7 @@ public class PageHelper {
 		if (pageNode == null) {
 			throw new NullPointerException("pageNode was not initialized. getPageContent must be called first.");
 		}
-		return pageNode.outer;
+		return pageNode.getOuterNode();
 	}
 
 	public HTMLNode getInfobox(String category, String header, HTMLNode parent, String title, boolean isUnique) {

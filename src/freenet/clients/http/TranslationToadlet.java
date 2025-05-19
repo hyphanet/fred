@@ -65,8 +65,8 @@ public class TranslationToadlet extends Toadlet {
 		} else if (request.isParameterSet("translation_updated")) {
 			String key = request.getParam("translation_updated");
 			PageNode page = ctx.getPageMaker().getPageNode(l10n("translationUpdatedTitle"), ctx);
-			HTMLNode pageNode = page.outer;
-			HTMLNode contentNode = page.content;
+			HTMLNode pageNode = page.getOuterNode();
+			HTMLNode contentNode = page.getContentNode();
 
 			HTMLNode translationNode = contentNode.addChild("div", "class", "translation");
 			HTMLNode legendTable = translationNode.addChild("table", "class", "translation");
@@ -100,8 +100,8 @@ public class TranslationToadlet extends Toadlet {
 			boolean gotoNext = request.isParameterSet("gotoNext");
 			String key = request.getParam("translate");
 			PageNode page = ctx.getPageMaker().getPageNode(l10n("translationUpdateTitle"), ctx);
-			HTMLNode pageNode = page.outer;
-			HTMLNode contentNode = page.content;
+			HTMLNode pageNode = page.getOuterNode();
+			HTMLNode contentNode = page.getContentNode();
 
 			HTMLNode translationNode = contentNode.addChild("div", "class", "translation");
 			HTMLNode updateForm =  ctx.addFormChild(translationNode, TOADLET_URL, "trans_update");
@@ -145,8 +145,8 @@ public class TranslationToadlet extends Toadlet {
 		} else if (request.isParameterSet("remove")) {
 			String key = request.getParam("remove");
 			PageNode page = ctx.getPageMaker().getPageNode(l10n("removeOverrideTitle"), ctx);
-			HTMLNode pageNode = page.outer;
-			HTMLNode contentNode = page.content;
+			HTMLNode pageNode = page.getOuterNode();
+			HTMLNode contentNode = page.getContentNode();
 
 			HTMLNode content = ctx.getPageMaker().getInfobox("infobox-warning", l10n("removeOverrideWarningTitle"), contentNode, "translation-override", true);
 			content.addChild("p").addChild("#",
@@ -164,8 +164,8 @@ public class TranslationToadlet extends Toadlet {
 		}
 
 		PageNode page = ctx.getPageMaker().getPageNode(l10n("translationUpdateTitle"), ctx);
-		HTMLNode pageNode = page.outer;
-		HTMLNode contentNode = page.content;
+		HTMLNode pageNode = page.getOuterNode();
+		HTMLNode contentNode = page.getContentNode();
 
 		final HTMLNode translatingForBox = ctx.getPageMaker().getInfobox(null, l10n("selectTranslation"), contentNode);
 		ArrayList<String> elementsToTranslate = new ArrayList<String>();

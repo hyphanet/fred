@@ -20,8 +20,8 @@ public class ChatForumsToadlet extends Toadlet implements LinkEnabledCallback {
 
 	public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		PageNode page = ctx.getPageMaker().getPageNode(l10n("title"), ctx);
-		HTMLNode pageNode = page.outer;
-		HTMLNode contentNode = page.content;
+		HTMLNode pageNode = page.getOuterNode();
+		HTMLNode contentNode = page.getContentNode();
 		
 		contentNode.addChild(ctx.getAlertManager().createSummary());
 		

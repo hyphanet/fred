@@ -178,8 +178,8 @@ public class BookmarkEditorToadlet extends Toadlet {
 		String editorTitle = NodeL10n.getBase().getString("BookmarkEditorToadlet.title");
 		String error = NodeL10n.getBase().getString("BookmarkEditorToadlet.error");
 		PageNode page = pageMaker.getPageNode(editorTitle, ctx);
-		HTMLNode pageNode = page.outer;
-		HTMLNode content = page.content;
+		HTMLNode pageNode = page.getOuterNode();
+		HTMLNode content = page.getContentNode();
 		String originalBookmark = req.getParam("bookmark");
 		if(!req.getParam("action").isEmpty() && !originalBookmark.isEmpty()) {
 			String action = req.getParam("action");
@@ -338,8 +338,8 @@ public class BookmarkEditorToadlet extends Toadlet {
 		PageMaker pageMaker = ctx.getPageMaker();
 		BookmarkManager bookmarkManager = ctx.getBookmarkManager();
 		PageNode page = pageMaker.getPageNode(NodeL10n.getBase().getString("BookmarkEditorToadlet.title"), ctx);
-		HTMLNode pageNode = page.outer;
-		HTMLNode content = page.content;
+		HTMLNode pageNode = page.getOuterNode();
+		HTMLNode content = page.getContentNode();
 
 		if(req.isPartSet("AddDefaultBookmarks")) {
 			bookmarkManager.reAddDefaultBookmarks();
