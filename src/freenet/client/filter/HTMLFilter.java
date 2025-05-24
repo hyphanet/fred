@@ -1440,7 +1440,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					"alt",
 					"ismap",
 					"accept",
-					"align" },
+					"align",
+					"form" },
 				new String[] { "usemap" },
 				new String[] { "src" },
 				new String[] { "onfocus", "onblur", "onselect", "onchange" }));
@@ -1507,6 +1508,33 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				emptyStringArray,
 				new String[] { "onfocus", "onblur", "onselect", "onchange" },
 				emptyStringArray));
+		allowedTagsVerifiers.put(
+				"meter",
+				new CoreTagVerifier(
+						"meter",
+						new String[] {
+								"form",
+								"high",
+								"low",
+								"max",
+								"min",
+								"optimum",
+								"value" },
+						emptyStringArray,
+						emptyStringArray,
+						emptyStringArray,
+						emptyStringArray));
+		allowedTagsVerifiers.put(
+				"progress",
+				new CoreTagVerifier(
+						"progress",
+						new String[] {
+								"max",
+								"value" },
+						emptyStringArray,
+						emptyStringArray,
+						emptyStringArray,
+						emptyStringArray));
 		allowedTagsVerifiers.put(
 			"isindex",
 			new BaseCoreTagVerifier(
@@ -2924,7 +2952,12 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			// no ! file
 			"hidden",
 			"image",
-			"button"
+			"button",
+			"email",
+			"number",
+			"search",
+			"tel",
+			"url"
 		};
 
 		InputTagVerifier(
