@@ -3020,14 +3020,10 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					} else if (name.equalsIgnoreCase("Viewport")) {
 						hn.put("name", name);
 						hn.put("content", content);
-					} else if (name.equalsIgnoreCase("referrer")) {
-						hn.put("name", name);
-						hn.put("content", "no-referrer"); // Only no-referrer is allowed in freesites for privacy
 					} else if (name.equalsIgnoreCase("robots") || name.equalsIgnoreCase("googlebot")) {
-						StringTokenizer tokenizer = new StringTokenizer(content, ",");
+						String[] tokens = content.split(",");
 						StringBuilder sb = new StringBuilder(content.length());
-						while (tokenizer.hasMoreTokens()) {
-							String token = tokenizer.nextToken();
+						for (String token : tokens) {
 							if(!validRobotsValues.contains(token.trim().toLowerCase()))
 								continue;
 							if(sb.length() != 0)
