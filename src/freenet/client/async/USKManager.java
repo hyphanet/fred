@@ -454,7 +454,7 @@ public class USKManager {
 					final USK usk = origUSK.copy(number);
 					final boolean newSlotToo = newSlot;
 					for(final USKCallback callback : callbacks)
-						context.mainExecutor.execute(new Runnable() {
+						context.getMainExecutor().execute(new Runnable() {
 							@Override
 							public void run() {
 								callback.onFoundEdition(number, usk, // non-persistent
@@ -488,7 +488,7 @@ public class USKManager {
 			// Run off-thread, because of locking, and because client callbacks may take some time
 					final USK usk = origUSK.copy(number);
 					for(final USKCallback callback : callbacks)
-						context.mainExecutor.execute(new Runnable() {
+						context.getMainExecutor().execute(new Runnable() {
 							@Override
 							public void run() {
 								callback.onFoundEdition(number, usk, // non-persistent

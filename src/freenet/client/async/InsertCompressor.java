@@ -226,7 +226,7 @@ public class InsertCompressor implements CompressJob {
 				}, NativeThread.NORM_PRIORITY+1);
 			} else {
 				// We do it off thread so that RealCompressor can release the semaphore
-				context.mainExecutor.execute(new PrioRunnable() {
+				context.getMainExecutor().execute(new PrioRunnable() {
 
 					@Override
 					public int getPriority() {
