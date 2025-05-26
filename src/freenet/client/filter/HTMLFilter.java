@@ -2981,8 +2981,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			HTMLParseContext pc) throws DataFilterException {
 			Map<String, Object> hn = super.sanitizeHash(h, p, pc);
 
-			// We drop the whole <input> if type isn't allowed
-			if(!allowedTypes.contains(hn.get("type"))){
+			// We drop the whole <input> if type isn't allowed (case-insensitive)
+			if(!allowedTypes.contains(hn.get("type").toString().toLowerCase())){
 				return null;
 			}
 

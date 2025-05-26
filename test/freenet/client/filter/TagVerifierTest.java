@@ -166,25 +166,54 @@ public class TagVerifierTest {
 
 	@Test
 	public void testValidInputTag() throws DataFilterException {
-		tagname = "input";
-		verifier = HTMLFilter.allowedTagsVerifiers.get(tagname);
+		String[] types = new String[]{
+			"TEXT",
+			"password",
+			"Checkbox",
+			"radio",
+			"SUBMIT",
+			"rEsEt",
+			// no ! file
+			"hidden",
+			"image",
+			"button",
+			"email",
+			"number",
+			"search",
+			"tel",
+			"url"
+		};
 
-		attributes.put("type", "text");
+		for(String t : types) {
+			tagname = "input";
 
-		htmlTag = new ParsedTag(tagname, attributes);
+			verifier = HTMLFilter.allowedTagsVerifiers.get(tagname);
 
-		assertEquals("Input tag with a valid type", htmlTag.toString(), verifier.sanitize(htmlTag, pc).toString());
+			attributes.put("type", t);
+
+			htmlTag = new ParsedTag(tagname, attributes);
+
+			assertEquals("Input tag with a valid type", htmlTag.toString(), verifier.sanitize(htmlTag, pc).toString());
+		}
 	}
 
 	@Test
 	public void testInvalidInputTag() throws DataFilterException {
-		tagname = "input";
-		verifier = HTMLFilter.allowedTagsVerifiers.get(tagname);
+		String[] types = new String[]{
+			"file",
+			"FILE",
+			"INVALID_TYPE",
+		};
 
-		attributes.put("type", "INVALID_TYPE");
+		for(String t : types) {
+			tagname = "input";
+			verifier = HTMLFilter.allowedTagsVerifiers.get(tagname);
 
-		htmlTag = new ParsedTag(tagname, attributes);
+			attributes.put("type", "INVALID_TYPE");
 
-		assertNull("Input tag with an invalid type", verifier.sanitize(htmlTag, pc));
+			htmlTag = new ParsedTag(tagname, attributes);
+
+			assertNull("Input tag with an invalid type", verifier.sanitize(htmlTag, pc));
+		}
 	}
 }
