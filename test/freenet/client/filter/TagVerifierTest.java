@@ -184,15 +184,12 @@ public class TagVerifierTest {
 			"url"
 		};
 
+		tagname = "input";
+		verifier = HTMLFilter.allowedTagsVerifiers.get(tagname);
+
 		for(String t : types) {
-			tagname = "input";
-
-			verifier = HTMLFilter.allowedTagsVerifiers.get(tagname);
-
 			attributes.put("type", t);
-
 			htmlTag = new ParsedTag(tagname, attributes);
-
 			assertEquals("Input tag with a valid type", htmlTag.toString(), verifier.sanitize(htmlTag, pc).toString());
 		}
 	}
@@ -205,14 +202,12 @@ public class TagVerifierTest {
 			"INVALID_TYPE",
 		};
 
+		tagname = "input";
+		verifier = HTMLFilter.allowedTagsVerifiers.get(tagname);
+
 		for(String t : types) {
-			tagname = "input";
-			verifier = HTMLFilter.allowedTagsVerifiers.get(tagname);
-
-			attributes.put("type", "INVALID_TYPE");
-
+			attributes.put("type", t);
 			htmlTag = new ParsedTag(tagname, attributes);
-
 			assertNull("Input tag with an invalid type", verifier.sanitize(htmlTag, pc));
 		}
 	}
