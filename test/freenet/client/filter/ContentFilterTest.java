@@ -431,4 +431,11 @@ public class ContentFilterTest {
             }
         }
     }
+
+    private static final String ARIA_ROLE_TEST = "<span role=\"caption\" />";
+
+    @Test
+    public void testARIAProperties() throws Exception {
+        assertEquals(ARIA_ROLE_TEST, htmlFilter(ARIA_ROLE_TEST));
+    }
 }
