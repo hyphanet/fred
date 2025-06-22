@@ -245,15 +245,16 @@ public class UserAlertManager implements Comparator<UserAlert> {
 		userAlertNode.addChild("div", "class", "infobox-header", userAlert.getTitle());
 		HTMLNode alertContentNode = userAlertNode.addChild("div", "class", "infobox-content");
 		alertContentNode.addChild(userAlert.getHTMLText());
-		if (userAlert.canReply()) {
-			alertContentNode.addChild(renderReplyButton(userAlert, userAlert.getSourceNode()));
+		if (userAlert instanceof N2NTMUserAlert) {
+			N2NTMUserAlert n2ntmUserAlert = (N2NTMUserAlert) userAlert;
+			alertContentNode.addChild(renderReplyButton(n2ntmUserAlert, n2ntmUserAlert.getSourceNode()));
 		}
 		alertContentNode.addChild(renderDismissButton(userAlert, null));
 
 		return userAlertNode;
 	}
 
-	public HTMLNode renderReplyButton(UserAlert userAlert, PeerNode peerNode) {
+	public HTMLNode renderReplyButton(N2NTMUserAlert userAlert, PeerNode peerNode) {
 		HTMLNode form = new HTMLNode("form",
 					new String[]{"method", "action"},
 					new String[]{"post", "/send_n2ntm/"});

@@ -57,18 +57,6 @@ public interface UserAlert {
 	public void isValid(boolean validity);
 	
 	public String dismissButtonText();
-	
-	public default String replyButtonText() {
-		return dismissButtonText();
-	};
-
-	public default boolean canReply() {
-		return false;
-	}
-
-	public default PeerNode getSourceNode() {
-		return null;
-	}
 
 	public boolean shouldUnregisterOnDismiss();
 	
