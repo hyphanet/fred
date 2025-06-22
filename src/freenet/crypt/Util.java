@@ -189,9 +189,6 @@ public class Util {
 		return freenet.support.Fields.byteArrayEqual(a, b, offset, offset, length);
 	}
 
-	private static final MessageDigest ctx;
-	private static final int ctx_length;
-
 	public static final Map<String, Provider> mdProviders;
 
 	static private long benchmark(MessageDigest md) throws GeneralSecurityException
@@ -261,9 +258,6 @@ public class Util {
 				mdProviders_internal.put(algo, mdProvider);
 			}
 			mdProviders = Collections.unmodifiableMap(mdProviders_internal);
-
-			ctx = MessageDigest.getInstance("SHA1", mdProviders.get("SHA1"));
-			ctx_length = ctx.getDigestLength();
 		} catch(NoSuchAlgorithmException e) {
 			// impossible
 			throw new Error(e);
@@ -276,8 +270,8 @@ public class Util {
 		int offset,
 		int len) {
 		try {
-		synchronized (ctx) {
-			ctx.digest(); // reinitialize
+			MessageDigest ctx = HashType.SHA1.get();
+			int ctx_length = ctx.getDigestLength();
 
 			int ic = 0;
 			while (len > 0) {
@@ -297,8 +291,7 @@ public class Util {
 				offset += bc;
 				len -= bc;
 			}
-		}
-		Arrays.fill(entropy, (byte) 0);
+			Arrays.fill(entropy, (byte) 0);
 		} catch(DigestException e) {
 			// impossible
 			throw new Error(e);
