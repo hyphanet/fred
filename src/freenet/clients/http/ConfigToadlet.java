@@ -193,8 +193,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 		if (request.isPartSet("confirm-reset-to-defaults")) {
 			PageNode page = ctx.getPageMaker().getPageNode(
 					l10n("confirmResetTitle"), ctx);
-			HTMLNode pageNode = page.outer;
-			HTMLNode contentNode = page.content;
+			HTMLNode contentNode = page.getContentNode();
 
 			HTMLNode content = ctx.getPageMaker().getInfobox("infobox-warning",
 					l10n("confirmResetTitle"), contentNode, "reset-confirm",
@@ -232,7 +231,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 					new String[] { "type", "name", "value" }, new String[] {
 							"submit", "decline-default-reset",
 							NodeL10n.getBase().getString("Toadlet.no") });
-			writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+			writeHTMLReply(ctx, 200, "OK", page.generate());
 			return;
 		}
 
@@ -363,8 +362,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 
 		PageNode page = ctx.getPageMaker().getPageNode(l10n("appliedTitle"),
 				ctx);
-		HTMLNode pageNode = page.outer;
-		HTMLNode contentNode = page.content;
+		HTMLNode contentNode = page.getContentNode();
 
 		if (errbuf.length() == 0) {
 			HTMLNode content = ctx.getPageMaker().getInfobox("infobox-success",
@@ -413,7 +411,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 		content.addChild("br");
 		addHomepageLink(content);
 
-		writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+		writeHTMLReply(ctx, 200, "OK", page.generate());
 
 	}
 
@@ -431,8 +429,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 
 		PageNode page = ctx.getPageMaker().getPageNode(
 				NodeL10n.getBase().getString("ConfigToadlet.fullTitle"), ctx);
-		HTMLNode pageNode = page.outer;
-		HTMLNode contentNode = page.content;
+		HTMLNode contentNode = page.getContentNode();
 
 		contentNode.addChild(ctx.getAlertManager().createSummary());
 
@@ -656,7 +653,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 							l10n("resetToDefaults") });
 		}
 
-		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+		this.writeHTMLReply(ctx, 200, "OK", page.generate());
 	}
 
 	/**

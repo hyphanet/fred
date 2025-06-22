@@ -30,8 +30,7 @@ public class UserAlertsToadlet extends Toadlet {
             return;
 
 		PageNode page = ctx.getPageMaker().getPageNode(l10n("title"), ctx);
-		HTMLNode pageNode = page.outer;
-		HTMLNode contentNode = page.content;
+		HTMLNode contentNode = page.getContentNode();
 		HTMLNode alertsNode = ctx.getAlertManager().createAlerts(false);
 		if (alertsNode.getFirstTag() == null) {
 			alertsNode = new HTMLNode("div", "class", "infobox");
@@ -39,7 +38,7 @@ public class UserAlertsToadlet extends Toadlet {
 		}
 		contentNode.addChild(alertsNode);
 
-		writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+		writeHTMLReply(ctx, 200, "OK", page.generate());
 	}
 
 	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {

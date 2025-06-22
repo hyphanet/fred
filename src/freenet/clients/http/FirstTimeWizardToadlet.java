@@ -200,7 +200,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		Step getStep = steps.get(currentStep);
 		PageHelper helper = new PageHelper(ctx, persistFields, currentStep);
 		getStep.getStep(request, helper);
-		writeHTMLReply(ctx, 200, "OK", helper.getPageOuter().generate());
+		writeHTMLReply(ctx, 200, "OK", helper.generate());
 	}
 
 	/**

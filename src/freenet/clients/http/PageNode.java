@@ -15,7 +15,11 @@ public class PageNode extends InfoboxNode {
 		super(page, content);
 		this.headNode = head;
 	}
-	
+
+	public HTMLNode getHeadNode() {
+		return headNode;
+	}
+
 	/**
 	 * Adds a custom style sheet to the header of the page.
 	 *

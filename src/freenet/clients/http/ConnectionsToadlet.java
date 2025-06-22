@@ -250,8 +250,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 
 		PageNode page = ctx.getPageMaker().getPageNode(getPageTitle(titleCountString), ctx);
 		final boolean advancedMode = ctx.isAdvancedModeEnabled();
-		HTMLNode pageNode = page.outer;
-		HTMLNode contentNode = page.content;
+		HTMLNode contentNode = page.getContentNode();
 		
 		// FIXME! We need some nice images
 		long now = System.currentTimeMillis();
@@ -596,7 +595,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			drawNoderefBox(contentNode, getNoderef());
 		}
 		
-		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+		this.writeHTMLReply(ctx, 200, "OK", page.generate());
 	}
 
 	protected abstract boolean acceptRefPosts();
@@ -743,8 +742,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			}
 			
 			PageNode page = ctx.getPageMaker().getPageNode(l10n("reportOfNodeAddition"), ctx);
-			HTMLNode pageNode = page.outer;
-			HTMLNode contentNode = page.content;
+			HTMLNode contentNode = page.getContentNode();
 			
 			//We create a table to show the results
 			HTMLNode detailedStatusBox=new HTMLNode("table");
@@ -766,7 +764,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			infoboxContent.addChild("p").addChild("a", "href", path(), l10n("goFriendConnectionStatus"));
 			addHomepageLink(infoboxContent.addChild("p"));
 			
-			writeHTMLReply(ctx, 500, l10n("reportOfNodeAddition"), pageNode.generate());
+			writeHTMLReply(ctx, 500, l10n("reportOfNodeAddition"), page.generate());
 		} else handleAltPost(uri, request, ctx, logMINOR);
 		
 		
@@ -1210,8 +1208,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 	 */
 	protected void sendErrorPage(ToadletContext ctx, int code, String desc, String message, boolean returnToAddFriends) throws ToadletContextClosedException, IOException {
 		PageNode page = ctx.getPageMaker().getPageNode(desc, ctx);
-		HTMLNode pageNode = page.outer;
-		HTMLNode contentNode = page.content;
+		HTMLNode contentNode = page.getContentNode();
 		
 		HTMLNode infoboxContent = ctx.getPageMaker().getInfobox("infobox-error", desc, contentNode, null, true);
 		infoboxContent.addChild("#", message);
@@ -1226,7 +1223,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		}
 		addHomepageLink(infoboxContent);
 		
-		writeHTMLReply(ctx, code, desc, pageNode.generate());
+		writeHTMLReply(ctx, code, desc, page.generate());
 	}
 
 }

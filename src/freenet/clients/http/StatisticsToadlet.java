@@ -135,8 +135,8 @@ public class StatisticsToadlet extends Toadlet {
 
 		node.getClientCore().getBandwidthStatsPutter().updateData(node);
 
-		HTMLNode pageNode;
-		
+		PageNode page = ctx.getPageMaker().getPageNode(l10n("fullTitle"), ctx);
+
 		// Synchronize to avoid problems with DecimalFormat.
 		synchronized(this) {
 		
@@ -171,10 +171,8 @@ public class StatisticsToadlet extends Toadlet {
 		int numberOfDisconnecting = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_DISCONNECTING);
 		int numberOfNoLoadStats = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_NO_LOAD_STATS);
 
-		PageNode page = ctx.getPageMaker().getPageNode(l10n("fullTitle"), ctx);
 		boolean advancedMode = ctx.isAdvancedModeEnabled();
-		pageNode = page.outer;
-		HTMLNode contentNode = page.content;
+		HTMLNode contentNode = page.getContentNode();
 
 		// FIXME! We need some nice images
 		final long now = System.currentTimeMillis();
@@ -525,16 +523,15 @@ public class StatisticsToadlet extends Toadlet {
 		
 		}
 
-		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+		this.writeHTMLReply(ctx, 200, "OK", page.generate());
 	}
 
 	private void showRequesters(HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		PageNode page = ctx.getPageMaker().getPageNode(l10n("fullTitle"), ctx);
-		HTMLNode pageNode = page.outer;
-		HTMLNode contentNode = page.content;
+		HTMLNode contentNode = page.getContentNode();
 
 		drawClientRequestersBox(contentNode);
-		writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+		writeHTMLReply(ctx, 200, "OK", page.generate());
 	}
 
 	private void drawLoadBalancingBox(HTMLNode loadStatsInfobox, boolean realTime) {

@@ -80,7 +80,7 @@ public abstract class WebInterfaceToadlet extends Toadlet implements LinkEnabled
 
 	public HTMLNode createErrorBox(List<String> errors, String path, FreenetURI retryUri, String extraParams) {
 		InfoboxNode box = pluginContext.pageMaker.getInfobox("infobox-alert", "ERROR");
-		HTMLNode errorBox = box.content;
+		HTMLNode errorBox = box.getContentNode();
 		for (String error : errors) {
 			errorBox.addChild("#", error);
 			errorBox.addChild("br");
@@ -90,6 +90,6 @@ public abstract class WebInterfaceToadlet extends Toadlet implements LinkEnabled
 			errorBox.addChild(new HTMLNode("a", "href", path + "?key="
 					+ ((extraParams == null) ? retryUri : (retryUri + extraParams)), retryUri.toString(false, false)));
 		}
-		return box.outer;
+		return box.getOuterNode();
 	}
 }
