@@ -11,6 +11,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicIntegerArray;
 
 import freenet.config.InvalidConfigValueException;
 import freenet.config.NodeNeedRestartException;
@@ -60,32 +61,27 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 	/** Histogram for request locations. */
 	private static class RequestsByLocation {
-		private final int[] bins;
-		private int count = 0;
+		private final AtomicIntegerArray bins;
 
 		/** Constructs a request location histogram with the given number of bins. */
 		RequestsByLocation(int numBins) {
-			bins = new int[numBins];
+			bins = new AtomicIntegerArray(numBins);
 		}
 
 		/** Update the request counts with a request for the given location. */
 		final void report(final double loc) {
-			assert(loc >= 0 && loc < 1.0);
-			final int bin = (int)Math.floor(loc * bins.length);
-			synchronized (this) {
-				bins[bin]++;
-			}
+			assert loc >= 0 && loc < 1.0;
+			int bin = (int) Math.floor(loc * bins.length());
+			bins.incrementAndGet(bin);
 		}
 
-		/** Get the request count bins. The total request count is placed at position zero of the
-		  * given array. */
-		final int[] getCounts(final int[] total) {
-			final int[] ret = new int[bins.length];
-			synchronized (this) {
-				System.arraycopy(bins, 0, ret, 0, bins.length);
-				total[0] = count;
+		/** Get the request count bins. */
+		final int[] getCounts() {
+			int[] counts = new int[bins.length()];
+			for (int i = 0; i < counts.length; i++) {
+				counts[i] = bins.get(i);
 			}
-			return ret;
+			return counts;
 		}
 	}
 
@@ -2895,24 +2891,24 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		incomingRequests.report(loc);
 	}
 
-	public int[] getIncomingRequestLocation(int[] retval) {
-		return incomingRequests.getCounts(retval);
+	public int[] getIncomingRequestLocation() {
+		return incomingRequests.getCounts();
 	}
 
 	public void reportOutgoingLocalRequestLocation(double loc) {
 		outgoingLocalRequests.report(loc);
 	}
 
-	public int[] getOutgoingLocalRequestLocation(int[] retval) {
-		return outgoingLocalRequests.getCounts(retval);
+	public int[] getOutgoingLocalRequestLocation() {
+		return outgoingLocalRequests.getCounts();
 	}
 
 	public void reportOutgoingRequestLocation(double loc) {
 		outgoingRequests.report(loc);
 	}
 
-	public int[] getOutgoingRequestLocation(int[] retval) {
-		return outgoingRequests.getCounts(retval);
+	public int[] getOutgoingRequestLocation() {
+		return outgoingRequests.getCounts();
 	}
 
 	public void reportCHKOutcome(long rtt, boolean successful, double location, boolean isRealtime) {
