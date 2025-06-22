@@ -263,7 +263,9 @@ public class UserAlertManager implements Comparator<UserAlert> {
 							.replaceAll("\n", "NEWLINE")});
 			form.addChild("input",
 					new String[]{"hidden", "name", "value"},
-					new String[]{"true", "peernode_hashcode", Integer.valueOf(peerNode.hashCode()).toString()});
+					new String[]{"true", "peernode_hashcode", peerNode == null
+							? ""
+							: Integer.valueOf(peerNode.hashCode()).toString()});
 			form.addChild("input",
 					new String[] { "type", "name", "value" },
 					new String[] { "hidden", "formPassword", core.getFormPassword()});
