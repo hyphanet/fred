@@ -31,6 +31,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.Stack;
 import java.util.StringTokenizer;
+import java.util.Arrays;
 
 import freenet.clients.http.ToadletContextImpl;
 import freenet.l10n.NodeL10n;
@@ -3027,6 +3028,24 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
             "charset"
 		};
 
+		private static final String[] validRobotsValue = {
+			"all",
+			"follow",
+			"index",
+			"noarchive",
+			"nocache",
+			"nofollow",
+			"noimageindex",
+			"noindex",
+			"none",
+			"nosnippet"
+		};
+		private static final HashSet<String> validRobotsValues;
+		static {
+			validRobotsValues = new HashSet<String>();
+			validRobotsValues.addAll(Arrays.asList(validRobotsValue));
+		};
+
 		MetaTagVerifier() {
 			super("meta", new String[] { "id" });
 			for(String attr : locallyVerifiedAttrs) {
@@ -3062,6 +3081,20 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					} else if (name.equalsIgnoreCase("Viewport")) {
 						hn.put("name", name);
 						hn.put("content", content);
+					} else if (name.equalsIgnoreCase("robots") || name.equalsIgnoreCase("googlebot")) {
+						String[] tokens = content.split(",");
+						StringBuilder sb = new StringBuilder(content.length());
+						for (String token : tokens) {
+							if(!validRobotsValues.contains(token.trim().toLowerCase()))
+								continue;
+							if(sb.length() != 0)
+								sb.append(',');
+							sb.append(token);
+						}
+						if(sb.length() > 0) {
+							hn.put("name", name);
+							hn.put("content", sb.toString());
+						}
 					}
 				} else if ((http_equiv != null) && (name == null)) {
 					if (http_equiv.equalsIgnoreCase("Expires")) {

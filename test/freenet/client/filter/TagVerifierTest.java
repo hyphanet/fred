@@ -104,6 +104,27 @@ public class TagVerifierTest {
 	}
 
 	@Test
+	public void testMetaTagSpider() throws DataFilterException {
+		tagname = "meta";
+		verifier = HTMLFilter.allowedTagsVerifiers.get(tagname);
+
+		attributes.put("name","robots");
+		attributes.put("content","none, noindex, nofollow, noarchive, nosnippet, nocache");
+		htmlTag = new ParsedTag(tagname, attributes);
+
+		assertEquals("Meta tag controlling spiders - valid value", htmlTag.toString(), verifier.sanitize(htmlTag, pc).toString());
+
+		attributes.put("name","robots");
+		attributes.put("content","noindex,invalid");
+		htmlTag = new ParsedTag(tagname, attributes);
+
+		ParsedTag htmlTagFiltered;
+		attributes.put("content","noindex");
+		htmlTagFiltered = new ParsedTag(tagname, attributes);
+		assertEquals("Meta tag controlling spiders - invalid value", htmlTagFiltered.toString(), verifier.sanitize(htmlTag, pc).toString());
+	}
+
+	@Test
 	public void testMetaTagUnknownContentType() {
 		tagname = "meta";
 		verifier = HTMLFilter.allowedTagsVerifiers.get(tagname);
