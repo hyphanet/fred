@@ -45,35 +45,16 @@ public class InetAddressIpv6FirstComparator implements Comparator<InetAddress> {
 		} else if (arg0.isLinkLocalAddress() && !arg1.isLinkLocalAddress()) {
 			return 1;
 		}
-        // calculate hashCode only once; used multiple times later
-		int a = arg0.hashCode();
-		int b = arg1.hashCode();
 		// prefer LAN addresses *if they are routable* over global addresses, because they should stay within VPNs
 		if (!arg0.isSiteLocalAddress() && arg1.isSiteLocalAddress()) {
 			// prefer reachable over unreachable addresses. This is usually a ping. TODO: This actually pings all advertised ip addresses. Is that OK? Do we need a maximum number of accepted addresses to prevent abuse as DDoS? 
-			Boolean reachable1 = reachabilityCache.get(b);
-			if (reachable1 == null) {
-				try {
-					reachable1 = arg1.isReachable((int) DEFAULT_MAX_PING_TIME);
-				} catch (IOException e) {
-					reachable1 = false;
-				}
-				reachabilityCache.put(b, reachable1);
-			}
-			if (reachable1) {
+			boolean reachable = isReachable(arg1);
+			if (reachable) {
 				return 1;
 			}
 		} else if (arg0.isSiteLocalAddress() && !arg1.isSiteLocalAddress()) {
-			Boolean reachable0 = reachabilityCache.get(a);
-			if (reachable0 == null) {
-				try {
-					reachable0 = arg0.isReachable((int) DEFAULT_MAX_PING_TIME);
-				} catch (IOException e) {
-					reachable0 = false;
-				}
-				reachabilityCache.put(a, reachable0);
-			}
-			if (reachable0) {
+			boolean reachable = isReachable(arg0);
+			if (reachable) {
 				return -1;
 			}
 		}
@@ -86,11 +67,28 @@ public class InetAddressIpv6FirstComparator implements Comparator<InetAddress> {
 			return 1;
 		}
 
+		// calculate hashCode only once; used multiple times later
+		int hashCode0 = arg0.hashCode();
+		int hashCode1 = arg1.hashCode();
 		// Sort by hash code as fallback. This is fast.
-		if(a > b) return 1;
-		else if(b > a) return -1;
+		if(hashCode0 > hashCode1) return 1;
+		else if(hashCode1 > hashCode0) return -1;
 		return Fields.compareBytes(bytes0, bytes1);
 		// Hostnames in InetAddress are merely cached, equals() only operates on the byte[].
+	}
+
+	private boolean isReachable(InetAddress inetAddress) {
+		int hashCode = inetAddress.hashCode();
+		Boolean reachable = reachabilityCache.get(hashCode);
+		if (reachable == null) {
+			try {
+				reachable = inetAddress.isReachable((int) DEFAULT_MAX_PING_TIME);
+			} catch (IOException e) {
+				reachable = false;
+			}
+			reachabilityCache.put(hashCode, reachable);
+		}
+		return reachable;
 	}
 
 }
