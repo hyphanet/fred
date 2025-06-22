@@ -82,12 +82,10 @@ public class N2NTMUserAlert extends AbstractUserAlert implements NodeToNodeMessa
 		return alertNode;
 	}
 
-	@Override
 	public boolean canReply() {
 		return true;
 	}
 
-	@Override
 	public PeerNode getSourceNode() {
 		if (peerRef == null) {
 			return null;
@@ -98,11 +96,6 @@ public class N2NTMUserAlert extends AbstractUserAlert implements NodeToNodeMessa
 	@Override
 	public String dismissButtonText() {
 		return l10n("delete");
-	}
-
-	@Override
-	public String replyButtonText() {
-		return l10n("reply");
 	}
 
 	private String l10n(String key) {
