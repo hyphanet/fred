@@ -3,8 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.useralerts;
 
-import java.lang.ref.WeakReference;
-
 import freenet.clients.fcp.FCPMessage;
 import freenet.node.PeerNode;
 import freenet.support.HTMLNode;
@@ -68,7 +66,7 @@ public interface UserAlert {
 		return false;
 	}
 
-	public default WeakReference<PeerNode> getSourceNode() {
+	public default PeerNode getSourceNode() {
 		return null;
 	}
 

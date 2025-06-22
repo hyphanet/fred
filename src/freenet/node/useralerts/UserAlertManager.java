@@ -253,7 +253,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 		return userAlertNode;
 	}
 
-	public HTMLNode renderReplyButton(UserAlert userAlert, WeakReference<PeerNode> peerNode) {
+	public HTMLNode renderReplyButton(UserAlert userAlert, PeerNode peerNode) {
 		HTMLNode form = new HTMLNode("form",
 					new String[]{"method", "action"},
 					new String[]{"post", "/send_n2ntm/"});
@@ -263,7 +263,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 							.replaceAll("\n", "NEWLINE")});
 			form.addChild("input",
 					new String[]{"hidden", "name", "value"},
-					new String[]{"true", "peernode_hashcode", Integer.valueOf(peerNode.get().hashCode()).toString()});
+					new String[]{"true", "peernode_hashcode", Integer.valueOf(peerNode.hashCode()).toString()});
 			form.addChild("input",
 					new String[] { "type", "name", "value" },
 					new String[] { "hidden", "formPassword", core.getFormPassword()});
