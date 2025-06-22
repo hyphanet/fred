@@ -577,7 +577,7 @@ public class WelcomeToadlet extends Toadlet {
                 restartForm.addChild("input", new String[]{"type", "name"}, new String[]{"hidden", "restart"});
                 restartForm.addChild("input", new String[]{"type", "name", "value"}, new String[]{"submit", "restart2", l10n("restartNode")});
                 // add autostart info for Linux (where there’s no tray *and* there is a defined way for autostart).
-                if (FileUtil.OperatingSystem.Linux.equals(FileUtil.detectedOS)) {
+                if (FileUtil.OperatingSystem.Linux == FileUtil.detectedOS) {
                     restartForm.addChild("p", l10n("disableAutostartLinuxInfo"));
                 }
             }
