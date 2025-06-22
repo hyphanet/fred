@@ -25,7 +25,6 @@ import freenet.client.InsertException;
 import freenet.client.InsertException.InsertExceptionMode;
 import freenet.support.Base64;
 import freenet.support.Fields;
-import freenet.support.HexUtil;
 import freenet.support.IllegalBase64Exception;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -493,25 +492,6 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 	    this.suggestedEdition = 0;
 	}
 
-	/** Dump the individual components of the key to System.out. */
-	public void decompose() {
-		String r = routingKey == null ? "none" : HexUtil.bytesToHex(routingKey);
-		String k = cryptoKey == null ? "none" : HexUtil.bytesToHex(cryptoKey);
-		String e = extra == null ? "none" : HexUtil.bytesToHex(extra);
-		System.out.println("FreenetURI" + this);
-		System.out.println("Key type   : " + keyType);
-		System.out.println("Routing key: " + r);
-		System.out.println("Crypto key : " + k);
-		System.out.println("Extra      : " + e);
-		System.out.println(
-			"Doc name   : " + (docName == null ? "none" : docName));
-		System.out.print("Meta strings: ");
-		if(metaStr == null)
-			System.out.println("none");
-		else
-			System.out.println(Arrays.asList(metaStr).toString());
-	}
-
 	public String getGuessableKey() {
 		return getDocName();
 	}
@@ -795,11 +775,6 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 				b.append('/').append(URLEncoder.encode(metaStr[i], "/", false, " "));
 			}
 		return b.toString();
-	}
-
-	/** Run this class to decompose the argument. */
-	public static void main(String[] args) throws Exception {
-		(new FreenetURI(args[0])).decompose();
 	}
 
 	/** Get the extra bytes. SSKs and CHKs have extra bytes, these come
