@@ -17,6 +17,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.l10n.NodeL10n;
@@ -566,8 +567,10 @@ public class PproxyToadlet extends Toadlet {
 		p.addChild("#", l10n("loadOfficialPluginText"));
 		
 		for (Entry<String, List<OfficialPluginDescription>> groupPlugins : availablePlugins.entrySet()) {
-			List<OfficialPluginDescription> notLoadedPlugins = retainOnlySupportedPlugins(
-					getNotLoadedPlugins(pm, groupPlugins.getValue()));
+			List<OfficialPluginDescription> notLoadedPlugins = groupPlugins.getValue().stream()
+					.filter(plugin -> !pm.isPluginLoaded(plugin.name))
+					.filter(plugin -> !plugin.unsupported)
+					.collect(Collectors.toList());
 			if (notLoadedPlugins.isEmpty()) {
 				continue;
 			}
@@ -597,26 +600,6 @@ public class PproxyToadlet extends Toadlet {
 			}
 			option.addChild("#", " - " + pluginDescription.getLocalisedPluginDescription());
 		}
-	}
-
-	private List<OfficialPluginDescription> getNotLoadedPlugins(PluginManager pluginManager, List<OfficialPluginDescription> plugins) {
-		List<OfficialPluginDescription> notLoadedPlugins = new ArrayList<OfficialPluginDescription>();
-		for (OfficialPluginDescription plugin : plugins) {
-			if (!pluginManager.isPluginLoaded(plugin.name)) {
-				notLoadedPlugins.add(plugin);
-			}
-		}
-		return notLoadedPlugins;
-	}
-
-	private List<OfficialPluginDescription> retainOnlySupportedPlugins(List<OfficialPluginDescription> plugins) {
-		List<OfficialPluginDescription> supportedPlugins = new ArrayList<OfficialPluginDescription>();
-		for (OfficialPluginDescription plugin : plugins) {
-			if (!plugin.unsupported) {
-				supportedPlugins.add(plugin);
-			}
-		}
-		return supportedPlugins;
 	}
 
 	private void showUnofficialPluginLoader(ToadletContext toadletContext, HTMLNode contentNode) {
