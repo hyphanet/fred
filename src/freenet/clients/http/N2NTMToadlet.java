@@ -16,7 +16,9 @@ import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.NodeStarter;
 import freenet.node.PeerManager;
+import freenet.support.Base64;
 import freenet.support.HTMLNode;
+import freenet.support.IllegalBase64Exception;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.SizeUtil;
@@ -147,7 +149,12 @@ public class N2NTMToadlet extends Toadlet {
 		if (request.isPartSet("replyTo")) {
 			String message = request.getPartAsStringFailsafe("replyTo", 1024 * 1024);
 			message = message.trim();
-			message = message.replaceAll("NEWLINE", "\n");
+			try {
+				message = Base64.decodeUTF8(message);
+			} catch (IllegalBase64Exception e) {
+				Logger.error(this, "could not decode replyTo text", e);
+				message = "";
+			}
 			if (!message.isEmpty()) {
 				message = "\n> " + String.join("\n> ", message.split("\n")) + "\n\n";
 				message = message.replaceAll("\n> >", "\n>>")
