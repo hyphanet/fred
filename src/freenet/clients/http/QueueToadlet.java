@@ -218,7 +218,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					"Location",
 					LocalFileInsertToadlet.PATH
 						+ "?key=" + insertURI.toASCIIString()
-						+ "&compress=" + (request.getPartAsStringFailsafe("compress", 128).isEmpty())
+						+ "&compress=" + (!(request.getPartAsStringFailsafe("compress", 128).isEmpty()))
 						+ "&compatibilityMode=" + request.getPartAsStringFailsafe("compatibilityMode", 100)
 						+ "&overrideSplitfileKey=" + request.getPartAsStringFailsafe("overrideSplitfileKey", 65)
 				);
