@@ -314,7 +314,7 @@ public class ArchiveManager {
 				pis.connect(pos);
 				final OutputStream os = new BufferedOutputStream(pos);
 				wrapper = new ExceptionWrapper();
-				context.mainExecutor.execute(new Runnable() {
+				context.getMainExecutor().execute(new Runnable() {
 
 					@Override
 					public void run() {
