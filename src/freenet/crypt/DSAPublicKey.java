@@ -22,7 +22,7 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 	public static final int HASH_LENGTH = 32;
 	/** Null means use Global.DSAgroupBigA. This makes persistence simpler. */
 	private final DSAGroup group;
-	private byte[] fingerprint = null;
+	private volatile byte[] fingerprint;
 	
 	public DSAPublicKey(DSAGroup g, BigInteger y) {
 		if(y.signum() != 1)
@@ -151,11 +151,12 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 
 	@Override
 	public byte[] fingerprint() {
-		synchronized(this) {
-			if(fingerprint == null)
-				fingerprint = fingerprint(new BigInteger[]{y});
-			return fingerprint;
+		byte[] fingerprint = this.fingerprint;
+		if (fingerprint == null) {
+			fingerprint = fingerprint(new BigInteger[]{y});
+			this.fingerprint = fingerprint;
 		}
+		return fingerprint;
 	}
 
 	public boolean equals(DSAPublicKey o) {
