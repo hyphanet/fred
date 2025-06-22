@@ -48,18 +48,19 @@ public class AEADInputStream extends FilterInputStream {
     public final int getIVSize() {
         return cipher.getUnderlyingCipher().getBlockSize() / 8;
     }
-    
-    private final byte[] onebyte = new byte[1];
-    
+
     private final byte[] excess;
     private int excessEnd;
     private int excessPtr;
     
     @Override
     public int read() throws IOException {
-        int length = read(onebyte);
-        if(length <= 0) return -1;
-        else return onebyte[0];
+        byte[] buf = new byte[1];
+        int length = read(buf, 0, 1);
+        if (length > 0) {
+            return Byte.toUnsignedInt(buf[0]);
+        }
+        return -1;
     }
     
     @Override

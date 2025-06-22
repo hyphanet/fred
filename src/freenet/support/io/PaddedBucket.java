@@ -164,14 +164,12 @@ public class PaddedBucket implements Bucket, Serializable {
         
         @Override
         public int read() throws IOException {
-            synchronized(PaddedBucket.this) {
-                if(counter >= size) return -1;
+            byte[] buf = new byte[1];
+            int length = read(buf, 0, 1);
+            if (length > 0) {
+                return Byte.toUnsignedInt(buf[0]);
             }
-            int ret = in.read();
-            synchronized(PaddedBucket.this) {
-                counter++;
-            }
-            return ret;
+            return -1;
         }
         
         @Override

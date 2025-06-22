@@ -30,14 +30,21 @@ public class ByteBufferInputStream extends InputStream implements DataInput {
 
 	@Override
 	public int read() throws IOException {
-		try {
-			return buf.get() & Integer.MAX_VALUE;
-		} catch (BufferUnderflowException e) {
-			return -1;
+		byte[] buf = new byte[1];
+		int length = read(buf, 0, 1);
+		if (length > 0) {
+			return Byte.toUnsignedInt(buf[0]);
 		}
+		return -1;
 	}
-	
-	
+
+	@Override
+	public int read(byte[] b, int off, int len) throws IOException {
+		int read = Math.min(len, buf.remaining());
+		buf.get(b, off, read);
+		return read;
+	}
+
 	public int remaining() {
 		return buf.remaining();
 	}
