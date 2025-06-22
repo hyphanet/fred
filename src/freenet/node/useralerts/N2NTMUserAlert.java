@@ -14,7 +14,7 @@ import freenet.node.DarknetPeerNode;
 import freenet.node.PeerNode;
 import freenet.support.HTMLNode;
 
-// Node To Node Text Message User Alert
+// Node To Node Text Message User Alert: messaging between users
 public class N2NTMUserAlert extends AbstractUserAlert implements NodeToNodeMessageUserAlert {
 	private final WeakReference<PeerNode> peerRef;
 	private final String messageText;
