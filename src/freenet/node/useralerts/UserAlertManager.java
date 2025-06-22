@@ -260,8 +260,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 					new String[]{"post", "/send_n2ntm/"});
 			form.addChild("input",
 					new String[]{"hidden", "name", "value"},
-					new String[]{"true", "replyTo", userAlert.getMessageText()
-							.replaceAll("\n", "NEWLINE")});
+					new String[]{"true", "replyTo", Base64.encodeUTF8(userAlert.getMessageText())});
 			form.addChild("input",
 					new String[]{"hidden", "name", "value"},
 					new String[]{"true", "peernode_hashcode", peerNode == null
