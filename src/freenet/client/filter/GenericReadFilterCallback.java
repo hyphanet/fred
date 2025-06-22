@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.filter;
 
+import freenet.l10n.BaseL10n;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -60,6 +61,8 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 			}
 		});
 	}
+
+	private static BaseL10n l10n = NodeL10n.getBase();
 
 	public GenericReadFilterCallback(URI uri, FoundURICallback cb,TagReplacerCallback trc, LinkFilterExceptionProvider linkFilterExceptionProvider) {
 		this.baseURI = uri;
@@ -303,11 +306,11 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 	}
 
 	private static String l10n(String key, String pattern, String value) {
-		return NodeL10n.getBase().getString("GenericReadFilterCallback."+key, pattern, value);
+		return l10n.getString("GenericReadFilterCallback." + key, pattern, value);
 	}
 
 	private static String l10n(String key) {
-		return NodeL10n.getBase().getString("GenericReadFilterCallback."+key);
+		return l10n.getString("GenericReadFilterCallback." + key);
 	}
 
 	private String finishProcess(HTTPRequest req, String overrideType, String path, URI u, boolean noRelative) {
@@ -487,4 +490,18 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 		if(cb != null)
 			cb.onFinishedPage();
 	}
+
+	/**
+	 * Sets the {@link BaseL10n l10n provider} to use for translating some
+	 * error messages. If this method is not called, {@link NodeL10n}’s
+	 * {@link NodeL10n#getBase() l10n provider} is used.
+	 * <p>
+	 * This method should only be called from tests.
+	 *
+	 * @param l10n The l10n provider to use
+	 */
+	static void setBaseL10n(BaseL10n l10n) {
+		GenericReadFilterCallback.l10n = l10n;
+	}
+
 }

@@ -1,5 +1,8 @@
 package freenet.clients.http.utils;
 
+import freenet.clients.http.utils.L10nExtension.L10nFunction;
+import freenet.l10n.BaseL10n;
+import freenet.l10n.NodeL10n;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
@@ -22,7 +25,7 @@ public class PebbleUtils {
     loader.setPrefix(PebbleUtils.TEMPLATE_ROOT_PATH);
     loader.setSuffix(PebbleUtils.TEMPLATE_NAME_SUFFIX);
 
-    templateEngine = new PebbleEngine.Builder().loader(loader).extension(new L10nExtension()).build();
+    templateEngine = new PebbleEngine.Builder().loader(loader).extension(new L10nExtension(NodeL10n.getBase())).build();
   }
 
   public static void addChild(
@@ -39,4 +42,20 @@ public class PebbleUtils {
 
     parent.addChild("%", writer.toString());
   }
+
+  /**
+   * Sets the {@link BaseL10n l10n provider} to use with the
+   * {@link L10nFunction}. If this method is not called, {@link NodeL10n}’s
+   * {@link NodeL10n#getBase() l10n provider} is used.
+   * <p>
+   * This method should only be called from tests.
+   *
+   * @param l10n The l10n provider to use
+   */
+  static void setBaseL10n(BaseL10n l10n) {
+    // this will remove the old function from the registry, because the
+    // registry is a big Map, with the function name as key.
+    templateEngine.getExtensionRegistry().addExtension(new L10nExtension(l10n));
+  }
+
 }
