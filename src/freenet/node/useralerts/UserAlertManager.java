@@ -7,7 +7,6 @@ import static java.util.Arrays.stream;
 
 import java.io.IOException;
 import java.io.StringWriter;
-import java.lang.ref.WeakReference;
 import java.text.Format;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
