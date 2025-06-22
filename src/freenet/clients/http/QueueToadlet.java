@@ -435,7 +435,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				String downloadPath;
 				File downloadsDir = null;
 				//Download to disk disabled and initialized.
-				if (request.isPartSet("path") && !core.isDownloadDisabled()) {
+				if (request.isPartSet("path") && !FProxyToadlet.isDownloadDisabledOrUnsafe(ctx, core)) {
 					downloadPath = request.getPartAsStringFailsafe("path", MAX_FILENAME_LENGTH);
 					try {
 						downloadsDir = getDownloadsDir(downloadPath);
@@ -469,7 +469,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				if(target == null) target = "direct";
 				String downloadPath;
 				File downloadsDir = null;
-				if (request.isPartSet("path") && !core.isDownloadDisabled()) {
+				if (request.isPartSet("path") && !FProxyToadlet.isDownloadDisabledOrUnsafe(ctx, core)) {
 					downloadPath = request.getPartAsStringFailsafe("path", MAX_FILENAME_LENGTH);
 					try {
 						downloadsDir = getDownloadsDir(downloadPath);
@@ -2008,7 +2008,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		//Force downloading to encrypted space if high/maximum threat level or if the user has disabled
 		//downloading to disk.
 		if(threatLevel == PHYSICAL_THREAT_LEVEL.HIGH || threatLevel == PHYSICAL_THREAT_LEVEL.MAXIMUM ||
-			core.isDownloadDisabled()) {
+			FProxyToadlet.isDownloadDisabledOrUnsafe(ctx, core)) {
 			downloadForm.addChild("input",
 				new String[] { "type", "name", "value" },
 				new String[] { "hidden", "target", "direct" });

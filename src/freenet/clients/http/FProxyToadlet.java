@@ -381,7 +381,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		}
 
 		//Display fetch option if not at low physical security or the user has disabled downloading to disk.
-		if (threatLevel != PHYSICAL_THREAT_LEVEL.LOW || core.isDownloadDisabled()) {
+		if (threatLevel != PHYSICAL_THREAT_LEVEL.LOW || isDownloadDisabledOrUnsafe(ctx, core)) {
 			HTMLNode option = optionList.addChild("li");
 			HTMLNode optionForm = ctx.addFormChild(option, "/downloads/", "tooBigQueueForm");
 			optionForm.addChild("input",
