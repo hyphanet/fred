@@ -88,8 +88,11 @@ public class N2NTMUserAlert extends AbstractUserAlert implements NodeToNodeMessa
 	}
 
 	@Override
-	public WeakReference<PeerNode> getSourceNode() {
-		return peerRef;
+	public PeerNode getSourceNode() {
+		if (peerRef == null) {
+			return null;
+		}
+		return peerRef.get();
 	}
 
 	@Override
