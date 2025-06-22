@@ -61,7 +61,7 @@ public class InetAddressIpv6FirstComparator implements Comparator<InetAddress> {
 				reachabilityCache.put(b, reachable1);
 			}
 			if (reachable1) {
-				return -1;
+				return 1;
 			}
 		} else if (arg0.isSiteLocalAddress() && !arg1.isSiteLocalAddress()) {
 			Boolean reachable0 = reachabilityCache.get(a);
@@ -74,7 +74,7 @@ public class InetAddressIpv6FirstComparator implements Comparator<InetAddress> {
 				reachabilityCache.put(a, reachable0);
 			}
 			if (reachable0) {
-				return 1;
+				return -1;
 			}
 		}
 		byte[] bytes0 = arg0.getAddress();
