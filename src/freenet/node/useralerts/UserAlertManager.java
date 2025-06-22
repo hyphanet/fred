@@ -253,7 +253,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 		return userAlertNode;
 	}
 
-	public HTMLNode renderReplyButton(N2NTMUserAlert userAlert, PeerNode peerNode) {
+	private HTMLNode renderReplyButton(N2NTMUserAlert userAlert, PeerNode peerNode) {
 		HTMLNode form = new HTMLNode("form",
 					new String[]{"method", "action"},
 					new String[]{"post", "/send_n2ntm/"});
