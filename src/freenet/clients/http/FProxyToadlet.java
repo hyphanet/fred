@@ -321,7 +321,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		}
 		//Display FProxy option to download to disk if the user isn't at maximum physical threat level
 		//and hasn't disabled downloading to disk.
-		if (threatLevel != PHYSICAL_THREAT_LEVEL.MAXIMUM && !core.isDownloadDisabled()) {
+		if (threatLevel != PHYSICAL_THREAT_LEVEL.MAXIMUM && !isDownloadDisabledOrUnsafe(ctx, core)) {
 			HTMLNode option = optionList.addChild("li");
 			HTMLNode optionForm = ctx.addFormChild(option, "/downloads/", "tooBigQueueForm");
 			optionForm.addChild("input",
@@ -380,7 +380,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		}
 
 		//Display fetch option if not at low physical security or the user has disabled downloading to disk.
-		if (threatLevel != PHYSICAL_THREAT_LEVEL.LOW || core.isDownloadDisabled()) {
+		if (threatLevel != PHYSICAL_THREAT_LEVEL.LOW || isDownloadDisabledOrUnsafe(ctx, core)) {
 			HTMLNode option = optionList.addChild("li");
 			HTMLNode optionForm = ctx.addFormChild(option, "/downloads/", "tooBigQueueForm");
 			optionForm.addChild("input",
@@ -411,6 +411,14 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				filterControl.addChild("div", l10n("filterDataMessage"));
 			}
 		}
+	}
+
+	static boolean isDownloadDisabledOrUnsafe(ToadletContext ctx, NodeClientCore core) {
+		return
+			// download is either disabled fully on this node
+			core.isDownloadDisabled()
+			// or we're accessing in public gateway mode and do not have full access
+			|| (ctx.getContainer().publicGatewayMode() && !ctx.isAllowedFullAccess());
 	}
 
 	public static String l10n(String msg) {
