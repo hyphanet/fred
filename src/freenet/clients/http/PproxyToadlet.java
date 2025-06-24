@@ -17,6 +17,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.l10n.NodeL10n;
@@ -562,7 +563,10 @@ public class PproxyToadlet extends Toadlet {
 		p.addChild("#", l10n("loadOfficialPluginText"));
 		
 		for (Entry<String, List<OfficialPluginDescription>> groupPlugins : availablePlugins.entrySet()) {
-			List<OfficialPluginDescription> notLoadedPlugins = getNotLoadedPlugins(pm, groupPlugins.getValue());
+			List<OfficialPluginDescription> notLoadedPlugins = groupPlugins.getValue().stream()
+					.filter(plugin -> !pm.isPluginLoaded(plugin.name))
+					.filter(plugin -> !plugin.unsupported)
+					.collect(Collectors.toList());
 			if (notLoadedPlugins.isEmpty()) {
 				continue;
 			}
@@ -575,9 +579,6 @@ public class PproxyToadlet extends Toadlet {
 		HTMLNode pluginGroupNode = addOfficialForm.addChild("div", "class", "plugin-group");
 		pluginGroupNode.addChild("div", "class", "plugin-group-title", l10n("pluginGroupTitle", "pluginGroup", groupPlugins.getKey()));
 		for (OfficialPluginDescription pluginDescription : notLoadedPlugins) {
-			if (pluginDescription.unsupported) {
-				continue;
-			}
 			HTMLNode pluginNode = pluginGroupNode.addChild("div", "class", "plugin");
 			HTMLNode option = pluginNode.addChild("input",
 					new String[] { "type", "name", "value", "id" },
@@ -595,16 +596,6 @@ public class PproxyToadlet extends Toadlet {
 			}
 			option.addChild("#", " - " + pluginDescription.getLocalisedPluginDescription());
 		}
-	}
-
-	private List<OfficialPluginDescription> getNotLoadedPlugins(PluginManager pluginManager, List<OfficialPluginDescription> plugins) {
-		List<OfficialPluginDescription> notLoadedPlugins = new ArrayList<OfficialPluginDescription>();
-		for (OfficialPluginDescription plugin : plugins) {
-			if (!pluginManager.isPluginLoaded(plugin.name)) {
-				notLoadedPlugins.add(plugin);
-			}
-		}
-		return notLoadedPlugins;
 	}
 
 	private void showUnofficialPluginLoader(ToadletContext toadletContext, HTMLNode contentNode) {
