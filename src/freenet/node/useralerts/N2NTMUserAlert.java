@@ -82,10 +82,7 @@ public class N2NTMUserAlert extends AbstractUserAlert implements NodeToNodeMessa
 		return alertNode;
 	}
 
-	public boolean canReply() {
-		return true;
-	}
-
+    @Override
 	public PeerNode getSourceNode() {
 		if (peerRef == null) {
 			return null;
