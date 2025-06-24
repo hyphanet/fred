@@ -296,7 +296,7 @@ public class N2NTMToadlet extends Toadlet {
 	public static void createN2NTMSendForm(boolean advancedMode,
 			HTMLNode contentNode, ToadletContext ctx, HashMap<String, String> peers)
 			throws ToadletContextClosedException, IOException {
-		createN2NTMSendForm(pageNode, advancedMode, contentNode, ctx, peers, "");
+		createN2NTMSendForm(null, advancedMode, contentNode, ctx, peers, "");
 	}
 	public static void createN2NTMSendForm(HTMLNode pageNode, boolean advancedMode,
 			HTMLNode contentNode, ToadletContext ctx, HashMap<String, String> peers, String initalContent)
