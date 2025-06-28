@@ -10,8 +10,4 @@ public abstract class AbstractNodeToNodeFileOfferUserAlert extends AbstractUserA
     super();
   }
   
-	protected AbstractNodeToNodeFileOfferUserAlert(boolean userCanDismiss, String title, String text, String shortText, HTMLNode htmlText, short priorityClass, boolean valid, String dismissButtonText, boolean shouldUnregisterOnDismiss, Object userIdentifier) {
-    super(userCanDismiss, title, text, shortText, htmlText, priorityClass, valid, dismissButtonText, shouldUnregisterOnDismiss, userIdentifier);
-	}
-  
 }
