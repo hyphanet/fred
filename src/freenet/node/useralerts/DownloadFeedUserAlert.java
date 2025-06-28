@@ -29,8 +29,8 @@ public class DownloadFeedUserAlert extends AbstractUserAlert implements NodeToNo
 		this.composed = composed;
 		this.sent = sent;
 		this.received = received;
-		peerRef = sourcePeerNode.getWeakRef();
-		sourceNodeName = sourcePeerNode.getName();
+		this.peerRef = sourcePeerNode.getWeakRef();
+		this.sourceNodeName = sourcePeerNode.getName();
 	}
 
 	@Override
