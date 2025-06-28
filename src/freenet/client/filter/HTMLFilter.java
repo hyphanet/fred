@@ -23,7 +23,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,7 +30,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.Stack;
 import java.util.StringTokenizer;
-import java.util.Arrays;
 
 import freenet.clients.http.ToadletContextImpl;
 import freenet.l10n.NodeL10n;
@@ -2152,24 +2150,19 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			this.allowedAttrs = new HashSet<String>();
 			this.parsedAttrs = new HashSet<String>();
 			if (allowedAttrs != null) {
-				for (String allowedAttr: allowedAttrs)
-					this.allowedAttrs.add(allowedAttr);
+				this.allowedAttrs.addAll(Arrays.asList(allowedAttrs));
 			}
 			this.uriAttrs = new HashSet<String>();
 			if (uriAttrs != null) {
-				for (String uriAttr: uriAttrs)
-					this.uriAttrs.add(uriAttr);
+				this.uriAttrs.addAll(Arrays.asList(uriAttrs));
 			}
 			this.inlineURIAttrs = new HashSet<String>();
 			if (inlineURIAttrs != null) {
-				for (String inlineURIAttr: inlineURIAttrs)
-					this.inlineURIAttrs.add(inlineURIAttr);
+				this.inlineURIAttrs.addAll(Arrays.asList(inlineURIAttrs));
 			}
 			this.booleanAttrs = new HashSet<String>();
 			if (booleanAttrs != null) {
-				for(int x = 0; x < booleanAttrs.length; x++) {
-					this.booleanAttrs.add(booleanAttrs[x]);
-				}
+				this.booleanAttrs.addAll(Arrays.asList(booleanAttrs));
 			}
 			// https://w3c.github.io/aria/
 			this.allowedRole = new HashSet<String>(Arrays.asList("alert","alertdialog","application","article",
@@ -2242,12 +2235,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			h = sanitizeHash(h, t, pc);
 			if (h == null) return null;
 			//Remove any blank entries
-			for(Iterator<Entry<String, Object>> it = h.entrySet().iterator(); it.hasNext();){
-				Map.Entry<String, Object> entry = it.next();
-				if(entry.getValue() == null || entry.getValue().equals("") && pc.isXHTML){
-					it.remove();
-				}
-			}
+			h.entrySet().removeIf(entry -> entry.getValue() == null || entry.getValue().equals("") && pc.isXHTML);
 			//If the tag has no attributes, and this is not allowable, remove it
             if(h.isEmpty() && expungeTagIfNoAttributes()) return null;
 			if (t.startSlash)
@@ -2539,9 +2527,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			String[] inlineURIAttrs, String[] booleanAttrs) {
 			super(tag, allowedAttrs, uriAttrs, inlineURIAttrs, booleanAttrs);
 			allowedHTMLTags.add(tag);
-			for(String attr : locallyVerifiedAttrs) {
-				this.parsedAttrs.add(attr);
-			}
+			this.parsedAttrs.addAll(Arrays.asList(locallyVerifiedAttrs));
 		}
 
 		@Override
@@ -2678,9 +2664,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			String[] inlineURIAttrs,
 			String[] eventAttrs) {
 			super(tag, allowedAttrs, uriAttrs, inlineURIAttrs, eventAttrs, null);
-			for(String attr : locallyVerifiedAttrs) {
-				this.parsedAttrs.add(attr);
-			}
+			this.parsedAttrs.addAll(Arrays.asList(locallyVerifiedAttrs));
 		}
 
 		@Override
@@ -2742,13 +2726,11 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				while (tok.hasMoreTokens()) {
 					String token = tok.nextToken();
 					if(token.equalsIgnoreCase("stylesheet")) {
-						if(token.equalsIgnoreCase("stylesheet")) {
-							isStylesheet = true;
-							if(!((i == 0 || i == 1 && prevToken != null && prevToken.equalsIgnoreCase("alternate"))))
-								return null;
-							if(tok.hasMoreTokens())
-								return null; // Disallow extra tokens after "stylesheet"
-						}
+						isStylesheet = true;
+						if(!((i == 0 || i == 1 && prevToken != null && prevToken.equalsIgnoreCase("alternate"))))
+							return null;
+						if(tok.hasMoreTokens())
+							return null; // Disallow extra tokens after "stylesheet"
 					} else if (token.equalsIgnoreCase("icon")) {
 						isIcon = true;
 					} else if(!isStandardLinkType(token)) continue;
@@ -2854,7 +2836,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		// Does not include stylesheet
 		private static final HashSet<String> standardRelTypes = new HashSet<String>();
 		static {
-			for(String s : new String[] {
+			// FIXME: more valid values from https://www.iana.org/assignments/link-relations/link-relations.xhtml
+			standardRelTypes.addAll(Arrays.asList(new String[]{
 					"alternate",
 					"start",
 					"next",
@@ -2869,7 +2852,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					"appendix",
 					"help",
 					"bookmark"
-			}) standardRelTypes.add(s);
+			}));
 		}
 
 		private boolean isStandardLinkType(String token) {
@@ -2896,9 +2879,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			String[] eventAttrs,
 			String[] booleanAttrs) {
 			super(tag, allowedAttrs, uriAttrs, inlineURIAttrs, eventAttrs, booleanAttrs);
-			for(String attr : locallyVerifiedAttrs) {
-				this.parsedAttrs.add(attr);
-			}
+			this.parsedAttrs.addAll(Arrays.asList(locallyVerifiedAttrs));
 		}
 
 		@Override
@@ -2936,9 +2917,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			String[] uriAttrs,
 			String[] eventAttrs) {
 			super(tag, allowedAttrs, uriAttrs, null, eventAttrs, null);
-			for(String attr : locallyVerifiedAttrs) {
-				this.parsedAttrs.add(attr);
-			}
+			this.parsedAttrs.addAll(Arrays.asList(locallyVerifiedAttrs));
 		}
 
 		@Override
@@ -2998,9 +2977,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			super(tag, allowedAttrs, uriAttrs, inlineURIAttrs, eventAttrs, null);
 			this.allowedTypes = new HashSet<String>();
 			if (types != null) {
-				for (String type: types) {
-					this.allowedTypes.add(type);
-				}
+				this.allowedTypes.addAll(Arrays.asList(types));
 			}
 		}
 
@@ -3048,10 +3025,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 
 		MetaTagVerifier() {
 			super("meta", new String[] { "id" });
-			for(String attr : locallyVerifiedAttrs) {
-				this.parsedAttrs.add(attr);
-				}
-			}
+			this.parsedAttrs.addAll(Arrays.asList(locallyVerifiedAttrs));
+		}
 
 		@Override
 		Map<String, Object> sanitizeHash(Map<String, Object> h,
@@ -3351,9 +3326,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		private static final String[] locallyVerifiedAttrs = new String[] { "xmlns" };
 		HtmlTagVerifier() {
 			super("html", new String[] { "id", "version" });
-			for(String attr : locallyVerifiedAttrs) {
-				parsedAttrs.add(attr);
-			}
+			this.parsedAttrs.addAll(Arrays.asList(locallyVerifiedAttrs));
 		}
 
 		@Override
@@ -3376,9 +3349,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 
 		BaseHrefTagVerifier(String tag, String[] allowedAttrs, String[] uriAttrs) {
 			super(tag, allowedAttrs, uriAttrs, null, emptyStringArray);
-			for(String attr : locallyVerifiedAttrs) {
-				this.parsedAttrs.add(attr);
-			}
+			this.parsedAttrs.addAll(Arrays.asList(locallyVerifiedAttrs));
 		}
 
 		@Override
