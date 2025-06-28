@@ -105,13 +105,4 @@ public class DownloadFeedUserAlert extends AbstractUserAlert implements NodeToNo
 		return true;
 	}
 
-	@Override
-	public WeakReference<PeerNode> getPeerRef() {
-		return peerRef;
-	}
-
-	@Override
-	public String getSourceNodeName() {
-		return sourceNodeName;
-	}
 }

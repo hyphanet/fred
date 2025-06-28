@@ -1023,16 +1023,6 @@ public class DarknetPeerNode extends PeerNode {
 		protected void onReceiveFailure() {
 			UserAlert alert = new AbstractNodeToNodeFileOfferUserAlert() {
 				@Override
-				public WeakReference<PeerNode> getPeerRef() {
-					return myRef;
-				}
-
-				@Override
-				public String getSourceNodeName() {
-					return myName;
-				}
-
-				@Override
 				public String dismissButtonText() {
 					return NodeL10n.getBase().getString("UserAlert.hide");
 				}
@@ -1126,15 +1116,6 @@ public class DarknetPeerNode extends PeerNode {
 		private void onReceiveSuccess() {
 			UserAlert alert = new AbstractNodeToNodeFileOfferUserAlert() {
 				@Override
-				public WeakReference<PeerNode> getPeerRef() {
-					return myRef;
-				}
-
-				@Override
-				public String getSourceNodeName() {
-					return myName;
-				}
-				@Override
 				public String dismissButtonText() {
 					return NodeL10n.getBase().getString("UserAlert.hide");
 				}
@@ -1207,15 +1188,6 @@ public class DarknetPeerNode extends PeerNode {
 		/** Ask the user whether (s)he wants to download a file from a direct peer */
 		public UserAlert askUserUserAlert() {
 			return new AbstractNodeToNodeFileOfferUserAlert() {
-				@Override
-				public WeakReference<PeerNode> getPeerRef() {
-					return myRef;
-				}
-
-				@Override
-				public String getSourceNodeName() {
-					return myName;
-				}
 
 				@Override
 				public String dismissButtonText() {
