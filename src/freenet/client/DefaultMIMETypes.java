@@ -571,7 +571,7 @@ public class DefaultMIMETypes {
 		addMIMEType((short)439, "audio/x-realaudio", "ra");
 		addMIMEType((short)440, "audio/x-scpls", "pls");
 		addMIMEType((short)441, "audio/x-sd2", "sd2");
-		addMIMEType((short)442, "audio/x-wav", "wav");
+		addMIMEType((short)442, "audio/vnd.wave", "wav");
 		addMIMEType((short)443, "chemical/x-pdb", "pdb");
 		addMIMEType((short)444, "chemical/x-xyz", "xyz");
 		addMIMEType((short)445, "image/cgm");
