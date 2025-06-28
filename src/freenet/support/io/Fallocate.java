@@ -60,9 +60,9 @@ public final class Fallocate {
    */
   @Deprecated
   public Fallocate keepSize() {
-	if (!IS_LINUX) {
-	  throw new UnsupportedOperationException("fallocate keep size is not supported on this file system");
-	}
+    if (!IS_LINUX) {
+      throw new UnsupportedOperationException("fallocate keep size is not supported on this file system");
+    }
     mode |= FALLOC_FL_KEEP_SIZE;
     return this;
   }
@@ -85,7 +85,7 @@ public final class Fallocate {
 
     if (isUnsupported || errno != 0) {
       if (errno != 0) {
-    	// OS supports fallocate() but it failed. Do not log if the OS does not support fallocate().
+        // OS supports fallocate() but it failed. Do not log if the OS does not support fallocate().
         Logger.normal(this, "fallocate() failed; using legacy method; errno=" + errno);
       }
       legacyFill(channel, final_filesize, offset);
@@ -137,12 +137,16 @@ public final class Fallocate {
       // Windows do not create sparse files by default, so just write a byte at the end.
       fc.write(ByteBuffer.allocate(1), newLength - 1);
     } else {
-	  // fill fc with zeros
-      byte[] b = new byte[4096];
+      // fill fc with zeros (4MiB each time)
+      byte[] b = new byte[4096 * 1024];
       ByteBuffer bb = ByteBuffer.wrap(b);
-      while (offset < newLength) {
+      while ((offset < newLength) && (newLength - offset >= b.length)) {
         bb.rewind();
         offset += fc.write(bb, offset);
+      }
+      // Remaining data can be written at once. If less bytes are written then try again.
+      while (offset < newLength) {
+        offset += fc.write(ByteBuffer.wrap(new byte[Math.toIntExact(newLength - offset)]), offset);
       }
     }
   }
