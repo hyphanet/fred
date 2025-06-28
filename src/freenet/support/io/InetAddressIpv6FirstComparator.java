@@ -58,26 +58,15 @@ public class InetAddressIpv6FirstComparator implements Comparator<InetAddress> {
 		return reachable;
 	}
 
-	// inverted prefer, because not(...) is only documented since Java 11
-	private Comparator<InetAddress> preferNot(Predicate<InetAddress> pred) {
-		return (arg0, arg1) -> -1 * predicateToCompare(pred, arg0, arg1);
-	}
-
 	private Comparator<InetAddress> prefer(Predicate<InetAddress> pred) {
-		return (arg0, arg1) -> predicateToCompare(pred, arg0, arg1);
+		return (arg0, arg1) -> Boolean.compare(!pred.test(arg0), !pred.test(arg1));
 	}
 
-	private int predicateToCompare(Predicate<InetAddress> pred, InetAddress arg0, InetAddress arg1) {
-		if (pred.test(arg0) && pred.test(arg1)) {
-				return 0;
-			}
-			if (pred.test(arg0)) {
-				return -1;
-			}
-			if (pred.test(arg1)) {
-				return 1;
-			}
-			return 0;
+	/**
+	 * inverted prefer, because not(...) is only documented since Java 11
+	 */
+	private Comparator<InetAddress> preferNot(Predicate<InetAddress> pred) {
+		return prefer(pred).reversed();
 	}
 
 }
