@@ -4,6 +4,13 @@ ul#navlist {
 }
 
 
+/*** From baseelements.css ***/
+div.dismiss-all-alerts-container {
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+}
+
 /*** From base.css ***/
 #statusbar-container {
   position: fixed;

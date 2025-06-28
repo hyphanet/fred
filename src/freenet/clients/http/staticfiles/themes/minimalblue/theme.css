@@ -558,6 +558,18 @@ span.peer_idle_old {
 	font-weight: bold;
 }
 
+
+/*
+ * Alerts Page
+ */
+
+div.dismiss-all-alerts-container {
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+  margin-left: 5px;
+}
+
 /* statusbar */
 
 div#statusbar-container {
