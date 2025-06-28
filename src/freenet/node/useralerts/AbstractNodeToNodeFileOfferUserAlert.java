@@ -6,8 +6,5 @@ import freenet.support.HTMLNode;
  * Helper to create anonymous classes with interface NodeToNodeMessageUserAlert
  */
 public abstract class AbstractNodeToNodeFileOfferUserAlert extends AbstractUserAlert implements NodeToNodeMessageUserAlert {
-  public AbstractNodeToNodeFileOfferUserAlert(){
-    super();
-  }
-  
+    // intentionally left blank
 }
