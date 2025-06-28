@@ -3,7 +3,7 @@ package freenet.node.useralerts;
 import freenet.support.HTMLNode;
 
 /**
- * Wrapper class to create anonymous classes with interface NodeToNodeMessageUserAlert
+ * Helper to create anonymous classes with interface NodeToNodeMessageUserAlert
  */
 public abstract class AbstractNodeToNodeFileOfferUserAlert extends AbstractUserAlert implements NodeToNodeMessageUserAlert {
   public AbstractNodeToNodeFileOfferUserAlert(){
