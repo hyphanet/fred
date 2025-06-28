@@ -18,8 +18,11 @@
  */
 package freenet.io.xfer;
 
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Deque;
+import java.util.HashSet;
+import java.util.List;
 
 import freenet.io.comm.AsyncMessageCallback;
 import freenet.io.comm.AsyncMessageFilterCallback;
@@ -32,16 +35,18 @@ import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerContext;
 import freenet.io.comm.RetrievalException;
-import freenet.node.MessageItem;
 import freenet.io.comm.SlowAsyncMessageFilterCallback;
+import freenet.node.HighHtlAware;
+import freenet.node.MessageItem;
+import freenet.node.Node;
 import freenet.node.PrioRunnable;
 import freenet.support.BitArray;
 import freenet.support.Executor;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.Ticker;
 import freenet.support.TimeUtil;
-import freenet.support.Logger.LogLevel;
 import freenet.support.io.NativeThread;
 import freenet.support.math.MedianMeanRunningAverage;
 
@@ -61,6 +66,12 @@ import freenet.support.math.MedianMeanRunningAverage;
  */
 public class BlockTransmitter {
 
+	/**
+	 * Maximum of the wait time for packets 31 and 32. Empirical value by reporter.
+	 * TODO: doublecheck whether this can be reduced safely, since 1000 ms
+	 * cause a total insert latency increase of 2.5s on average.
+	 */
+	private static final int MAX_ARTIFICIAL_FINAL_PACKETS_DELAY = 1000;
 	private static volatile boolean logMINOR;
 
 	static {
@@ -114,6 +125,7 @@ public class BlockTransmitter {
 	class BlockSenderJob implements PrioRunnable {
 		
 		private boolean running = false;
+		private int count = 0;
 		
 		@Override
 		public void run() {
@@ -140,6 +152,17 @@ public class BlockTransmitter {
 						}
 						copy = _sentPackets.copy();
 						_sentPackets.setBit(packetNo, true);
+						// add a random delay between 30th message and 31st message, as well as 31st and 32nd
+						// the variable count is used to count which message is being processed now
+						// the HTL is taken into consideration when adding delay too
+						count++;
+						if (isHighHtl() && count >= (Node.PACKETS_IN_BLOCK - 1)) {
+							try {
+								wait((int) (Math.random() * MAX_ARTIFICIAL_FINAL_PACKETS_DELAY));
+							} catch (InterruptedException e) {
+								// intentionally left blank: can continue
+							}
+						}
 					}
 					if(!innerRun(packetNo, copy)) return;
 				}
@@ -634,6 +657,13 @@ public class BlockTransmitter {
 					}
 				});
 			}
+			// if the 32 pieces are ready, shuffle them for mix the insertion order
+			if (isHighHtl() && _unsent.size() == Node.PACKETS_IN_BLOCK) {
+				List<Integer> temp = new ArrayList<>(_unsent);
+				_unsent.clear();
+				Collections.shuffle(temp);
+				_unsent.addAll(temp);
+			}
 			_senderThread.schedule();
 
 			MessageFilter mfAllReceived = MessageFilter.create().setType(DMT.allReceived).setField(DMT.UID, _uid).setSource(_destination).setNoTimeout();
@@ -808,4 +838,11 @@ public class BlockTransmitter {
 	public synchronized static int getRunningSends() {
 		return runningBlockTransmits;
 	}
+
+    private boolean isHighHtl() {
+        if (_ctr instanceof HighHtlAware) {
+            return ((HighHtlAware) _ctr).isHighHtl();
+        }
+        return false;
+    }
 }

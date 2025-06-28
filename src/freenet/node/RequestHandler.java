@@ -40,7 +40,7 @@ import freenet.support.io.NativeThread;
  * is separated off into RequestSender so we get transfer coalescing
  * and both ends for free. 
  */
-public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderListener {
+public class RequestHandler implements PrioRunnable, HighHtlAware, ByteCounter, RequestSenderListener {
 
 	private static volatile boolean logMINOR;
 
@@ -649,6 +649,11 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 		}
 	}
 	boolean sendTerminalCalled = false;
+
+	@Override
+	public boolean isHighHtl() {
+		return this.htl >= (node.maxHTL() - 1);
+	}
 
 	/**
 	 * Note well! These functions are not executed on the RequestHandler thread.
