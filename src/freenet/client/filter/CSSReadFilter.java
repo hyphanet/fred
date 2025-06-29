@@ -127,6 +127,11 @@ public class CSSReadFilter implements ContentDataFilter, CharsetExtractor {
 
 	@Override
 	public BOMDetection getCharsetByBOM(byte[] input, int length) throws DataFilterException, IOException {
+		return detectCharsetFromBOM(input, length);
+	}
+
+	public static BOMDetection detectCharsetFromBOM(byte[] input, int length)
+			throws UnsupportedCharsetInFilterException {
 		if(ContentFilter.startsWith(input, ascii, length))
 			return new BOMDetection("UTF-8", true);
 		if(ContentFilter.startsWith(input, utf16be, length))
