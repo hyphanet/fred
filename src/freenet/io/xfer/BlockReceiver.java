@@ -41,7 +41,8 @@ import freenet.support.Logger.LogLevel;
 import freenet.support.Ticker;
 import freenet.support.TimeUtil;
 import freenet.support.io.NativeThread;
-import freenet.support.math.MedianMeanRunningAverage;
+import freenet.support.math.RunningAverage;
+import freenet.support.math.TrivialRunningAverage;
 
 /**
  * IMPORTANT: The receiver can cancel the incoming transfer. This may or may not, 
@@ -306,10 +307,8 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 					long endTime = System.currentTimeMillis();
 					long transferTime = (endTime - startTime);
 					if(logMINOR) {
-						synchronized(avgTimeTaken) {
-							avgTimeTaken.report(transferTime);
-							Logger.minor(this, "Block transfer took "+transferTime+"ms - average is "+avgTimeTaken);
-						}
+						avgTimeTaken.report(transferTime);
+						Logger.minor(this, "Block transfer took "+transferTime+"ms - average is "+avgTimeTaken.currentValue());
 					}
 					complete(_prb.getBlock());
 					return;
@@ -534,7 +533,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 		}
 	}
 	
-	private static MedianMeanRunningAverage avgTimeTaken = new MedianMeanRunningAverage();
+	private static final RunningAverage avgTimeTaken = new TrivialRunningAverage();
 	
 	private void maybeResetDiscardFilter() {
 		long timeleft=discardEndTime-System.currentTimeMillis();

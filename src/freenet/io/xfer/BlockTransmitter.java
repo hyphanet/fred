@@ -48,7 +48,8 @@ import freenet.support.Logger.LogLevel;
 import freenet.support.Ticker;
 import freenet.support.TimeUtil;
 import freenet.support.io.NativeThread;
-import freenet.support.math.MedianMeanRunningAverage;
+import freenet.support.math.RunningAverage;
+import freenet.support.math.TrivialRunningAverage;
 
 /**
  * @author ian
@@ -126,7 +127,7 @@ public class BlockTransmitter {
 		
 		private boolean running = false;
 		private int count = 0;
-		
+
 		@Override
 		public void run() {
 			synchronized(this) {
@@ -494,10 +495,8 @@ public class BlockTransmitter {
 			if(logMINOR) {
 				long endTime = System.currentTimeMillis();
 				long transferTime = (endTime - startTime);
-				synchronized(avgTimeTaken) {
-					avgTimeTaken.report(transferTime);
-					Logger.minor(this, "Block send took "+transferTime+" : "+avgTimeTaken+" on "+BlockTransmitter.this);
-				}
+				avgTimeTaken.report(transferTime);
+				Logger.minor(this, "Block send took "+transferTime+" : average "+avgTimeTaken.currentValue()+" on "+BlockTransmitter.this);
 			}
 			synchronized(_senderThread) {
 				_receivedSendCompletion = true;
@@ -794,7 +793,7 @@ public class BlockTransmitter {
 	
 	private long lastSentPacket = -1;
 	
-	private static MedianMeanRunningAverage avgTimeTaken = new MedianMeanRunningAverage();
+	private static final RunningAverage avgTimeTaken = new TrivialRunningAverage();
 	
 	/** LOCKING: Must be called with _senderThread held. */
 	private int getNumSent() {
