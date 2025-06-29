@@ -226,6 +226,9 @@ public class TagVerifierTest {
 		tagname = "input";
 		verifier = HTMLFilter.allowedTagsVerifiers.get(tagname);
 
+		htmlTag = new ParsedTag(tagname, attributes);
+		assertNull("Input tag without type", verifier.sanitize(htmlTag, pc));
+
 		for(String t : types) {
 			attributes.put("type", t);
 			htmlTag = new ParsedTag(tagname, attributes);
