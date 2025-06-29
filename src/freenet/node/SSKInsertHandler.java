@@ -18,8 +18,8 @@ import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
 import freenet.store.KeyCollisionException;
 import freenet.support.Logger;
-import freenet.support.ShortBuffer;
 import freenet.support.Logger.LogLevel;
+import freenet.support.ShortBuffer;
 import freenet.support.io.NativeThread;
 
 /**
@@ -100,14 +100,6 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
 		} catch (NotConnectedException e1) {
 			if(logMINOR) Logger.minor(this, "Lost connection to source");
 			return;
-		}
-		
-		if(tag.shouldSlowDown()) {
-			try {
-				source.sendAsync(DMT.createFNPRejectedOverload(uid, false, false, realTimeFlag), null, this);
-			} catch (NotConnectedException e) {
-				// Ignore.
-			}
 		}
 		
 		while(headers == null || data == null || pubKey == null) {

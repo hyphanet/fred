@@ -3,10 +3,13 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.filter;
 
+import static freenet.l10n.BaseL10n.LANGUAGE.ENGLISH;
 import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.startsWith;
 import static org.junit.Assert.*;
 
+import freenet.l10n.BaseL10n;
+import freenet.l10n.BaseL10nTest;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -115,6 +118,7 @@ public class ContentFilterTest {
 
     private static final String SPAN_WITH_STYLE = "<span style=\"font-family: verdana, sans-serif; color: red;\">";
 
+    private static final String HTML_METER_PROGRESS_TAG = "<meter min=\"0\" max=\"100\" low=\"20\" high=\"80\" optimum=\"80\" value=\"50\">alt text</meter><progress max=\"100\" value=\"0\">alt text</progress>";
 	private static final String HTML5_TAGS = "<main><article><details><summary><mark>TLDR</mark></summary><center>Too Long Di<wbr />dn&rsquo;t Read</center></details><section><figure><figcaption>Fig.1</figcaption></figure></article></main>";
 	private static final String HTML5_BDI_RUBY = "<small dir=\"auto\"><bdi>&#x0627;&#x06CC;&#x0631;&#x0627;&#x0646;</bdi>, <bdo><ruby>&#xBD81;<rt>North</rt>&#xD55C;<rt>Korea</rt></ruby><rp>North Korea</rp></ruby></bdo></small>";
 
@@ -138,6 +142,10 @@ public class ContentFilterTest {
 			HTML_AUDIO_TAG,
 			HTML_VIDEO_TAG + HTML_AUDIO_TAG,
 			HTML_AUDIO_TAG + HTML_AUDIO_TAG);
+
+    static {
+        GenericReadFilterCallback.setBaseL10n(BaseL10nTest.createTestL10n(ENGLISH));
+    }
 
 	private static void testOneHTMLFilter(String html) throws Exception {
 		assertEquals(html, htmlFilter(html));
@@ -201,6 +209,7 @@ public class ContentFilterTest {
         testOneHTMLFilter(CSS_SPEC_EXAMPLE1);
 
         testOneHTMLFilter(SPAN_WITH_STYLE);
+        testOneHTMLFilter(HTML_METER_PROGRESS_TAG);
         testOneHTMLFilter(HTML5_TAGS);
         testOneHTMLFilter(HTML5_BDI_RUBY);
 
@@ -430,5 +439,12 @@ public class ContentFilterTest {
                 }
             }
         }
+    }
+
+    private static final String ARIA_ROLE_TEST = "<span role=\"caption\" />";
+
+    @Test
+    public void testARIAProperties() throws Exception {
+        assertEquals(ARIA_ROLE_TEST, htmlFilter(ARIA_ROLE_TEST));
     }
 }

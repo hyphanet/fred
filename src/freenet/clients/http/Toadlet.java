@@ -399,8 +399,7 @@ public abstract class Toadlet {
 	 */
 	protected void sendErrorPage(ToadletContext ctx, int code, String desc, HTMLNode message) throws ToadletContextClosedException, IOException {
 		PageNode page = ctx.getPageMaker().getPageNode(desc, ctx);
-		HTMLNode pageNode = page.outer;
-		HTMLNode contentNode = page.content;
+		HTMLNode contentNode = page.getContentNode();
 
 		HTMLNode infoboxContent = ctx.getPageMaker().getInfobox("infobox-error", desc, contentNode, null, true);
 		infoboxContent.addChild(message);
@@ -409,7 +408,7 @@ public abstract class Toadlet {
 		infoboxContent.addChild("br");
 		addHomepageLink(infoboxContent);
 
-		writeHTMLReply(ctx, code, desc, pageNode.generate());
+		writeHTMLReply(ctx, code, desc, page.generate());
 	}
 
 	/**
@@ -423,8 +422,7 @@ public abstract class Toadlet {
 	 */
 	protected void sendErrorPage(ToadletContext ctx, String desc, String message, Throwable t) throws ToadletContextClosedException, IOException {
 		PageNode page = ctx.getPageMaker().getPageNode(desc, ctx);
-		HTMLNode pageNode = page.outer;
-		HTMLNode contentNode = page.content;
+		HTMLNode contentNode = page.getContentNode();
 
 		HTMLNode infoboxContent = ctx.getPageMaker().getInfobox("infobox-error", desc, contentNode, null, true);
 		infoboxContent.addChild("#", message);
@@ -440,7 +438,7 @@ public abstract class Toadlet {
 		infoboxContent.addChild("a", "href", ".", l10n("returnToPrevPage"));
 		addHomepageLink(infoboxContent);
 
-		writeHTMLReply(ctx, 500, desc, pageNode.generate());
+		writeHTMLReply(ctx, 500, desc, page.generate());
 	}
 
 	/**

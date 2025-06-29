@@ -9,9 +9,9 @@ import freenet.support.api.RandomAccessBuffer;
 public class RAFInputStream extends InputStream {
     
     private final RandomAccessBuffer underlying;
+    private final long rafLength;
+
     private long rafOffset;
-    private long rafLength;
-    private final byte[] oneByte = new byte[1];
 
     public RAFInputStream(RandomAccessBuffer data, long offset, long size) {
         this.underlying = data;
@@ -21,8 +21,12 @@ public class RAFInputStream extends InputStream {
 
     @Override
     public int read() throws IOException {
-        read(oneByte);
-        return oneByte[0];
+        byte[] buf = new byte[1];
+        int length = read(buf, 0, 1);
+        if (length > 0) {
+            return Byte.toUnsignedInt(buf[0]);
+        }
+        return -1;
     }
     
     @Override

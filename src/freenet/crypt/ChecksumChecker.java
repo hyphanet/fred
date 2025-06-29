@@ -76,10 +76,10 @@ public abstract class ChecksumChecker {
         if(length < 0 || length > maxLength) {
             throw new IOException("Bad length: " + length + "; maxLength: " + maxLength);
         }
-        final Bucket bucket = bf.makeBucket(-1);
-        OutputStream os = bucket.getOutputStream();
-        copyAndStripChecksum(dis, os, length);
-        os.close();
+        Bucket bucket = bf.makeBucket(length);
+        try (OutputStream os = bucket.getOutputStream()) {
+            copyAndStripChecksum(dis, os, length);
+        }
         return ReadBucketAndFreeInputStream.create(bucket);
     }
     

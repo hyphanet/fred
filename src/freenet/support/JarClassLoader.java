@@ -186,7 +186,7 @@ public class JarClassLoader extends ClassLoader implements Closeable {
 				}
 				while ((nextElement == null) && jarFileEntries.hasMoreElements()) {
 					JarEntry jarEntry = jarFileEntries.nextElement();
-					if (jarEntry.getName().equals(name)) {
+					if (jarEntry.getName().equals(name) || jarEntry.getName().equals(name + "/")) {
 						try {
 							nextElement = new URL("jar:" + new File(tempJarFile.getName()).toURI().toURL() + "!/" + name);
 						} catch (MalformedURLException e) {

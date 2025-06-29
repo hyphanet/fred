@@ -25,7 +25,7 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 /** Base class for request and insert senders.
  * Mostly concerned with what happens *before and up to* we get the Accepted.
  * After that it hands over to the child class. */
-public abstract class BaseSender implements ByteCounter {
+public abstract class BaseSender implements ByteCounter, HighHtlAware {
 	
     private static volatile boolean logMINOR;
     static {
@@ -736,6 +736,11 @@ loadWaiterLoop:
 	
 	protected abstract boolean isInsert();
 	
+	@Override
+	public boolean isHighHtl() {
+		return htl >= (node.maxHTL() - 1);
+	}
+
 	protected long ignoreLowBackoff() {
 		return 0;
 	}

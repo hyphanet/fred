@@ -67,14 +67,13 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
         PageMaker pageMaker = ctx.getPageMaker();
 
         PageNode page = pageMaker.getPageNode(l10n("pageTitle"), ctx);
-        HTMLNode pageNode = page.outer;
-        HTMLNode contentNode = page.content;
+        HTMLNode contentNode = page.getContentNode();
 
         contentNode.addChild(ctx.getAlertManager().createSummary());
 
         contentNode.addChild(createContent(pageMaker, ctx));
 
-        writeHTMLReply(ctx, 200, "OK", null, pageNode.generate());
+        writeHTMLReply(ctx, 200, "OK", null, page.generate());
     }
 
     public void handleMethodPOST(URI uri, final HTTPRequest request, final ToadletContext ctx)
@@ -123,8 +122,8 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
 
     private HTMLNode createContent(PageMaker pageMaker, ToadletContext ctx) {
         InfoboxNode infobox = pageMaker.getInfobox(l10n("filterFile"), "filter-file", true);
-        HTMLNode filterBox = infobox.outer;
-        HTMLNode filterContent = infobox.content;
+        HTMLNode filterBox = infobox.getOuterNode();
+        HTMLNode filterContent = infobox.getContentNode();
 
         HTMLNode filterForm = ctx.addFormChild(filterContent, PATH, "filterForm");
 
@@ -188,8 +187,7 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
             throws ToadletContextClosedException, IOException {
         PageMaker pageMaker = context.getPageMaker();
         PageNode page = pageMaker.getPageNode(header, context);
-        HTMLNode pageNode = page.outer;
-        HTMLNode contentNode = page.content;
+        HTMLNode contentNode = page.getContentNode();
         if (context.isAllowedFullAccess()) {
             contentNode.addChild(context.getAlertManager().createSummary());
         }
@@ -200,7 +198,7 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
                     "ContentFilterToadlet.tryAgainFilterFilePage", new String[] { "link" },
                     new HTMLNode[] { HTMLNode.link(ContentFilterToadlet.PATH) });
         }
-        writeHTMLReply(context, 400, "Bad request", pageNode.generate());
+        writeHTMLReply(context, 400, "Bad request", page.generate());
     }
 
     /**

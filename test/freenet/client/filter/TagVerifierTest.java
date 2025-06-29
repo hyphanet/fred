@@ -104,6 +104,27 @@ public class TagVerifierTest {
 	}
 
 	@Test
+	public void testMetaTagSpider() throws DataFilterException {
+		tagname = "meta";
+		verifier = HTMLFilter.allowedTagsVerifiers.get(tagname);
+
+		attributes.put("name","robots");
+		attributes.put("content","none, noindex, nofollow, noarchive, nosnippet, nocache");
+		htmlTag = new ParsedTag(tagname, attributes);
+
+		assertEquals("Meta tag controlling spiders - valid value", htmlTag.toString(), verifier.sanitize(htmlTag, pc).toString());
+
+		attributes.put("name","robots");
+		attributes.put("content","noindex,invalid");
+		htmlTag = new ParsedTag(tagname, attributes);
+
+		ParsedTag htmlTagFiltered;
+		attributes.put("content","noindex");
+		htmlTagFiltered = new ParsedTag(tagname, attributes);
+		assertEquals("Meta tag controlling spiders - invalid value", htmlTagFiltered.toString(), verifier.sanitize(htmlTag, pc).toString());
+	}
+
+	@Test
 	public void testMetaTagUnknownContentType() {
 		tagname = "meta";
 		verifier = HTMLFilter.allowedTagsVerifiers.get(tagname);
@@ -166,25 +187,49 @@ public class TagVerifierTest {
 
 	@Test
 	public void testValidInputTag() throws DataFilterException {
+		String[] types = new String[]{
+			"TEXT",
+			"password",
+			"Checkbox",
+			"radio",
+			"SUBMIT",
+			"rEsEt",
+			// no ! file
+			"hidden",
+			"image",
+			"button",
+			"email",
+			"number",
+			"search",
+			"tel",
+			"url"
+		};
+
 		tagname = "input";
 		verifier = HTMLFilter.allowedTagsVerifiers.get(tagname);
 
-		attributes.put("type", "text");
-
-		htmlTag = new ParsedTag(tagname, attributes);
-
-		assertEquals("Input tag with a valid type", htmlTag.toString(), verifier.sanitize(htmlTag, pc).toString());
+		for(String t : types) {
+			attributes.put("type", t);
+			htmlTag = new ParsedTag(tagname, attributes);
+			assertEquals("Input tag with a valid type", htmlTag.toString(), verifier.sanitize(htmlTag, pc).toString());
+		}
 	}
 
 	@Test
 	public void testInvalidInputTag() throws DataFilterException {
+		String[] types = new String[]{
+			"file",
+			"FILE",
+			"INVALID_TYPE",
+		};
+
 		tagname = "input";
 		verifier = HTMLFilter.allowedTagsVerifiers.get(tagname);
 
-		attributes.put("type", "INVALID_TYPE");
-
-		htmlTag = new ParsedTag(tagname, attributes);
-
-		assertNull("Input tag with an invalid type", verifier.sanitize(htmlTag, pc));
+		for(String t : types) {
+			attributes.put("type", t);
+			htmlTag = new ParsedTag(tagname, attributes);
+			assertNull("Input tag with an invalid type", verifier.sanitize(htmlTag, pc));
+		}
 	}
 }

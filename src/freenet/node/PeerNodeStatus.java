@@ -164,8 +164,8 @@ public class PeerNodeStatus {
 		this.averagePingTimeCorrected = peerNode.averagePingTimeCorrected();
 		this.publicInvalidVersion = peerNode.publicInvalidVersion();
 		this.publicReverseInvalidVersion = peerNode.publicReverseInvalidVersion();
-		this.backedOffPercentRT = peerNode.backedOffPercentRT.currentValue();
-		this.backedOffPercentBulk = peerNode.backedOffPercentBulk.currentValue();
+		this.backedOffPercentRT = peerNode.getBackedOffPercentRT().currentValue();
+		this.backedOffPercentBulk = peerNode.getBackedOffPercentBulk().currentValue();
 		this.lastBackoffReasonRT = peerNode.getLastBackoffReason(true);
 		this.lastBackoffReasonBulk = peerNode.getLastBackoffReason(false);
 		this.timeLastRoutable = peerNode.timeLastRoutable();

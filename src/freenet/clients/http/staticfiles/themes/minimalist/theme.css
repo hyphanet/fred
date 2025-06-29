@@ -254,6 +254,17 @@ div#content div.infobox.infobox-summary-status-box div.infobox-content li {
 	margin-right: 5px;
 }
 
+/*
+ * Alerts Page
+ */
+
+div.dismiss-all-alerts-container {
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+}
+
+
 /* *****************************************************************
  *                     statusbar settings
  * *****************************************************************/

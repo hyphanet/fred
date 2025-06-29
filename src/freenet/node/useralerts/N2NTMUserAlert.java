@@ -15,7 +15,7 @@ import freenet.node.PeerNode;
 import freenet.support.HTMLNode;
 
 // Node To Node Text Message User Alert
-public class N2NTMUserAlert extends AbstractUserAlert {
+public class N2NTMUserAlert extends AbstractUserAlert implements NodeToNodeMessageUserAlert {
 	private final WeakReference<PeerNode> peerRef;
 	private final String messageText;
 	private final int fileNumber;
@@ -151,5 +151,4 @@ public class N2NTMUserAlert extends AbstractUserAlert {
 		}
 		return true;
 	}
-
 }

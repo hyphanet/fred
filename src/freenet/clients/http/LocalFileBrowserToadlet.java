@@ -291,20 +291,19 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 
 		if (currentPath != null && !allowedDir(currentPath)) {
 			PageNode page = pageMaker.getPageNode(l10n("listingTitle", "path", attemptedPath), ctx);
-			pageMaker.getInfobox("infobox-error",  "Forbidden", page.content, "access-denied", true).
+			pageMaker.getInfobox("infobox-error",  "Forbidden", page.getContentNode(), "access-denied", true).
 			        addChild("#", l10n("dirAccessDenied"));
 
 			sendErrorPage(ctx, 403, "Forbidden", l10n("dirAccessDenied"));
 			return;
 		}
-		
-		HTMLNode pageNode;
+
+		PageNode page;
 
 		if (currentPath != null && currentPath.exists() && currentPath.isDirectory() && currentPath.canRead()) {
-			PageNode page = pageMaker.getPageNode(l10n("listingTitle", "path",
+			page = pageMaker.getPageNode(l10n("listingTitle", "path",
 			        currentPath.getAbsolutePath()), ctx);
-			pageNode = page.outer;
-			HTMLNode contentNode = page.content;
+			HTMLNode contentNode = page.getContentNode();
 			if (ctx.isAllowedFullAccess()) contentNode.addChild(ctx.getAlertManager().createSummary());
 			
 			HTMLNode infoboxDiv = contentNode.addChild("div", "class", "infobox");
@@ -418,9 +417,8 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 				}
 			}
 		} else {
-			PageNode page = pageMaker.getPageNode(l10n("listingTitle", "path", attemptedPath), ctx);
-			pageNode = page.outer;
-			HTMLNode contentNode = page.content;
+			page = pageMaker.getPageNode(l10n("listingTitle", "path", attemptedPath), ctx);
+			HTMLNode contentNode = page.getContentNode();
 			if (ctx.isAllowedFullAccess()) contentNode.addChild(ctx.getAlertManager().createSummary());
 			
 			HTMLNode infoboxDiv = contentNode.addChild("div", "class", "infobox");
@@ -433,7 +431,7 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 			ulNode.addChild("li", l10n("checkPathIsDir"));
 			ulNode.addChild("li", l10n("checkPathReadable"));
 		}
-		writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+		writeHTMLReply(ctx, 200, "OK", page.generate());
 	}
 
 	private String l10n (String key, String pattern, String value) {
