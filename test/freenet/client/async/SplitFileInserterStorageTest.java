@@ -13,6 +13,8 @@ import java.util.HashSet;
 import java.util.Random;
 
 import freenet.support.io.*;
+
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -209,6 +211,11 @@ public class SplitFileInserterStorageTest {
             return 0;
         }
 
+    }
+
+    @After
+    public void removeDirectory() {
+        FileUtil.removeAll(dir);
     }
 
     @Test
