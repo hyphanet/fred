@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import freenet.io.comm.AsyncMessageCallback;
 import freenet.io.comm.AsyncMessageFilterCallback;
@@ -36,6 +37,7 @@ import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerContext;
 import freenet.io.comm.RetrievalException;
 import freenet.io.comm.SlowAsyncMessageFilterCallback;
+import freenet.node.FastRunnable;
 import freenet.node.HighHtlAware;
 import freenet.node.MessageItem;
 import freenet.node.Node;
@@ -92,7 +94,7 @@ public class BlockTransmitter {
 	private final boolean realTime;
 	final PartiallyReceivedBlock _prb;
 	private Deque<Integer> _unsent;
-	private BlockSenderJob _senderThread = new BlockSenderJob();
+	private final BlockSenderJob _senderThread = new BlockSenderJob();
 	private BitArray _sentPackets;
 	private long timeAllSent = -1;
 	final ByteCounter _ctr;
@@ -123,57 +125,62 @@ public class BlockTransmitter {
 	static int runningBlockTransmits = 0;
 	
 	class BlockSenderJob implements PrioRunnable {
-		
-		private boolean running = false;
-		private int count = 0;
+		private static final int STATE_IDLE = 0; // not running
+		private static final int STATE_RUNNING = 1; // currently running
+		private static final int STATE_WAITING = 2; // waiting for a scheduled delay
+
+		private final AtomicInteger state = new AtomicInteger();
+		private int sentCount = 0;
 		
 		@Override
 		public void run() {
-			synchronized(this) {
-				if(running) return;
-				running = true;
+			if (!state.compareAndSet(STATE_IDLE, STATE_RUNNING)) {
+				return;
 			}
 			try {
 				while(true) {
-					int packetNo = -1;
-					BitArray copy;
+					int packetNumberToSend;
+					BitArray previouslySentPackets;
 					synchronized(_senderThread) {
-						if(_failed || _receivedSendCompletion || _completed) return;
-						if(_unsent.isEmpty()) {
+						if (_failed || _receivedSendCompletion || _completed) {
+							return;
+						}
+						if (_unsent.isEmpty()) {
 							// Wait for PRB callback to tell us we have more packets.
 							return;
 						}
-						else {
-							packetNo = _unsent.removeFirst();
-							if(_sentPackets.bitAt(packetNo)) {
-								Logger.error(this, "Already sent packet in run(): "+packetNo+" for "+this+" unsent is "+_unsent+" sent is "+_sentPackets, new Exception("error"));
-								continue;
-							}
-						}
-						copy = _sentPackets.copy();
-						_sentPackets.setBit(packetNo, true);
+
 						// add a random delay between 30th message and 31st message, as well as 31st and 32nd
 						// the variable count is used to count which message is being processed now
 						// the HTL is taken into consideration when adding delay too
-						count++;
-						if (isHighHtl() && count >= (Node.PACKETS_IN_BLOCK - 1)) {
-							try {
-								wait((int) (Math.random() * MAX_ARTIFICIAL_FINAL_PACKETS_DELAY));
-							} catch (InterruptedException e) {
-								// intentionally left blank: can continue
-							}
+						if (isHighHtl() && sentCount >= (Node.PACKETS_IN_BLOCK - 2)) {
+							state.set(STATE_WAITING);
+							long delayMillis = (long) (Math.random() * MAX_ARTIFICIAL_FINAL_PACKETS_DELAY);
+							_ticker.queueTimedJob((FastRunnable) this::schedule, delayMillis);
+							return;
 						}
+
+						packetNumberToSend = _unsent.removeFirst();
+						if(_sentPackets.bitAt(packetNumberToSend)) {
+							Logger.error(this, "Already sent packet in run(): "+packetNumberToSend+" for "+this+" unsent is "+_unsent+" sent is "+_sentPackets, new Exception("error"));
+							continue;
+						}
+
+						sentCount++;
+						previouslySentPackets = _sentPackets.copy();
+						_sentPackets.setBit(packetNumberToSend, true);
 					}
-					if(!innerRun(packetNo, copy)) return;
+					if (!queueNextPacket(packetNumberToSend, previouslySentPackets)) {
+						return;
+					}
 				}
 			} finally {
-				synchronized(this) {
-					running = false;
-				}
+				state.compareAndSet(STATE_RUNNING, STATE_IDLE);
 			}
 		}
-		
-		public void schedule() {
+
+		void schedule() {
+			state.compareAndSet(STATE_WAITING, STATE_IDLE);
 			if(_failed || _receivedSendCompletion || _completed) {
 				if(logMINOR) Logger.minor(this, "Not scheduling for "+_uid+" to "+_destination+" :"+
 						(_failed ? "(failed) " : "") + (_receivedSendCompletion ? "(receivedSendCompletion) " : "") + (_completed ? "(completed) " : ""));
@@ -182,8 +189,12 @@ public class BlockTransmitter {
 			_executor.execute(this, "BlockTransmitter block sender for "+_uid+" to "+_destination);
 		}
 
-		/** @return True . */
-		private boolean innerRun(int packetNo, BitArray copied) {
+		/**
+		 * Queue the next packet for sending and check whether more packets should be sent.
+		 *
+		 * @return true if more packets should be sent, false otherwise
+		 * */
+		private boolean queueNextPacket(int packetNo, BitArray copied) {
 			try {
 				Message msg = DMT.createPacketTransmit(_uid, packetNo, copied, _prb.getPacket(packetNo), realTime);
 				MyAsyncMessageCallback cb = new MyAsyncMessageCallback();
@@ -314,7 +325,7 @@ public class BlockTransmitter {
 			timeAllSent = System.currentTimeMillis();
 			if(logMINOR)
 				Logger.minor(this, "Sent all blocks, none unsent on "+this);
-			_senderThread.notifyAll();
+			_senderThread.schedule();
 			return true;
 		}
 		if(blockSendsPending == 0 && _failed) {
@@ -613,7 +624,7 @@ public class BlockTransmitter {
 		synchronized(_senderThread) {
 			timeAllSent = -1;
 			_failed = true;
-			_senderThread.notifyAll();
+			_senderThread.schedule();
 			fail = maybeFail(reason, description);
 		}
 		fail.execute();
