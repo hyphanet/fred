@@ -26,7 +26,7 @@ If you don't hear anything for a while feel free to bring it to the attention of
 people in [IRC](https://www.hyphanet.org/pages/help.html#chat-with-us) or the [mailing list](https://www.hyphanet.org/pages/help.html#mailing-lists) - we may
 have missed it.
 
-All commits with functional changes must be reviewed, also those from
+All commits with functional changes must be reviewed, including those from
 maintainers. An exception are plugins: updates to official plugins
 must include the commit id from the the plugin-repo in the commit
 description (the review in the plugin-repo doubles as review in fred).
