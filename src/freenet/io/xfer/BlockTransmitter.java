@@ -158,7 +158,7 @@ public class BlockTransmitter {
 						count++;
 						if (isHighHtl() && count >= (Node.PACKETS_IN_BLOCK - 1)) {
 							try {
-								wait((int) (Math.random() * MAX_ARTIFICIAL_FINAL_PACKETS_DELAY));
+								wait((int) (Math.random() * MAX_ARTIFICIAL_FINAL_PACKETS_DELAY), 1);
 							} catch (InterruptedException e) {
 								// intentionally left blank: can continue
 							}
