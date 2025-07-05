@@ -29,7 +29,7 @@ have missed it.
 All commits with functional changes must be reviewed, including those from
 maintainers. An exception are plugins: updates to official plugins
 must include the commit id from the the plugin-repo in the commit
-description (the review in the plugin-repo doubles as review in fred).
+description; the review in the plugin repository then serves as review in fred.
 
 Code review helps improve code quality, ensures that multiple people know the
 codebase, serves as a defense against introducing malicious code, and makes it
