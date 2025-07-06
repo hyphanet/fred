@@ -260,4 +260,14 @@ public class BaseL10nTest {
         return new BaseL10n("freenet/l10n/", "freenet.l10n.${lang}.test.properties",
                 overrideFile.getPath(), lang);
     }
+
+    /**
+     * Installs a {@link #createTestL10n(LANGUAGE) BaseL10n} with
+     * translations read from the test classpath into the global
+     * {@link NodeL10n}, allowing tests for translation keys.
+     */
+    public static void useTestTranslation() {
+        NodeL10n.setBase(createTestL10n(LANGUAGE.ENGLISH));
+    }
+
 }

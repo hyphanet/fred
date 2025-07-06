@@ -31,12 +31,14 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
+import freenet.l10n.BaseL10nTest;
 import freenet.node.NodeClientCore;
 
 public class UserAlertManagerTest {
 
 	@Test
 	public void generatedAtomContainsTitle() throws Exception {
+		BaseL10nTest.useTestTranslation();
 		verifyStringPropertyInGeneratedAtom("/feed/title", equalTo("UserAlertManager.feedTitle"));
 	}
 
