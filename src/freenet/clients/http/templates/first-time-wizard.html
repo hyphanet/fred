@@ -81,7 +81,10 @@
         </fieldset>
         <fieldset>
             <legend>{{ l10n("storage") }}</legend>
+            <input id="donateDiskSpace" name="donateDiskSpace" type="checkbox" {{ donateDiskSpace }}>
+            <label for="donateDiskSpace">{{ l10n("donateDiskSpace") }}</label>
             <p>
+              <div id="chooseStoreSize" hidden="hidden">
                 {% if errors.storageLimitError is not null %}
                     <div class="error">{{ errors.storageLimitError }}</div>
                 {% endif %}
@@ -90,6 +93,7 @@
                 <!-- TODO: Possibly attach this number with a slider of percentage of free space. -->
                 <input id="storage" value="{{ storageLimit }}" name="storage" type="number" min="{{ minStorageLimit }}" max="999999999" step=".01">
                 {{ l10n("storageLimitDescription") }}
+              </div>
             </p>
             {% if setPassword is not null %}
             <input id="setPassword" name="setPassword" type="checkbox" {{ setPassword }}>
