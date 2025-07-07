@@ -36,8 +36,12 @@ public class PNGFilter implements ContentDataFilter {
 	        (byte) 10 };
 	static final String[] HARMLESS_CHUNK_TYPES = {
 	// http://www.w3.org/TR/PNG/
-	        "tRNS", "cHRM", "gAMA", "iCCP", // FIXME Embedded ICC profile: could this conceivably cause a web lookup?
-	        "sBIT", // FIXME rather obscure ??
+	        "tRNS", "cHRM", "iCCP", // FIXME Embedded ICC profile: could this conceivably cause a web lookup?
+	        "sBIT", // https://www.w3.org/TR/png/#11sBIT
+	        "gAMA", // https://www.w3.org/TR/png/#11gAMA
+	        "cICP", // https://www.w3.org/TR/png/#cICP-chunk
+	        "mDCV", // https://www.w3.org/TR/png/#mDCV-chunk
+	        "cLLI", // https://www.w3.org/TR/png/#cLLI-chunk
 	        "sRGB", "bKGD", "hIST", "pHYs", "sPLT",
 	        // APNG chunks (Firefox 3 will support APNG)
 	        // http://wiki.mozilla.org/APNG_Specification
