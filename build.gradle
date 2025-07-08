@@ -126,6 +126,15 @@ task buildJar(type: Jar) {
 jar.enabled = false
 jar.dependsOn buildJar
 
+task sourcesJar(type: Jar) {
+    dependsOn generateVersionSource
+    archiveClassifier = 'sources'
+    from(sourceSets.main.allSource) {
+        exclude 'freenet/node/Version.java'
+    }
+    from(compileVersion.source)
+}
+
 def jars = []
 gradle.addListener(new TaskExecutionListener() {
 void afterExecute(Task task, TaskState state) {
