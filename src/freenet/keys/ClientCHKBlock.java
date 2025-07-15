@@ -406,7 +406,7 @@ public class ClientCHKBlock implements ClientKeyBlock {
             if(finalData.length != 0)
             	md256.update(finalData);
             byte[] digest = md256.digest();
-            MersenneTwister mt = new MersenneTwister(digest);
+			MersenneTwister mt = MersenneTwister.createUnsynchronized(digest);
 			data = Arrays.copyOf(finalData, 32768);
 			Util.randomBytes(mt, data, finalData.length, 32768-finalData.length);
         } else {

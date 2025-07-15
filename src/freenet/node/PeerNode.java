@@ -402,7 +402,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	}
 
 	private PacketFormat packetFormat;
-	MersenneTwister paddingGen;
+	private final MersenneTwister paddingGen;
 	
 	protected SimpleFieldSet fullFieldSet;
 
@@ -702,9 +702,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		bytesInAtStartup = fs.getLong("totalInput", 0);
 		bytesOutAtStartup = fs.getLong("totalOutput", 0);
 
-		byte buffer[] = new byte[16];
-		node.getRandom().nextBytes(buffer);
-		paddingGen = new MersenneTwister(buffer);
+		paddingGen = node.createRandom();
 		
 		if(fromLocal) {
 			SimpleFieldSet f = fs.subset("full");

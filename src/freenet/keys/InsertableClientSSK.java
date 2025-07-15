@@ -126,7 +126,7 @@ public class InsertableClientSSK extends ClientSSK {
 			if (compressedData.length != 0)
 				md256.update(compressedData);
 			byte[] digest = md256.digest();
-			MersenneTwister mt = new MersenneTwister(digest);
+			MersenneTwister mt = MersenneTwister.createUnsynchronized(digest);
 			data = Arrays.copyOf(compressedData, SSKBlock.DATA_LENGTH);
 			if (compressedData.length > data.length) {
 				throw new RuntimeException("compressedData.length = " + compressedData.length + " but data.length="

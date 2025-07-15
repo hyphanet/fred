@@ -181,7 +181,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, Serializable {
 		@SuppressWarnings("cast")
 		public void close() throws IOException {
 			try {
-				Random random = new MersenneTwister(randomSeed);
+				Random random = MersenneTwister.createUnsynchronized(randomSeed);
 				synchronized(PaddedEphemerallyEncryptedBucket.this) {
 		            if(closed) return;
 	                if(streamNumber != lastOutputStream) {

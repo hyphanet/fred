@@ -37,7 +37,7 @@ import freenet.support.math.MersenneTwister;
 final public class FileUtil {
 
 	public static final int BUFFER_SIZE = 32*1024;
-	private static final Random SEED_GENERATOR = new MersenneTwister(NodeStarter.getGlobalSecureRandom().generateSeed(32));
+	private static final Random SEED_GENERATOR = MersenneTwister.createSynchronized(NodeStarter.getGlobalSecureRandom().generateSeed(32));
 
 	/**
 	 * Returns a line reading stream for the content of <code>logfile</code>. The stream will
@@ -722,11 +722,9 @@ final public class FileUtil {
 	 * @throws IOException If unable to write to the stream.
 	 */
 	public static void fill(OutputStream os, long length) throws IOException {
-		long seed;
-		synchronized (SEED_GENERATOR) {
-			seed = SEED_GENERATOR.nextLong();
-		}
-		writeRandomBytes(os, new MersenneTwister(seed), length);
+		byte[] seed = new byte[16];
+		SEED_GENERATOR.nextBytes(seed);
+		writeRandomBytes(os, MersenneTwister.createUnsynchronized(seed), length);
 	}
 
 	/** @deprecated */
