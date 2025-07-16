@@ -478,10 +478,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 							onFailure(new FetchException(FetchExceptionMode.INTERNAL_ERROR, "No metadata in container! Cannot happen as ArchiveManager should synthesise some!"), false, context);
 						}
 						@Override
-						public void onFailed(ArchiveRestartException e, ClientContext context) {
-							SingleFileFetcher.this.onFailure(new FetchException(e), false, context);
-						}
-						@Override
 						public void onFailed(ArchiveFailureException e, ClientContext context) {
 							SingleFileFetcher.this.onFailure(new FetchException(e), false, context);
 						}
@@ -542,10 +538,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 						@Override
 						public void notInArchive(ClientContext context) {
 							onFailure(new FetchException(FetchExceptionMode.NOT_IN_ARCHIVE), false, context);
-						}
-						@Override
-						public void onFailed(ArchiveRestartException e, ClientContext context) {
-							SingleFileFetcher.this.onFailure(new FetchException(e), false, context);
 						}
 						@Override
 						public void onFailed(ArchiveFailureException e,  ClientContext context) {
@@ -610,10 +602,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 						@Override
 						public void notInArchive(ClientContext context) {
 							onFailure(new FetchException(FetchExceptionMode.NOT_IN_ARCHIVE), false, context);
-						}
-						@Override
-						public void onFailed(ArchiveRestartException e, ClientContext context) {
-							SingleFileFetcher.this.onFailure(new FetchException(e), false, context);
 						}
 						@Override
 						public void onFailed(ArchiveFailureException e, ClientContext context) {
