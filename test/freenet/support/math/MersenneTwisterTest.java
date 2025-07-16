@@ -1,14 +1,13 @@
 package freenet.support.math;
 
-import static org.junit.Assert.*;
-
-import freenet.support.Fields;
+import static org.junit.Assert.assertEquals;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
+import freenet.support.Fields;
 import org.junit.Test;
 
 public class MersenneTwisterTest {
@@ -89,7 +88,7 @@ public class MersenneTwisterTest {
 	@Test
 	public void testConsistencySeedFromBytes() throws NoSuchAlgorithmException {
 		MessageDigest md = MessageDigest.getInstance("SHA-1");
-		MersenneTwister mt = new MersenneTwister(BYTE_SEED);
+		MersenneTwister mt = MersenneTwister.createUnsynchronized(BYTE_SEED);
 		byte[] bytes = new byte[SEED_SIZE];
 
 		mt.nextBytes(bytes);

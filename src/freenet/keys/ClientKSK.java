@@ -45,7 +45,7 @@ public class ClientKSK extends InsertableClientSSK {
 	public static ClientKSK create(String keyword) {
 		MessageDigest md256 = SHA256.getMessageDigest();
 		byte[] keywordHash = md256.digest(keyword.getBytes(StandardCharsets.UTF_8));
-		MersenneTwister mt = new MersenneTwister(keywordHash);
+		MersenneTwister mt = MersenneTwister.createUnsynchronized(keywordHash);
 		DSAPrivateKey privKey = new DSAPrivateKey(Global.DSAgroupBigA, mt);
 		DSAPublicKey pubKey = new DSAPublicKey(Global.DSAgroupBigA, privKey);
 		byte[] pubKeyHash = md256.digest(pubKey.asBytes());

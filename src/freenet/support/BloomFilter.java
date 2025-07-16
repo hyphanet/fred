@@ -128,7 +128,7 @@ public abstract class BloomFilter {
 	}
 
 	protected Random getHashes(byte[] key) {
-		return new MersenneTwister(key);
+		return MersenneTwister.createUnsynchronized(key);
 	}
 
 	//-- Fork & Merge

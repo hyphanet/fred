@@ -1364,12 +1364,7 @@ public class Node implements TimeSkewDetectorCallback {
 		this.secureRandom = NodeStarter.getGlobalSecureRandom();
 		isPRNGReady = true;
 		toadlets.getStartupToadlet().setIsPRNGReady();
-		if(weakRandom == null) {
-			byte buffer[] = new byte[16];
-			random.nextBytes(buffer);
-			this.fastWeakRandom = new MersenneTwister(buffer);
-		}else
-			this.fastWeakRandom = weakRandom;
+		fastWeakRandom = weakRandom != null ? weakRandom : createRandom();
 
 		nodeNameUserAlert = new MeaningfulNodeNameUserAlert(this);
 		this.config = config;
@@ -5033,11 +5028,13 @@ public class Node implements TimeSkewDetectorCallback {
 		return false;
 	}
 
-
+	/**
+	 * Create a thread-safe random generator with a random seed for non-cryptographic use.
+	 */
 	public MersenneTwister createRandom() {
 		byte[] buf = new byte[16];
 		random.nextBytes(buf);
-		return new MersenneTwister(buf);
+		return MersenneTwister.createSynchronized(buf);
 	}
 	
 	public boolean enableNewLoadManagement(boolean realTimeFlag) {
