@@ -2,25 +2,26 @@ package freenet.crypt;
 
 import java.security.MessageDigest;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
 
 final class MultiHashDigester {
 
-    private final Digester[] digesters;
+    private final Collection<Digester> digesters;
 
-    private MultiHashDigester(Digester[] digesters) {
+    private MultiHashDigester(Collection<Digester> digesters) {
         this.digesters = digesters;
     }
 
     void update(byte[] input, int offset, int len) {
-        for (Digester digester : digesters) {
-            digester.update(input, offset, len);
-        }
+        digesters.forEach(digester -> digester.update(input, offset, len));
     }
 
-    HashResult[] getResults() {
-        return Arrays.stream(digesters)
+    List<HashResult> getResults() {
+        return digesters.stream()
                 .map(Digester::getResult)
-                .toArray(HashResult[]::new);
+                .collect(Collectors.toList());
     }
 
     /**
@@ -29,10 +30,10 @@ final class MultiHashDigester {
      * @see HashType#bitmask
      */
     static MultiHashDigester fromBitmask(long bitmask) {
-        Digester[] digesters = Arrays.stream(HashType.values())
+        List<Digester> digesters = Arrays.stream(HashType.values())
                 .filter(hashType -> (bitmask & hashType.bitmask) == hashType.bitmask)
                 .map(Digester::new)
-                .toArray(Digester[]::new);
+                .collect(Collectors.toList());
 
         return new MultiHashDigester(digesters);
     }

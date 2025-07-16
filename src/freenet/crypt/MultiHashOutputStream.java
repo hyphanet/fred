@@ -26,6 +26,6 @@ public class MultiHashOutputStream extends FilterOutputStream {
 	}
 	
 	public HashResult[] getResults() {
-		return digester.getResults();
+		return digester.getResults().toArray(new HashResult[0]);
 	}
 }
