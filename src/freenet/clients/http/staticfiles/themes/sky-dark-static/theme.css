@@ -229,6 +229,11 @@ input[type=radio] {
   display:none;
 }
 
+/* special case WoT */
+#page-_WebOfTrust_MyIdentity input[type=radio] {
+  display: initial;
+}
+
 input[type=radio] + label:before {
   content: '•';
   display:inline-block;
