@@ -95,13 +95,29 @@ public class PngUtil {
 	 * @throws IOException if an I/O error occurs
 	 */
 	public static void createPngFile(File destination, List<Chunk> extraChunks) throws IOException {
+		createPngFile(destination, extraChunks, emptyList());
+	}
+
+	/**
+	 * Writes a 1x1 transparent PNG and allows adding extra chunks before and
+	 * after the IDAT chunk.
+	 *
+	 * @param destination The file to write
+	 * @param preIDATChunks The extra chunks to write before the IDAT chunk
+	 * @param postIDATChunks The extra chunks to write after the IDAT chunk
+	 * @throws IOException if an I/O error occurs
+	 */
+	public static void createPngFile(File destination, List<Chunk> preIDATChunks, List<Chunk> postIDATChunks) throws IOException {
 		try (FileOutputStream fileOutputStream = new FileOutputStream(destination)) {
 			fileOutputStream.write(pngHeader);
 			new Chunk("IHDR", new byte[] { /* width */ 0, 0, 0, 1, /* height */ 0, 0, 0, 1, /* bit depth */ 8, /* color type greyscale */ 6, 0, 0, 0 }).write(fileOutputStream);
-			for (Chunk extraChunk : extraChunks) {
-				extraChunk.write(fileOutputStream);
+			for (Chunk preIDATChunk : preIDATChunks) {
+				preIDATChunk.write(fileOutputStream);
 			}
 			new Chunk("IDAT", new byte[] { 0x08, 0x5b, 0x63, 0x60, 0x00, 0x02, 0x00, 0x00, 0x05, 0x00, 0x01 }).write(fileOutputStream);
+			for (Chunk postIDATChunk : postIDATChunks) {
+				postIDATChunk.write(fileOutputStream);
+			}
 			new Chunk("IEND", new byte[0]).write(fileOutputStream);
 		}
 	}

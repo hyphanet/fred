@@ -7,6 +7,8 @@ import freenet.test.PngUtil;
 import freenet.test.PngUtil.Chunk;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.util.List;
+import org.hamcrest.Matcher;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -15,8 +17,10 @@ import org.junit.rules.TemporaryFolder;
 
 import static freenet.client.filter.ResourceFileUtil.resourceToBucket;
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -135,29 +139,39 @@ public class PNGFilterTest {
 
 	@Test
 	public void cICPChunkIsNotFiltered() throws IOException {
-		verifyChunkIsNotRemoved(new Chunk("cICP", new byte[0]));
+		writeChunksAndVerifyChunks(asList(new Chunk("cICP", new byte[0])), emptyList(), hasItem(new Chunk("cICP", new byte[0])));
+	}
+
+	@Test
+	public void cICPChunkAfterPLTEChunkIsRemoved() throws IOException {
+		writeChunksAndVerifyChunks(asList(new Chunk("PLTE", new byte[0]), new Chunk("cICP", new byte[0])), emptyList(), not(hasItem(new Chunk("cICP", new byte[0]))));
+	}
+
+	@Test
+	public void cICPChunkAfterIDATChunkIsRemoved() throws IOException {
+		writeChunksAndVerifyChunks(emptyList(), asList(new Chunk("cICP", new byte[0])), not(hasItem(new Chunk("cICP", new byte[0]))));
 	}
 
 	@Test
 	public void mDCVChunkIsNotFiltered() throws IOException {
-		verifyChunkIsNotRemoved(new Chunk("mDCV", new byte[0]));
+		writeChunksAndVerifyChunks(asList(new Chunk("mDCV", new byte[0])), emptyList(), hasItem(new Chunk("mDCV", new byte[0])));
 	}
 
 	@Test
 	public void cLLIChunkIsNotFiltered() throws IOException {
-		verifyChunkIsNotRemoved(new Chunk("cLLI", new byte[0]));
+		writeChunksAndVerifyChunks(asList(new Chunk("cLLI", new byte[0])), emptyList(), hasItem(new Chunk("cLLI", new byte[0])));
 	}
 
-	private void verifyChunkIsNotRemoved(Chunk chunk) throws IOException {
+	private void writeChunksAndVerifyChunks(List<Chunk> preIDATChunks, List<Chunk> postIDATChunks, Matcher<Iterable<? super Chunk>> chunksVerifier) throws IOException {
 		PNGFilter filter = new PNGFilter(false, false, true);
 		File pngFile = temporaryFolder.newFile();
-		PngUtil.createPngFile(pngFile, asList(chunk));
+		PngUtil.createPngFile(pngFile, preIDATChunks, postIDATChunks);
 		File filteredPngFile = temporaryFolder.newFile();
 		Bucket bucket = new FileBucket(pngFile, true, false, false, false);
 		try (FileOutputStream outputStream = new FileOutputStream(filteredPngFile)) {
 			filter.readFilter(bucket.getInputStream(), outputStream, "", null, null, null);
 		}
-		assertThat(PngUtil.getChunks(filteredPngFile), hasItem(chunk));
+		assertThat(PngUtil.getChunks(filteredPngFile), chunksVerifier);
 	}
 
 	@Rule

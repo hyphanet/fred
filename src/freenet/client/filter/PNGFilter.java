@@ -39,7 +39,6 @@ public class PNGFilter implements ContentDataFilter {
 	        "tRNS", "cHRM", "iCCP", // FIXME Embedded ICC profile: could this conceivably cause a web lookup?
 	        "sBIT", // https://www.w3.org/TR/png/#11sBIT
 	        "gAMA", // https://www.w3.org/TR/png/#11gAMA
-	        "cICP", // https://www.w3.org/TR/png/#cICP-chunk
 	        "mDCV", // https://www.w3.org/TR/png/#mDCV-chunk
 	        "cLLI", // https://www.w3.org/TR/png/#cLLI-chunk
 	        "sRGB", "bKGD", "hIST", "pHYs", "sPLT",
@@ -87,6 +86,7 @@ public class PNGFilter implements ContentDataFilter {
 		boolean hasSeenIHDR = false;
 		boolean hasSeenIEND = false;
 		boolean hasSeenIDAT = false;
+		boolean hasSeenPLTE = false;
 		try {
                         long offset = 0;
 			dis = new DataInputStream(input);
@@ -242,6 +242,7 @@ public class PNGFilter implements ContentDataFilter {
 					if (hasSeenIDAT)
 						throwError("PLTE must be before IDAT", "PLTE must be before IDAT");
 					validChunkType = true;
+					hasSeenPLTE = true;
 				}
 
 				if (!skip && "IDAT".equalsIgnoreCase(chunkTypeString)) {
@@ -250,6 +251,10 @@ public class PNGFilter implements ContentDataFilter {
 						        "Multiple IDAT chunks must be consecutive!");
 					hasSeenIDAT = true;
 					validChunkType = true;
+				}
+
+				if (!skip && "cICP".equals(chunkTypeString)) {
+					validChunkType = !(hasSeenPLTE || hasSeenIDAT);
 				}
 
 				if (!validChunkType) {
