@@ -139,22 +139,37 @@ public class PNGFilterTest {
 
 	@Test
 	public void cICPChunkIsNotFiltered() throws IOException {
-		writeChunksAndVerifyChunks(asList(new Chunk("cICP", new byte[0])), emptyList(), hasItem(new Chunk("cICP", new byte[0])));
+		writeChunksAndVerifyChunks(asList(cICPChunk), emptyList(), hasItem(cICPChunk));
 	}
 
 	@Test
 	public void cICPChunkAfterPLTEChunkIsRemoved() throws IOException {
-		writeChunksAndVerifyChunks(asList(new Chunk("PLTE", new byte[0]), new Chunk("cICP", new byte[0])), emptyList(), not(hasItem(new Chunk("cICP", new byte[0]))));
+		writeChunksAndVerifyChunks(asList(PLTEChunk, cICPChunk), emptyList(), not(hasItem(cICPChunk)));
 	}
 
 	@Test
 	public void cICPChunkAfterIDATChunkIsRemoved() throws IOException {
-		writeChunksAndVerifyChunks(emptyList(), asList(new Chunk("cICP", new byte[0])), not(hasItem(new Chunk("cICP", new byte[0]))));
+		writeChunksAndVerifyChunks(emptyList(), asList(cICPChunk), not(hasItem(cICPChunk)));
 	}
 
 	@Test
-	public void mDCVChunkIsNotFiltered() throws IOException {
-		writeChunksAndVerifyChunks(asList(new Chunk("mDCV", new byte[0])), emptyList(), hasItem(new Chunk("mDCV", new byte[0])));
+	public void mDCVChunkWithCICPChunkIsNotFiltered() throws IOException {
+		writeChunksAndVerifyChunks(asList(cICPChunk, mDCVChunk), emptyList(), hasItem(mDCVChunk));
+	}
+
+	@Test
+	public void mDCVChunkWithoutCICPChunkIsFiltered() throws IOException {
+		writeChunksAndVerifyChunks(asList(mDCVChunk), emptyList(), not(hasItem(mDCVChunk)));
+	}
+
+	@Test
+	public void mDCVChunkAfterPLTEChunkIsRemoved() throws IOException {
+		writeChunksAndVerifyChunks(asList(cICPChunk, PLTEChunk, mDCVChunk), emptyList(), not(hasItem(mDCVChunk)));
+	}
+
+	@Test
+	public void mDCVChunkAfterIDATChunkIsRemoved() throws IOException {
+		writeChunksAndVerifyChunks(asList(cICPChunk), asList(mDCVChunk), not(hasItem(mDCVChunk)));
 	}
 
 	@Test
@@ -168,13 +183,21 @@ public class PNGFilterTest {
 		PngUtil.createPngFile(pngFile, preIDATChunks, postIDATChunks);
 		File filteredPngFile = temporaryFolder.newFile();
 		Bucket bucket = new FileBucket(pngFile, true, false, false, false);
-		try (FileOutputStream outputStream = new FileOutputStream(filteredPngFile)) {
-			filter.readFilter(bucket.getInputStream(), outputStream, "", null, null, null);
+		try {
+			try (FileOutputStream outputStream = new FileOutputStream(filteredPngFile)) {
+				filter.readFilter(bucket.getInputStream(), outputStream, "", null, null, null);
+			}
+			assertThat(PngUtil.getChunks(filteredPngFile), chunksVerifier);
+		} catch (DataFilterException e) {
+			assertThat(emptyList(), chunksVerifier);
 		}
-		assertThat(PngUtil.getChunks(filteredPngFile), chunksVerifier);
 	}
 
 	@Rule
 	public final TemporaryFolder temporaryFolder = new TemporaryFolder();
+
+	private static final Chunk cICPChunk = new Chunk("cICP", new byte[0]);
+	private static final Chunk PLTEChunk = new Chunk("PLTE", new byte[0]);
+	private static final Chunk mDCVChunk = new Chunk("mDCV", new byte[0]);
 
 }
