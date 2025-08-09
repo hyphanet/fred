@@ -138,7 +138,7 @@ public class PNGFilterTest {
 	}
 
 	@Test
-	public void BrokencICPChunkIsFiltered() throws IOException {
+	public void brokencICPChunkIsFiltered() throws IOException {
 		// cICP chunks must be 4 bytes long!
 		Chunk brokencICPChunk1 = new Chunk("cICP", new byte[0]);
 		writeChunksAndVerifyChunks(asList(brokencICPChunk1), emptyList(), not(hasItem(brokencICPChunk1)));
