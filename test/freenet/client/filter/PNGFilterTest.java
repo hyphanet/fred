@@ -138,6 +138,16 @@ public class PNGFilterTest {
 	}
 
 	@Test
+	public void BrokencICPChunkIsFiltered() throws IOException {
+		// cICP chunks must be 4 bytes long!
+		Chunk brokencICPChunk1 = new Chunk("cICP", new byte[0]);
+		writeChunksAndVerifyChunks(asList(brokencICPChunk1), emptyList(), not(hasItem(brokencICPChunk1)));
+		// Unsupported color model other than RGB is specified in PNG!
+		Chunk brokencICPChunk2 = new Chunk("cICP", new byte[] {0xC, 0xD, 0x1, 0x1});
+		writeChunksAndVerifyChunks(asList(brokencICPChunk2), emptyList(), not(hasItem(brokencICPChunk2)));
+	}
+
+	@Test
 	public void cICPChunkIsNotFiltered() throws IOException {
 		writeChunksAndVerifyChunks(asList(cICPChunk), emptyList(), hasItem(cICPChunk));
 	}
@@ -196,7 +206,7 @@ public class PNGFilterTest {
 	@Rule
 	public final TemporaryFolder temporaryFolder = new TemporaryFolder();
 
-	private static final Chunk cICPChunk = new Chunk("cICP", new byte[0]);
+	private static final Chunk cICPChunk = new Chunk("cICP", new byte[] {0xC, 0xD, 0x0, 0x1});
 	private static final Chunk PLTEChunk = new Chunk("PLTE", new byte[0]);
 	private static final Chunk mDCVChunk = new Chunk("mDCV", new byte[0]);
 
