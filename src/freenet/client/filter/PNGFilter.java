@@ -34,13 +34,18 @@ public class PNGFilter implements ContentDataFilter {
 	private final boolean checkCRCs;
 	static final byte[] pngHeader = { (byte) 137, (byte) 80, (byte) 78, (byte) 71, (byte) 13, (byte) 10, (byte) 26,
 	        (byte) 10 };
-	static final String[] HARMLESS_CHUNK_TYPES = {
+	// https://www.w3.org/TR/png/#5ChunkOrdering, these chunks must appear before PLTE and IDAT
+	static final String[] HARMLESS_CHUNK_TYPES_BEFORE_PLTE = {
 	// http://www.w3.org/TR/PNG/
-	        "tRNS", "cHRM", "iCCP", // FIXME Embedded ICC profile: could this conceivably cause a web lookup?
+	        "cHRM", "iCCP", // FIXME Embedded ICC profile: could this conceivably cause a web lookup?
 	        "sBIT", // https://www.w3.org/TR/png/#11sBIT
 	        "gAMA", // https://www.w3.org/TR/png/#11gAMA
 	        "cLLI", // https://www.w3.org/TR/png/#cLLI-chunk
-	        "sRGB", "bKGD", "hIST", "pHYs", "sPLT",
+	        "sRGB"
+	};
+	static final String[] HARMLESS_CHUNK_TYPES_OTHER_ORDER = {
+	        "pHYs", "sPLT",
+	        "tRNS", "bKGD", "hIST",
 	        // APNG chunks (Firefox 3 will support APNG)
 	        // http://wiki.mozilla.org/APNG_Specification
 	        "acTL", "fcTL", "fdAT"
@@ -277,8 +282,21 @@ public class PNGFilter implements ContentDataFilter {
 				}
 
 				if (!validChunkType) {
-					for (int i = 0; i < HARMLESS_CHUNK_TYPES.length; i++) {
-						if (HARMLESS_CHUNK_TYPES[i].equals(chunkTypeString)) {
+					for (int i = 0; i < HARMLESS_CHUNK_TYPES_BEFORE_PLTE.length; i++) {
+						if (HARMLESS_CHUNK_TYPES_BEFORE_PLTE[i].equals(chunkTypeString)) {
+							if (!hasSeenPLTE && !hasSeenIDAT) {
+								validChunkType = true;
+								break;
+							} else {
+								throwError("The chunk appeared in an unexpected order!",
+										"The chunk appeared in an unexpected order!");
+							}
+						}
+					}
+				}
+				if (!validChunkType) {
+					for (int i = 0; i < HARMLESS_CHUNK_TYPES_OTHER_ORDER.length; i++) {
+						if (HARMLESS_CHUNK_TYPES_OTHER_ORDER[i].equals(chunkTypeString)) {
 							validChunkType = true;
 							break;
 						}

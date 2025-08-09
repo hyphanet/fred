@@ -70,7 +70,7 @@ public class PNGFilterTest {
 	        // NOT PASS  { "./png/broken/length_ihdr.png", false }, //
 	        { "./png/broken/missing_ihdr.png", false }, //
 	        // NOT PASS  { "./png/broken/ihdr_image_size.png", false }, //
-	        // NOT PASS  { "./png/broken/gama_after_plte.png", false }, //
+	        { "./png/broken/gama_after_plte.png", false },
 	        { "./png/broken/multiple_ihdr.png", false }, //
 	        // NOT PASS  { "./png/broken/unknown_filter_type.png", false }, //
 	        // NOT PASS  { "./png/broken/scal_zero.png", false }, //
@@ -78,16 +78,16 @@ public class PNGFilterTest {
 	        // NOT PASS  { "./png/broken/scal_negative.png", false }, //
 	        // NOT PASS  { "./png/broken/ster_mode.png", false }, //
 	        // NOT PASS  { "./png/broken/private_interlace_method.png", false }, //
-	        // NOT PASS  { "./png/broken/srgb_after_idat.png", false }, //
+	        { "./png/broken/srgb_after_idat.png", false },
 	        // NOT PASS  { "./png/broken/ster_after_idat.png", false }, //
 	        // NOT PASS  { "./png/broken/ihdr_16bit_palette.png", false }, //
-	        // NOT PASS  { "./png/broken/iccp_after_idat.png", false }, //
+	        { "./png/broken/iccp_after_idat.png", false },
 	        // NOT PASS  { "./png/broken/plte_empty.png", false }, //
 	        // NOT PASS  { "./png/broken/private_compression_method.png", false }, //
 	        // NOT PASS  { "./png/broken/offs_unit_specifier.png", false }, //
 	        // NOT PASS  { "./png/broken/plte_length_mod_three.png", false }, //
 	        // NOT PASS  { "./png/broken/multiple_offs.png", false }, //
-	        // NOT PASS  { "./png/broken/gama_after_idat.png", false }, //
+	        { "./png/broken/gama_after_idat.png", false },
 	        // NOT PASS  { "./png/broken/missing_plte.png", false }, //
 	        // NOT PASS  { "./png/broken/splt_sample_depth.png", false }, //
 	        // NOT PASS  { "./png/broken/multiple_pcal.png", false }, //
