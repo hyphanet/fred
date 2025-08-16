@@ -11,7 +11,7 @@ Fred stands for Freenet REference Daemon.
 
 ## Building
 
-We've included the [Gradle Wrapper](https://docs.gradle.org/8.11/userguide/gradle_wrapper.html) as
+We've included the [Gradle Wrapper](https://docs.gradle.org/8.14.3/userguide/gradle_wrapper.html) as
 recommended by the Gradle project. If you trust the version we've committed you can build
 immediately:
 
@@ -23,7 +23,7 @@ immediately:
 
     > gradlew jar
 
-We've [configured it](gradle/wrapper/gradle-wrapper.properties) to [verify the checksum](https://docs.gradle.org/8.11/userguide/gradle_wrapper.html#wrapper_checksum_verification)
+We've [configured it](gradle/wrapper/gradle-wrapper.properties) to [verify the checksum](https://docs.gradle.org/8.14.3/userguide/gradle_wrapper.html#wrapper_checksum_verification)
 of the archive it downloads from `https://services.gradle.org`.
 
 ### Build with ant
@@ -61,7 +61,7 @@ To test your version of Freenet, build it with ,./gradlew jar`,
 stop your node, replace `freenet.jar` in your
 Freenet directory with `build/libs/freenet.jar`, and start your node again.
 
-To override values set in `build.gradle` put them into [the file](https://docs.gradle.org/8.11/userguide/build_environment.html)
+To override values set in `build.gradle` put them into [the file](https://docs.gradle.org/8.14.3/userguide/build_environment.html)
 `gradle.properties` in the format `variable = value`. For instance:
 
     org.gradle.parallel = true
