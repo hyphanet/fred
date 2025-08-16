@@ -225,32 +225,34 @@ span.peer_connected {
   color: #03b003;
 }
 
-input[type=radio] {
-  display:none;
+input[type="radio"] {
+    appearance: none;
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    box-sizing: content-box;
+    margin: 0 1px -2px 0;
+    padding: 0;
+    background: #6c6c6c;
+    color: #535353;
+    border: 2px solid #313131;
 }
 
-/* special case WoT */
-#page-_WebOfTrust_MyIdentity input[type=radio] {
-  display: initial;
+input[type="radio"]:checked {
+    color: white;
 }
 
-input[type=radio] + label:before {
-  content: '•';
-  display:inline-block;
-  border-radius: 10px;
-  width: 16px;
-  height:16px;
-  background:#6c6c6c;
-  color:#535353;
-  border: 2px solid #313131;
-  line-height: 15px;
-  text-align: center;
-  font-size:25px;
-  margin-right: 5px;
-}
-
-input[type=radio]:checked + label:before {
-  color: #fff;
+input[type="radio"]::before {
+    content: "";
+    display: block;
+    position: relative;
+    width: 8px;
+    height: 8px;
+    left: 4px;
+    top: 4px;
+    border-radius: 50%;
+    background-color: currentColor;
 }
 
 input[type="checkbox"],input[type="file"] {
