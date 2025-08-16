@@ -2,6 +2,7 @@ package freenet.clients.fcp;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 
 import freenet.node.Node;
 import freenet.support.LogThresholdCallback;
@@ -53,8 +54,8 @@ public abstract class FCPMessage {
 		}
 		sfs.setEndMarker(getEndString());
 		String msg = sfs.toString();
-		os.write((getName()+ '\n').getBytes("UTF-8"));
-		os.write(msg.getBytes("UTF-8"));
+		os.write((getName()+ '\n').getBytes(StandardCharsets.UTF_8));
+		os.write(msg.getBytes(StandardCharsets.UTF_8));
 		if(logDEBUG) {
 			Logger.debug(this, "Outgoing FCP message:\n"+getName()+'\n'+sfs.toString());
 			Logger.debug(this, "Being handled by "+this);
@@ -93,8 +94,8 @@ public abstract class FCPMessage {
 			return new SendTextMessage(fs);
 		if(name.equals(DisconnectMessage.NAME))
 			return new DisconnectMessage(fs);
-        if(name.equals(FCPPluginClientMessage.NAME))
-            return new FCPPluginClientMessage(fs);
+		if(name.equals(FCPPluginClientMessage.NAME))
+			return new FCPPluginClientMessage(fs);
 		if(name.equals(GenerateSSKMessage.NAME))
 			return new GenerateSSKMessage(fs);
 		if(name.equals(GetConfig.NAME))

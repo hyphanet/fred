@@ -7,7 +7,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Arrays;
 import java.util.HashMap;
 
 import org.junit.Test;
@@ -27,14 +26,14 @@ public class JPEGFilterTest {
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 		jpegFilter.readFilter(inputStream, outputStream, "UTF-8", new HashMap<>(), null, new NullFilterCallback());
 		byte[] filteredJpegFile = outputStream.toByteArray();
-		assertTrue(Arrays.equals(jpegFile, filteredJpegFile));
+		assertArrayEquals(jpegFile, filteredJpegFile);
 	}
 
 	private byte[] createValidJpegFileWithThumbnail() throws IOException {
 		ByteArrayOutputStream jpegFile = new ByteArrayOutputStream();
 		writeStartOfImageMarker(jpegFile);
-		writeAppMarker(jpegFile, 0, new byte[]{0x4a, 0x46, 0x49, 0x46, 0x00, 0x01, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00});
-		writeAppMarker(jpegFile, 0, new byte[]{0x4a, 0x46, 0x58, 0x58, 0x00, 0x13, 0x01, 0x01, 0x00, 0x7f, 0x00});
+		writeAppMarker(jpegFile, new byte[]{0x4a, 0x46, 0x49, 0x46, 0x00, 0x01, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00});
+		writeAppMarker(jpegFile, new byte[]{0x4a, 0x46, 0x58, 0x58, 0x00, 0x13, 0x01, 0x01, 0x00, 0x7f, 0x00});
 		writeEndOfImageMarker(jpegFile);
 		return jpegFile.toByteArray();
 	}
@@ -43,8 +42,8 @@ public class JPEGFilterTest {
 		outputStream.write(new byte[]{(byte) 0xff, (byte) 0xd8});
 	}
 
-	private void writeAppMarker(OutputStream outputStream, int app, byte[] payload) throws IOException {
-		outputStream.write(new byte[]{(byte) 0xff, (byte) (0xe0 + app)});
+	private void writeAppMarker(OutputStream outputStream, byte[] payload) throws IOException {
+		outputStream.write(new byte[]{(byte) 0xff, (byte) (0xe0)});
 		int payloadLengthIncludingLength = payload.length + 2;
 		outputStream.write(new byte[]{(byte) ((payloadLengthIncludingLength >> 8) & 0xff), (byte) (payloadLengthIncludingLength & 0xff)});
 		outputStream.write(payload);

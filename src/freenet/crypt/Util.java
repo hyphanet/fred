@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.security.DigestException;
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
@@ -22,7 +23,6 @@ import java.util.Random;
 
 import freenet.crypt.ciphers.Rijndael;
 import freenet.support.Fields;
-import freenet.support.HexUtil;
 import freenet.support.Loader;
 import freenet.support.Logger;
 import freenet.support.math.MersenneTwister;
@@ -112,14 +112,9 @@ public class Util {
 	 * Hashes a string in a consistent manner
 	 */
 	public static byte[] hashString(MessageDigest d, String s) {
-		try {
-			byte[] sbytes = s.getBytes("UTF-8");
-			d.update(sbytes, 0, sbytes.length);
-			return d.digest();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return null;
+		byte[] sbytes = s.getBytes(StandardCharsets.UTF_8);
+		d.update(sbytes, 0, sbytes.length);
+		return d.digest();
 	}
 
 	public static byte[] xor(byte[] b1, byte[] b2) {
@@ -194,9 +189,6 @@ public class Util {
 		return freenet.support.Fields.byteArrayEqual(a, b, offset, offset, length);
 	}
 
-	private static final MessageDigest ctx;
-	private static final int ctx_length;
-
 	public static final Map<String, Provider> mdProviders;
 
 	static private long benchmark(MessageDigest md) throws GeneralSecurityException
@@ -266,9 +258,6 @@ public class Util {
 				mdProviders_internal.put(algo, mdProvider);
 			}
 			mdProviders = Collections.unmodifiableMap(mdProviders_internal);
-
-			ctx = MessageDigest.getInstance("SHA1", mdProviders.get("SHA1"));
-			ctx_length = ctx.getDigestLength();
 		} catch(NoSuchAlgorithmException e) {
 			// impossible
 			throw new Error(e);
@@ -281,8 +270,8 @@ public class Util {
 		int offset,
 		int len) {
 		try {
-		synchronized (ctx) {
-			ctx.digest(); // reinitialize
+			MessageDigest ctx = HashType.SHA1.get();
+			int ctx_length = ctx.getDigestLength();
 
 			int ic = 0;
 			while (len > 0) {
@@ -302,8 +291,7 @@ public class Util {
 				offset += bc;
 				len -= bc;
 			}
-		}
-		Arrays.fill(entropy, (byte) 0);
+			Arrays.fill(entropy, (byte) 0);
 		} catch(DigestException e) {
 			// impossible
 			throw new Error(e);
@@ -328,44 +316,11 @@ public class Util {
 			return (BlockCipher) Loader.getInstance(
 				"freenet.crypt.ciphers." + name,
 				new Class<?>[] { Integer.class },
-				new Object[] { Integer.valueOf(keySize)});
+				new Object[] {keySize});
 		} catch (Exception e) {
 			//throw new UnsupportedCipherException(""+e);
 			e.printStackTrace();
 			return null;
-		}
-	}
-
-	public static void main(String[] args) throws Exception {
-		if ((args.length == 0) || args[0].equals("write")) {
-			writeMPI(new BigInteger("9"), System.out);
-			writeMPI(new BigInteger("1234567890123456789"), System.out);
-			writeMPI(new BigInteger("100200300400500600700800900"), System.out);
-		} else if (args[0].equals("read")) {
-			System.out.println("9");
-			System.out.println(readMPI(System.in));
-			System.out.println("1234567890123456789");
-			System.out.println(readMPI(System.in));
-			System.out.println("100200300400500600700800900");
-			System.out.println(readMPI(System.in));
-		} else if (args[0].equals("write-mpi")) {
-			writeMPI(new BigInteger(args[1]), System.out);
-		} else if (args[0].equals("read-mpi")) {
-			System.err.println(readMPI(System.in));
-		} else if (args[0].equals("keygen")) {
-			byte[] entropy = readMPI(System.in).toByteArray();
-			byte[] key =
-				new byte[(args.length > 1 ? Integer.parseInt(args[1]) : 16)];
-			makeKey(entropy, key, 0, key.length);
-			System.err.println(HexUtil.bytesToHex(key, 0, key.length));
-		} else if (args[0].equals("shatest")) {
-			synchronized (ctx) {
-				ctx.digest();
-				ctx.update((byte) 'a');
-				ctx.update((byte) 'b');
-				ctx.update((byte) 'c');
-				System.err.println(HexUtil.bytesToHex(ctx.digest()));
-			}
 		}
 	}
 

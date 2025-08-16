@@ -217,17 +217,17 @@ public class RealNodeProbeTest extends RealNodeRoutingTest {
 				int selection = Integer.parseInt(r.readLine());
 				if (selection == types.length) {
 					System.err.print("Enter new node index ([0-" + (NUMBER_OF_NODES - 1) + "]):");
-					index = Integer.valueOf(r.readLine());
+					index = Integer.parseInt(r.readLine());
 				}
 				else if (selection == types.length+1) {
 					System.err.print("Enter new HTL: ");
-					htl = Byte.valueOf(r.readLine());
+					htl = Byte.parseByte(r.readLine());
 				} else if (selection == types.length+2) {
-					SubConfig nodeConfig = nodes[index].config.get("node");
+					SubConfig nodeConfig = nodes[index].getConfig().get("node");
 					String[] options = { "probeBandwidth", "probeBuild", "probeIdentifier", "probeLinkLengths", "probeLinkLengths", "probeUptime" };
 					for (String option : options) {
 						System.err.print(option + ": ");
-						nodeConfig.set(option, Boolean.valueOf(r.readLine()));
+						nodeConfig.set(option, Boolean.parseBoolean(r.readLine()));
 					}
 				} else nodes[index].startProbe(htl, random.nextLong(), types[selection], print);
 			} catch (Exception e) {

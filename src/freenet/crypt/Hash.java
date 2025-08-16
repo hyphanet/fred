@@ -6,7 +6,6 @@ package freenet.crypt;
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 
-import net.i2p.util.NativeBigInteger;
 import freenet.support.HexUtil;
 
 /**
@@ -95,31 +94,6 @@ public final class Hash{
 	 */
 	public final String genHexHash() {
 		return HexUtil.bytesToHex(genHash());
-	}
-	
-	/**
-	 * Generates the hash as a NativeBigInteger of all the bytes in the buffer 
-	 * added with the addBytes methods. The buffer is then cleared after the hash 
-	 * has been generated.
-	 * @return The generated hash as a NativeBigInteger of all the bytes added 
-	 * since last reset.
-	 */
-	public final NativeBigInteger genNativeBigIntegerHash(){
-		return new NativeBigInteger(1, genHash());
-	}
-	
-	/**
-	 * Generates the hash as a NativeBigInteger string of only the specified 
-	 * bytes. The buffer is cleared before processing the input to ensure that 
-	 * no extra data is included. Once the hash has been generated, the buffer 
-	 * is cleared again. 
-	 * @param input The bytes to hash
-	 * @return The generated hash as a NativeBigInteger of the data
-	 */
-	public final NativeBigInteger genNativeBigIntegerHash(byte[]... data){
-		digest.reset();
-		addBytes(data);
-		return genNativeBigIntegerHash();
 	}
 	
 	/**

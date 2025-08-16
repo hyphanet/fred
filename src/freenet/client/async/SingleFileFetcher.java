@@ -350,7 +350,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					return;
 				}
 			}
-			if(metaStrings.size() == 0) {
+			if(metaStrings.isEmpty()) {
 				if(metadata.hasTopData()) {
 					if((metadata.topSize > ctx.maxOutputLength) ||
 							(metadata.topCompressedSize > ctx.maxTempLength)) {
@@ -376,7 +376,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				} else if(metaStrings.isEmpty()) {
 					FreenetURI u = uri;
 					String last = u.lastMetaString();
-					if(last == null || !last.equals(""))
+					if(last == null || !last.isEmpty())
 						u = u.addMetaStrings(new String[] { "" });
 					else
 						u = null;
@@ -654,7 +654,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				}
 
 				String mimeType = clientMetadata.getMIMETypeNoParams();
-				if(mimeType != null && ArchiveManager.ARCHIVE_TYPE.isUsableArchiveType(mimeType) && metaStrings.size() > 0) {
+				if(mimeType != null && ArchiveManager.ARCHIVE_TYPE.isUsableArchiveType(mimeType) && !metaStrings.isEmpty()) {
 					// Looks like an implicit archive, handle as such
 					metadata.setArchiveManifest();
 					// Pick up MIME type from inside archive
@@ -729,7 +729,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				clientMetadata.mergeNoOverwrite(metadata.getClientMetadata()); // even splitfiles can have mime types!
 
 				String mimeType = clientMetadata.getMIMETypeNoParams();
-				if(mimeType != null && ArchiveManager.ARCHIVE_TYPE.isUsableArchiveType(mimeType) && metaStrings.size() > 0) {
+				if(mimeType != null && ArchiveManager.ARCHIVE_TYPE.isUsableArchiveType(mimeType) && !metaStrings.isEmpty()) {
 					// Looks like an implicit archive, handle as such
 					metadata.setArchiveManifest();
 					// Pick up MIME type from inside archive
@@ -1274,11 +1274,12 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 
 		@Override
 		public void onFoundEdition(long l, USK newUSK, ClientContext context, boolean metadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo) {
-			if(l < usk.suggestedEdition && datastoreOnly)
+			if(l < usk.suggestedEdition && datastoreOnly) {
 				l = usk.suggestedEdition;
+			}
 			ClientSSK key = usk.getSSK(l);
 			try {
-				if(l == usk.suggestedEdition) {
+				if(l == usk.suggestedEdition || (l == 0 && usk.suggestedEdition == 1)) {
 					SingleFileFetcher sf = new SingleFileFetcher(parent, cb, null, key, metaStrings, key.getURI().addMetaStrings(metaStrings),
 							0, ctx, false, realTimeFlag, actx, null, null, maxRetries, recursionLevel+1, dontTellClientGet, token, false, true, false, (short)0, context, false);
 					if(tag != null) {

@@ -9,6 +9,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
@@ -1941,7 +1942,7 @@ public class RijndaelTest {
 			InputStream is = null;
 			try {
 				is = getClass().getResourceAsStream("/freenet/crypt/ciphers/rijndael-gladman-test-data/ecbn"+type+testNumber+".txt");
-				InputStreamReader isr = new InputStreamReader(is, "ISO-8859-1");
+				InputStreamReader isr = new InputStreamReader(is, StandardCharsets.ISO_8859_1);
 				BufferedReader br = new BufferedReader(isr);
 				for(int i=0;i<7;i++) br.readLine(); // Skip header
 				String line = br.readLine();

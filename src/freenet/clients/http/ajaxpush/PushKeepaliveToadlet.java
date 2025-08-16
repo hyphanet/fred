@@ -31,7 +31,7 @@ public class PushKeepaliveToadlet extends Toadlet {
 		if (logMINOR) {
 			Logger.minor(this, "Got keepalive:" + requestId);
 		}
-		boolean success = ((SimpleToadletServer) ctx.getContainer()).pushDataManager.keepAliveReceived(requestId);
+		boolean success = ((SimpleToadletServer) ctx.getContainer()).getPushDataManager().keepAliveReceived(requestId);
 		if (success) {
 			writeHTMLReply(ctx, 200, "OK", UpdaterConstants.SUCCESS);
 		} else {

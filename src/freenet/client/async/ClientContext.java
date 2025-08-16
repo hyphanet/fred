@@ -50,8 +50,15 @@ public class ClientContext {
 	private transient ClientRequestScheduler sskInsertSchedulerRT;
 	private transient ClientRequestScheduler chkInsertSchedulerRT;
 	private transient UserAlertManager alerts;
-	/** The main Executor for the node. Jobs for transient requests run here. */
+
+	/**
+	 * The main Executor for the node. Jobs for transient requests run here.
+	 *
+	 * @deprecated Use {@link #getMainExecutor()} instead
+	 */
+	@Deprecated
 	public transient final Executor mainExecutor;
+
 	/** We need to be able to suspend execution of jobs changing persistent state in order to write
 	 * it to disk consistently. Also, some jobs may want to request immediate serialization. */
 	public transient final PersistentJobRunner jobRunner;
@@ -317,4 +324,9 @@ public class ClientContext {
 	public Config getConfig() {
 		return config;
 	}
+
+	public Executor getMainExecutor() {
+		return mainExecutor;
+	}
+
 }

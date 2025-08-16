@@ -1,0 +1,59 @@
+#!/usr/bin/env -S make -f
+# -*- makefile -*-
+
+# Uncomment this to turn on verbose mode.
+export DH_VERBOSE=0
+FREENET_VERSION := 0.7.5
+FREENET_BUILD   := 1498
+WRAPPER_INIT    := /usr/share/wrapper/make-wrapper-init.sh
+
+BUILD_DIR	:= /tmp/fred-build
+
+REFS		:= https://github.com/freenet/seedrefs/archive/refs/heads/master.zip
+REFS_NAME	:= seedrefs-master
+REFS_DIR	:= $(BUILD_DIR)/seeds
+
+export GRADLE_OPTS	:= -Dorg.gradle.daemon=true -Xmx512m -Dorg.gradle.project.buildDir=$(BUILD_DIR)
+export GRADLE_USER_HOME := $(BUILD_DIR)/gradle
+
+%:
+	dh $@ --with javahelper
+
+$(REFS_DIR):
+	mkdir -p $(REFS_DIR)
+	wget -q $(REFS) -O $(REFS_DIR)/$(REFS_NAME).zip
+	unzip $(REFS_DIR)/$(REFS_NAME).zip -d $(REFS_DIR)
+
+build_seed_file: $(REFS_DIR)
+	cat $(REFS_DIR)/$(REFS_NAME)/* > debian/seednodes.fref
+
+clean:
+	rm -f debian/seednodes.fref
+	rm -rf .gradle gradle/wrapper/dists debian/freenet
+
+override_dh_auto_build: build_seed_file
+	./gradlew jar; \
+	./gradlew copyRuntimeLibs
+
+	sed -e 's/@version@/$(FREENET_VERSION)/' -e 's/@build@/$(FREENET_BUILD)/' $(CURDIR)/debian/freenet.service.params | \
+	 $(WRAPPER_INIT) -q > "$(CURDIR)/debian/freenet.init"
+
+# override_dh_builddeb:
+# 	dh_builddeb -- -Zgzip
+
+override_dh_auto_install:
+	dh_auto_install
+	jh_installlibs $(BUILD_DIR)/libs/freenet.jar
+
+override_dh_auto_test:
+
+override_jh_depends:
+
+override_jh_installlibs:
+	jh_installlibs $(BUILD_DIR)/output/freenet-ext-29.jar
+	jh_installlibs $(BUILD_DIR)/output/jna-4.5.2.jar
+	jh_installlibs $(BUILD_DIR)/output/jna-platform-4.5.2.jar
+	jh_installlibs $(BUILD_DIR)/output/bcprov-jdk15on-1.59.jar
+	jh_installlibs $(BUILD_DIR)/output/pebble-3.1.5.jar
+	jh_installlibs $(BUILD_DIR)/output/unbescape-1.1.6.RELEASE.jar
+	jh_installlibs $(BUILD_DIR)/output/slf4j-api-1.7.25.jar

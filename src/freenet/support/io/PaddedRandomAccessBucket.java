@@ -171,14 +171,12 @@ public class PaddedRandomAccessBucket implements RandomAccessBucket, Serializabl
         
         @Override
         public int read() throws IOException {
-            synchronized(PaddedRandomAccessBucket.this) {
-                if(counter >= size) return -1;
+            byte[] buf = new byte[1];
+            int length = read(buf, 0, 1);
+            if (length > 0) {
+                return Byte.toUnsignedInt(buf[0]);
             }
-            int ret = in.read();
-            synchronized(PaddedRandomAccessBucket.this) {
-                counter++;
-            }
-            return ret;
+            return -1;
         }
         
         @Override
@@ -223,8 +221,7 @@ public class PaddedRandomAccessBucket implements RandomAccessBucket, Serializabl
             long max = size - counter;
             int ret = in.available();
             if(max < ret) ret = (int)max;
-            if(ret < 0) return 0;
-            return ret;
+            return Math.max(ret, 0);
         }
         
     }

@@ -1,13 +1,18 @@
 package freenet.node;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import org.junit.Test;
 
 public class MessageWrapperTest {
 	@Test
 	public void testGetFragment() {
-		MessageItem item = new MessageItem(new byte[1024], null, false, null, (short) 0, false, false);
+		MessageItem item = new MessageItem(new byte[1024], null, false, null, (short) 0);
 		MessageWrapper wrapper = new MessageWrapper(item, 0);
 
 		MessageFragment frag = wrapper.getMessageFragment(128);
@@ -53,7 +58,7 @@ public class MessageWrapperTest {
 	
 	@Test
 	public void testGetFragmentWithLoss() {
-		MessageItem item = new MessageItem(new byte[363], null, false, null, (short) 0, false, false);
+		MessageItem item = new MessageItem(new byte[363], null, false, null, (short) 0);
 		MessageWrapper wrapper = new MessageWrapper(item, 0);
 
 		MessageFragment frag1 = wrapper.getMessageFragment(128);
@@ -107,7 +112,7 @@ public class MessageWrapperTest {
 
 	@Test
 	public void testLost() {
-		MessageItem item = new MessageItem(new byte[363], null, false, null, (short) 0, false, false);
+		MessageItem item = new MessageItem(new byte[363], null, false, null, (short) 0);
 		MessageWrapper wrapper = new MessageWrapper(item, 0);
 
 		MessageFragment frag = wrapper.getMessageFragment(128);

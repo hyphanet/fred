@@ -25,6 +25,7 @@ import java.util.regex.Pattern;
  * <li>IPv4 unabridged (a.b.c.d)</li>
  * <li>IPv4 abridged (a.b.d or a.d)</li>
  * <li>IPv6 unabridged (a:b:c:d:e:f:g:h)</li>
+ * <li>IPv6 abridged (a::b:c:d:e)</li>
  * </ul>
  * 
  * @author David Roden &lt;droden@gmail.com&gt;
@@ -38,21 +39,38 @@ public class AddressIdentifier {
 		String ipv4AddressRegex = byteRegex + "\\.(?>" + byteRegex + "\\.)?(?>" + byteRegex + "\\.)?" + byteRegex;
 		ipv4Pattern = Pattern.compile(ipv4AddressRegex);
 		
-		String wordRegex = "(?>[0-9a-fA-F]{1,4})";
+		String wordRegex = "(?>[0-9a-f]{1,4})";
 		String percentScopeIDRegex = "(?>%[0-9]{1,3})?";
-		String ipv6AddressRegex = wordRegex + "?:" + wordRegex + ':' + wordRegex + ':' + wordRegex + ':' + wordRegex + ':' + wordRegex + ':' + wordRegex + ':' + wordRegex;
-		String ipv6ISATAPAddressRegex = wordRegex + "?:" + wordRegex + ':' + wordRegex + ':' + wordRegex + ":(0){1,4}:5(efe|EFE):" + wordRegex + ':' + wordRegex + percentScopeIDRegex;
-		ipv6Pattern = Pattern.compile(ipv6AddressRegex);
-		ipv6PatternWithPercentScopeID = Pattern.compile(ipv6AddressRegex + percentScopeIDRegex);
-		ipv6ISATAPPattern = Pattern.compile(ipv6ISATAPAddressRegex);
+		/*
+		 * ::(?>(?>X:){0,6}X)?
+		 * X::(?>(?>X:){0,5}X)?
+		 * X:X::(?>(?>X:){0,4}X)?
+		 * X:X:X::(?>(?>X:){0,3}X)?
+		 * (?>X:){4}:(?>(?>X:){0,2}X)?
+		 * (?>X:){5}:(?>X:)?X?
+		 * (?>X:){6}:X?
+		 * (?>X:){7}(?>X|:)
+		 */
+		String ipv6AddressRegex = "::(?>(?>X:){0,6}X)?|X::(?>(?>X:){0,5}X)?|X:X::(?>(?>X:){0,4}X)?|X:X:X::(?>(?>X:){0,3}X)?|(?>X:){4}:(?>(?>X:){0,2}X)?|(?>X:){5}:(?>X:)?X?|(?>X:){6}:X?|(?>X:){7}(?>X|:)";
+		ipv6AddressRegex = ipv6AddressRegex.replaceAll("X", wordRegex);
+		// case 0: :(?>(?>:X){1,3}:0{1,4}|:0{1,4}|):5EFE:X:X
+		// case 1: X:(?>:0{1,4}|:(?>X:){1,2}0{1,4}|):5EFE:X:X
+		// case 2: X:X:(?>:0{1,4}|:(?>X:)?0{1,4}|):5EFE:X:X
+		// case 3 and 4: X:X:X:(?>X:0{1,4}|:0{1,4}|X:|):5EFE:X:X
+		// case 5: (?>X:){4}0{1,4}:5EFE:(?>X:X|:X?|X::)
+		String ipv6ISATAPAddressRegex = ":(?>(?>:X){1,3}:0{1,4}|:0{1,4}|):5EFE:X:X|X:(?>:0{1,4}|:(?>X:){1,2}0{1,4}|):5EFE:X:X|X:X:(?>:0{1,4}|:(?>X:)?0{1,4}|):5EFE:X:X|X:X:X:(?>X:0{1,4}|:0{1,4}|X:|):5EFE:X:X|(?>X:){4}0{1,4}:5EFE:(?>X:X|:X?|X::)";
+		ipv6ISATAPAddressRegex = ipv6ISATAPAddressRegex.replaceAll("X", wordRegex);
+		ipv6Pattern = Pattern.compile(ipv6AddressRegex, Pattern.CASE_INSENSITIVE);
+		ipv6PatternWithPercentScopeID = Pattern.compile("(?>" + ipv6AddressRegex + ")" + percentScopeIDRegex, Pattern.CASE_INSENSITIVE);
+		ipv6ISATAPPattern = Pattern.compile("(?>" + ipv6ISATAPAddressRegex + ")" + percentScopeIDRegex, Pattern.CASE_INSENSITIVE);
 	}
 	
 	public enum AddressType {
-		OTHER, IPv4, IPv6;
+		OTHER, IPv4, IPv6
 	}
 
 	/**
-	 * Tries to detemine the address type of the given address.
+	 * Tries to determine the address type of the given address.
 	 * 
 	 * REDFLAG: IPv6 percent scope ID's could cause problems with URI's.
 	 * Should not be exploitable as we don't do anything important with 
@@ -71,7 +89,7 @@ public class AddressIdentifier {
 	}
 
 	/**
-	 * Tries to detemine the address type of the given address.
+	 * Tries to determine the address type of the given address.
 	 * 
 	 * @param address
 	 *            The address to determine the type of

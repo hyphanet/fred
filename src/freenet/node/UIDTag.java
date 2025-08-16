@@ -5,8 +5,8 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import java.lang.ref.WeakReference;
 import java.util.HashSet;
 
-import freenet.support.Logger;
 import freenet.support.LogThresholdCallback;
+import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 
 /**
@@ -35,8 +35,7 @@ public abstract class UIDTag {
 	protected final RequestTracker tracker;
 	protected boolean accepted;
 	protected boolean sourceRestarted;
-	private boolean slowDown;
-	
+
 	/** Nodes we have routed to at some point */
 	private HashSet<PeerNode> routedTo = null;
 	/** Nodes we are currently talking to i.e. which have not yet removed our UID from the
@@ -62,7 +61,7 @@ public abstract class UIDTag {
 		this.sourceRef = source == null ? null : source.myRef;
 		wasLocal = source == null;
 		this.realTimeFlag = realTimeFlag;
-		this.tracker = node.tracker;
+		this.tracker = node.getTracker();
 		this.uid = uid;
 		if(logMINOR)
 			Logger.minor(this, "Created "+this);
@@ -468,15 +467,5 @@ public abstract class UIDTag {
 	
 	public synchronized boolean isWaitingForSlot() {
 		return waitingForSlot;
-	}
-
-	/** Set a flag indicating the originator should slow down. Only used at the shouldRejectRequest stage. */
-	synchronized void slowDown() {
-		slowDown = true;
-	}
-
-	/** Query the slow-down flag. Should be checked after shouldRejectRequest. */
-	synchronized boolean shouldSlowDown() {
-		return slowDown;
 	}
 }

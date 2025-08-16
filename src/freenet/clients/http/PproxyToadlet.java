@@ -17,6 +17,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.l10n.NodeL10n;
@@ -79,9 +80,9 @@ public class PproxyToadlet extends Toadlet {
 
 		if(logMINOR) Logger.minor(this, "Pproxy received POST on "+path);
 
-		final PluginManager pm = node.pluginManager;
+		final PluginManager pm = node.getPluginManager();
 
-		if(path.length()>0)
+		if(!path.isEmpty())
 		{
 			// Plugins handle their own formPassword checking.
 			try
@@ -112,8 +113,10 @@ public class PproxyToadlet extends Toadlet {
 			catch (DownloadPluginHTTPException e) {
 				// FIXME: maybe it ought to be defined like sendErrorPage : in toadlets
 
-				MultiValueTable<String, String> head = new MultiValueTable<String, String>();
-				head.put("Content-Disposition", "attachment; filename=\"" + e.filename + '"');
+				MultiValueTable<String, String> head = MultiValueTable.from(
+					"Content-Disposition",
+					"attachment; filename=\"" + e.filename + '"'
+				);
 				ctx.sendReplyHeaders(DownloadPluginHTTPException.CODE, "Found", head, e.mimeType, e.data.length);
 				ctx.writeData(e.data);
 			}
@@ -134,12 +137,11 @@ public class PproxyToadlet extends Toadlet {
 			
 			if (request.isPartSet("submit-official")) {
 				final String pluginName = request.getPartAsStringFailsafe("plugin-name", 40);
-				final String pluginSource = request.getPartAsStringFailsafe("pluginSource", 10);
-				
-				node.executor.execute(new Runnable() {
+
+				node.getExecutor().execute(new Runnable() {
 					@Override
 					public void run() {
-						pm.startPluginOfficial(pluginName, true, true, "https".equals(pluginSource));
+						pm.startPluginOfficial(pluginName, true);
 					}
 				});
 				
@@ -151,7 +153,7 @@ public class PproxyToadlet extends Toadlet {
 				final String pluginName = request.getPartAsStringFailsafe("plugin-url", 200);
 				final boolean fileonly = "on".equalsIgnoreCase(request.getPartAsStringFailsafe("fileonly", 20));
 				
-				node.executor.execute(new Runnable() {
+				node.getExecutor().execute(new Runnable() {
 					@Override
 					public void run() {
 						if (fileonly) 
@@ -168,7 +170,7 @@ public class PproxyToadlet extends Toadlet {
 			if (request.isPartSet("submit-freenet")) {
 				final String pluginName = request.getPartAsStringFailsafe("plugin-uri", 300);
 				
-				node.executor.execute(new Runnable() {
+				node.getExecutor().execute(new Runnable() {
 					@Override
 					public void run() {
 						pm.startPluginFreenet(pluginName, true);
@@ -184,7 +186,7 @@ public class PproxyToadlet extends Toadlet {
 				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 				return;
 			}
-			if (request.getPartAsStringFailsafe("unloadconfirm", MAX_PLUGIN_NAME_LENGTH).length() > 0) {
+			if (!request.getPartAsStringFailsafe("unloadconfirm", MAX_PLUGIN_NAME_LENGTH).isEmpty()) {
 				String pluginThreadName = request.getPartAsStringFailsafe("unloadconfirm", MAX_PLUGIN_NAME_LENGTH);
 				String pluginSpecification = getPluginSpecification(pm, pluginThreadName);
 				pm.killPlugin(pluginThreadName, MAX_THREADED_UNLOAD_WAIT_TIME, false);
@@ -192,8 +194,7 @@ public class PproxyToadlet extends Toadlet {
 					pm.removeCachedCopy(pluginSpecification);
 				}
 				PageNode page = pageMaker.getPageNode(l10n("plugins"), ctx);
-				HTMLNode pageNode = page.outer;
-				HTMLNode contentNode = page.content;
+				HTMLNode contentNode = page.getContentNode();
 				HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-success");
 				infobox.addChild("div", "class", "infobox-header", l10n("pluginUnloaded"));
 				HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
@@ -203,12 +204,11 @@ public class PproxyToadlet extends Toadlet {
                                 infoboxContent.addChild("br");
                                 infoboxContent.addChild("br");
 				infoboxContent.addChild("a", "href", "/plugins/", l10n("returnToPluginPage"));
-				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+				writeHTMLReply(ctx, 200, "OK", page.generate());
 				return;
-			}if (request.getPartAsStringFailsafe("unload", MAX_PLUGIN_NAME_LENGTH).length() > 0) {
+			}if (!request.getPartAsStringFailsafe("unload", MAX_PLUGIN_NAME_LENGTH).isEmpty()) {
 				PageNode page = pageMaker.getPageNode(l10n("plugins"), ctx);
-				HTMLNode pageNode = page.outer;
-				HTMLNode contentNode = page.content;
+				HTMLNode contentNode = page.getContentNode();
 				HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-query");
 				infobox.addChild("div", "class", "infobox-header", l10n("unloadPluginTitle"));
 				HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
@@ -223,12 +223,11 @@ public class PproxyToadlet extends Toadlet {
 				tempNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "confirm", l10n("unload") });
 				tempNode.addChild("#", " ");
 				tempNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.cancel") });
-				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+				writeHTMLReply(ctx, 200, "OK", page.generate());
 				return;
-			} else if (request.getPartAsStringFailsafe("reload", MAX_PLUGIN_NAME_LENGTH).length() > 0) {
+			} else if (!request.getPartAsStringFailsafe("reload", MAX_PLUGIN_NAME_LENGTH).isEmpty()) {
 				PageNode page = pageMaker.getPageNode(l10n("plugins"), ctx);
-				HTMLNode pageNode = page.outer;
-				HTMLNode contentNode = page.content;
+				HTMLNode contentNode = page.getContentNode();
 				HTMLNode reloadContent = pageMaker.getInfobox("infobox infobox-query", l10n("reloadPluginTitle"), contentNode, "plugin-reload", true);
 				reloadContent.addChild("p", l10n("reloadExplanation"));
 				reloadContent.addChild("p", l10n("reloadWarning"));
@@ -245,9 +244,9 @@ public class PproxyToadlet extends Toadlet {
 				tempNode.addChild("#", " ");
 				tempNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.cancel") });
 				
-				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+				writeHTMLReply(ctx, 200, "OK", page.generate());
 				return;
-			} else if (request.getPartAsStringFailsafe("update", MAX_PLUGIN_NAME_LENGTH).length() > 0) {
+			} else if (!request.getPartAsStringFailsafe("update", MAX_PLUGIN_NAME_LENGTH).isEmpty()) {
 				// Deploy the plugin update
 				final String pluginFilename = request.getPartAsStringFailsafe("update", MAX_PLUGIN_NAME_LENGTH);
 
@@ -255,14 +254,14 @@ public class PproxyToadlet extends Toadlet {
 					sendErrorPage(ctx, 404, l10n("pluginNotFoundUpdatingTitle"), 
 							l10n("pluginNotFoundUpdating", "name", pluginFilename));
 				} else {
-					node.nodeUpdater.deployPluginWhenReady(pluginFilename);
+					node.getNodeUpdater().deployPluginWhenReady(pluginFilename);
 
 					headers.put("Location", ".");
 					ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 				}
 				return;
 				
-			}else if (request.getPartAsStringFailsafe("reloadconfirm", MAX_PLUGIN_NAME_LENGTH).length() > 0) {
+			}else if (!request.getPartAsStringFailsafe("reloadconfirm", MAX_PLUGIN_NAME_LENGTH).isEmpty()) {
 				boolean purge = request.isPartSet("purge");
 				String pluginThreadName = request.getPartAsStringFailsafe("reloadconfirm", MAX_PLUGIN_NAME_LENGTH);
 				final String fn = getPluginSpecification(pm, pluginThreadName);
@@ -275,7 +274,7 @@ public class PproxyToadlet extends Toadlet {
 					if (purge) {
 						pm.removeCachedCopy(fn);
 					}
-					node.executor.execute(new Runnable() {
+					node.getExecutor().execute(new Runnable() {
 
 						@Override
 						public void run() {
@@ -349,12 +348,12 @@ public class PproxyToadlet extends Toadlet {
 		if(path.startsWith("/")) path = path.substring(1);
 		if(path.startsWith("plugins/")) path = path.substring("plugins/".length());
 
-		PluginManager pm = node.pluginManager;
+		PluginManager pm = node.getPluginManager();
 
 		if(logMINOR)
 			Logger.minor(this, "Pproxy fetching "+path);
 		try {
-			if (path.equals("")) {
+			if (path.isEmpty()) {
 		        if(!ctx.checkFullAccess(this))
 		            return;
 
@@ -362,12 +361,11 @@ public class PproxyToadlet extends Toadlet {
 
 				PageNode page = ctx.getPageMaker().getPageNode(l10n("plugins"), ctx);
 				boolean advancedModeEnabled = ctx.isAdvancedModeEnabled();
-				HTMLNode pageNode = page.outer;
 				if (loadingPlugins.hasNext()) {
 					/* okay, add a refresh. */
-					page.headNode.addChild("meta", new String[] { "http-equiv", "content" }, new String[] { "refresh", "10; url=" });
+					page.getHeadNode().addChild("meta", new String[] { "http-equiv", "content" }, new String[] { "refresh", "10; url=" });
 				}
-				HTMLNode contentNode = page.content;
+				HTMLNode contentNode = page.getContentNode();
 
 				contentNode.addChild(ctx.getAlertManager().createSummary());
 
@@ -421,7 +419,7 @@ public class PproxyToadlet extends Toadlet {
 				showUnofficialPluginLoader(ctx, contentNode);
 				showFreenetPluginLoader(ctx, contentNode);
 
-				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+				writeHTMLReply(ctx, 200, "OK", page.generate());
 			} else {
 				// split path into plugin class name and 'data' path for plugin
 				int to = path.indexOf('/');
@@ -448,8 +446,10 @@ public class PproxyToadlet extends Toadlet {
 		} catch (DownloadPluginHTTPException e) {
 			// FIXME: maybe it ought to be defined like sendErrorPage : in toadlets
 
-			MultiValueTable<String, String> head = new MultiValueTable<String, String>();
-			head.put("Content-Disposition", "attachment; filename=\"" + e.filename + '"');
+			MultiValueTable<String, String> head = MultiValueTable.from(
+				"Content-Disposition",
+				"attachment; filename=\"" + e.filename + '"'
+			);
 			ctx.sendReplyHeaders(DownloadPluginHTTPException.CODE, "Found", head, e.mimeType, e.data.length);
 			ctx.writeData(e.data);
 		} catch(PluginHTTPException e) {
@@ -560,84 +560,42 @@ public class PproxyToadlet extends Toadlet {
 		HTMLNode addOfficialForm = toadletContext.addFormChild(addOfficialPluginContent, ".", "addOfficialPluginForm");
 		
 		HTMLNode p = addOfficialForm.addChild("p");
-		
 		p.addChild("#", l10n("loadOfficialPluginText"));
 		
-		// Over Freenet or over HTTP??
-		
-		p.addChild("#", " " + l10n("pluginSourceChoice"));
-		
-		boolean loadFromWeb = pm.loadOfficialPluginsFromWeb();
-		
-		HTMLNode input = addOfficialForm.addChild("input",
-				new String[] { "type", "name", "value", "id" },
-				new String[] { "radio", "pluginSource", "freenet", "pluginSourceFreenet" });
-		if(!loadFromWeb)
-			input.addAttribute("checked", "true");
-		addOfficialForm.addChild("label",
-				new String[] { "for" },
-				new String[] { "pluginSourceFreenet" },
-				l10n("pluginSourceFreenet"));
-		addOfficialForm.addChild("br");
-		input = addOfficialForm.addChild("input",
-				new String[] { "type", "name", "value", "id" },
-				new String[] { "radio", "pluginSource", "https", "pluginSourceHTTPS" });
-		if(loadFromWeb)
-			input.addAttribute("checked", "true");
-		addOfficialForm.addChild("label",
-				new String[] { "for" },
-				new String[] { "pluginSourceHTTPS" },
-				l10n("pluginSourceHTTPS"));
-		addOfficialForm.addChild("#", " ");
-		if(node.getOpennet() == null)
-			addOfficialForm.addChild("b").addChild("font", "color", "red", l10n("pluginSourceHTTPSWarning"));
-		else
-			// FIXME CSS-ize this
-			addOfficialForm.addChild("b", l10n("pluginSourceHTTPSWarning"));
-		
-		p = addOfficialForm.addChild("p");
-		
-		p.addChild("#", (l10n("loadOfficialPluginLabel") + ": "));
 		for (Entry<String, List<OfficialPluginDescription>> groupPlugins : availablePlugins.entrySet()) {
-			List<OfficialPluginDescription> notLoadedPlugins = getNotLoadedPlugins(pm, groupPlugins.getValue());
+			List<OfficialPluginDescription> notLoadedPlugins = groupPlugins.getValue().stream()
+					.filter(plugin -> !pm.isPluginLoaded(plugin.name))
+					.filter(plugin -> !plugin.unsupported)
+					.collect(Collectors.toList());
 			if (notLoadedPlugins.isEmpty()) {
 				continue;
 			}
-			HTMLNode pluginGroupNode = addOfficialForm.addChild("div", "class", "plugin-group");
-			pluginGroupNode.addChild("div", "class", "plugin-group-title", l10n("pluginGroupTitle", "pluginGroup", groupPlugins.getKey()));
-			for (OfficialPluginDescription pluginDescription : notLoadedPlugins) {
-        if (pluginDescription.unsupported) {
-          continue;
-        }
-				HTMLNode pluginNode = pluginGroupNode.addChild("div", "class", "plugin");
-				HTMLNode option = pluginNode.addChild("input",
-					new String[] { "type", "name", "value", "id" },
-					new String[] { "radio", "plugin-name", pluginDescription.name, "radioPlugin" + pluginDescription.name });
-				option.addChild("label",
-					new String[] { "for" },
-					new String[] { "radioPlugin" + pluginDescription.name }
-				).addChild("i", pluginDescription.getLocalisedPluginName());
-				if(pluginDescription.deprecated)
-					option.addChild("b", " ("+l10n("loadLabelDeprecated")+")");
-				if(pluginDescription.experimental)
-					option.addChild("b", " ("+l10n("loadLabelExperimental")+")");
-				if (advancedModeEnabled && pluginDescription.minimumVersion >= 0) {
-					option.addChild("#", " ("+l10n("pluginVersion")+" " + pluginDescription.recommendedVersion + ")");
-				}
-				option.addChild("#", " - "+pluginDescription.getLocalisedPluginDescription());
-			}
+			addPluginGroupForLoading(advancedModeEnabled, groupPlugins, addOfficialForm, notLoadedPlugins);
 		}
 		addOfficialForm.addChild("p").addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit-official", l10n("Load") });
 	}
 
-	private List<OfficialPluginDescription> getNotLoadedPlugins(PluginManager pluginManager, List<OfficialPluginDescription> plugins) {
-		List<OfficialPluginDescription> notLoadedPlugins = new ArrayList<OfficialPluginDescription>();
-		for (OfficialPluginDescription plugin : plugins) {
-			if (!pluginManager.isPluginLoaded(plugin.name)) {
-				notLoadedPlugins.add(plugin);
+	private void addPluginGroupForLoading(boolean advancedModeEnabled, Entry<String, List<OfficialPluginDescription>> groupPlugins, HTMLNode addOfficialForm, List<OfficialPluginDescription> notLoadedPlugins) {
+		HTMLNode pluginGroupNode = addOfficialForm.addChild("div", "class", "plugin-group");
+		pluginGroupNode.addChild("div", "class", "plugin-group-title", l10n("pluginGroupTitle", "pluginGroup", groupPlugins.getKey()));
+		for (OfficialPluginDescription pluginDescription : notLoadedPlugins) {
+			HTMLNode pluginNode = pluginGroupNode.addChild("div", "class", "plugin");
+			HTMLNode option = pluginNode.addChild("input",
+					new String[] { "type", "name", "value", "id" },
+					new String[] { "radio", "plugin-name", pluginDescription.name, "radioPlugin" + pluginDescription.name });
+			option.addChild("label",
+					new String[] { "for" },
+					new String[] { "radioPlugin" + pluginDescription.name }
+			).addChild("i", pluginDescription.getLocalisedPluginName());
+			if (pluginDescription.deprecated)
+				option.addChild("b", " (" + l10n("loadLabelDeprecated") + ")");
+			if (pluginDescription.experimental)
+				option.addChild("b", " (" + l10n("loadLabelExperimental") + ")");
+			if (advancedModeEnabled && pluginDescription.minimumVersion >= 0) {
+				option.addChild("#", " (" + l10n("pluginVersion") + " " + pluginDescription.recommendedVersion + ")");
 			}
+			option.addChild("#", " - " + pluginDescription.getLocalisedPluginDescription());
 		}
-		return notLoadedPlugins;
 	}
 
 	private void showUnofficialPluginLoader(ToadletContext toadletContext, HTMLNode contentNode) {

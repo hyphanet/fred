@@ -56,6 +56,7 @@ public class ContentFilter {
 				l10n("textPlainReadAdvice"),
 				true, "US-ASCII", null, false));
 
+		// Images
 		// GIF - has a filter
 		register(new FilterMIMEType("image/gif", "gif", new String[0], new String[0],
 				true, false, new GIFFilter(), false, false, false, false, false, false,
@@ -74,14 +75,20 @@ public class ContentFilter {
 				l10n("imagePngReadAdvice"),
 				false, null, null, false));
 
-
 		// BMP - has a filter
 		// Reference: http://filext.com/file-extension/BMP
 		register(new FilterMIMEType("image/bmp", "bmp", new String[] { "image/x-bmp","image/x-bitmap","image/x-xbitmap","image/x-win-bitmap","image/x-windows-bmp","image/ms-bmp","image/x-ms-bmp","application/bmp","application/x-bmp","application/x-win-bitmap"  }, new String[0],
 				true, false, new BMPFilter(), false, false, false, false, true, false,
 				l10n("imageBMPReadAdvice"),
 				false, null, null, false));
+		
+		// WEBP - has a filter
+		register(new FilterMIMEType("image/webp", "webp", new String[] { "image/webp" }, new String[0],
+				true, false, new WebPFilter(), false, false, false, false, true, false,
+				l10n("imageWebPReadAdvice"),
+				false, null, null, false));
 
+		// Audio
 		/* Ogg - has a filter
 		 * Xiph's container format. Contains one or more logical bitstreams.
 		 * Each type of bitstream will likely require additional processing,
@@ -92,7 +99,7 @@ public class ContentFilter {
 				true, false, new OggFilter(), true, true, false, true, false, false,
 				l10n("containerOggReadAdvice"),false, null, null, false));
 
-		/* FLAC - Needs filter
+		/* FLAC - has a filter
 		 * Lossless audio format. This data is sometimes encapsulated inside
 		 * of ogg containers. It is, however, not currently supported, and
 		 * is very dangerous, as it may specify URLs from which album art
@@ -117,6 +124,11 @@ public class ContentFilter {
 		register(new FilterMIMEType("audio/mpeg", "mp3", new String[] {"audio/mp3", "audio/x-mp3", "audio/x-mpeg", "audio/mpeg3", "audio/x-mpeg3", "audio/mpg", "audio/x-mpg", "audio/mpegaudio"},
 				new String[0], true, false, new MP3Filter(), true, true, false, true, false, false,
 				l10n("audioMP3ReadAdvice"), false, null, null, false));
+		
+		// WAV - has a filter
+		register(new FilterMIMEType("audio/vnd.wave", "wav", new String[] {"audio/x-wav", "audio/wav", "audio/wave"},
+				new String[0], true, true, new WAVFilter(), false, false, false, false, false, false,
+				l10n("audioWAVReadAdvice"), false, null, null, false));
 
 		// ICO needs filtering.
 		// Format is not the same as BMP iirc.
@@ -335,7 +347,7 @@ public class ContentFilter {
 		else {
 			// Run the read filter if there is one.
 			if(handler.readFilter != null) {
-				if(handler.takesACharset && ((charset == null) || (charset.length() == 0))) {
+				if(handler.takesACharset && ((charset == null) || (charset.isEmpty()))) {
 					int bufferSize = handler.charsetExtractor.getCharsetBufferSize();
 					input.mark(bufferSize);
 					byte[] charsetBuffer = new byte[bufferSize];
@@ -448,7 +460,7 @@ public class ContentFilter {
 		}
 
 		// If no BOM, use the charset from the referring document.
-		if(handler.useMaybeCharset && maybeCharset != null && (maybeCharset.length() != 0))
+		if(handler.useMaybeCharset && maybeCharset != null && (!maybeCharset.isEmpty()))
 			return maybeCharset;
 
 		if(charset != null)
@@ -526,24 +538,26 @@ public class ContentFilter {
 	}
 
 	public static String mimeTypeForSrc(String uriold) {
-			String uriPath = uriold.contains("?")
-					? uriold.split("\\?")[0]
-					: uriold;
-			String subMimetype;
-			if (uriPath.endsWith(".m3u") || uriPath.endsWith(".m3u8")) {
-					subMimetype = "audio/mpegurl";
-} else if (uriPath.endsWith(".flac")) {
-					subMimetype = "audio/flac";
-} else if (uriPath.endsWith(".oga")) {
-					subMimetype = "audio/ogg";
-} else if (uriPath.endsWith(".ogv")) {
-					subMimetype = "video/ogg";
-} else if (uriPath.endsWith(".ogg")) {
-					subMimetype = "application/ogg";
-			} else { // force mp3 for anything we do not know
-					subMimetype = "audio/mpeg";
-			}
-			return subMimetype;
+		String uriPath = uriold.contains("?")
+				? uriold.split("\\?")[0]
+				: uriold;
+		String subMimetype;
+		if (uriPath.endsWith(".m3u") || uriPath.endsWith(".m3u8")) {
+			subMimetype = "audio/mpegurl";
+		} else if (uriPath.endsWith(".flac")) {
+			subMimetype = "audio/flac";
+		} else if (uriPath.endsWith(".oga")) {
+			subMimetype = "audio/ogg";
+		} else if (uriPath.endsWith(".ogv")) {
+			subMimetype = "video/ogg";
+		} else if (uriPath.endsWith(".ogg")) {
+			subMimetype = "application/ogg";
+		} else if (uriPath.endsWith(".wav")) {
+			subMimetype = "audio/vnd.wave";
+		} else { // force mp3 for anything we do not know
+			subMimetype = "audio/mpeg";
+		}
+		return subMimetype;
 	}
 
 	public static class FilterStatus {

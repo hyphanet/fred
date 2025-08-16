@@ -152,12 +152,28 @@ public class SubConfig implements Comparable<SubConfig> {
 		register(new StringArrOption(this, optionName, defaultValue, sortOrder, expert, forceWrite, shortDesc, longDesc, cb));
 	}
 
+	/**
+	 * Registers an option that cannot be used.
+	 * <p>
+	 * It is not listed, it is not exported, it is not persisted, it doesn’t
+	 * have a value, you cannot change the value. It only exists so that
+	 * Fred doesn’t log an error message if this particular option is used in
+	 * a config file.
+	 *
+	 * @param optionName The name of the option to ignore
+	 * @see PersistentConfig#finishedInit()
+	 */
+	public void registerIgnoredOption(String optionName) {
+		config.onRegister(this, new IgnoredOption(optionName));
+	}
+
 	public int getInt(String optionName) {
 		IntOption o;
 		synchronized(this) {
 			o = (IntOption) map.get(optionName);
 		}
-		return o.getValue();
+		// return fallback value for ignored options (null). This avoids breaking plugins which try to get ignored options.
+		return o == null ? -1 : o.getValue();
 	}
 
 	public long getLong(String optionName) {
@@ -165,7 +181,8 @@ public class SubConfig implements Comparable<SubConfig> {
 		synchronized(this) {
 			o = (LongOption) map.get(optionName);
 		}
-		return o.getValue();
+		// return fallback value for ignored options (null). This avoids breaking plugins which try to get ignored options.
+		return o == null ? -1L : o.getValue();
 	}
 
 	public boolean getBoolean(String optionName) {
@@ -173,7 +190,8 @@ public class SubConfig implements Comparable<SubConfig> {
 		synchronized(this) {
 			o = (BooleanOption) map.get(optionName);
 		}
-		return o.getValue();
+		// return fallback value for ignored options (null). This avoids breaking plugins which try to get ignored options.
+		return o == null ? false : o.getValue();
 	}
 
 	public String getString(String optionName) {
@@ -181,7 +199,8 @@ public class SubConfig implements Comparable<SubConfig> {
 		synchronized(this) {
 			o = (StringOption) map.get(optionName);
 		}
-		return o.getValue().trim();
+		// return fallback value for ignored options (null). This avoids breaking plugins which try to get ignored options.
+		return o == null ? "" : o.getValue().trim();
 	}
 
 	public String[] getStringArr(String optionName) {
@@ -189,7 +208,8 @@ public class SubConfig implements Comparable<SubConfig> {
 		synchronized(this) {
 			o = (StringArrOption) map.get(optionName);
 		}
-		return o.getValue();
+		// return fallback value for ignored options (null). This avoids breaking plugins which try to get ignored options.
+		return o == null ? new String[]{} : o.getValue();
 	}
 
 	public short getShort(String optionName) {
@@ -197,7 +217,8 @@ public class SubConfig implements Comparable<SubConfig> {
 		synchronized(this) {
 			o = (ShortOption) map.get(optionName);
 		}
-		return o.getValue();
+		// return fallback value for ignored options (null). This avoids breaking plugins which try to get ignored options.
+		return o == null ? -1 : o.getValue();
 	}
 
 	public Option<?> removeOption(String optionName) {
@@ -382,6 +403,33 @@ public class SubConfig implements Comparable<SubConfig> {
 			if(fs == null) return null;
 			return fs.get(prefix + SimpleFieldSet.MULTI_LEVEL_CHAR + name);
 		} else return null;
+	}
+
+	private class IgnoredOption extends Option<Void> {
+
+		public IgnoredOption(String optionName) {
+			super(SubConfig.this, optionName, new ConfigCallback<Void>() {
+				@Override
+				public Void get() {
+					return null;
+				}
+
+				@Override
+				public void set(Void value) {
+				}
+			}, -1, false, false, null, null, null);
+		}
+
+		@Override
+		protected Void parseString(String val) {
+			return null;
+		}
+
+		@Override
+		protected String toString(Void val) {
+			return null;
+		}
+
 	}
 
 }

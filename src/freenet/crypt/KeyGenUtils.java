@@ -3,8 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.crypt;
 
-import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
@@ -315,11 +315,7 @@ public final class KeyGenUtils {
             throw new NullPointerException();
         }
         MessageAuthCode kdf = new MessageAuthCode(MACType.HMACSHA512, kdfKey);
-        try {
-            return kdf.genMac((c.getName()+kdfString).getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException e) {
-            throw new Error(e); // Impossible
-        }
+        return kdf.genMac((c.getName()+kdfString).getBytes(StandardCharsets.UTF_8));
     }
 
 

@@ -37,9 +37,25 @@ public class NodeAndClientLayerTest extends NodeAndClientLayerTestBase {
     private static final File dir = new File("test-fetch-pull-single-node");
     
     @Test
-    public void testFetchPullSingleNode() throws InvalidThresholdException, NodeInitException, InsertException, FetchException, IOException {
+    public void testFetchPullSingleNodeSsk() throws InvalidThresholdException, NodeInitException, InsertException, FetchException, IOException {
         if(!TestProperty.EXTENSIVE) return;
         DummyRandomSource random = new DummyRandomSource(25312);
+        InsertBlock block = generateBlock(random, false);
+        FetchResult result = insertAndRetrieveBlock(random, block);
+        assertTrue(BucketTools.equalBuckets(result.asBucket(), block.getData()));
+    }
+    
+    @Test
+    public void testFetchPullSingleNodeUskEditionZero() throws InvalidThresholdException, NodeInitException, InsertException, FetchException, IOException {
+        if(!TestProperty.EXTENSIVE) return;
+        DummyRandomSource random = new DummyRandomSource(25312);
+        InsertBlock block = generateBlock(random, true);
+        FetchResult result = insertAndRetrieveBlock(random, block);
+        assertTrue(BucketTools.equalBuckets(result.asBucket(), block.getData()));
+    }
+
+    private static FetchResult insertAndRetrieveBlock(DummyRandomSource random, InsertBlock block)
+        throws InvalidThresholdException, NodeInitException, InsertException, FetchException {
         final Executor executor = new PooledExecutor();
         FileUtil.removeAll(dir);
         dir.mkdir();
@@ -54,10 +70,9 @@ public class NodeAndClientLayerTest extends NodeAndClientLayerTestBase {
         Node node = NodeStarter.createTestNode(params);
         node.start(false);
         HighLevelSimpleClient client = 
-                node.clientCore.makeClient((short)0, false, false);
+                node.getClientCore().makeClient((short)0, false, false);
         InsertContext ictx = client.getInsertContext(true);
         ictx.localRequestOnly = true;
-        InsertBlock block = generateBlock(random);
         FreenetURI uri = 
                 client.insert(block, "", (short)0, ictx);
         assertEquals(uri.getKeyType(), "SSK");
@@ -66,9 +81,9 @@ public class NodeAndClientLayerTest extends NodeAndClientLayerTestBase {
         FetchWaiter fw = new FetchWaiter(rc);
         client.fetch(uri, FILE_SIZE*2, fw, ctx, (short)0);
         FetchResult result = fw.waitForCompletion();
-        assertTrue(BucketTools.equalBuckets(result.asBucket(), block.getData()));
+        return result;
     }
-    
+
     @After
     public void cleanUp() {
         FileUtil.removeAll(dir);

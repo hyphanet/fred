@@ -4,6 +4,7 @@ import freenet.support.Logger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.regex.Pattern;
 
 public class FilterUtils {
 	private static volatile boolean logDEBUG;
@@ -103,7 +104,7 @@ public class FilterUtils {
 	{
 		String lengthValue=null;
 		value=value.trim();
-		if (value.length() == 0) {
+		if (value.isEmpty()) {
 			return false;
 		}
 		if (isSVG) {
@@ -150,14 +151,14 @@ public class FilterUtils {
 	{
 		boolean isValid=true;
 		int index=-1;
-		if(value.indexOf("deg")>-1)
+		if(value.contains("deg"))
 		{
 			index=value.indexOf("deg");
 			String secondpart=value.substring(index,value.length()).trim();
 			if(!("deg".equals(secondpart)))
 				isValid=false;
 		}
-		else if(value.indexOf("grad")>-1)
+		else if(value.contains("grad"))
 		{
 			index=value.indexOf("grad");
 			String secondpart=value.substring(index,value.length()).trim();
@@ -165,7 +166,7 @@ public class FilterUtils {
 			if(!("grad".equals(secondpart)))
 				isValid=false;
 		}
-		else if(value.indexOf("rad")>-1)
+		else if(value.contains("rad"))
 		{
 			index=value.indexOf("rad");
 			String secondpart=value.substring(index,value.length()).trim();
@@ -289,6 +290,7 @@ public class FilterUtils {
 		SVGcolorKeywords.add("whitesmoke");
 		SVGcolorKeywords.add("yellow");
 		SVGcolorKeywords.add("yellowgreen");
+		SVGcolorKeywords.add("rebeccapurple"); // CSS Colors Level 4: #663399
 	}
 	private final static HashSet<String> CSScolorKeywords=new HashSet<String>();
 	static
@@ -315,34 +317,34 @@ public class FilterUtils {
 	}
 	private final static HashSet<String> CSSsystemColorKeywords=new HashSet<String>();
 	static {
-		CSScolorKeywords.add("ActiveBorder");
-		CSScolorKeywords.add("ActiveCaption");
-		CSScolorKeywords.add("AppWorkspace");
-		CSScolorKeywords.add("Background");
-		CSScolorKeywords.add("ButtonFace");
-		CSScolorKeywords.add("ButtonHighlight");
-		CSScolorKeywords.add("ButtonShadow");
-		CSScolorKeywords.add("ButtonText");
-		CSScolorKeywords.add("CaptionText");
-		CSScolorKeywords.add("GrayText");
-		CSScolorKeywords.add("Highlight");
-		CSScolorKeywords.add("HighlightText");
-		CSScolorKeywords.add("InactiveBorder");
-		CSScolorKeywords.add("InactiveCaption");
-		CSScolorKeywords.add("InactiveCaptionText");
-		CSScolorKeywords.add("InfoBackground");
-		CSScolorKeywords.add("InfoText");
-		CSScolorKeywords.add("Menu");
-		CSScolorKeywords.add("MenuText");
-		CSScolorKeywords.add("Scrollbar");
-		CSScolorKeywords.add("ThreeDDarkShadow");
-		CSScolorKeywords.add("ThreeDFace");
-		CSScolorKeywords.add("ThreeDHighlight");
-		CSScolorKeywords.add("ThreeDLightShadow");
-		CSScolorKeywords.add("ThreeDShadow");
-		CSScolorKeywords.add("Window");
-		CSScolorKeywords.add("WindowFrame");
-		CSScolorKeywords.add("WindowText");
+		CSScolorKeywords.add("activeborder");
+		CSScolorKeywords.add("activecaption");
+		CSScolorKeywords.add("appworkspace");
+		CSScolorKeywords.add("background");
+		CSScolorKeywords.add("buttonface");
+		CSScolorKeywords.add("buttonhighlight");
+		CSScolorKeywords.add("buttonshadow");
+		CSScolorKeywords.add("buttontext");
+		CSScolorKeywords.add("captiontext");
+		CSScolorKeywords.add("graytext");
+		CSScolorKeywords.add("highlight");
+		CSScolorKeywords.add("highlighttext");
+		CSScolorKeywords.add("inactiveborder");
+		CSScolorKeywords.add("inactivecaption");
+		CSScolorKeywords.add("inactivecaptiontext");
+		CSScolorKeywords.add("infobackground");
+		CSScolorKeywords.add("infotext");
+		CSScolorKeywords.add("menu");
+		CSScolorKeywords.add("menutext");
+		CSScolorKeywords.add("scrollbar");
+		CSScolorKeywords.add("threeddarkshadow");
+		CSScolorKeywords.add("threedface");
+		CSScolorKeywords.add("threedhighlight");
+		CSScolorKeywords.add("threedlightshadow");
+		CSScolorKeywords.add("threedshadow");
+		CSScolorKeywords.add("window");
+		CSScolorKeywords.add("windowframe");
+		CSScolorKeywords.add("windowtext");
 	}
 	public static boolean isValidCSSShape(String value)
 	{
@@ -370,70 +372,57 @@ public class FilterUtils {
 	public static boolean isMedia(String media) {
 		return cssMedia.contains(media);
 	}
+	
+	public static final Pattern hexColorPattern = Pattern.compile("#(?>[0-9a-f]{8}|[0-9a-f]{6}|[0-9a-f]{3,4})", Pattern.CASE_INSENSITIVE);
+	
 	public static boolean isColor(String value)
 	{
-		value=value.trim();
+		value=value.trim().toLowerCase();
 
 		if(CSScolorKeywords.contains(value) || CSSsystemColorKeywords.contains(value) || SVGcolorKeywords.contains(value))
 			return true;
 
 		if(value.indexOf('#')==0)
 		{
-
-			if(value.length()==4)
-			{
-				try{
-					Integer.valueOf(value.substring(1,2),16).intValue();
-					Integer.valueOf(value.substring(2,3),16).intValue();
-					Integer.valueOf(value.substring(3,4),16).intValue();
-					return true;
-				}
-				catch(Exception e)
-				{
-				}
-
-			}
-			else if(value.length()==7)
-			{
-
-				try{
-					Integer.valueOf(value.substring(1,3),16).intValue();
-					Integer.valueOf(value.substring(3,5),16).intValue();
-					Integer.valueOf(value.substring(5,7),16).intValue();
-					return true;
-				}
-				catch(Exception e)
-				{
-				}
-			}
+			return hexColorPattern.matcher(value).matches();
 		}
-		if(value.indexOf("rgb(")==0 && value.indexOf(')')==value.length()-1)
+		if((value.startsWith("rgb(") || value.startsWith("rgba(")) && value.indexOf(')')==value.length()-1)
 		{
-			String[] colorParts=value.substring(4,value.length()-1).split(",");
-			if(colorParts.length!=3)
-				return false;
-			boolean isValidColorParts=true;
-			for(int i=0; i<colorParts.length && isValidColorParts;i++)
+			// rgba is an alias to rgb
+			if(value.contains(","))
 			{
-				if(!(isPercentage(colorParts[i].trim()) || isInteger(colorParts[i].trim())))
-					isValidColorParts = false;
-			}
-			if(isValidColorParts)
+				// Legacy format rgba(r,g,b,a)
+				String[] colorParts=value.substring(value.indexOf("(")+1,value.length()-1).split(",");
+				if(colorParts.length!=3&&colorParts.length!=4)
+					return false;
+				for(int i=0; i<3; i++)
+				{
+					if(!(isPercentage(colorParts[i].trim()) || isInteger(colorParts[i].trim())))
+						return false;
+				}
+				if(colorParts.length<=3 || isNumber(colorParts[3]))
+					return true;
+			}else{
+				if(value.contains("/")){
+					// Modern format rgba(r g b / a)
+					String alphaPart=value.substring(value.indexOf("/")+1,value.length()-1).trim();
+					if(!alphaPart.isEmpty() && !isPercentage(alphaPart) && !isNumber(alphaPart) && !alphaPart.equalsIgnoreCase("none"))
+						return false;
+					value=value.substring(0,value.indexOf("/"))+")"; // Strip alpha value, proceed to the following tests
+				}
+				// Modern format rgba(r g b)
+				String[] colorParts=value.substring(value.indexOf("(")+1,value.length()-1).split(" ");
+				if(colorParts.length!=3) {
+					return false;
+				}
+				for(int i=0; i<3; i++)
+				{
+					String trimmed = colorParts[i].trim();
+					if(!(trimmed.equalsIgnoreCase("none") || isPercentage(trimmed) || (isInteger(trimmed) && isIntegerInRange(trimmed, 0, 255))))
+						return false;
+				}
 				return true;
-		}
-		if(value.indexOf("rgba(")==0 && value.indexOf(')')==value.length()-1)
-		{
-			String[] colorParts=value.substring(5,value.length()-1).split(",");
-			if(colorParts.length!=4)
-				return false;
-			boolean isValidColorParts=true;
-			for(int i=0; i<colorParts.length-1 && isValidColorParts;i++)
-			{
-				if(!(isPercentage(colorParts[i].trim()) || isInteger(colorParts[i].trim())))
-					isValidColorParts = false;
 			}
-			if(isValidColorParts && isNumber(colorParts[3]))
-				return true;
 		}
 
 		if(value.indexOf("hsl(")==0 && value.indexOf(')')==value.length()-1)
@@ -591,7 +580,7 @@ public class FilterUtils {
 		String firstPart;
 		value=value.trim().toLowerCase();
 		boolean isValidFrequency=true;
-		if(value.indexOf("khz")!=-1)
+		if(value.contains("khz"))
 		{
 			int index=value.indexOf("khz");
 			firstPart=value.substring(0,index).trim();
@@ -601,7 +590,7 @@ public class FilterUtils {
 			}
 
 		}
-		else if(value.indexOf("hz")!=-1)
+		else if(value.contains("hz"))
 		{
 			int index=value.indexOf("hz");
 			firstPart=value.substring(0,index).trim();
@@ -631,7 +620,7 @@ public class FilterUtils {
 	{
 		value=value.toLowerCase();
 		String intValue;
-		if(value.indexOf("ms")>-1 && value.length()>2)
+		if(value.contains("ms") && value.length()>2)
 			intValue=value.substring(0,value.length()-2);
 		else if(value.indexOf('s')>-1 && value.length()>1)
 			intValue=value.substring(0,value.length()-1);
@@ -648,7 +637,7 @@ public class FilterUtils {
 			value = value.trim();
 			if(stripQuotes)
 				value = CSSTokenizerFilter.removeOuterQuotes(value).trim();
-			if(value!=null && !("".equals(value.trim())))
+			if(value!=null && !(value.trim().isEmpty()))
 				arrayToReturn.add(value);
 		}
 		return arrayToReturn.toArray(new String[0]);

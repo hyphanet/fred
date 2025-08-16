@@ -353,7 +353,7 @@ public class FetchException extends Exception implements Cloneable {
         // FIXME change the l10n to use the names rather than codes
 	    int code = mode.code;
 		String ret = NodeL10n.getBase().getString("FetchException.shortError."+code);
-		if(ret == null || ret.equals(""))
+		if(ret == null || ret.isEmpty())
 			return "Unknown code "+mode;
 		else return ret;
 	}

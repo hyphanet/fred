@@ -203,7 +203,7 @@ public class MessageCore {
 					i.remove();
 					continue;
 				}
-				MATCHED status = f.match(m, tStart);
+				MATCHED status = f.match(m, false, tStart);
 				if(status == MATCHED.TIMED_OUT || status == MATCHED.TIMED_OUT_AND_MATCHED) {
 					if(timedOut == null)
 						timedOut = new ArrayList<MessageFilter>();
@@ -269,7 +269,7 @@ public class MessageCore {
 				if(logMINOR) Logger.minor(this, "Rechecking filters and adding message");
 				for (ListIterator<MessageFilter> i = _filters.listIterator(); i.hasNext();) {
 					MessageFilter f = i.next();
-					MATCHED status = f.match(m, tStart);
+					MATCHED status = f.match(m, false, tStart);
 					if(status == MATCHED.MATCHED) {
 						matched = true;
 						match = f;
@@ -616,9 +616,9 @@ public class MessageCore {
 				String messageName = m.getSpec().getName();
 				Integer messageCount = messageCounts.get(messageName);
 				if (messageCount == null) {
-					messageCounts.put(messageName, Integer.valueOf(1) );
+					messageCounts.put(messageName, 1);
 				} else {
-					messageCount = Integer.valueOf(messageCount.intValue() + 1);
+					messageCount = messageCount + 1;
 					messageCounts.put(messageName, messageCount );
 				}
 			}

@@ -76,7 +76,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	public RequestStarter(NodeClientCore node, BaseRequestThrottle throttle, String name, 
 			RunningAverage averageOutputBytesPerRequest, RunningAverage averageInputBytesPerRequest, boolean isInsert, boolean isSSK, boolean realTime) {
 		this.core = node;
-		this.stats = core.nodeStats;
+		this.stats = core.getNodeStats();
 		this.throttle = throttle;
 		this.name = name + (realTime ? " (realtime)" : " (bulk)");
 		this.averageOutputBytesPerRequest = averageOutputBytesPerRequest;
@@ -108,7 +108,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 		while(true) {
 			// Allow 5 minutes before we start killing requests due to not connecting.
 			OpennetManager om;
-			if(core.node.peers.countConnectedPeers() < 3 && (om = core.node.getOpennet()) != null &&
+			if(core.getNode().getPeers().countConnectedPeers() < 3 && (om = core.getNode().getOpennet()) != null &&
 					System.currentTimeMillis() - om.getCreationTime() < MINUTES.toMillis(5)) {
 				try {
 					synchronized(this) {
@@ -226,7 +226,6 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 
 	@Override
 	public void run() {
-	    freenet.support.Logger.OSThread.logPID(this);
             while(true) {
                 try {
                     realRun();
@@ -248,7 +247,6 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 
 		@Override
 		public void run() {
-		    freenet.support.Logger.OSThread.logPID(this);
 		    // FIXME ? key is not known for inserts here
 		    if (key != null)
 		    	stats.reportOutgoingLocalRequestLocation(key.toNormalizedDouble());

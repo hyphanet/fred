@@ -14,8 +14,8 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -30,6 +30,8 @@ import freenet.node.FSParseException;
 import freenet.support.io.Closer;
 import freenet.support.io.LineReader;
 import freenet.support.io.Readers;
+
+import static java.util.Collections.emptyMap;
 
 /**
  * @author amphibian
@@ -199,7 +201,7 @@ public class SimpleFieldSet {
 				Logger.error(this, "No end marker");
 				break;
 			}
-			if ((line.length() == 0)) continue; // ignore
+			if (line.isEmpty()) continue; // ignore
 			firstLine = false;
 
 			char first = line.charAt(0);
@@ -210,7 +212,7 @@ public class SimpleFieldSet {
 
 			} else {
 				if (headerSection) {
-					if (headers.size() > 0) { this.header = headers.toArray(new String[headers.size()]); }
+					if (!headers.isEmpty()) { this.header = headers.toArray(new String[headers.size()]); }
 					headerSection = false;
 				}
 
@@ -219,7 +221,7 @@ public class SimpleFieldSet {
 					// Mapping
 					String before = line.substring(0, index).trim();
 					String after = line.substring(index+1);
-					if((!after.isEmpty()) && after.charAt(0) == '=' && allowBase64) {
+					if(!after.isEmpty() && after.charAt(0) == '=' && allowBase64) {
 						try {
 							after = after.substring(1);
 							after = after.replaceAll("\\s", "");
@@ -802,7 +804,7 @@ public class SimpleFieldSet {
      * @return
      */
     public Map<String, SimpleFieldSet> directSubsets() {
-        return Collections.unmodifiableMap(subsets);
+        return subsets == null ? emptyMap() : Collections.unmodifiableMap(subsets);
     }
 
     /** Tolerant put(); does nothing if fs is empty */
@@ -946,13 +948,7 @@ public class SimpleFieldSet {
 
 		try {
 			bis = new BufferedInputStream(is);
-			try {
-				isr = new InputStreamReader(bis, "UTF-8");
-			} catch (UnsupportedEncodingException e) {
-				Logger.error(SimpleFieldSet.class, "Impossible: "+e, e);
-				is.close();
-				throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
-			}
+			isr = new InputStreamReader(bis, StandardCharsets.UTF_8);
 			br = new BufferedReader(isr);
 			SimpleFieldSet fs = new SimpleFieldSet(br, allowMultiple, shortLived, allowBase64, alwaysBase64);
 			br.close();
@@ -993,12 +989,7 @@ public class SimpleFieldSet {
         BufferedWriter bw = null;
         
         bos = new BufferedOutputStream(os, bufferSize);
-        try {
-            osw = new OutputStreamWriter(bos, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            Logger.error(SimpleFieldSet.class, "Impossible: " + e, e);
-            throw e;
-        }
+        osw = new OutputStreamWriter(bos, StandardCharsets.UTF_8);
         bw = new BufferedWriter(osw);
         writeTo(bw);
         bw.flush();
@@ -1308,7 +1299,7 @@ public class SimpleFieldSet {
 		double[] ret = new double[strings.length];
 		for(int i=0;i<strings.length;i++) {
 			try {
-				ret[i] = Double.valueOf(strings[i]);
+				ret[i] = Double.parseDouble(strings[i]);
 			} catch(NumberFormatException e) {
 				Logger.error(this, "Cannot parse "+strings[i]+" : "+e,e);
 				return null;
@@ -1324,7 +1315,7 @@ public class SimpleFieldSet {
 		float[] ret = new float[strings.length];
 		for(int i=0;i<strings.length;i++) {
 			try {
-				ret[i] = Float.valueOf(strings[i]);
+				ret[i] = Float.parseFloat(strings[i]);
 			} catch(NumberFormatException e) {
 				Logger.error(this, "Cannot parse "+strings[i]+" : "+e,e);
 				return null;
@@ -1340,7 +1331,7 @@ public class SimpleFieldSet {
         boolean[] ret = new boolean[strings.length];
         for(int i=0;i<strings.length;i++) {
             try {
-                ret[i] = Boolean.valueOf(strings[i]);
+                ret[i] = Boolean.parseBoolean(strings[i]);
             } catch(NumberFormatException e) {
                 Logger.error(this, "Cannot parse "+strings[i]+" : "+e,e);
                 return null;

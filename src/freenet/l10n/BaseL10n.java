@@ -31,7 +31,7 @@ import freenet.support.io.FileUtil;
  * Note : do not use this class *as is*, use NodeL10n.getBase() or
  * PluginL10n.getBase().
  *
- * Note : this class also supports using/saving/editing overriden translations.
+ * Note : this class also supports using/saving/editing overridden translations.
  * @author Florent Daigni&egrave;re &lt;nextgens@freenetproject.org&gt;
  * @author Artefact2
  */
@@ -246,7 +246,7 @@ public class BaseL10n {
 	 * Note : you shouldn't have to run this yourself. Use PluginL10n or NodeL10n.
 	 * @param l10nFilesBasePath Base path of the l10n files, ex. "com/mycorp/myproject/l10n"
 	 * @param l10nFilesMask Mask of the l10n files, ex. "messages_${lang}.l10n"
-	 * @param l10nOverrideFilesMask Same as l10nFilesMask, but for overriden messages.
+	 * @param l10nOverrideFilesMask Same as l10nFilesMask, but for overridden messages.
 	 * @param lang Language to use.
 	 * @param cl ClassLoader to use.
 	 */
@@ -376,7 +376,7 @@ public class BaseL10n {
 	}
 
 	/**
-	 * Returns true if a key is overriden.
+	 * Returns true if a key is overridden.
 	 * @param key Key to check override status
 	 * @return boolean
 	 */
@@ -402,7 +402,7 @@ public class BaseL10n {
 
 		// If there is no need to keep it in the override, remove it...
 		// unless the original/default is the same as the translation
-		if ("".equals(value) || (currentTranslation != null && value.equals(this.currentTranslation.get(key)))) {
+		if (value.isEmpty() || (currentTranslation != null && value.equals(this.currentTranslation.get(key)))) {
 			this.translationOverride.removeValue(key);
 		} else {
 			value = value.replaceAll("(\r|\n|\t)+", "");
@@ -417,7 +417,7 @@ public class BaseL10n {
 	}
 
 	/**
-	 * Save the SimpleFieldSet of overriden keys in a file.
+	 * Save the SimpleFieldSet of overridden keys in a file.
 	 */
 	private void saveTranslationFile() {
 		FileOutputStream fos = null;
@@ -425,7 +425,7 @@ public class BaseL10n {
 
 		try {
 			// We don't set deleteOnExit on it : if the save operation fails, we want a backup
-			File tempFile = File.createTempFile(finalFile.getName(), ".bak", finalFile.getParentFile());;
+			File tempFile = File.createTempFile(finalFile.getName(), ".bak", finalFile.getParentFile());
 			Logger.minor(this.getClass(), "The temporary filename is : " + tempFile);
 
 			fos = new FileOutputStream(tempFile);
@@ -433,7 +433,7 @@ public class BaseL10n {
 			fos.close();
 			fos = null;
 
-			FileUtil.renameTo(tempFile, finalFile);
+			FileUtil.moveTo(tempFile, finalFile);
 			Logger.normal(this.getClass(), "Override file saved successfully!");
 		} catch (IOException e) {
 			Logger.error(this.getClass(), "Error while saving the translation override: " + e.getMessage(), e);
@@ -451,7 +451,7 @@ public class BaseL10n {
 	}
 
 	/**
-	 * Get a copy of the currently used SimpleFieldSet (overriden messages).
+	 * Get a copy of the currently used SimpleFieldSet (overridden messages).
 	 * @return SimpleFieldSet
 	 */
 	public SimpleFieldSet getOverrideForCurrentLanguageTranslation() {
@@ -772,9 +772,9 @@ public class BaseL10n {
     private void addHTMLSubstitutions(HTMLNode node, String value,
             String[] patterns, HTMLNode[] values) throws L10nParseException {
 		int x;
-		while(!value.equals("") && (x = value.indexOf("${")) != -1) {
+		while(!value.isEmpty() && (x = value.indexOf("${")) != -1) {
 			String before = value.substring(0, x);
-			if(before.length() > 0)
+			if(!before.isEmpty())
 				node.addChild("#", before);
 			value = value.substring(x);
 			int y = value.indexOf('}');
@@ -817,7 +817,7 @@ public class BaseL10n {
 				value = rest;
 			}
 		}
-		if(!value.equals(""))
+		if(!value.isEmpty())
 			node.addChild("#", value);
 	}
 	

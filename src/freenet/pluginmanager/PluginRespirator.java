@@ -40,10 +40,10 @@ public class PluginRespirator {
 	
 	public PluginRespirator(Node node, PluginInfoWrapper pi) {
 		this.node = node;
-		this.hlsc = node.clientCore.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS, false, false);
+		this.hlsc = node.getClientCore().makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS, false, false);
 		this.plugin = pi.getPlugin();
 		this.pi = pi;
-		stores = node.clientCore.getPluginStores();
+		stores = node.getClientCore().getPluginStores();
 	}
 	
 	//public HighLevelSimpleClient getHLSimpleClient() throws PluginSecurityException {
@@ -64,7 +64,7 @@ public class PluginRespirator {
 	 */
 	public FilterCallback makeFilterCallback(String path) {
 		try {
-			return node.clientCore.createFilterCallback(URIPreEncoder.encodeURI(path), null);
+			return node.getClientCore().createFilterCallback(URIPreEncoder.encodeURI(path), null);
 		} catch (URISyntaxException e) {
 			throw new Error(e);
 		}
@@ -78,7 +78,7 @@ public class PluginRespirator {
 	}
 	
 	/**
-	 * Add a valid form including the {@link NodeClientCore#formPassword}. See the JavaDoc there for an explanation of the purpose of this mechanism. 
+	 * Add a valid form including the {@link NodeClientCore#getFormPassword() formPassword}. See the JavaDoc there for an explanation of the purpose of this mechanism.
 	 * 
 	 * <p><b>ATTENTION</b>: It is critically important to validate the form password when processing requests which "change the server state".
 	 * Other words for this would be requests which change your database or "write" requests.
@@ -95,7 +95,7 @@ public class PluginRespirator {
 			parentNode.addChild("form", new String[] { "action", "method", "enctype", "id", "name", "accept-charset" }, 
 					new String[] { target, "post", "multipart/form-data", name, name, "utf-8"} );
 		formNode.addChild("input", new String[] { "type", "name", "value" }, 
-				new String[] { "hidden", "formPassword", node.clientCore.formPassword });
+				new String[] { "hidden", "formPassword", node.getClientCore().getFormPassword() });
 		
 		return formNode;
 	}
@@ -183,7 +183,7 @@ public class PluginRespirator {
         
         // pluginName being null will be handled by createFCPPluginConnectionForIntraNodeFCP().
         
-        return node.clientCore.getFCPServer().createFCPPluginConnectionForIntraNodeFCP(pluginName,
+        return node.getClientCore().getFCPServer().createFCPPluginConnectionForIntraNodeFCP(pluginName,
             messageHandler);
     }
 
@@ -224,14 +224,14 @@ public class PluginRespirator {
      *     If this happens, you should consider the connection {@link UUID} as invalid forever and
      *     discard it. */
     public FCPPluginConnection getPluginConnectionByID(UUID connectionID) throws IOException {
-        return node.clientCore.getFCPServer().getPluginConnectionByID(connectionID);
+        return node.getClientCore().getFCPServer().getPluginConnectionByID(connectionID);
     }
 
 	/** Get the ToadletContainer, which manages HTTP. You can then register
 	 * toadlets on it, which allow integrating your plugin into the main
 	 * menus, and are a more versatile interface than FredPluginHTTP. */
 	public ToadletContainer getToadletContainer() {
-		return node.clientCore.getToadletContainer();
+		return node.getClientCore().getToadletContainer();
 	}
 	
     /**

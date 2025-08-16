@@ -1,0 +1,68 @@
+name: Build debian package
+on:
+  push:
+    branches: [ 'master', 'next', 'debian-package' ]
+    tags:
+      - build**
+      - testing-**
+  pull_request:
+jobs:
+  build-deb:
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        distribution: [temurin]
+        java: [17]
+
+    runs-on: '${{ matrix.os }}'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Wrapper validation
+        uses: gradle/actions/wrapper-validation@v4
+
+      - name: Speedup dpkg
+        run: sudo sh -c "echo 'force-unsafe-io' > /etc/dpkg/dpkg.cfg.d/force-unsafe-io"
+
+      - name: Fix 'Setup Java' action Gradle caching
+        run: |
+          sudo mkdir -p /tmp/fred-build/gradle
+          sudo ln -s /tmp/fred-build/gradle ~/.gradle
+          sudo chmod o+rwx ~/.gradle
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          cache: 'gradle'
+          distribution: '${{ matrix.distribution }}'
+          java-version: '${{ matrix.java }}'
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install build-essential debhelper devscripts equivs -y
+
+      - name: Install package build dependencies
+        run: |
+          install_tool="apt-get -o Debug::pkgProblemResolver=yes --no-install-recommends --yes"
+          sudo mk-build-deps --install -r --tool="${install_tool}" debian/control
+
+      - name: Build package
+        run: |
+          sudo gbp buildpackage --git-ignore-branch --git-upstream-tag="HEAD" -us -uc --git-ignore-new || (EDITOR=true dpkg-source --commit . hack-1 && sudo gbp buildpackage --git-ignore-branch --git-upstream-tag="HEAD" -us -uc --git-ignore-new)
+
+      - name: Get package info
+        run: |
+          dpkg -I ../freenet*.deb
+          file ../freenet*.deb
+          cp ../freenet*.deb ./
+
+      - name: Provide Debian Package
+        uses: actions/upload-artifact@v4
+        with:
+          name: debian-package
+          path: freenet_*.deb
+          # Since .deb file is compressed archive itself,
+          # additional compression useless
+          compression-level: 0

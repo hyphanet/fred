@@ -1,5 +1,7 @@
 package freenet.client.filter;
 
+import static org.hamcrest.Matchers.anyOf;
+import static org.hamcrest.Matchers.equalToIgnoringCase;
 import static org.junit.Assert.*;
 
 import java.io.IOException;
@@ -9,13 +11,14 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
+import org.hamcrest.MatcherAssert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -32,12 +35,11 @@ public class CSSParserTest {
 
 
 	// FIXME should specify exact output values
-	/** CSS1 Selectors */
-	private final static HashMap<String,String> CSS1_SELECTOR= new HashMap<String,String>();
-	static
-	{
+	/** CSS1 Selectors: key is the input value, value is the expected output. */
+	private final static HashMap<String,String> CSS1_SELECTOR= new HashMap<>();
+	static {
 		CSS1_SELECTOR.put("h1 {}","h1");
-		CSS1_SELECTOR.put("h1:link {}","h1:link");
+		CSS1_SELECTOR.put("h1:link {color:transparent}","");
 		CSS1_SELECTOR.put("h1:visited {}","");
 		CSS1_SELECTOR.put("h1.warning {}","h1.warning");
 		CSS1_SELECTOR.put("h1#myid {}","h1#myid");
@@ -47,23 +49,22 @@ public class CSSParserTest {
 		CSS1_SELECTOR.put("h1:focus {}" ,"h1:focus");
 		CSS1_SELECTOR.put("h1:first-line {}" ,"h1:first-line");
 		CSS1_SELECTOR.put("h1:first-letter {}" ,"h1:first-letter");
-
-
-
-
+		CSS1_SELECTOR.put("input:checked {}" ,"input:checked");
 	}
 
 	// FIXME should specify exact output values
-	/** CSS2 Selectors */
-	private final static HashMap<String,String> CSS2_SELECTOR= new HashMap<String,String>();
-	static
-	{
+	/** CSS2 Selectors: key is the input value, value is the expected output. */
+	private final static HashMap<String,String> CSS2_SELECTOR= new HashMap<>();
+	static {
 		CSS2_SELECTOR.put("* {}","*");
 		CSS2_SELECTOR.put("h1[foo] {}","h1[foo]");
 		CSS2_SELECTOR.put("h1[foo=\"bar\"] {}", "h1[foo=\"bar\"]");
 		CSS2_SELECTOR.put("h1[foo=bar] {}", "h1[foo=bar] {}");
 		CSS2_SELECTOR.put("h1[foo~=\"bar\"] {}", "h1[foo~=\"bar\"]");
 		CSS2_SELECTOR.put("h1[foo|=\"en\"] {}","h1[foo|=\"en\"]");
+		CSS2_SELECTOR.put("h1[foo^=\"en\"] {}","h1[foo^=\"en\"]");
+		CSS2_SELECTOR.put("h1[foo$=\"en\"] {}","h1[foo$=\"en\"]");
+		CSS2_SELECTOR.put("h1[foo*=\"en\"] {}","h1[foo*=\"en\"]");
 		CSS2_SELECTOR.put("[foo|=\"en\"] {}","[foo|=\"en\"]");
 		CSS2_SELECTOR.put("h1:first-child {}","h1:first-child");
 		CSS2_SELECTOR.put("h1:lang(fr) {}","h1:lang(fr)");
@@ -81,6 +82,7 @@ public class CSSParserTest {
 		CSS2_SELECTOR.put("body > P { line-height: 1.3 }", "body>P { line-height: 1.3 }");
 		CSS2_SELECTOR.put("div ol>li p { color: green;}", "div ol>li p { color: green;}");
 		CSS2_SELECTOR.put("h1 + h2 { margin-top: -5mm }", "h1+h2 { margin-top: -5mm }");
+		CSS2_SELECTOR.put("h1 ~ h2 { margin-top: -5mm }", "h1 ~ h2 { margin-top: -5mm }");
 		CSS2_SELECTOR.put("h1.opener + h2 { margin-top: -5mm }", "h1.opener+h2 { margin-top: -5mm }");
 		CSS2_SELECTOR.put("span[class=example] { color: blue; }", "span[class=example] { color: blue; }");
 		CSS2_SELECTOR.put("span[hello=\"Cleveland\"][goodbye=\"Columbus\"] { color: blue; }", "span[hello=\"Cleveland\"][goodbye=\"Columbus\"] { color: blue; }");
@@ -88,9 +90,9 @@ public class CSSParserTest {
 		CSS2_SELECTOR.put("div > p:FIRST-CHILD { text-indent: 0 }", "div>p:FIRST-CHILD { text-indent: 0 }");
 		CSS2_SELECTOR.put("p:first-child em { font-weight : bold }", "p:first-child em { font-weight: bold }");
 		CSS2_SELECTOR.put("* > a:first-child {}", "*>a:first-child {}");
-		CSS2_SELECTOR.put(":link { color: red }", ":link { color: red }");
 		// REDFLAG: link vs visited is safe for Freenet as there is no scripting.
 		// If there was scripting it would not be safe, although datastore probing is probably the greater threat.
+		CSS2_SELECTOR.put(":link { color: red }", "");
 		CSS2_SELECTOR.put("a.external:visited { color: blue }", "");
 		CSS2_SELECTOR.put("a:focus:hover { background: white }", "a:focus:hover { background: white }");
 		CSS2_SELECTOR.put("p:first-line { text-transform: uppercase;}", "p:first-line { text-transform: uppercase;}");
@@ -120,9 +122,8 @@ public class CSSParserTest {
 		// CONFORMANCE: We combine pseudo-classes and pseudo-elements, so we allow pseudo-elements on earlier selectors. This is against the spec, CSS2 section 5.10.
 	}
 
-	private final static HashSet<String> CSS2_BAD_SELECTOR= new HashSet<String>();
-	static
-	{
+	private final static HashSet<String> CSS2_BAD_SELECTOR= new HashSet<>();
+	static {
 		// Doubled =
 		CSS2_BAD_SELECTOR.add("h1[foo=bar=bat] {}");
 		CSS2_BAD_SELECTOR.add("h1[foo~=bar~=bat] {}");
@@ -132,8 +133,14 @@ public class CSSParserTest {
 		CSS2_BAD_SELECTOR.add("h1[foo=\"bar\\] {}");
 		// Unclosed string
 		CSS2_BAD_SELECTOR.add("h1[foo=\"bar] {}");
+		// illegal modifier
+		CSS2_BAD_SELECTOR.add("h1[foo,=bar] {}");
 
 		CSS2_BAD_SELECTOR.add("h1:langblahblah(fr) {}");
+		// java.lang.StringIndexOutOfBoundsException
+		CSS2_BAD_SELECTOR.add("h1:golang {}");
+		// missing argument
+		CSS2_BAD_SELECTOR.add("h1:lang {}");
 
 		// THE FOLLOWING ARE VALID BUT DISALLOWED
 		// ] inside string inside attribute selector: way too confusing for parsers.
@@ -146,10 +153,9 @@ public class CSSParserTest {
 	}
 
 
-	/** CSS3 Selectors */
-	private final static HashMap<String,String> CSS3_SELECTOR= new HashMap<String,String>();
-	static
-	{
+	/** CSS3 Selectors: key is the input value, value is the expected output. */
+	private final static HashMap<String,String> CSS3_SELECTOR= new HashMap<>();
+	static {
 		CSS3_SELECTOR.put("tr:nth-child(odd) { background-color: red; }","tr:nth-child(odd) { background-color: red; }");
 		CSS3_SELECTOR.put("tr:nth-child(even) { background-color: yellow; }","tr:nth-child(even) { background-color: yellow; }");
 		CSS3_SELECTOR.put("tr:nth-child(1) {}","tr:nth-child(1)");
@@ -183,9 +189,8 @@ public class CSSParserTest {
 		CSS3_SELECTOR.put("h1:nth-last-of-type(even) {}","h1:nth-last-of-type(even)");
 	}
 
-	private final static HashSet<String> CSS3_BAD_SELECTOR= new HashSet<String>();
-	static
-	{
+	private final static HashSet<String> CSS3_BAD_SELECTOR= new HashSet<>();
+	static {
 		CSS3_BAD_SELECTOR.add("tr:nth-child() {}");
 		CSS3_BAD_SELECTOR.add("tr:nth-child(-) {}");
 		CSS3_BAD_SELECTOR.add("tr:nth-child(+) {}");
@@ -221,8 +226,69 @@ public class CSSParserTest {
 		// Whitespace not supported at all.
 		CSS3_BAD_SELECTOR.add("tr:nth-child( n+2) {}");
 		CSS3_BAD_SELECTOR.add("tr:nth-child(n + 2) {}");
+		// java.lang.StringIndexOutOfBoundsException
+		CSS3_BAD_SELECTOR.add("tr:tenth-child {}");
+		CSS3_BAD_SELECTOR.add("tr:tenth-child(2n+1) {}");
 	}
 
+	private final static HashMap<String,String> CSS_SELECTOR_LEVEL4= new HashMap<>();
+	static {
+		CSS_SELECTOR_LEVEL4.put("div:dir(ltr) {}", "div:dir(ltr)");
+		CSS_SELECTOR_LEVEL4.put("div:dir(rtl) {}", "div:dir(rtl)");
+		CSS_SELECTOR_LEVEL4.put(":target {}", ":target");
+		CSS_SELECTOR_LEVEL4.put(":any-link {}", ":any-link");
+		CSS_SELECTOR_LEVEL4.put(":empty {}", ":empty");
+		CSS_SELECTOR_LEVEL4.put(":focus-visible {}", ":focus-visible");
+		CSS_SELECTOR_LEVEL4.put(":only-child {}", ":only-child");
+		CSS_SELECTOR_LEVEL4.put(":only-of-type {}", ":only-of-type");
+		CSS_SELECTOR_LEVEL4.put(":root {font-size: xxx-large;}", ":root {font-size: xxx-large;}");
+		// forms
+		CSS_SELECTOR_LEVEL4.put("input:default {}", "input:default");
+		CSS_SELECTOR_LEVEL4.put("input:disabled {}", "input:disabled");
+		CSS_SELECTOR_LEVEL4.put("input:enabled {}", "input:enabled");
+		CSS_SELECTOR_LEVEL4.put("input:indeterminate {}", "input:indeterminate");
+		CSS_SELECTOR_LEVEL4.put("input:in-range {}", "input:in-range");
+		CSS_SELECTOR_LEVEL4.put("input:invalid {}", "input:invalid");
+		CSS_SELECTOR_LEVEL4.put("input:optional {}", "input:optional");
+		CSS_SELECTOR_LEVEL4.put("input:out-of-range {}", "input:out-of-range");
+		CSS_SELECTOR_LEVEL4.put("input:placeholder-shown {}", "input:placeholder-shown");
+		CSS_SELECTOR_LEVEL4.put("input:read-only {}", "input:read-only");
+		CSS_SELECTOR_LEVEL4.put("input:read-write {}", "input:read-write");
+		CSS_SELECTOR_LEVEL4.put("input:required {}", "input:required");
+	}
+
+	private final static HashSet<String> CSS_BAD_SELECTOR_LEVEL4= new HashSet<>();
+	static {
+		// not dir
+		CSS_BAD_SELECTOR_LEVEL4.add("div:bidir(ltr) {}");
+		// missing ltr or rtl
+		CSS_BAD_SELECTOR_LEVEL4.add("div:dir {}");
+		// these selectors don't have arguments
+		CSS_BAD_SELECTOR_LEVEL4.add(":target() {}");
+		CSS_BAD_SELECTOR_LEVEL4.add(":any-link() {}");
+		CSS_BAD_SELECTOR_LEVEL4.add(":empty() {}");
+		CSS_BAD_SELECTOR_LEVEL4.add(":focus-visible() {}");
+		CSS_BAD_SELECTOR_LEVEL4.add(":only-child() {}");
+		CSS_BAD_SELECTOR_LEVEL4.add(":only-of-type() {}");
+		CSS_BAD_SELECTOR_LEVEL4.add(":root() {}");
+		// these forms selectors don't have arguments
+		CSS_BAD_SELECTOR_LEVEL4.add("input:default() {}");
+		CSS_BAD_SELECTOR_LEVEL4.add("input:disabled() {}");
+		CSS_BAD_SELECTOR_LEVEL4.add("input:enabled() {}");
+		CSS_BAD_SELECTOR_LEVEL4.add("input:indeterminate() {}");
+		CSS_BAD_SELECTOR_LEVEL4.add("input:in-range() {}");
+		CSS_BAD_SELECTOR_LEVEL4.add("input:invalid() {}");
+		CSS_BAD_SELECTOR_LEVEL4.add("input:optional() {}");
+		CSS_BAD_SELECTOR_LEVEL4.add("input:out-of-range() {}");
+		CSS_BAD_SELECTOR_LEVEL4.add("input:placeholder-shown() {}");
+		CSS_BAD_SELECTOR_LEVEL4.add("input:read-only() {}");
+		CSS_BAD_SELECTOR_LEVEL4.add("input:read-write() {}");
+		CSS_BAD_SELECTOR_LEVEL4.add("input:required() {}");
+		// banned
+		CSS_BAD_SELECTOR_LEVEL4.add(":defined {}");
+		CSS_BAD_SELECTOR_LEVEL4.add(":defined() {}");
+	}
+	
 	private static final String CSS_STRING_NEWLINES = "* { content: \"this string does not terminate\n}\nbody {\nbackground: url(http://www.google.co.uk/intl/en_uk/images/logo.gif); }\n\" }";
 	private static final String CSS_STRING_NEWLINESC = "* {}\nbody { }\n";
 
@@ -254,10 +320,10 @@ public class CSSParserTest {
 	private static final String CSS_IMPORT_SPACE_IN_STRING = "@import url(\"/chk@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test page\") screen;";
 	private static final String CSS_IMPORT_SPACE_IN_STRINGC = "@import url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page?type=text/css&maybecharset=UTF-8\") screen;";
 
-	private static final String CSS_IMPORT_QUOTED_STUFF = "@import url(\"/chk@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test page \\) \\\\ \\\' \\\" \") screen;";
+	private static final String CSS_IMPORT_QUOTED_STUFF = "@import url(\"/chk@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test page \\) \\\\ \\' \\\" \") screen;";
 	private static final String CSS_IMPORT_QUOTED_STUFFC = "@import url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page%20%29%20%5c%20%27%20%22%20?type=text/css&maybecharset=UTF-8\") screen;";
 
-	private static final String CSS_IMPORT_QUOTED_STUFF2 = "@import url(/chk@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test page \\) \\\\ \\\' \\\" ) screen;";
+	private static final String CSS_IMPORT_QUOTED_STUFF2 = "@import url(/chk@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test page \\) \\\\ \\' \\\" ) screen;";
 	private static final String CSS_IMPORT_QUOTED_STUFF2C = "@import url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page%20%29%20%5c%20%27%20%22?type=text/css&maybecharset=UTF-8\") screen;";
 
 	private static final String CSS_IMPORT_NOURL_TWOMEDIAS = "@import \"/chk@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/1-1.html\" screen tty;";
@@ -324,7 +390,7 @@ public class CSSParserTest {
 
 	private static final String CSS_INVALID_MEDIA_CASCADE = "@media blah { h1, h2 { color: green;} }";
 
-	private final static LinkedHashMap<String, String> propertyTests = new LinkedHashMap<String, String>();
+	private final static LinkedHashMap<String, String> propertyTests = new LinkedHashMap<>();
 	static {
 		// Check that the last part of a double bar works
 		propertyTests.put("@media speech { h1 { azimuth: behind }; }", "@media speech { h1 { azimuth: behind }}");
@@ -463,7 +529,6 @@ public class CSSParserTest {
 		// HTML tags are case insensitive, but we downcase them.
 		propertyTests.put("H3 { BACKGROUND: URL(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test page\") }", "H3 { BACKGROUND: url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }");
 		propertyTests.put("h3 { background: scroll url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }", "h3 { background: scroll url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }");
-		propertyTests.put("h3 { background: scroll #f00 url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }", "h3 { background: scroll #f00 url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }");
 		propertyTests.put("h3 { background: scroll #f00 url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }", "h3 { background: scroll #f00 url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }");
 		propertyTests.put("h3 { background: scroll rgb(100%, 2%, 1%) url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }", "h3 { background: scroll rgb(100%, 2%, 1%) url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }");
 		propertyTests.put("h3 { background: 3.3cm 20%;}", "h3 { background: 3.3cm 20%;}");
@@ -688,6 +753,7 @@ public class CSSParserTest {
 		propertyTests.put("#inner { float: right; width: 130px; color: blue }", "#inner { float: right; width: 130px; color: blue }");
 		propertyTests.put(".abc { z-index: auto; } h1 p { z-index: 3; } h2 p { z-index: inherit }", ".abc { z-index: auto; } h1 p { z-index: 3; } h2 p { z-index: inherit }");
 		propertyTests.put("blockquote { direction: rtl; unicode-bidi: BIDI-OVERRIDE }", "blockquote { direction: rtl; unicode-bidi: BIDI-OVERRIDE }");
+		propertyTests.put("div { border-inline-start-color: transparent; border-inline-start-style: dotted; border-inline-start-width: thick; }", "div { border-inline-start-color: transparent; border-inline-start-style: dotted; border-inline-start-width: thick; }");
 
 		// Visual details
 		propertyTests.put("p { width: 100px } h1,h2,h3 { width: 150% } body { width: auto }", "p { width: 100px } h1,h2,h3 { width: 150% } body { width: auto }");
@@ -751,11 +817,15 @@ public class CSSParserTest {
 		propertyTests.put("p { text-indent: 3em }", "p { text-indent: 3em }");
 		propertyTests.put("p { text-indent: 33% }", "p { text-indent: 33% }");
 		propertyTests.put("div.important { text-align: center }", "div.important { text-align: center }");
-		propertyTests.put("a:visited,a:link { text-decoration: underline }", "a:link { text-decoration: underline }");
+		propertyTests.put("a:visited,a:link { text-decoration: underline }", "");
+		propertyTests.put("a:any-link { text-decoration: underline }", "a:any-link { text-decoration: underline }");
+		propertyTests.put("a:any-link { text-decoration: underline red }", "a:any-link { text-decoration: underline red }");
 		propertyTests.put("blockquote { text-decoration: underline overline line-through blink } h1 { text-decoration: none } h2 { text-decoration: inherit }","blockquote { text-decoration: underline overline line-through blink } h1 { text-decoration: none } h2 { text-decoration: inherit }");
 		propertyTests.put("blockquote { letter-spacing: 0.1em }", "blockquote { letter-spacing: 0.1em }");
 		propertyTests.put("blockquote { letter-spacing: normal }", "blockquote { letter-spacing: normal }");
 		propertyTests.put("h1 { word-spacing: 1em }", "h1 { word-spacing: 1em }");
+		propertyTests.put("h1 { word-wrap: normal } h2 { word-wrap: break-word } h1 { word-wrap: anywhere }",
+                          "h1 { word-wrap: normal } h2 { word-wrap: break-word } h1 { word-wrap: anywhere }");
 		propertyTests.put("h1 { text-transform: uppercase }", "h1 { text-transform: uppercase }");
 		propertyTests.put("pre        { white-space: pre } p          { white-space: normal } td[nowrap] { white-space: nowrap }", "pre { white-space: pre } p { white-space: normal } td[nowrap] { white-space: nowrap }");
 		propertyTests.put("pre[wrap]  { white-space: pre-wrap }", "pre[wrap] { white-space: pre-wrap }");
@@ -774,10 +844,8 @@ public class CSSParserTest {
 		propertyTests.put("table { empty-cells: show }", "table { empty-cells: show }");
 
 		// User interface
-		propertyTests.put(":link,:visited { cursor: url(example.svg#linkcursor) url(hyper.cur) pointer }", ":link { cursor: url(\"example.svg#linkcursor\") url(\"hyper.cur\") pointer }");
-		propertyTests.put(":link,:visited { cursor: url(example.svg#linkcursor), url(hyper.cur), pointer }", ":link { cursor: url(\"example.svg#linkcursor\"), url(\"hyper.cur\"), pointer }");
-		propertyTests.put(":link,:visited { cursor: url(example.svg#linkcursor) 2 5, url(hyper.cur), pointer }", ":link { cursor: url(\"example.svg#linkcursor\") 2 5, url(\"hyper.cur\"), pointer }");
-                propertyTests.put(":link,:visited { cursor: url(example.svg#linkcursor) 2, url(hyper.cur), pointer }", ":link { }");
+		propertyTests.put(":link,:visited { cursor: url(example.svg#linkcursor) url(hyper.cur) pointer }", "");
+        propertyTests.put(":any-link { cursor: url(example.svg#linkcursor) 2, url(hyper.cur), pointer }", ":any-link { }");
 
 		// UI colors
 		propertyTests.put("p { color: WindowText; background-color: Window }", "p { color: WindowText; background-color: Window }");
@@ -825,11 +893,9 @@ public class CSSParserTest {
 		propertyTests.put("nav > ul { display: flex; }", "nav>ul { display: flex; }");
 		propertyTests.put("nav > ul > li {\n  min-width: 100px;\n  /* Prevent items from getting too small for their content. */\n  }", "nav>ul>li {\n  min-width: 100px;\n  \n  }");
 		propertyTests.put("nav > ul > #login {\n  margin-left: auto;\n}", "nav>ul>#login {\n  margin-left: auto;\n}");
-		propertyTests.put("nav > ul { display: flex; }", "nav>ul { display: flex; }");
 		propertyTests.put("div { flex-flow: row nowrap; }", "div { flex-flow: row nowrap; }");
 		propertyTests.put("div { flex-grow: 5; }", "div { flex-grow: 5; }");
 		propertyTests.put("div { flex: 64 content; }", "div { flex: 64 content; }");
-		propertyTests.put("div { flex-grow: 5; }", "div { flex-grow: 5; }");
 		propertyTests.put("div { flex-basis: 5px; }", "div { flex-basis: 5px; }");
 		propertyTests.put("div { flex-basis: content; }", "div { flex-basis: content; }");
 		propertyTests.put("div { flex: 64 ; }", "div { flex: 64; }");
@@ -880,8 +946,8 @@ public class CSSParserTest {
 		propertyTests.put("body { nav-left: div.bold '<target-name>'; }",  "body { }");
 		propertyTests.put("button#foo { nav-left: #bar \"sidebar\"; }", "button#foo { nav-left: #bar \"sidebar\"; }");
 		propertyTests.put("button#foo { nav-left: invalidSelector \"sidebar\"; }", "button#foo { }");
-		
-		// transition-* 
+
+		// transition-*
 		// valid, 1 value
 		propertyTests.put("div { transition-duration: 5s; }", "div { transition-duration: 5s; }");
 		propertyTests.put("div { transition-delay: 1s; }", "div { transition-delay: 1s; }");
@@ -902,6 +968,62 @@ public class CSSParserTest {
 		propertyTests.put("div { transition-delay: \"test\"; }", "div { }");
 		propertyTests.put("div { transition-property: \"test\"; }", "div { }");
 		propertyTests.put("div { transition-timing-function: \"test\"; }", "div { }");
+		
+		// writing mode
+		propertyTests.put("#a { writing-mode: vertical-rl; text-underline-position: left; }", "#a { writing-mode: vertical-rl; text-underline-position: left; }");
+		propertyTests.put("#b { writing-mode: horizontal-tb; text-underline-position: auto; inline-size: max-content; block-size: 200px; }", "#b { writing-mode: horizontal-tb; text-underline-position: auto; inline-size: max-content; block-size: 200px; }");
+
+		// Compositing and Blending
+		propertyTests.put("#foo { background: url(\"1.png\"); background-blend-mode: darken; }", "#foo { background: url(\"1.png\"); background-blend-mode: darken; }");
+		propertyTests.put("#foo {mix-blend-mode: luminosity; }", "#foo {mix-blend-mode: luminosity; }");
+		
+		// new property values
+		propertyTests.put("div { overflow: clip; clear: inline-end; text-decoration: revert; float: inline-end;}", "div { overflow: clip; clear: inline-end; text-decoration: revert; float: inline-end;}");
+		propertyTests.put("#a {unicode-bidi: isolate;}", "#a {unicode-bidi: isolate;}");
+		propertyTests.put("textarea#x {caret-color: currentcolor;}", "textarea#x {caret-color: currentcolor;}");
+		propertyTests.put("div { word-wrap: anywhere; overflow-wrap: anywhere; }", "div { word-wrap: anywhere; overflow-wrap: anywhere; }");
+		propertyTests.put("div { white-space-collapse: collapse; }", "div { white-space-collapse: collapse; }");
+		propertyTests.put("#a { word-break: keep-all; font-kerning: none; }", "#a { word-break: keep-all; font-kerning: none; }");
+		propertyTests.put("#a { tab-size: 4; }", "#a { tab-size: 4; }");
+		propertyTests.put("#a { tab-size: 12pt; }", "#a { tab-size: 12pt; }");
+		propertyTests.put("img#a { object-fit: scale-down; }", "img#a { object-fit: scale-down; }");
+		propertyTests.put("#x { list-style-type: korean-hanja-formal }", "#x { list-style-type: korean-hanja-formal }");
+		propertyTests.put("#x { list-style-type: \"*\" }", "#x { list-style-type: \"*\" }");
+		propertyTests.put("#x { max-inline-size: none; min-block-size: auto; }", "#x { max-inline-size: none; min-block-size: auto; }");
+		propertyTests.put("#x { text-combine-upright: all; }", "#x { text-combine-upright: all; }");
+		propertyTests.put("#x { text-decoration-thickness: 5px; }", "#x { text-decoration-thickness: 5px; }");
+		propertyTests.put("#x { dominant-baseline: alphabetic; }", "#x { dominant-baseline: alphabetic; }");
+		propertyTests.put("#x { margin-block: 3px 3%; margin-inline: 5%; margin-inline-end: 4px; margin-inline-start: auto; }", "#x { margin-block: 3px 3%; margin-inline: 5%; margin-inline-end: 4px; margin-inline-start: auto; }");
+		propertyTests.put("#x { padding-block: 3px 3%; padding-inline: 5%; padding-inline-end: 4px; padding-inline-start: 1em; }", "#x { padding-block: 3px 3%; padding-inline: 5%; padding-inline-end: 4px; padding-inline-start: 1em; }");
+		propertyTests.put("#x { text-orientation: upright; }", "#x { text-orientation: upright; }");
+		propertyTests.put("#x { scroll-snap-align: start end; }", "#x { scroll-snap-align: start end; }");
+		propertyTests.put("#x { scroll-snap-stop: always; }", "#x { scroll-snap-stop: always; }");
+		propertyTests.put("#x { scroll-snap-type: both proximity; } #y { scroll-snap-type: x; }", "#x { scroll-snap-type: both proximity; } #y { scroll-snap-type: x; }");
+		propertyTests.put("#box1:hover {rotate: 90deg;} #box2:hover {rotate: y 180deg;} #box3:hover {rotate: 1 2 1 360deg;} #box4:hover {rotate: none;}", "#box1:hover {rotate: 90deg;} #box2:hover {rotate: y 180deg;} #box3:hover {rotate: 1 2 1 360deg;} #box4:hover {rotate: none;}");
+		propertyTests.put("#a {rotate: 1;} #b {rotate: 0.1;} #c {rotate: 1 2 3 4;} #d {rotate: x;}", "#a {} #b {} #c {} #d {}");
+		propertyTests.put("#a {object-position: top;} #b {object-position: 25% 75%;} #c {object-position: 1cm top;} #d {object-position: bottom 10px right 20px;}", "#a {object-position: top;} #b {object-position: 25% 75%;} #c {object-position: 1cm top;} #d {object-position: bottom 10px right 20px;}");
+		propertyTests.put("#a {background-position: top;} #b {background-position: 25% 75%;} #c {background-position: 1cm top;} #d {background-position: bottom 10px right 20px;}", "#a {background-position: top;} #b {background-position: 25% 75%;} #c {background-position: 1cm top;} #d {background-position: bottom 10px right 20px;}");
+		propertyTests.put("#a {object-position: top top;} #b {object-position: 25% top 75% left;} #c {object-position: left 10px right 20px;} #d {object-position: top right bottom left;}", "#a {} #b {} #c {} #d {}");
+		propertyTests.put("td { border-inline-end: 2px dotted; border-block-start: medium dashed blue }", "td { border-inline-end: 2px dotted; border-block-start: medium dashed blue }");
+
+		// text-emphasis
+		propertyTests.put("#x { text-emphasis: triangle blue; }", "#x { text-emphasis: triangle blue; }"); // java.lang.NullPointerException
+		propertyTests.put("#x { text-emphasis: filled triangle blue; }", "#x { text-emphasis: filled triangle blue; }");
+		propertyTests.put("#x { text-emphasis-style: triangle; text-emphasis-color: blue; }", "#x { text-emphasis-style: triangle; text-emphasis-color: blue; }");
+		// text-shadow
+		propertyTests.put("#x { text-shadow: 1px 1px 2px black; }", "#x { text-shadow: 1px 1px 2px black; }");
+		propertyTests.put("#x { text-shadow: #fc0 1px 0 10px; }", "#x { text-shadow: #fc0 1px 0 10px; }");
+		propertyTests.put("#x { text-shadow: 5px 5px #558abb; }", "#x { text-shadow: 5px 5px #558abb; }");
+		propertyTests.put("#x { text-shadow: white 2px 5px; }", "#x { text-shadow: white 2px 5px; }");
+		propertyTests.put("#x { text-shadow: 5px 10px; }", "#x { text-shadow: 5px 10px; }");
+		propertyTests.put("#x { text-shadow: 1px 1px 2px 1px black; }", "#x { }");
+		// not possible to parse a comma separated list?
+		//propertyTests.put("#x { text-shadow: 1px 1px 2px red, 0 0 1em blue, 0 0 0.2em blue; }", "#x { text-shadow: 1px 1px 2px red, 0 0 1em blue, 0 0 0.2em blue; }");
+
+		// dark mode
+		propertyTests.put(":root { color-scheme: light dark; }", ":root { color-scheme: light dark; }");
+		propertyTests.put(":root { color-scheme: only light; }", ":root { color-scheme: only light; }");
+
 	}
 
 	FilterMIMEType cssMIMEType;
@@ -918,104 +1040,109 @@ public class CSSParserTest {
 
 	@Test
 	public void testCSS1Selector() throws IOException, URISyntaxException {
+		testCssSelectorFiltering(CSS1_SELECTOR);
+		assertEquals(
+			"key=\"" + CSS_DELETE_INVALID_SELECTOR + "\" value=\"" + filter(CSS_DELETE_INVALID_SELECTOR) + "\" should be \"" + CSS_DELETE_INVALID_SELECTORC + "\"",
+			CSS_DELETE_INVALID_SELECTORC,
+			filter(CSS_DELETE_INVALID_SELECTOR)
+		);
+		assertEquals(
+			"key=\"" + CSS_INVALID_MEDIA_CASCADE + "\" value=\"" + filter(CSS_INVALID_MEDIA_CASCADE) + "\"",
+			"",
+			filter(CSS_INVALID_MEDIA_CASCADE)
+		);
+	}
 
-
-		Collection<String> c = CSS1_SELECTOR.keySet();
-		Iterator<String> itr = c.iterator();
-		while(itr.hasNext())
-		{
-
-			String key=itr.next();
-			String value=CSS1_SELECTOR.get(key);
-			assertTrue("key=\""+key+"\" value=\""+filter(key)+"\" should be \""+value+"\"", filter(key).contains(value));
+	private void testCssSelectorFiltering(Map<String, String> cssSelectorMap) throws IOException, URISyntaxException {
+		for (Entry<String, String> entry : cssSelectorMap.entrySet()) {
+			String key = entry.getKey();
+			String value = entry.getValue();
+			assertTrue("key=\"" + key + "\" value=\"" + filter(key) + "\" should be \"" + value + "\"", filter(key).contains(value));
 		}
+	}
 
-		assertTrue("key=\""+CSS_DELETE_INVALID_SELECTOR+"\" value=\""+filter(CSS_DELETE_INVALID_SELECTOR)+"\" should be \""+CSS_DELETE_INVALID_SELECTORC+"\"", CSS_DELETE_INVALID_SELECTORC.equals(filter(CSS_DELETE_INVALID_SELECTOR)));
-		assertTrue("key=\""+CSS_INVALID_MEDIA_CASCADE+"\" value=\""+filter(CSS_INVALID_MEDIA_CASCADE)+"\"", "".equals(filter(CSS_INVALID_MEDIA_CASCADE)));
+	private void testBadSelectorFiltering(Set<String> badSelectorSet) throws IOException, URISyntaxException {
+		for (String key : badSelectorSet) {
+			assertEquals(
+				"Bad selector filtering should produce empty string: '" + key + "'",
+				"",
+				filter(key)
+			);
+		}
 	}
 
 	@Test
 	public void testCSS2Selector() throws IOException, URISyntaxException {
-		Collection<String> c = CSS2_SELECTOR.keySet();
-		Iterator<String> itr = c.iterator();
-		int i=0;
-		while(itr.hasNext())
-		{
-			String key=itr.next();
-			String value=CSS2_SELECTOR.get(key);
-			System.err.println("Test "+(i++)+" : "+key+" -> "+value);
-			assertTrue("key="+key+" value=\""+filter(key)+"\" should be \""+value+"\"", filter(key).contains(value));
-		}
-
-		i=0;
-		for(String key : CSS2_BAD_SELECTOR) {
-			System.err.println("Bad selector test "+(i++));
-			assertTrue("".equals(filter(key)));
-		}
-
+		testCssSelectorFiltering(CSS2_SELECTOR);
+		testBadSelectorFiltering(CSS2_BAD_SELECTOR);
 	}
 
 	@Test
 	public void testCSS3Selector() throws IOException, URISyntaxException {
-		Collection<String> c = CSS3_SELECTOR.keySet();
-		Iterator<String> itr = c.iterator();
-		int i=0;
-		while(itr.hasNext())
-		{
-			String key=itr.next();
-			String value=CSS3_SELECTOR.get(key);
-			System.err.println("CSS3 test"+(i++)+" : "+key+" -> "+value);
-			assertTrue("key="+key+" value=\""+filter(key)+"\" should be \""+value+"\"", filter(key).contains(value));
-		}
-
-		i=0;
-		for(String key : CSS3_BAD_SELECTOR) {
-			System.err.println("CSS3 bad selector test "+(i++));
-			assertTrue("".equals(filter(key)));
-		}
-
+		testCssSelectorFiltering(CSS3_SELECTOR);
+		testBadSelectorFiltering(CSS3_BAD_SELECTOR);
+	}
+	
+	@Test
+	public void testCSS4Selector() throws IOException, URISyntaxException {
+		testCssSelectorFiltering(CSS_SELECTOR_LEVEL4);
 	}
 
 	@Test
+	public void testCSS4SelectorBad() throws IOException, URISyntaxException {
+		testBadSelectorFiltering(CSS_BAD_SELECTOR_LEVEL4);
+	}
+	
+	@Test
 	public void testNewlines() throws IOException, URISyntaxException {
-		assertTrue("key=\""+CSS_STRING_NEWLINES+"\" value=\""+filter(CSS_STRING_NEWLINES)+"\" should be: \""+CSS_STRING_NEWLINESC+"\"", CSS_STRING_NEWLINESC.equals(filter(CSS_STRING_NEWLINES)));
+		assertEquals(
+			"key=\"" + CSS_STRING_NEWLINES + "\" value=\"" + filter(CSS_STRING_NEWLINES) + "\" should be: \"" + CSS_STRING_NEWLINESC + "\"",
+			CSS_STRING_NEWLINESC,
+			filter(CSS_STRING_NEWLINES)
+		);
 	}
 
 	@Test
 	public void testBackgroundURL() throws IOException, URISyntaxException {
-		assertTrue("key="+CSS_BACKGROUND_URL+" value=\""+filter(CSS_BACKGROUND_URL)+"\" should be \""+CSS_BACKGROUND_URLC+"\"", CSS_BACKGROUND_URLC.equals(filter(CSS_BACKGROUND_URL)));
-
-		assertTrue("key="+CSS_LCASE_BACKGROUND_URL+" value=\""+filter(CSS_LCASE_BACKGROUND_URL)+"\"", CSS_LCASE_BACKGROUND_URLC.equals(filter(CSS_LCASE_BACKGROUND_URL)));
+		assertEquals("key=" + CSS_BACKGROUND_URL + " value=\"" + filter(CSS_BACKGROUND_URL) + "\" should be \"" + CSS_BACKGROUND_URLC + "\"",
+			CSS_BACKGROUND_URLC,
+			filter(CSS_BACKGROUND_URL)
+		);
+		assertEquals(
+			"key=" + CSS_LCASE_BACKGROUND_URL + " value=\"" + filter(CSS_LCASE_BACKGROUND_URL) + "\"",
+			CSS_LCASE_BACKGROUND_URLC,
+			filter(CSS_LCASE_BACKGROUND_URL)
+		);
 	}
 
 	@Test
 	public void testImports() throws IOException, URISyntaxException {
-		assertTrue("key="+CSS_IMPORT+" value=\""+filter(CSS_IMPORT)+"\"", CSS_IMPORTC.equals(filter(CSS_IMPORT)));
-		assertTrue("key="+CSS_IMPORT2+" value=\""+filter(CSS_IMPORT2)+"\"", CSS_IMPORT2C.equals(filter(CSS_IMPORT2)));
-		assertTrue("key="+CSS_IMPORT_MULTI_MEDIA+" value=\""+filter(CSS_IMPORT_MULTI_MEDIA)+"\"", CSS_IMPORT_MULTI_MEDIAC.equals(filter(CSS_IMPORT_MULTI_MEDIA)));
-		assertTrue("key="+CSS_IMPORT_MULTI_MEDIA_BOGUS+" value=\""+filter(CSS_IMPORT_MULTI_MEDIA_BOGUS)+"\"", CSS_IMPORT_MULTI_MEDIA_BOGUSC.equals(filter(CSS_IMPORT_MULTI_MEDIA_BOGUS)));
-		assertTrue("key="+CSS_IMPORT_MULTI_MEDIA_ALL+" value=\""+filter(CSS_IMPORT_MULTI_MEDIA_ALL)+"\"", CSS_IMPORT_MULTI_MEDIA_ALLC.equals(filter(CSS_IMPORT_MULTI_MEDIA_ALL)));
-		assertTrue("key="+CSS_IMPORT_TYPE+" value=\""+filter(CSS_IMPORT_TYPE)+"\"", CSS_IMPORT_TYPEC.equals(filter(CSS_IMPORT_TYPE)));
-		assertTrue("key="+CSS_IMPORT_SPACE_IN_STRING+" value=\""+filter(CSS_IMPORT_SPACE_IN_STRING)+"\"", CSS_IMPORT_SPACE_IN_STRINGC.equals(filter(CSS_IMPORT_SPACE_IN_STRING)));
-		assertTrue("key="+CSS_IMPORT_QUOTED_STUFF+" value=\""+filter(CSS_IMPORT_QUOTED_STUFF)+"\"", CSS_IMPORT_QUOTED_STUFFC.equals(filter(CSS_IMPORT_QUOTED_STUFF)));
-		assertTrue("key="+CSS_IMPORT_QUOTED_STUFF2+" value=\""+filter(CSS_IMPORT_QUOTED_STUFF2)+"\"", CSS_IMPORT_QUOTED_STUFF2C.equals(filter(CSS_IMPORT_QUOTED_STUFF2)));
-		assertTrue("key="+CSS_IMPORT_NOURL_TWOMEDIAS+" value=\""+filter(CSS_IMPORT_NOURL_TWOMEDIAS)+"\"", CSS_IMPORT_NOURL_TWOMEDIASC.equals(filter(CSS_IMPORT_NOURL_TWOMEDIAS)));
-		assertTrue("key="+CSS_IMPORT_UNQUOTED+" should be empty", "".equals(filter(CSS_IMPORT_UNQUOTED)));
-		assertTrue("key="+CSS_IMPORT_NOURL+" value=\""+filter(CSS_IMPORT_NOURL)+"\"", CSS_IMPORT_NOURLC.equals(filter(CSS_IMPORT_NOURL)));
-		assertTrue("key="+CSS_IMPORT_BRACKET+" value=\""+filter(CSS_IMPORT_BRACKET)+"\"", CSS_IMPORT_BRACKETC.equals(filter(CSS_IMPORT_BRACKET)));
-		assertTrue("key="+CSS_LATE_IMPORT+" value=\""+filter(CSS_LATE_IMPORT)+"\"", CSS_LATE_IMPORTC.equals(filter(CSS_LATE_IMPORT)));
-		assertTrue("key="+CSS_LATE_IMPORT2+" value=\""+filter(CSS_LATE_IMPORT2)+"\"", CSS_LATE_IMPORT2C.equals(filter(CSS_LATE_IMPORT2)));
-		assertTrue("key="+CSS_LATE_IMPORT3+" value=\""+filter(CSS_LATE_IMPORT3)+"\"", CSS_LATE_IMPORT3C.equals(filter(CSS_LATE_IMPORT3)));
-		assertTrue("key="+CSS_BOGUS_AT_RULE+" value=\""+filter(CSS_BOGUS_AT_RULE)+"\"", CSS_BOGUS_AT_RULEC.equals(filter(CSS_BOGUS_AT_RULE)));
-		assertTrue("key="+PRESERVE_CDO_CDC+" value=\""+filter(PRESERVE_CDO_CDC)+"\"", PRESERVE_CDO_CDCC.equals(filter(PRESERVE_CDO_CDC)));
-		assertTrue("key="+BROKEN_BEFORE_IMPORT+" value=\""+filter(BROKEN_BEFORE_IMPORT)+"\"", BROKEN_BEFORE_IMPORTC.equals(filter(BROKEN_BEFORE_IMPORT)));
-		assertTrue("key="+BROKEN_BEFORE_MEDIA+" value=\""+filter(BROKEN_BEFORE_MEDIA)+"\"", BROKEN_BEFORE_MEDIAC.equals(filter(BROKEN_BEFORE_MEDIA)));
+		assertEquals("key=" + CSS_IMPORT + " value=\"" + filter(CSS_IMPORT) + "\"", CSS_IMPORTC, filter(CSS_IMPORT));
+		assertEquals("key=" + CSS_IMPORT2 + " value=\"" + filter(CSS_IMPORT2) + "\"", CSS_IMPORT2C, filter(CSS_IMPORT2));
+		assertEquals("key=" + CSS_IMPORT_MULTI_MEDIA + " value=\"" + filter(CSS_IMPORT_MULTI_MEDIA) + "\"", CSS_IMPORT_MULTI_MEDIAC, filter(CSS_IMPORT_MULTI_MEDIA));
+		assertEquals("key=" + CSS_IMPORT_MULTI_MEDIA_BOGUS + " value=\"" + filter(CSS_IMPORT_MULTI_MEDIA_BOGUS) + "\"", CSS_IMPORT_MULTI_MEDIA_BOGUSC, filter(CSS_IMPORT_MULTI_MEDIA_BOGUS));
+		assertEquals("key=" + CSS_IMPORT_MULTI_MEDIA_ALL + " value=\"" + filter(CSS_IMPORT_MULTI_MEDIA_ALL) + "\"", CSS_IMPORT_MULTI_MEDIA_ALLC, filter(CSS_IMPORT_MULTI_MEDIA_ALL));
+		assertEquals("key=" + CSS_IMPORT_TYPE + " value=\"" + filter(CSS_IMPORT_TYPE) + "\"", CSS_IMPORT_TYPEC, filter(CSS_IMPORT_TYPE));
+		assertEquals("key=" + CSS_IMPORT_SPACE_IN_STRING + " value=\"" + filter(CSS_IMPORT_SPACE_IN_STRING) + "\"", CSS_IMPORT_SPACE_IN_STRINGC, filter(CSS_IMPORT_SPACE_IN_STRING));
+		assertEquals("key=" + CSS_IMPORT_QUOTED_STUFF + " value=\"" + filter(CSS_IMPORT_QUOTED_STUFF) + "\"", CSS_IMPORT_QUOTED_STUFFC, filter(CSS_IMPORT_QUOTED_STUFF));
+		assertEquals("key=" + CSS_IMPORT_QUOTED_STUFF2 + " value=\"" + filter(CSS_IMPORT_QUOTED_STUFF2) + "\"", CSS_IMPORT_QUOTED_STUFF2C, filter(CSS_IMPORT_QUOTED_STUFF2));
+		assertEquals("key=" + CSS_IMPORT_NOURL_TWOMEDIAS + " value=\"" + filter(CSS_IMPORT_NOURL_TWOMEDIAS) + "\"", CSS_IMPORT_NOURL_TWOMEDIASC, filter(CSS_IMPORT_NOURL_TWOMEDIAS));
+		assertEquals("key=" + CSS_IMPORT_UNQUOTED + " should be empty", "", filter(CSS_IMPORT_UNQUOTED));
+		assertEquals("key=" + CSS_IMPORT_NOURL + " value=\"" + filter(CSS_IMPORT_NOURL) + "\"", CSS_IMPORT_NOURLC, filter(CSS_IMPORT_NOURL));
+		assertEquals("key=" + CSS_IMPORT_BRACKET + " value=\"" + filter(CSS_IMPORT_BRACKET) + "\"", CSS_IMPORT_BRACKETC, filter(CSS_IMPORT_BRACKET));
+		assertEquals("key=" + CSS_LATE_IMPORT + " value=\"" + filter(CSS_LATE_IMPORT) + "\"", CSS_LATE_IMPORTC, filter(CSS_LATE_IMPORT));
+		assertEquals("key=" + CSS_LATE_IMPORT2 + " value=\"" + filter(CSS_LATE_IMPORT2) + "\"", CSS_LATE_IMPORT2C, filter(CSS_LATE_IMPORT2));
+		assertEquals("key=" + CSS_LATE_IMPORT3 + " value=\"" + filter(CSS_LATE_IMPORT3) + "\"", CSS_LATE_IMPORT3C, filter(CSS_LATE_IMPORT3));
+		assertEquals("key=" + CSS_BOGUS_AT_RULE + " value=\"" + filter(CSS_BOGUS_AT_RULE) + "\"", CSS_BOGUS_AT_RULEC, filter(CSS_BOGUS_AT_RULE));
+		assertEquals("key=" + PRESERVE_CDO_CDC + " value=\"" + filter(PRESERVE_CDO_CDC) + "\"", PRESERVE_CDO_CDCC, filter(PRESERVE_CDO_CDC));
+		assertEquals("key=" + BROKEN_BEFORE_IMPORT + " value=\"" + filter(BROKEN_BEFORE_IMPORT) + "\"", BROKEN_BEFORE_IMPORTC, filter(BROKEN_BEFORE_IMPORT));
+		assertEquals("key=" + BROKEN_BEFORE_MEDIA + " value=\"" + filter(BROKEN_BEFORE_MEDIA) + "\"", BROKEN_BEFORE_MEDIAC, filter(BROKEN_BEFORE_MEDIA));
 	}
 
 	@Test
 	public void testEscape() throws IOException, URISyntaxException {
-		assertTrue("key="+CSS_ESCAPED_LINK+" value=\""+filter(CSS_ESCAPED_LINK)+"\"", CSS_ESCAPED_LINKC.equals(filter(CSS_ESCAPED_LINK)));
-		assertTrue("key="+CSS_ESCAPED_LINK2+" value=\""+filter(CSS_ESCAPED_LINK2)+"\"", CSS_ESCAPED_LINK2C.equals(filter(CSS_ESCAPED_LINK2)));
+		assertEquals("key=" + CSS_ESCAPED_LINK + " value=\"" + filter(CSS_ESCAPED_LINK) + "\"", CSS_ESCAPED_LINKC, filter(CSS_ESCAPED_LINK));
+		assertEquals("key=" + CSS_ESCAPED_LINK2 + " value=\"" + filter(CSS_ESCAPED_LINK2) + "\"", CSS_ESCAPED_LINK2C, filter(CSS_ESCAPED_LINK2));
 	}
 
 	@Test
@@ -1023,7 +1150,7 @@ public class CSSParserTest {
 		for(Entry<String, String> entry : propertyTests.entrySet()) {
 			String key = entry.getKey();
 			String value = entry.getValue();
-			assertTrue("key=\""+key+"\" encoded=\""+filter(key)+"\" should be \""+value+"\"", value.equals(filter(key)));
+			assertEquals("key=\"" + key + "\" encoded=\"" + filter(key) + "\" should be \"" + value + "\"", value, filter(key));
 		}
 	}
 
@@ -1039,23 +1166,23 @@ public class CSSParserTest {
 	public void testCharset() throws IOException, URISyntaxException {
 		// Test whether @charset is passed through when it is correct.
 		String test = "@charset \"UTF-8\";\nh2 { color: red;}";
-		assertTrue("key=\""+test+"\" value=\""+filter(test)+"\"", filter(test).equals(test));
+		assertEquals("key=\"" + test + "\" value=\"" + filter(test) + "\"", filter(test), test);
 		// No quote marks
 		String testUnquoted = "@charset UTF-8;\nh2 { color: red;}";
-		assertTrue("key=\""+test+"\" value=\""+filter(test)+"\"", filter(testUnquoted).equals(test));
+		assertEquals("key=\"" + test + "\" value=\"" + filter(test) + "\"", filter(testUnquoted), test);
 		// Test whether the parse fails when @charset is not correct.
 		String testFail = "@charset ISO-8859-1;\nh2 { color: red;};";
-		try {
-			filter(test).equals("");
-			assertFalse("Bogus @charset should have been deleted, but result is \""+filter(testFail)+"\"", false);
-		} catch (IOException e) {
-			// Ok.
-		}
+		assertThrows(
+			"Bogus @charset should have been deleted",
+			IOException.class,
+			()-> filter(testFail)
+		);
+
 		// Test charset extraction
 		getCharsetTest("UTF-8");
 		getCharsetTest("UTF-16BE");
 		getCharsetTest("UTF-16LE");
-		// not availiable in java 1.5.0_22
+		// FIXME: these next two are not supported or produce errors
 		// getCharsetTest("UTF-32BE");
 		// getCharsetTest("UTF-32LE");
 
@@ -1083,37 +1210,33 @@ public class CSSParserTest {
 		charsetTestUnsupported("IBM01149");
 
 		// Late charset is invalid
-		assertTrue("key="+LATE_CHARSET+" value=\""+filter(LATE_CHARSET)+"\"", LATE_CHARSETC.equals(filter(LATE_CHARSET)));
+		assertEquals("key=" + LATE_CHARSET + " value=\"" + filter(LATE_CHARSET) + "\"", LATE_CHARSETC, filter(LATE_CHARSET));
 		try {
 			String output = filter(WRONG_CHARSET);
-			assertFalse("Should complain that detected charset differs from real charset, but returned \""+output+"\"", true);
+			fail("Should complain that detected charset differs from real charset, but returned \"" + output + "\"");
 		} catch (IOException e) {
 			// Ok.
 			// FIXME should have a dedicated exception.
 		}
 		try {
 			String output = filter(NONSENSE_CHARSET);
-			assertFalse("wrong charset output is \""+output+"\" but it should throw!", true);
+			fail("wrong charset output is \"" + output + "\" but it should throw!");
 		} catch (UnsupportedCharsetInFilterException e) {
 			// Ok.
 		}
 
-		assertTrue(BOM.equals(filter(BOM)));
-		assertTrue("output=\""+filter(LATE_BOM)+"\"",LATE_BOMC.equals(filter(LATE_BOM)));
+		assertEquals(BOM, filter(BOM));
+		assertEquals("output=\"" + filter(LATE_BOM) + "\"", LATE_BOMC, filter(LATE_BOM));
 	}
 
-	private void getCharsetTest(String charset) throws DataFilterException, IOException, URISyntaxException {
+	private void getCharsetTest(String charset) throws IOException, URISyntaxException {
 		getCharsetTest(charset, null);
 	}
 
-	private void getCharsetTest(String charset, String family) throws DataFilterException, IOException, URISyntaxException {
+	private void getCharsetTest(String charset, String family) throws IOException, URISyntaxException {
 		String original = "@charset \""+charset+"\";\nh2 { color: red;}";
 		byte[] bytes = original.getBytes(charset);
 		CSSReadFilter filter = new CSSReadFilter();
-		ArrayBucket inputBucket = new ArrayBucket(bytes);
-		ArrayBucket outputBucket = new ArrayBucket();
-		InputStream inputStream = inputBucket.getInputStream();
-		OutputStream outputStream = outputBucket.getOutputStream();
 		// Detect with original charset.
 		String detectedCharset = filter.getCharset(bytes, bytes.length, charset);
 		assertTrue("Charset detected \""+detectedCharset+"\" should be \""+charset+"\" even when parsing with correct charset", charset.equalsIgnoreCase(detectedCharset));
@@ -1122,83 +1245,111 @@ public class CSSParserTest {
 		assertTrue("Charset detected \""+detectedCharset+"\" should be \""+charset+"\" or \""+family+"\" from getCharsetByBOM", detectedCharset == null || charset.equalsIgnoreCase(detectedCharset) || (family != null && family.equalsIgnoreCase(detectedCharset)));
 		detectedCharset = ContentFilter.detectCharset(bytes, bytes.length, cssMIMEType, null);
 		assertTrue("Charset detected \""+detectedCharset+"\" should be \""+charset+"\" from ContentFilter.detectCharset bom=\""+bomCharset+"\"", charset.equalsIgnoreCase(detectedCharset));
-		FilterStatus filterStatus = ContentFilter.filter(inputStream, outputStream, "text/css", new URI("/CHK@OR904t6ylZOwoobMJRmSn7HsPGefHSP7zAjoLyenSPw,x2EzszO4oobMJRmSn7HsPGefHSP7zAjoLyenSPw,x2EzszO4Kqot8akqmKYXJbkD-fSj6noOVGB-K2YisZ4,AAIC--8/1-works.html"),
-        null, null, null, null);
-		inputStream.close();
-		outputStream.close();
+
+		ArrayBucket inputBucket = new ArrayBucket(bytes);
+		ArrayBucket outputBucket = new ArrayBucket();
+		FilterStatus filterStatus;
+		try (
+			InputStream inputStream = inputBucket.getInputStream();
+			OutputStream outputStream = outputBucket.getOutputStream()
+		) {
+			filterStatus = ContentFilter.filter(inputStream, outputStream, "text/css", new URI("/CHK@OR904t6ylZOwoobMJRmSn7HsPGefHSP7zAjoLyenSPw,x2EzszO4oobMJRmSn7HsPGefHSP7zAjoLyenSPw,x2EzszO4Kqot8akqmKYXJbkD-fSj6noOVGB-K2YisZ4,AAIC--8/1-works.html"),
+				null, null, null, null
+			);
+		}
 		assertEquals("text/css", filterStatus.mimeType);
 		assertEquals(charset, filterStatus.charset);
 		String filtered = new String(BucketTools.toByteArray(outputBucket), charset);
-		assertTrue("ContentFilter.filter() returns \""+filtered+"\" not original \""+original+"\" for charset \""+charset+"\"", original.equals(filtered));
+		assertEquals(
+			"ContentFilter.filter() returns \"" + filtered + "\" not original \"" + original + "\" for charset \"" + charset + "\"",
+			original,
+			filtered
+		);
 	}
 
-	private void charsetTestUnsupported(String charset) throws DataFilterException, IOException, URISyntaxException {
+	private void charsetTestUnsupported(String charset) throws IOException, URISyntaxException {
 		String original = "@charset \""+charset+"\";\nh2 { color: red;}";
 		byte[] bytes = original.getBytes(charset);
 		CSSReadFilter filter = new CSSReadFilter();
-		SimpleReadOnlyArrayBucket inputBucket = new SimpleReadOnlyArrayBucket(bytes);
-		Bucket outputBucket = new ArrayBucket();
-		InputStream inputStream = inputBucket.getInputStream();
-		OutputStream outputStream = outputBucket.getOutputStream();
 		String detectedCharset;
 		BOMDetection bom = filter.getCharsetByBOM(bytes, bytes.length);
 		String bomCharset = detectedCharset = bom == null ? null : bom.charset;
-		assertTrue("Charset detected \""+detectedCharset+"\" should be unknown testing unsupported charset \""+charset+"\" from getCharsetByBOM", detectedCharset == null);
+		assertNull(
+			"Charset detected \"" + detectedCharset + "\" should be unknown testing unsupported charset \"" + charset + "\" from getCharsetByBOM",
+			detectedCharset
+		);
 		detectedCharset = ContentFilter.detectCharset(bytes, bytes.length, cssMIMEType, null);
-		assertTrue("Charset detected \""+detectedCharset+"\" should be unknown testing unsupported charset \""+charset+"\" from ContentFilter.detectCharset bom=\""+bomCharset+"\"", charset == null || "utf-8".equalsIgnoreCase(detectedCharset));
-		try {
-			FilterStatus filterStatus = ContentFilter.filter(inputStream, outputStream, "text/css", new URI("/CHK@OR904t6ylZOwoobMJRmSn7HsPGefHSP7zAjoLyenSPw,x2EzszO4Kqot8akqmKYXJbkD-fSj6noOVGB-K2YisZ4,AAIC--8/1-works.html"),
-          null,null, null, null);
-			// It is safe to return utf-8, as long as we clobber the actual content; utf-8 is the default, but other stuff decoded to it is unlikely to be coherent...
-			assertTrue("ContentFilter.filter() returned charset \""+filterStatus.charset+"\" should be unknown testing  unsupported charset \""+charset+"\"", filterStatus.charset.equalsIgnoreCase(charset) || filterStatus.charset.equalsIgnoreCase("utf-8"));//If we switch to JUnit 4, this may be replaced with an assertThat
-			assertEquals("text/css", filterStatus.mimeType);
-			String filtered = new String(BucketTools.toByteArray(outputBucket), charset);
-			assertTrue("ContentFilter.filter() returns something: \""+filtered+"\" should be empty as unsupported charset, original: \""+original+"\" for charset \""+charset+"\"", filtered.equals(""));
-		} catch (UnsupportedCharsetInFilterException e) {
-			// Ok.
-		} catch (IOException e) {
-			// Ok.
+		assertTrue(
+			"Charset detected \""+detectedCharset+"\" should be unknown testing unsupported charset \""+charset+"\" from ContentFilter.detectCharset bom=\""+bomCharset+"\"",
+			"utf-8".equalsIgnoreCase(detectedCharset)
+		);
+		SimpleReadOnlyArrayBucket inputBucket = new SimpleReadOnlyArrayBucket(bytes);
+		Bucket outputBucket = new ArrayBucket();
+		FilterStatus filterStatus;
+		try (
+			InputStream inputStream = inputBucket.getInputStream();
+			OutputStream outputStream = outputBucket.getOutputStream()
+		) {
+			filterStatus = ContentFilter.filter(inputStream, outputStream, "text/css", new URI("/CHK@OR904t6ylZOwoobMJRmSn7HsPGefHSP7zAjoLyenSPw,x2EzszO4Kqot8akqmKYXJbkD-fSj6noOVGB-K2YisZ4,AAIC--8/1-works.html"),
+				null, null, null, null);
 		}
-		finally {
-			inputStream.close();
-			outputStream.close();
-		}
+		// It is safe to return utf-8, as long as we clobber the actual content; utf-8 is the default, but other stuff decoded to it is unlikely to be coherent...
+		MatcherAssert.assertThat(
+			"ContentFilter.filter() returned charset \""+filterStatus.charset+"\" should be unknown testing  unsupported charset \""+charset+"\"",
+			filterStatus.charset,
+			anyOf(
+				equalToIgnoringCase(charset),
+				equalToIgnoringCase("utf-8")
+			)
+		);
+		assertEquals("text/css", filterStatus.mimeType);
+		String filtered = new String(BucketTools.toByteArray(outputBucket), charset);
+		assertEquals(
+			"ContentFilter.filter() returns something: \"" + filtered + "\" should be empty as unsupported charset, original: \"" + original + "\" for charset \"" + charset + "\"",
+			"",
+			filtered
+		);
 	}
 
 	@Test
-	public void testMaybeCharset() throws UnsafeContentTypeException, URISyntaxException, IOException {
+	public void testMaybeCharset() throws URISyntaxException, IOException {
 		testUseMaybeCharset("UTF-8");
 		testUseMaybeCharset("UTF-16");
-		// not availiable in java 1.5.0_22
-		// testUseMaybeCharset("UTF-32LE");
+		testUseMaybeCharset("UTF-32LE");
 		testUseMaybeCharset("IBM01140");
 	}
 
-	private void testUseMaybeCharset(String charset) throws URISyntaxException, UnsafeContentTypeException, IOException {
+	private void testUseMaybeCharset(String charset) throws URISyntaxException, IOException {
 		String original = "h2 { color: red;}";
 		byte[] bytes = original.getBytes(charset);
 		SimpleReadOnlyArrayBucket inputBucket = new SimpleReadOnlyArrayBucket(bytes);
 		Bucket outputBucket = new ArrayBucket();
-		InputStream inputStream = inputBucket.getInputStream();
-		OutputStream outputStream = outputBucket.getOutputStream();
-		FilterStatus filterStatus = ContentFilter.filter(inputStream, outputStream, "text/css", new URI("/CHK@OR904t6ylZOwoobMJRmSn7HsPGefHSP7zAjoLyenSPw,x2EzszO4Kqot8akqmKYXJbkD-fSj6noOVGB-K2YisZ4,AAIC--8/1-works.html"),
-        null,null, null, charset);
-		inputStream.close();
-		outputStream.close();
+		FilterStatus filterStatus;
+		try (
+			InputStream inputStream = inputBucket.getInputStream();
+			OutputStream outputStream = outputBucket.getOutputStream()
+		) {
+			filterStatus = ContentFilter.filter(inputStream, outputStream, "text/css", new URI("/CHK@OR904t6ylZOwoobMJRmSn7HsPGefHSP7zAjoLyenSPw,x2EzszO4Kqot8akqmKYXJbkD-fSj6noOVGB-K2YisZ4,AAIC--8/1-works.html"),
+				null, null, null, charset);
+		}
 		assertEquals(charset, filterStatus.charset);
 		assertEquals("text/css", filterStatus.mimeType);
 		String filtered = new String(BucketTools.toByteArray(outputBucket), charset);
-		assertTrue("ContentFilter.filter() returns \""+filtered+"\" not original \""+original+"\" with maybeCharset \""+charset+"\"", original.equals(filtered));
+		assertEquals(
+			"ContentFilter.filter() returns \"" + filtered + "\" not original \"" + original + "\" with maybeCharset \"" + charset + "\"",
+			original,
+			filtered
+		);
 	}
 
 	@Test
 	public void testComment() throws IOException, URISyntaxException {
-		assertTrue("value=\""+filter(COMMENT)+"\"",COMMENTC.equals(filter(COMMENT)));
+		assertEquals("value=\"" + filter(COMMENT) + "\"", COMMENTC, filter(COMMENT));
 	}
 
 	@Test
 	public void testWhitespace() throws IOException, URISyntaxException {
-		assertTrue("value=\""+filter(CSS_COMMA_WHITESPACE)+"\"", CSS_COMMA_WHITESPACE.equals(filter(CSS_COMMA_WHITESPACE)));
+		assertEquals("value=\"" + filter(CSS_COMMA_WHITESPACE) + "\"", CSS_COMMA_WHITESPACE, filter(CSS_COMMA_WHITESPACE));
 	}
 
 	@Test

@@ -11,6 +11,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -122,7 +123,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 		this.data = null;
 		this.parts = null;
 		this.bucketfactory = null;
-		if ((encodedQueryString!=null) && (encodedQueryString.length()>0)) {
+		if ((encodedQueryString!=null) && !encodedQueryString.isEmpty()) {
 			this.uri = new URI(path+ '?' +encodedQueryString);
 		} else {
 			this.uri = new URI(path);
@@ -205,12 +206,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 			for (Entry<String, List<String>> parameterValues : parameters.entrySet()) {
 				List<String> values = parameterValues.getValue();
 				String value = values.get(values.size() - 1);
-				byte[] buf;
-				try {
-					buf = value.getBytes("UTF-8");
-				} catch (UnsupportedEncodingException e) {
-					throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
-				} // FIXME some other encoding?
+				byte[] buf = value.getBytes(StandardCharsets.UTF_8);
 				RandomAccessBucket b = new SimpleReadOnlyArrayBucket(buf);
 				parts.put(parameterValues.getKey(), b);
 				if(logMINOR)
@@ -277,7 +273,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 		Map<String, List<String>> parameters = new HashMap<String, List<String>>();
 
 		// nothing to do if there was no query string in the URI
-		if ((queryString == null) || (queryString.length() == 0)) {
+		if ((queryString == null) || queryString.isEmpty()) {
 			return parameters;
 		}
 
@@ -481,7 +477,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 		try {
 			if(data == null)
 				return;
-			String ctype = this.headers.get("content-type");
+			String ctype = this.headers.getFirst("content-type");
 			if(ctype == null)
 				return;
 			if(logMINOR)
@@ -492,7 +488,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 				if(data.size() > 1024 * 1024)
 					throw new IOException("Too big");
 				byte[] buf = BucketTools.toByteArray(data);
-				String s = new String(buf, "us-ascii");
+				String s = new String(buf, StandardCharsets.US_ASCII);
 				parseRequestParameters(s, true, true);
 			}
 			if(!ctypeparts[0].trim().equalsIgnoreCase("multipart/form-data") || (ctypeparts.length < 2))
@@ -505,7 +501,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 					boundary = subparts[1];
 			}
 
-			if((boundary == null) || (boundary.length() == 0))
+			if((boundary == null) || boundary.isEmpty())
 				return;
 			if(boundary.charAt(0) == '"')
 				boundary = boundary.substring(1);
@@ -539,7 +535,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 				contentType = null;
 				// chomp headers
 				while((line = lis.readLine(200, 200, true)) /* should be UTF-8 as we told the browser to send UTF-8 */ != null) {
-					if(line.length() == 0)
+					if(line.isEmpty())
 						break;
 
 					String[] lineparts = line.split(":");
@@ -587,7 +583,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 				bucketos = filedata.getOutputStream();
 				// buffer characters that match the boundary so far
 			// FIXME use whatever charset was used
-				byte[] bbound = boundary.getBytes("UTF-8"); // ISO-8859-1? boundary should be in US-ASCII
+				byte[] bbound = boundary.getBytes(StandardCharsets.UTF_8); // ISO-8859-1? boundary should be in US-ASCII
 				int offset = 0;
 				while((is.available() > 0) && (offset < bbound.length)) {
 					byte b = (byte) is.read();
@@ -658,11 +654,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 	@Override
 	@Deprecated
 	public String getPartAsString(String name, int maxlength) {
-		try {
-			return new String(getPartAsBytes(name, maxlength), "UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
-		}
+		return new String(getPartAsBytes(name, maxlength), StandardCharsets.UTF_8);
 	}
 	
 	@Override
@@ -687,11 +679,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 	}
 	
 	private String getPartAsLimitedString(Bucket part, int maxLength) {
-		try {
-			return new String(getPartAsLimitedBytes(part, maxLength), "UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
-		}
+		return new String(getPartAsLimitedBytes(part, maxLength), StandardCharsets.UTF_8);
 	}
 
 	/* (non-Javadoc)
@@ -867,12 +855,12 @@ public class HTTPRequestImpl implements HTTPRequest {
 	@Override
 	public String getHeader(String name) {
 		assert(name.equals(name.toLowerCase()));
-		return this.headers.get(name.toLowerCase());
+		return this.headers.getFirst(name.toLowerCase());
 	}
 
 	@Override
 	public int getContentLength() {
-		String slen = headers.get("content-length");
+		String slen = headers.getFirst("content-length");
 		if (slen == null)
 			return -1;
 		// it is already parsed, so NumberFormatException can not happens here
@@ -888,7 +876,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 	@Override
 	public boolean isIncognito() {
 		if(isParameterSet("incognito"))
-			return Boolean.valueOf(getParam("incognito"));
+			return Boolean.parseBoolean(getParam("incognito"));
 		return false;
 	}
 

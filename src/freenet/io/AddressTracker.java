@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.InetAddress;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Iterator;
 
@@ -78,7 +79,7 @@ public class AddressTracker {
 		try {
 			fis = new FileInputStream(data);
 			BufferedInputStream bis = new BufferedInputStream(fis);
-			InputStreamReader ir = new InputStreamReader(bis, "UTF-8");
+			InputStreamReader ir = new InputStreamReader(bis, StandardCharsets.UTF_8);
 			BufferedReader br = new BufferedReader(ir);
 			SimpleFieldSet fs = new SimpleFieldSet(br, false, true);
 			return new AddressTracker(fs, lastBootID);
@@ -299,14 +300,14 @@ public class AddressTracker {
 		try {
 			fos = new FileOutputStream(dataBak);
 			BufferedOutputStream bos = new BufferedOutputStream(fos);
-			OutputStreamWriter osw = new OutputStreamWriter(bos, "UTF-8");
+			OutputStreamWriter osw = new OutputStreamWriter(bos, StandardCharsets.UTF_8);
 			BufferedWriter bw = new BufferedWriter(osw);
 			SimpleFieldSet fs = getFieldset(bootID);
 			fs.writeTo(bw);
 			bw.flush();
 			bw.close();
 			fos = null;
-			FileUtil.renameTo(dataBak, data);
+			FileUtil.moveTo(dataBak, data);
 		} catch (IOException e) {
 			Logger.error(this, "Cannot store packet tracker to disk");
 			return;

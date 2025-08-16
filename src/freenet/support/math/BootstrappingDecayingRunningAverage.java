@@ -55,7 +55,7 @@ public final class BootstrappingDecayingRunningAverage implements RunningAverage
 	 * @param min
 	 *                minimum value of input data
 	 * @param max
-	 *                maxumum value of input data
+	 *                maximum value of input data
 	 * @param maxReports
 	 *		  number of reports before bootstrapping period ends and decay begins
 	 * @param fs

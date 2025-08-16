@@ -94,7 +94,7 @@ public class HTMLDecoder {
 									t = s.substring(curPos, tmpPos - 1);
 									ch = charTable.get(t);
 									if (ch != null) {
-										c = ch.charValue();
+										c = ch;
 										curPos = tmpPos;
 									}
 								}

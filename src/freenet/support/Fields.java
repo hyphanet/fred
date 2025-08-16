@@ -76,12 +76,12 @@ public abstract class Fields {
 		'z'
 	};
 	private static final long[] MULTIPLES = {
-		1000, 1l << 10,
-		1000 * 1000, 1l << 20,
-		1000l * 1000l * 1000l, 1l << 30,
-		1000l * 1000l * 1000l * 1000l, 1l << 40,
-		1000l * 1000l * 1000l * 1000l * 1000, 1l << 50,
-		1000l * 1000l * 1000l * 1000l * 1000l * 1000l, 1l << 60
+		1000, 1L << 10,
+		1000 * 1000, 1L << 20,
+		1000L * 1000L * 1000L, 1L << 30,
+		1000L * 1000L * 1000L * 1000L, 1L << 40,
+		1000L * 1000L * 1000L * 1000L * 1000, 1L << 50,
+		1000L * 1000L * 1000L * 1000L * 1000L * 1000L, 1L << 60
 	};
 	private static final String[] MULTIPLES_2 = {
 		"k", "K", "m", "M", "g", "G", "t", "T", "p", "P", "e", "E"
@@ -268,7 +268,7 @@ public abstract class Fields {
 	public static long dateTime(String date)
 		throws NumberFormatException {
 
-		if(date.length() == 0)
+		if(date.isEmpty())
 			throw new NumberFormatException("Date time empty");
 
 		if((date.charAt(0) == '-') || (date.charAt(0) == '+')) {
@@ -288,23 +288,40 @@ public abstract class Fields {
 				deltaType = Calendar.DAY_OF_YEAR;
 			else {
 				String deltaTypeString = date.substring(chop).toLowerCase();
-				if(deltaTypeString.equals("y") || deltaTypeString.equals("year"))
-					deltaType = Calendar.YEAR;
-				else if(deltaTypeString.equals("month") || deltaTypeString.equals("mo"))
-					deltaType = Calendar.MONTH;
-				else if(deltaTypeString.equals("week") || deltaTypeString.equals("w"))
-					deltaType = Calendar.WEEK_OF_YEAR;
-				else if(deltaTypeString.equals("day") || deltaTypeString.equals("d"))
-					deltaType = Calendar.DAY_OF_YEAR;
-				else if(deltaTypeString.equals("hour") || deltaTypeString.equals("h"))
-					deltaType = Calendar.HOUR;
-				else if(deltaTypeString.equals("minute") || deltaTypeString.equals("min"))
-					deltaType = Calendar.MINUTE;
-				else if(deltaTypeString.equals("second") || deltaTypeString.equals("s") || deltaTypeString.equals("sec"))
-					deltaType = Calendar.SECOND;
-				else
-					throw new NumberFormatException(
-						"unknown time/date delta type: " + deltaTypeString);
+				switch (deltaTypeString) {
+					case "y":
+					case "year":
+						deltaType = Calendar.YEAR;
+						break;
+					case "month":
+					case "mo":
+						deltaType = Calendar.MONTH;
+						break;
+					case "week":
+					case "w":
+						deltaType = Calendar.WEEK_OF_YEAR;
+						break;
+					case "day":
+					case "d":
+						deltaType = Calendar.DAY_OF_YEAR;
+						break;
+					case "hour":
+					case "h":
+						deltaType = Calendar.HOUR;
+						break;
+					case "minute":
+					case "min":
+						deltaType = Calendar.MINUTE;
+						break;
+					case "second":
+					case "s":
+					case "sec":
+						deltaType = Calendar.SECOND;
+						break;
+					default:
+						throw new NumberFormatException(
+								"unknown time/date delta type: " + deltaTypeString);
+				}
 				GregorianCalendar gc = new GregorianCalendar();
 				gc.add(deltaType, (date.charAt(0) == '+') ? num : -num);
 				return gc.getTime().getTime();
@@ -891,7 +908,7 @@ public abstract class Fields {
 		StringBuilder r = new StringBuilder(str.length());
 		for (String line : str.split("\n")) {
 			line = line.trim();
-			if (line.length() == 0) continue;
+			if (line.isEmpty()) continue;
 
 			r.append(line);
 			r.append('\n');

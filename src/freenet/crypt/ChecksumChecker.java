@@ -65,7 +65,7 @@ public abstract class ChecksumChecker {
     public abstract void copyAndStripChecksum(InputStream is, OutputStream os, long length) throws IOException, ChecksumFailedException;
 
     /** Read from disk and verify the checksum that follows the data. If it throws, the buffer will 
-     * be zero'ed out. */
+     * be zeroed out. */
     public abstract void readAndChecksum(DataInput is, byte[] buf, int offset, int length) throws IOException, ChecksumFailedException;
     
     public InputStream checksumReaderWithLength(InputStream dis, BucketFactory bf, long maxLength)
@@ -76,10 +76,10 @@ public abstract class ChecksumChecker {
         if(length < 0 || length > maxLength) {
             throw new IOException("Bad length: " + length + "; maxLength: " + maxLength);
         }
-        final Bucket bucket = bf.makeBucket(-1);
-        OutputStream os = bucket.getOutputStream();
-        copyAndStripChecksum(dis, os, length);
-        os.close();
+        Bucket bucket = bf.makeBucket(length);
+        try (OutputStream os = bucket.getOutputStream()) {
+            copyAndStripChecksum(dis, os, length);
+        }
         return ReadBucketAndFreeInputStream.create(bucket);
     }
     

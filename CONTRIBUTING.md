@@ -11,7 +11,7 @@ start with:
   "Project" drop-down in the upper right. Do any of these look interesting?
 * Check the [projects](https://wiki.freenetproject.org/Projects) page.
 * Join us in [IRC](https://web.libera.chat/?nick=Rabbit|?#freenet) - `#freenet` on
-  `irc.libera.chat`. or in FMS.
+  `irc.libera.chat` or in FMS.
 
 # Code review
 
@@ -23,6 +23,11 @@ submitted a pull request, people will start reviewing it and providing feedback.
 If you don't hear anything for a while feel free to bring it to the attention of
 people in [IRC](https://www.hyphanet.org/pages/help.html#chat-with-us) or FMS - we may
 have missed it.
+
+All commits with functional changes must be reviewed, including those from
+maintainers. An exception are plugins: updates to official plugins
+must include the commit id from the the plugin-repo in the commit
+description; the review in the plugin repository then serves as review in fred.
 
 Code review helps improve code quality, ensures that multiple people know the
 codebase, serves as a defense against introducing malicious code, and makes it

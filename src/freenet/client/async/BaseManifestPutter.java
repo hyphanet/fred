@@ -71,7 +71,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 	 * ArchivePutHandler - wrapper for ContainerInserter
 	 *
 	 * Archives are not part of the site structure, they are used to group files that
-	 * not fit into a container (for example a directory with brazilion files it)
+	 * not fit into a container (for example a directory with a bazillion files in it)
 	 * Archives are always inserted as CHK, references to items in it
 	 * are normal redirects to CHK@blah,blub,AA/nameinarchive
 	 *
@@ -326,7 +326,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		}
 	}
 
-	/** Placeholder for Matadata, don't run it! */
+	/** Placeholder for Metadata, don't run it! */
 	private final class JokerPutHandler extends PutHandler {
 
         private static final long serialVersionUID = 1L;
@@ -1584,7 +1584,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
     public static void flatten(HashMap<String,Object> manifestElements, List<ManifestElement> v, String prefix) {
         for(Map.Entry<String,Object> entry: manifestElements.entrySet()) {
             String name = entry.getKey();
-            String fullName = prefix.length() == 0 ? name : prefix+ '/' +name;
+            String fullName = prefix.isEmpty() ? name : prefix+ '/' +name;
             Object o = entry.getValue();
             if(o instanceof HashMap) {
                 flatten(Metadata.forceMap(o), v, fullName);

@@ -46,8 +46,7 @@ public class N2NTMToadlet extends Toadlet {
 
 		if (request.isParameterSet("peernode_hashcode")) {
 			PageNode page = ctx.getPageMaker().getPageNode(l10n("sendMessage"), ctx);
-			HTMLNode pageNode = page.outer;
-			HTMLNode contentNode = page.content;
+			HTMLNode contentNode = page.getContentNode();
 
 			String peernode_name = null;
 			String input_hashcode_string = request.getParam("peernode_hashcode");
@@ -71,17 +70,16 @@ public class N2NTMToadlet extends Toadlet {
 				contentNode.addChild(createPeerInfobox("infobox-error",
 						l10n("peerNotFoundTitle"), l10n("peerNotFoundWithHash",
 								"hash", input_hashcode_string)));
-				this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+				this.writeHTMLReply(ctx, 200, "OK", page.generate());
 				return;
 			}
 			HashMap<String, String> peers = new HashMap<String, String>();
 			peers.put(input_hashcode_string, peernode_name);
-			createN2NTMSendForm(pageNode, ctx.isAdvancedModeEnabled(), contentNode, ctx, peers);
-			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+			createN2NTMSendForm(ctx.isAdvancedModeEnabled(), contentNode, ctx, peers);
+			this.writeHTMLReply(ctx, 200, "OK", page.generate());
 			return;
 		}
-		MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-		headers.put("Location", "/friends/");
+		MultiValueTable<String, String> headers = MultiValueTable.from("Location", "/friends/");
 		ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 	}
 
@@ -150,18 +148,17 @@ public class N2NTMToadlet extends Toadlet {
 				return;
 			}
 			PageNode page = ctx.getPageMaker().getPageNode(l10n("processingSend"), ctx);
-			HTMLNode pageNode = page.outer;
-			HTMLNode contentNode = page.content;
+			HTMLNode contentNode = page.getContentNode();
 			HTMLNode peerTableInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 			DarknetPeerNode[] peerNodes = node.getDarknetConnections();
 			if(request.isPartSet(LocalFileBrowserToadlet.selectFile)) {
 				String fnam = request.getPartAsStringFailsafe("filename", 1024);
-				if(fnam != null && fnam.length() > 0) {
+				if(fnam != null && !fnam.isEmpty()) {
 					filename = new File(fnam);
 					if(!(filename.exists() && filename.canRead())) {
 						peerTableInfobox.addChild("#", l10n("noSuchFileOrCannotRead"));
 						Toadlet.addHomepageLink(peerTableInfobox);
-						this.writeHTMLReply(ctx, 400, "OK", pageNode.generate());
+						this.writeHTMLReply(ctx, 400, "OK", page.generate());
 						return;
 					}
 				}
@@ -182,13 +179,13 @@ public class N2NTMToadlet extends Toadlet {
 							peerTableInfobox.addChild("#", l10n("noSuchFileOrCannotRead"));
 							Toadlet.addHomepageLink(peerTableInfobox);
 							addUnsentMessageTextInfo(peerTableInfobox, message);
-							this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+							this.writeHTMLReply(ctx, 200, "OK", page.generate());
 							return;
 						}
 					} else if(request.isPartSet("n2nm-upload")) {
 						try{
 							HTTPUploadedFile file = request.getUploadedFile("n2nm-upload");
-							if(!file.getFilename().equals("")) {
+							if(!file.getFilename().isEmpty()) {
 								long size = request.getUploadedFile("n2nm-upload").getData().size();
 								if(size > 0) {
 									long limit = maxSize();
@@ -201,7 +198,7 @@ public class N2NTMToadlet extends Toadlet {
 												new String[] { "/friends/", l10n("returnToFriends") },
 												l10n("friends"));
 										addUnsentMessageTextInfo(peerTableInfobox, message);
-										this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+										this.writeHTMLReply(ctx, 200, "OK", page.generate());
 										return;
 									}
 									status = pn.sendFileOffer(request.getUploadedFile("n2nm-upload"), messageHead);
@@ -211,7 +208,7 @@ public class N2NTMToadlet extends Toadlet {
 							peerTableInfobox.addChild("#", l10n("uploadFailed"));
 							Toadlet.addHomepageLink(peerTableInfobox);
 							addUnsentMessageTextInfo(peerTableInfobox, message);
-							this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+							this.writeHTMLReply(ctx, 200, "OK", page.generate());
 							return;
 						}
 					}
@@ -257,11 +254,10 @@ public class N2NTMToadlet extends Toadlet {
 			list.addChild("li").addChild("a", new String[] { "href", "title" },
 					new String[] { "/friends/", l10n("returnToFriends") },
 					l10n("friends"));
-			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+			this.writeHTMLReply(ctx, 200, "OK", page.generate());
 			return;
 		}
-		MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-		headers.put("Location", "/friends/");
+		MultiValueTable<String, String> headers = MultiValueTable.from("Location", "/friends/");
 		ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 	}
 
@@ -270,7 +266,7 @@ public class N2NTMToadlet extends Toadlet {
 		node.addChild("p", message);
 	}
 
-	public static void createN2NTMSendForm(HTMLNode pageNode, boolean advancedMode,
+	public static void createN2NTMSendForm(boolean advancedMode,
 			HTMLNode contentNode, ToadletContext ctx, HashMap<String, String> peers)
 			throws ToadletContextClosedException, IOException {
 		HTMLNode infobox = contentNode.addChild("div", new String[] { "class",

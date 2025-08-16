@@ -81,7 +81,7 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 			subconfig = config.createSubConfig(getPluginClassName());
 			((FredPluginConfigurable)plug).setupConfig(subconfig);
 			config.finishedInit();
-			configToadlet = new ConfigToadlet(pr.getHLSimpleClient(), config, subconfig, node, node.clientCore, (FredPluginConfigurable)plug);
+			configToadlet = new ConfigToadlet(pr.getHLSimpleClient(), config, subconfig, node, node.getClientCore(), (FredPluginConfigurable)plug);
 		} else {
 			config = null;
 			subconfig = null;
@@ -127,13 +127,13 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 	}
 	
 	public synchronized boolean addPluginToadletSymlink(String linkfrom){
-		if (toadletLinks.size() < 1)
+		if (toadletLinks.isEmpty())
 			toadletLinks = new HashSet<String>();
 		return toadletLinks.add(linkfrom);
 	}
 	
 	public synchronized boolean removePluginToadletSymlink(String linkfrom){
-		if (toadletLinks.size() < 1)
+		if (toadletLinks.isEmpty())
 			return false;
 		return toadletLinks.remove(linkfrom);
 	}

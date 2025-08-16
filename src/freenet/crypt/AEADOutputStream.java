@@ -8,8 +8,6 @@ import java.util.Random;
 
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.InvalidCipherTextException;
-import org.bouncycastle.crypto.engines.AESEngine;
-import org.bouncycastle.crypto.engines.AESLightEngine;
 import org.bouncycastle.crypto.modes.AEADBlockCipher;
 import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
@@ -84,8 +82,8 @@ public class AEADOutputStream extends FilterOutputStream {
     
     /** For unit tests only */
     static AEADOutputStream innerCreateAES(OutputStream os, byte[] key, Random random) throws IOException {
-        AESEngine mainCipher = new AESEngine();
-        AESLightEngine hashCipher = new AESLightEngine();
+        BlockCipher mainCipher = BlockCiphers.aes();
+        BlockCipher hashCipher = BlockCiphers.aes();
         byte[] nonce = new byte[mainCipher.getBlockSize()];
         random.nextBytes(nonce);
         nonce[0] &= 0x7F;

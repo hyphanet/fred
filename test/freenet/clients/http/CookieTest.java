@@ -12,8 +12,6 @@ import java.util.Date;
 import org.junit.Before;
 import org.junit.Test;
 
-import freenet.support.CurrentTimeUTC;
-
 public class CookieTest {
 	
 	static final String VALID_PATH = "/Freetalk";
@@ -28,7 +26,7 @@ public class CookieTest {
 	@Before
 	public void setUp() throws Exception {
 		validPath = new URI(VALID_PATH);
-		validExpiresDate = new Date(CurrentTimeUTC.getInMillis()+60*60*1000);
+		validExpiresDate = new Date(System.currentTimeMillis() + 60 * 60 * 1000);
 		cookie = new Cookie(validPath, VALID_NAME, VALID_VALUE, validExpiresDate);
 	}
 
@@ -81,7 +79,7 @@ public class CookieTest {
 		// TODO: Test for more invalid characters in value;
 		
 		try {
-			new Cookie(validPath, VALID_NAME, VALID_VALUE, new Date(CurrentTimeUTC.getInMillis()-1));
+			new Cookie(validPath, VALID_NAME, VALID_VALUE, new Date(System.currentTimeMillis() - 1));
 			fail("Constructor allows construction of expired cookies.");
 		} catch(RuntimeException e) {}
 	}
@@ -89,10 +87,10 @@ public class CookieTest {
 	@Test
 	public void testEqualsObject() throws URISyntaxException {
 		assertEquals(cookie, cookie);
-		assertEquals(cookie, new Cookie(validPath, VALID_NAME, VALID_VALUE, new Date(CurrentTimeUTC.getInMillis()+60*1000)));
+		assertEquals(cookie, new Cookie(validPath, VALID_NAME, VALID_VALUE, new Date(System.currentTimeMillis() + 60 * 1000)));
 		
 		// Value is not checked in equals().
-		assertEquals(cookie, new Cookie(validPath, VALID_NAME, "", new Date(CurrentTimeUTC.getInMillis()+60*1000)));
+		assertEquals(cookie, new Cookie(validPath, VALID_NAME, "", new Date(System.currentTimeMillis() + 60 * 1000)));
 		
 		assertFalse(cookie.equals(new Cookie(new URI(VALID_PATH.toLowerCase()), VALID_NAME, VALID_VALUE, validExpiresDate)));
 		assertEquals(cookie, new Cookie(validPath, VALID_NAME.toLowerCase(), VALID_VALUE, validExpiresDate));

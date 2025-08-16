@@ -33,7 +33,7 @@ public class GenerateSSKMessage extends FCPMessage {
 	@Override
 	public void run(FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
-    	InsertableClientSSK key = InsertableClientSSK.createRandom(node.random, "");
+    	InsertableClientSSK key = InsertableClientSSK.createRandom(node.getRandom(), "");
     	FreenetURI insertURI = key.getInsertURI();
     	FreenetURI requestURI = key.getURI();
     	SSKKeypairMessage msg = new SSKKeypairMessage(insertURI, requestURI, identifier);

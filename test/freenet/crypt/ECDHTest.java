@@ -1,20 +1,20 @@
 package freenet.crypt;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
 
-import java.io.UnsupportedEncodingException;
-import java.math.BigInteger;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.Security;
 
+import freenet.crypt.ECDH.Curves;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.Before;
 import org.junit.Test;
-
-import freenet.crypt.ECDH.Curves;
 
 public class ECDHTest {
     
@@ -36,7 +36,7 @@ public class ECDHTest {
         byte[] bobS = bob.getAgreedSecret(alice.getPublicKey());
         assertNotNull(aliceS);
         assertNotNull(bobS);
-        assertEquals(toHex(aliceS), toHex(bobS));
+        assertArrayEquals(aliceS, bobS);
         assertEquals(aliceS.length, curveToTest.derivedSecretSize);
         assertEquals(bobS.length, curveToTest.derivedSecretSize);
     }
@@ -50,31 +50,5 @@ public class ECDHTest {
         assertNotSame(aliceP, bobP);
         assertEquals(aliceP.getEncoded().length, curveToTest.modulusSize);
         assertEquals(bobP.getEncoded().length, curveToTest.modulusSize);
-    }
-
-
-    public static void main(String[] args) throws InvalidKeyException, IllegalStateException, NoSuchAlgorithmException {
-        Security.addProvider(new BouncyCastleProvider());
-        
-        ECDH alice = new ECDH(Curves.P256);
-        ECDH bob = new ECDH(Curves.P256);
-        PublicKey bobP = bob.getPublicKey();
-        PublicKey aliceP = alice.getPublicKey();
-        
-        System.out.println("Alice C: "+alice.curve);
-        System.out.println("Bob   C: "+bob.curve);
-        System.out.println("Alice P: "+toHex(aliceP.getEncoded()));
-        System.out.println("Bob   P: "+toHex(bobP.getEncoded()));
-        
-        System.out.println("Alice S: "+toHex(alice.getAgreedSecret(bob.getPublicKey())));
-        System.out.println("Bob   S: "+toHex(bob.getAgreedSecret(alice.getPublicKey())));
-    }
-    
-    public static String toHex(byte[] arg) {
-        return String.format("%040x", new BigInteger(1,arg));
-    }
-    
-    public static String toHex(String arg) throws UnsupportedEncodingException {
-        return toHex(arg.getBytes("utf-8"));
     }
 }

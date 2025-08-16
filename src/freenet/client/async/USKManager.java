@@ -126,7 +126,7 @@ public class USKManager {
 	public synchronized long lookupKnownGood(USK usk) {
 		Long l = latestKnownGoodByClearUSK.get(usk.clearCopy());
 		if(l != null)
-			return l.longValue();
+			return l;
 		else return -1;
 	}
 
@@ -138,7 +138,7 @@ public class USKManager {
 	public synchronized long lookupLatestSlot(USK usk) {
 		Long l = latestSlotByClearUSK.get(usk.clearCopy());
 		if(l != null)
-			return l.longValue();
+			return l;
 		else return -1;
 	}
 
@@ -431,8 +431,8 @@ public class USKManager {
 		synchronized(this) {
 			Long l = latestKnownGoodByClearUSK.get(clear);
 			if(logMINOR) Logger.minor(this, "Old known good: "+l);
-			if((l == null) || (number > l.longValue())) {
-				l = Long.valueOf(number);
+			if((l == null) || (number > l)) {
+				l = number;
 				latestKnownGoodByClearUSK.put(clear, l);
 				if(logMINOR) Logger.minor(this, "Put "+number);
 			} else
@@ -440,8 +440,8 @@ public class USKManager {
 			
 			l = latestSlotByClearUSK.get(clear);
 			if(logMINOR) Logger.minor(this, "Old slot: "+l);
-			if((l == null) || (number > l.longValue())) {
-				l = Long.valueOf(number);
+			if((l == null) || (number > l)) {
+				l = number;
 				latestSlotByClearUSK.put(clear, l);
 				if(logMINOR) Logger.minor(this, "Put "+number);
 				newSlot = true;
@@ -454,7 +454,7 @@ public class USKManager {
 					final USK usk = origUSK.copy(number);
 					final boolean newSlotToo = newSlot;
 					for(final USKCallback callback : callbacks)
-						context.mainExecutor.execute(new Runnable() {
+						context.getMainExecutor().execute(new Runnable() {
 							@Override
 							public void run() {
 								callback.onFoundEdition(number, usk, // non-persistent
@@ -471,8 +471,8 @@ public class USKManager {
 		synchronized(this) {
 			Long l = latestSlotByClearUSK.get(clear);
 			if(logMINOR) Logger.minor(this, "Old slot: "+l);
-			if((l == null) || (number > l.longValue())) {
-				l = Long.valueOf(number);
+			if((l == null) || (number > l)) {
+				l = number;
 				latestSlotByClearUSK.put(clear, l);
 				if(logMINOR) Logger.minor(this, "Put "+number);
 			} else
@@ -488,7 +488,7 @@ public class USKManager {
 			// Run off-thread, because of locking, and because client callbacks may take some time
 					final USK usk = origUSK.copy(number);
 					for(final USKCallback callback : callbacks)
-						context.mainExecutor.execute(new Runnable() {
+						context.getMainExecutor().execute(new Runnable() {
 							@Override
 							public void run() {
 								callback.onFoundEdition(number, usk, // non-persistent

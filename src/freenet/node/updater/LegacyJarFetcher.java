@@ -46,7 +46,7 @@ class LegacyJarFetcher implements ClientGetCallback {
 	public LegacyJarFetcher(FreenetURI uri, File saveTo, NodeClientCore core, LegacyFetchCallback cb) {
 		this.uri = uri;
 		this.saveTo = saveTo;
-		this.context = core.clientContext;
+		this.context = core.getClientContext();
 		this.cb = cb;
 		ctx = core.makeClient((short) 1, true, false).getFetchContext();
 		ctx.allowSplitfiles = true;
@@ -135,7 +135,7 @@ class LegacyJarFetcher implements ClientGetCallback {
 	@Override
 	public void onSuccess(FetchResult result, ClientGetter state) {
 		result.asBucket().free();
-		if(!FileUtil.renameTo(tempFile, saveTo)) {
+		if(!FileUtil.moveTo(tempFile, saveTo)) {
 			Logger.error(this, "Fetched file but unable to rename temp file "+tempFile+" to "+saveTo+" : UOM FROM OLD NODES WILL NOT WORK!");
 		} else {
 			synchronized(this) {

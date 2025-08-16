@@ -1,0 +1,243 @@
+#! /bin/sh
+
+#
+# Copyright (c) 1999, 2022 Tanuki Software, Ltd.
+# http://www.tanukisoftware.com
+# All rights reserved.
+#
+# This software is the proprietary information of Tanuki Software.
+# You shall use it only in accordance with the terms of the
+# license agreement you entered into with Tanuki Software.
+# http://wrapper.tanukisoftware.com/doc/english/licenseOverview.html
+#
+# Java Service Wrapper sh script.  Suitable for starting and stopping
+#  wrapped Java applications on UNIX platforms.
+# Optimized for use with version 3.5.51 of the Wrapper.
+#
+
+#-----------------------------------------------------------------------------
+# These settings can be modified to fit the needs of your application
+
+# IMPORTANT - Please always stop and uninstall an application before making
+#             any changes to this file.  Failure to do so could remove the
+#             script's ability to control the application.
+
+# NOTE - After loading the variables below, the script will attempt to locate a
+#  file with the same basename as this script and having a '.shconf' extension.
+#  If such file exists, it will be executed giving the user a chance to
+#  override the default settings. Having the customized configuration in a
+#  separate '.shconf' file makes it easier to upgrade the Wrapper, as the
+#  present script file can then be replaced with minimal changes (although at
+#  least the 'INIT INFO' below needs to be updated).
+
+# Initialization block for the install_initd and remove_initd scripts used by
+#  SUSE linux, CentOS and RHEL distributions.  Also used by update-rc.d.
+# Note: From CentOS 6, make sure the BEGIN INIT INFO section is before any line 
+#       of code otherwise the service won't be displayed in the Service 
+#       Configuration GUI.
+### BEGIN INIT INFO
+# Provides: freenet
+# Required-Start: $remote_fs $syslog
+# Should-Start: $network $time
+# Should-Stop: $network $time
+# Required-Stop: $remote_fs $syslog
+# Default-Start: 2 3 4 5
+# Default-Stop: 0 1 6
+# Short-Description: Freenet 0.7.5 build 1498 (experimental release)
+# Description: Freenet reference daemon
+### END INIT INFO
+
+# Application name and long name: If these variables are not set (or left to
+#  the default tokens), APP_NAME will default to the name of the script, then
+#  APP_LONG_NAME will default to the value of APP_NAME.
+APP_NAME="freenet"
+APP_LONG_NAME="Freenet 0.7.5 build 1498 (experimental release)"
+
+# If uncommented (and set to false), APP_NAME and APP_LONG_NAME will no longer 
+#  be passed to the wrapper. See documentation for details.
+#APP_NAME_PASS_TO_WRAPPER=false
+
+# Wrapper
+WRAPPER_CMD="/usr/sbin/wrapper"
+WRAPPER_CONF="/etc/freenet/wrapper.conf"
+
+# Priority at which to run the wrapper.  See "man nice" for valid priorities.
+#  nice is only used if a priority is specified.
+PRIORITY="10"
+
+# Location of the pid file.
+PIDDIR="/var/run/freenet"
+
+# PIDFILE_CHECK_PID tells the script to double check whether the pid in the pid
+#  file actually exists and belongs to this application.  When not set, only
+#  check the pid, but not what it is.  This is only needed when multiple
+#  applications need to share the same pid file.
+PIDFILE_CHECK_PID=true
+
+# FIXED_COMMAND tells the script to use a hard coded action rather than
+#  expecting the first parameter of the command line to be the command.
+#  By default the command will be expected to be the first parameter.
+#FIXED_COMMAND=console
+
+# PASS_THROUGH controls how the script arguments should be passed to the
+#  Wrapper. Possible values are:
+#  - commented or 'false': the arguments will be ignored (not passed).
+#  - 'app_args' or 'true': the arguments will be passed through the Wrapper as
+#                          arguments for the Java Application.
+#  - 'both': both Wrapper properties and Application arguments can be passed to
+#            the Wrapper. The Wrapper properties come in first position. The
+#            user can optionally add a '--' separator followed by application
+#            arguments.
+# NOTE - If FIXED_COMMAND is set to true the above applies to all arguments,
+#        otherwise it applies to arguments starting with the second.
+# NOTE - Passing arguments is only valid with the following commands:
+#          - 'console'
+#          - 'start', 'restart', 'condrestart' (if not installed as a daemon)
+#PASS_THROUGH=app_args
+
+# If uncommented, causes the Wrapper to be shutdown using an anchor file.
+#  When launched with the 'start' command, it will also ignore all INT and
+#  TERM signals.
+#IGNORE_SIGNALS=true
+
+# Wrapper will start the JVM asynchronously. Your application may have some
+#  initialization tasks and it may be desirable to wait a few seconds
+#  before returning.  For example, to delay the invocation of following
+#  startup scripts.  Setting WAIT_AFTER_STARTUP to a positive number will
+#  cause the start command to delay for the indicated period of time 
+#  (in seconds).
+WAIT_AFTER_STARTUP=0
+
+# If set, wait for the wrapper to report that the daemon has started
+WAIT_FOR_STARTED_STATUS=true
+WAIT_FOR_STARTED_TIMEOUT=120
+
+# If set, the status, start_msg and stop_msg commands will print out detailed
+#   state information on the Wrapper and Java processes.
+#DETAIL_STATUS=true
+
+# If set, the 'pause' and 'resume' commands will be enabled.  These make it
+#  possible to pause the JVM or Java application without completely stopping
+#  the Wrapper.  See the wrapper.pausable and wrapper.pausable.stop_jvm
+#  properties for more information.
+#PAUSABLE=true
+
+# Set the mode used to 'pause' or 'resume' the Wrapper. Possible values are
+#  'signals' which uses SIGUSR1 and SIGUSR2, and 'file' which uses the command
+#  file to communicate these actions.  The default value is 'signals'.
+#  Be aware that depending on the mode, the properties wrapper.signal.mode.usr1,
+#  wrapper.signal.mode.usr2, or wrapper.commandfile of the configuration file may
+#  be overriden.
+#PAUSABLE_MODE=signals
+
+# If set, the Wrapper will be run as the specified user.
+# IMPORTANT - Make sure that the user has the required privileges to write
+#  the PID file and wrapper.log files.  Failure to be able to write the log
+#  file will cause the Wrapper to exit without any way to write out an error
+#  message.
+# NOTES - This will set the user which is used to run the Wrapper as well as
+#  the JVM and is not useful in situations where a privileged resource or
+#  port needs to be allocated prior to the user being changed.
+#       - Setting this variable will cause stdin to be closed. While this
+#  should not be a problem when running as Daemon, it would disable ability
+#  for console applications to receive inputs.
+RUN_AS_USER="freenet"
+
+# When RUN_AS_USER is set, the 'runuser' command will be used to substitute the
+#  user. If not present on the machine, 'su' will be used as a fallback.
+#  The parameter below lets you specify option(s) for the 'runuser' (or 'su')
+#  command.
+# NOTES - The '-u' option is not allowed. Please set the user with RUN_AS_USER.
+#       - On GNU/Linux systems, if the user specified by RUN_AS_USER doesn't
+#  have a default shell please specify one with the '-s' option.
+#SU_OPTS="-s /bin/bash"
+
+# By default we show a detailed usage block.  Uncomment to show brief usage.
+#BRIEF_USAGE=true
+
+# Set which service management tool to use.
+# Possible values are: 
+#   for linux...: auto, systemd, upstart, initd
+#   for aix.....: auto, src, initd
+# When set to 'auto', this script file will try to detect in the order of the 
+# list for each platform which service management tool to use to install the Wrapper.
+SERVICE_MANAGEMENT_TOOL=auto
+
+# Specify how the Wrapper daemon and its child processes should be killed
+#  when using systemd.
+#  The default is 'control-group' which tells systemd to kill all child
+#  processes (including detached ones) in the control group of the daemon
+#  when it stops.
+#  Alternatively, 'process' can be specified to prevent systemd from
+#  killing the child processes leaving this responsibility to the Wrapper.
+#  In this case child processes marked as 'detached' will not be killed on shutdown.
+# NOTE - the daemon must be reinstalled for any changes on this property to take effect.
+SYSTEMD_KILLMODE=control-group
+
+# When installing on Mac OSX platforms, the following domain will be used to
+#  prefix the plist file name.
+PLIST_DOMAIN=org.tanukisoftware.wrapper
+
+# When installing on Mac OSX platforms, this parameter controls whether the daemon
+#  is to be kept continuously running or to let demand and conditions control the 
+#  invocation.
+MACOSX_KEEP_RUNNING="false"
+
+# The following two lines are used by the chkconfig command. Change as is
+#  appropriate for your application.  They should remain commented.
+# chkconfig: 2345 20 80
+# description: Freenet 0.7.5 build 1498 (experimental release)
+
+# Set run level to use when installing the application to start and stop on
+#  system startup and shutdown.  It is important that the application always
+#  be uninstalled before making any changes to the run levels.
+# It is also possible to specify different run levels based on the individual
+#  platform.  When doing so this script will look for defined run levels in
+#  the following order:
+#   1) "RUN_LEVEL_S_$DIST_OS" or "RUN_LEVEL_K_$DIST_OS", where "$DIST_OS" is
+#      the value of DIST_OS.  "RUN_LEVEL_S_solaris=20" for example.
+#   2) RUN_LEVEL_S or RUN_LEVEL_K, to specify specify start or stop run levels.
+#   3) RUN_LEVEL, to specify a general run level.
+RUN_LEVEL=20
+
+# List of files to source prior to executing any commands. Use ';' as delimiter.
+# For example: 
+#  FILES_TO_SOURCE="/home/user/.bashrc;anotherfile;../file3"
+FILES_TO_SOURCE=
+
+# Do not modify anything beyond this point
+#-----------------------------------------------------------------------------
+
+if [ -f "/etc/default/$APP_NAME" ]; then
+	. "/etc/default/$APP_NAME"
+fi
+
+# WRAPPER_PREINIT START
+# do we want to run at all?
+
+if [ "$RUN" != "yes" ]; then echo >&2 "RUN is not yes; abort"; exit 1; fi
+
+# set PRIORITY from /etc/default
+
+if [ -n "$NICE" ]; then PRIORITY="$NICE"; fi
+
+# copy default config files, if necessary
+
+ensure_exists() { if [ ! -f "$1" ]; then cp "$2" "$1"; fi; }
+
+ensure_exists /etc/freenet/wrapper.conf  /usr/share/freenet/wrapper.conf
+ensure_exists /etc/freenet/freenet.ini  /usr/share/freenet/freenet.ini
+ensure_exists /etc/freenet/noderef/seednodes.fref /usr/share/freenet/seednodes.fref
+
+[ -z "$SERVER_USER" ] && SERVER_USER=freenet
+[ -z "$SERVER_GROUP" ] && SERVER_GROUP=freenet
+
+if [ ! -d "$PIDDIR" ]; then
+	mkdir "$PIDDIR" || exit 1
+	chown $SERVER_USER:$SERVER_GROUP "$PIDDIR" || exit 1
+	chmod 2750 "$PIDDIR" || exit 1
+fi
+# WRAPPER_PREINIT END
+
+. "/usr/share/wrapper/daemon.sh"
+

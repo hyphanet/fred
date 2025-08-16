@@ -133,6 +133,6 @@ public class ProbeRequest extends FCPMessage {
 				handler.send(new ProbeOverallBulkOutputCapacityUsage(identifier, bandwidthClassForCapacityUsage, capacityUsage));
 			}
 		};
-		node.startProbe(htl, node.random.nextLong(), type, listener);
+		node.startProbe(htl, node.getRandom().nextLong(), type, listener);
 	}
 }

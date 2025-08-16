@@ -9,11 +9,13 @@ import java.io.IOException;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Arrays;
 
 import freenet.io.AddressIdentifier;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
+import freenet.support.io.InetAddressIpv6FirstComparator;
 import freenet.support.transport.ip.HostnameSyntaxException;
 import freenet.support.transport.ip.HostnameUtil;
 import freenet.support.transport.ip.IPUtil;
@@ -81,7 +83,7 @@ public class FreenetInetAddress {
 		_address = InetAddress.getByAddress(ba);
 		String name = null;
 		String s = dis.readUTF();
-		if(s.length() > 0)
+		if(!s.isEmpty())
 			name = s;
 		hostname = name;
 	}
@@ -112,7 +114,7 @@ public class FreenetInetAddress {
 		_address = InetAddress.getByAddress(ba);
 		String name = null;
 		String s = dis.readUTF();
-		if(s.length() > 0)
+		if(!s.isEmpty())
 			name = s;
 		hostname = name;
         if(checkHostnameOrIPSyntax && null != hostname) {
@@ -279,7 +281,10 @@ public class FreenetInetAddress {
 		}
 
 		// No hostname, go by address.
-		if(!getHostName(_address).equalsIgnoreCase(getHostName(addr._address))) {
+		String reverseHostNameISee = getHostName(_address);
+		String reverseHostNameTheySee = getHostName(addr._address);
+		if(reverseHostNameISee == null
+				|| !reverseHostNameISee.equalsIgnoreCase(reverseHostNameTheySee)) {
 			//Logger.minor(this, "Addresses do not match: mine="+getHostName(_address)+" his="+getHostName(addr._address));
 			return false;
 		}
@@ -326,7 +331,7 @@ public class FreenetInetAddress {
 	        return _address;
 	    } else {
 	    	if(logMINOR) Logger.minor(this, "Looking up '"+hostname+"' in DNS", new Exception("debug"));
-	        /* 
+	        /*
 	         * Peers are constructed from an address once a
 	         * handshake has been completed, so this lookup
 	         * will only be performed during a handshake
@@ -337,19 +342,21 @@ public class FreenetInetAddress {
 	         * DNS lookup with every packet we send.
 	         */
 	        try {
-	        	InetAddress addr = InetAddress.getByName(hostname);
-	        	if(logMINOR) Logger.minor(this, "Look up got '"+addr+ '\'');
-	        	if( addr != null ) {
+	        	InetAddress[] addresses = InetAddress.getAllByName(hostname);
+	        	if(logMINOR) Logger.minor(this, "Look up got '"+addresses+ '\'');
+	        	if( addresses.length > 1 ) {
+	        		/* sort by IPv6 first */
+	        		Arrays.sort(addresses, InetAddressIpv6FirstComparator.COMPARATOR);
 	        		/*
 	        		 * cache the answer since getHandshakeAddress()
 	        		 * doesn't use the cached value, thus
 	        		 * getHandshakeIPs() should always get the
 	        		 * latest value from DNS (minus Java's caching)
 	        		 */
-	        		this._address = InetAddress.getByAddress(addr.getAddress());
+	        		this._address = InetAddress.getByAddress(addresses[0].getAddress());
 	        		if(logMINOR) Logger.minor(this, "Setting address to "+_address);
 	        	}
-	        	return addr;
+	        	return addresses[0];
 	        } catch (UnknownHostException e) {
 	        	if(logMINOR) Logger.minor(this, "DNS said hostname '"+hostname+"' is an unknown host, returning null");
 	            return null;
@@ -406,7 +413,7 @@ public class FreenetInetAddress {
 		if(primaryIPAddress == null) return null;
 		String s = primaryIPAddress.toString();
 		String addr = s.substring(0, s.indexOf('/')).trim();
-		if(addr.length() == 0)
+		if(addr.isEmpty())
 			return primaryIPAddress.getHostAddress();
 		else
 			return addr;
@@ -442,8 +449,12 @@ public class FreenetInetAddress {
 		} else return this;
 	}
 
+	public boolean hasHostname() {
+		return hostname != null && !hostname.isEmpty();
+	}
+
 	public boolean hasHostnameNoIP() {
-		return hostname != null && hostname.length() > 0 && _address == null;
+		return hasHostname() && _address == null;
 	}
 
 	public boolean isIPv6(boolean defaultValue) {

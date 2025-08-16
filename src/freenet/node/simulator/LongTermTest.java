@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -26,7 +28,7 @@ public class LongTermTest {
 	protected static final int EXIT_FAILED_TARGET = 258;
 	protected static final int EXIT_THREW_SOMETHING = 261;
 	
-	protected static final String ENCODING = "UTF-8";
+	protected static final Charset ENCODING = StandardCharsets.UTF_8;
 
 	protected static void writeToStatusLog(File file, List<String> csvLine) {
 		try {

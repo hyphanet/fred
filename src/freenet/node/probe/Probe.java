@@ -140,7 +140,7 @@ public class Probe implements ByteCounter {
 	 * @return Value +/- Gaussian percentage.
 	 */
 	private final double randomNoise(final double input, final double sigma) {
-		return node.nodeStats.randomNoise(input, sigma);
+		return node.getNodeStats().randomNoise(input, sigma);
 	}
 
 	/**
@@ -149,7 +149,7 @@ public class Probe implements ByteCounter {
 	 */
 	@Override
 	public void sentBytes(int bytes) {
-		node.nodeStats.probeRequestCtr.sentBytes(bytes);
+		node.getNodeStats().probeRequestCtr.sentBytes(bytes);
 	}
 
 	/**
@@ -158,7 +158,7 @@ public class Probe implements ByteCounter {
 	 */
 	@Override
 	public void receivedBytes(int bytes) {
-		node.nodeStats.probeRequestCtr.receivedBytes(bytes);
+		node.getNodeStats().probeRequestCtr.receivedBytes(bytes);
 	}
 
 	/**
@@ -174,7 +174,7 @@ public class Probe implements ByteCounter {
 		this.timer = new Timer(true);
 
 		int sortOrder = 0;
-		final SubConfig nodeConfig = node.config.get("node");
+		final SubConfig nodeConfig = node.getConfig().get("node");
 
 		nodeConfig.register("probeBandwidth", true, sortOrder++, true, true, "Node.probeBandwidthShort",
 			"Node.probeBandwidthLong", new BooleanCallback() {
@@ -310,7 +310,7 @@ public class Probe implements ByteCounter {
 			public void set(Long val) {
 				probeIdentifier = val;
 				//-1 is reserved for picking a random value; don't pick it randomly.
-				while(probeIdentifier == -1) probeIdentifier = node.random.nextLong();
+				while(probeIdentifier == -1) probeIdentifier = node.getRandom().nextLong();
 			}
 		}, false);
 		probeIdentifier = nodeConfig.getLong("identifier");
@@ -323,7 +323,7 @@ public class Probe implements ByteCounter {
 			if(probeIdentifier == -1) {
 				nodeConfig.getOption("identifier").setValue("-1");
 				//TODO: Store config here as it has changed?
-				node.config.store();
+				node.getConfig().store();
 			}
 		} catch (InvalidConfigValueException e) {
 			Logger.error(Probe.class, "node.identifier set() unexpectedly threw.", e);
@@ -448,7 +448,7 @@ public class Probe implements ByteCounter {
 		htl = probabilisticDecrement(htl);
 		if (htl == 0 || !route(type, uid, htl, listener)) {
 			long wait = WAIT_MAX;
-			while (wait >= WAIT_MAX) wait = (long)(-Math.log(node.random.nextDouble()) * WAIT_BASE / Math.E);
+			while (wait >= WAIT_MAX) wait = (long)(-Math.log(node.getRandom().nextDouble()) * WAIT_BASE / Math.E);
 			timer.schedule(new TimerTask() {
 				@Override
 				public void run() {
@@ -490,7 +490,7 @@ public class Probe implements ByteCounter {
 				return true;
 			}
 
-			candidate = peers[node.random.nextInt(degree)];
+			candidate = peers[node.getRandom().nextInt(degree)];
 
 			if (candidate.isConnected()) {
 				//acceptProbability is the MH correction.
@@ -503,7 +503,7 @@ public class Probe implements ByteCounter {
 				else acceptProbability = (float)degree / candidateDegree;
 
 				if (logDEBUG) Logger.debug(Probe.class, "acceptProbability is " + acceptProbability);
-				if (node.random.nextFloat() < acceptProbability) {
+				if (node.getRandom().nextFloat() < acceptProbability) {
 					if (logDEBUG) Logger.debug(Probe.class, "Accepted candidate.");
 					//Filter for response to this probe with requested result type.
 					final MessageFilter filter = createResponseFilter(type, candidate, uid, htl);
@@ -606,7 +606,7 @@ public class Probe implements ByteCounter {
 			listener.onOutputBandwidth((float)randomNoise((double)node.getOutputBandwidthLimit()/(1 << 10), 0.05));
 			break;
 		case BUILD:
-			listener.onBuild(node.nodeUpdater.getMainVersion());
+			listener.onBuild(node.getNodeUpdater().getMainVersion());
 			break;
 		case IDENTIFIER:
 			/*
@@ -620,7 +620,7 @@ public class Probe implements ByteCounter {
 			 * difficult to get useful information out of any given result because it is included with an
 			 * identifier,
 			 */
-			long percent = Math.round(randomNoise(100*node.uptime.getUptimeWeek(), 0.05));
+			long percent = Math.round(randomNoise(100*node.getUptimeEstimator().getUptimeWeek(), 0.05));
 			//Clamp to byte.
 			if (percent > Byte.MAX_VALUE) percent = Byte.MAX_VALUE;
 			else if (percent < Byte.MIN_VALUE) percent = Byte.MIN_VALUE;
@@ -667,7 +667,7 @@ public class Probe implements ByteCounter {
 			 * for 6 hours per day, 12 hours per 48 hours, or 25%. A half-hour seems a sufficient amount of
 			 * ambiguity, so 0.5 hours / 48 hours ~= 1%, and 1% / 25% = 0.04 sigma.
 			 */
-			listener.onUptime((float)randomNoise(100*node.uptime.getUptime(), 0.04));
+			listener.onUptime((float)randomNoise(100*node.getUptimeEstimator().getUptime(), 0.04));
 			break;
 		case UPTIME_7D:
 			/*
@@ -675,17 +675,17 @@ public class Probe implements ByteCounter {
 			 * As a 168-hour uptime covers a longer period 1 hour of ambiguity seems sufficient.
 			 * 1 hour / 168 hours ~= 0.6%, and 0.6% / 20% = 0.03 sigma.
 			 */
-			listener.onUptime((float)randomNoise(100*node.uptime.getUptimeWeek(), 0.03));
+			listener.onUptime((float)randomNoise(100*node.getUptimeEstimator().getUptimeWeek(), 0.03));
 			break;
 		case REJECT_STATS:
-			byte[] stats = node.nodeStats.getNoisyRejectStats();
+			byte[] stats = node.getNodeStats().getNoisyRejectStats();
 			listener.onRejectStats(stats);
 			break;
 		case OVERALL_BULK_OUTPUT_CAPACITY_USAGE:
 			byte bandwidthClass = 
 				DMT.bandwidthClassForCapacityUsage(node.getOutputBandwidthLimit());
 			listener.onOverallBulkOutputCapacity(bandwidthClass, 
-					(float)randomNoise(node.nodeStats.getBandwidthLiabilityUsage(), 0.1));
+					(float)randomNoise(node.getNodeStats().getBandwidthLiabilityUsage(), 0.1));
 			break;
 		default:
 			throw new UnsupportedOperationException("Missing response for " + type.name());
@@ -717,7 +717,7 @@ public class Probe implements ByteCounter {
 	private byte probabilisticDecrement(byte htl) {
 		assert htl > 0;
 		if (htl == 1) {
-			if (node.random.nextFloat() < DECREMENT_PROBABILITY) return 0;
+			if (node.getRandom().nextFloat() < DECREMENT_PROBABILITY) return 0;
 			return 1;
 		}
 		return (byte)(htl - 1);

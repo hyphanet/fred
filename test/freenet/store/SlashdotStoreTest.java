@@ -4,6 +4,7 @@ import static org.junit.Assert.*;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Random;
 
 import org.junit.After;
@@ -97,11 +98,11 @@ public class SlashdotStoreTest {
 		ClientCHKBlock cb = new ClientCHKBlock(verify, key);
 		Bucket output = cb.decode(new ArrayBucketFactory(), 32768, false);
 		byte[] buf = BucketTools.toByteArray(output);
-		return new String(buf, "UTF-8");
+		return new String(buf, StandardCharsets.UTF_8);
 	}
 
 	private ClientCHKBlock encodeBlock(String test) throws CHKEncodeException, IOException {
-		byte[] data = test.getBytes("UTF-8");
+		byte[] data = test.getBytes(StandardCharsets.UTF_8);
 		SimpleReadOnlyArrayBucket bucket = new SimpleReadOnlyArrayBucket(data);
 		return ClientCHKBlock.encode(bucket, false, false, (short)-1, bucket.size(), Compressor.DEFAULT_COMPRESSORDESCRIPTOR,
         null, (byte)0);

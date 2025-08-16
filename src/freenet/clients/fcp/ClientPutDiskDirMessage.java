@@ -67,7 +67,7 @@ public class ClientPutDiskDirMessage extends ClientPutDirMessage {
 	@Override
 	public void run(FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
-		if(!handler.server.core.allowUploadFrom(dirname))
+		if(!handler.getServer().getCore().allowUploadFrom(dirname))
 			throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "Not allowed to upload from "+dirname, identifier, global);
 		// Create a directory listing of Buckets of data, mapped to ManifestElement's.
 		// Directories are sub-HashMap's.
@@ -93,7 +93,7 @@ public class ClientPutDiskDirMessage extends ClientPutDirMessage {
     	for(int i = 0 ; i < filelist.length ; i++) {
     		if(filelist[i].isHidden() && !includeHiddenFiles) continue;
                 //   Skip unreadable files and dirs
-		//   Skip files nonexistant (dangling symlinks) - check last 
+		//   Skip files nonexistent (dangling symlinks) - check last
 	        if (filelist[i].canRead() && filelist[i].exists()) {
 	        	if (filelist[i].isFile()) {
 	        		File f = filelist[i];

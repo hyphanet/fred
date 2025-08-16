@@ -69,7 +69,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		this.isSSKScheduler = forSSKs;
 		this.isRTScheduler = forRT;
 		schedTransient = new KeyListenerTracker(forInserts, forSSKs, forRT, random, this, null, false);
-		this.datastoreChecker = core.storeChecker;
+		this.datastoreChecker = core.getStoreChecker();
 		this.starter = starter;
 		this.random = random;
 		this.node = node;
@@ -289,7 +289,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 		final Key key = block.getKey();
 		if(schedTransient.anyProbablyWantKey(key, clientContext)) {
-			this.clientContext.mainExecutor.execute(new PrioRunnable() {
+			this.clientContext.getMainExecutor().execute(new PrioRunnable() {
 
 				@Override
 				public void run() {

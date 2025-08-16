@@ -11,6 +11,7 @@ import static freenet.node.stats.DataStoreType.CACHE;
 import static freenet.node.stats.DataStoreType.CLIENT;
 import static freenet.node.stats.DataStoreType.SLASHDOT;
 import static freenet.node.stats.DataStoreType.STORE;
+import static freenet.support.io.DatastoreUtil.oneGiB;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -23,9 +24,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.RandomAccessFile;
-import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -37,17 +38,18 @@ import java.util.MissingResourceException;
 import java.util.Random;
 import java.util.Set;
 
-import freenet.config.*;
-import freenet.node.diagnostics.*;
-import freenet.node.useralerts.*;
-import freenet.support.io.*;
-import org.tanukisoftware.wrapper.WrapperManager;
-
 import freenet.client.FetchContext;
 import freenet.clients.fcp.FCPMessage;
 import freenet.clients.fcp.FeedMessage;
 import freenet.clients.http.SecurityLevelsToadlet;
 import freenet.clients.http.SimpleToadletServer;
+import freenet.config.Dimension;
+import freenet.config.EnumerableOptionCallback;
+import freenet.config.FreenetFilePersistentConfig;
+import freenet.config.InvalidConfigValueException;
+import freenet.config.NodeNeedRestartException;
+import freenet.config.PersistentConfig;
+import freenet.config.SubConfig;
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.ECDH;
 import freenet.crypt.MasterSecret;
@@ -90,6 +92,8 @@ import freenet.node.NodeDispatcher.NodeDispatcherCallback;
 import freenet.node.OpennetManager.ConnectionType;
 import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
 import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
+import freenet.node.diagnostics.DefaultNodeDiagnostics;
+import freenet.node.diagnostics.NodeDiagnostics;
 import freenet.node.probe.Listener;
 import freenet.node.probe.Type;
 import freenet.node.stats.DataStoreInstanceType;
@@ -97,8 +101,14 @@ import freenet.node.stats.DataStoreStats;
 import freenet.node.stats.NotAvailNodeStoreStats;
 import freenet.node.stats.StoreCallbackStats;
 import freenet.node.updater.NodeUpdateManager;
+import freenet.node.useralerts.JVMVersionAlert;
+import freenet.node.useralerts.MeaningfulNodeNameUserAlert;
+import freenet.node.useralerts.NotEnoughNiceLevelsUserAlert;
+import freenet.node.useralerts.PeersOffersUserAlert;
+import freenet.node.useralerts.SimpleUserAlert;
+import freenet.node.useralerts.TimeSkewDetectedUserAlert;
+import freenet.node.useralerts.UserAlert;
 import freenet.pluginmanager.ForwardPort;
-import freenet.pluginmanager.PluginDownLoaderOfficialHTTPS;
 import freenet.pluginmanager.PluginManager;
 import freenet.store.BlockMetadata;
 import freenet.store.CHKStore;
@@ -136,10 +146,12 @@ import freenet.support.api.ShortCallback;
 import freenet.support.api.StringCallback;
 import freenet.support.io.ArrayBucketFactory;
 import freenet.support.io.Closer;
+import freenet.support.io.DatastoreUtil;
 import freenet.support.io.FileUtil;
 import freenet.support.io.NativeThread;
 import freenet.support.math.MersenneTwister;
 import freenet.support.transport.ip.HostnameSyntaxException;
+import org.tanukisoftware.wrapper.WrapperManager;
 
 /**
  * @author amphibian
@@ -209,14 +221,32 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	volatile CHKStore oldCHK;
+
+	/**
+	 * @deprecated Use {@link #getOldPK()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	volatile PubkeyStore oldPK;
 	volatile SSKStore oldSSK;
 
 	volatile CHKStore oldCHKCache;
+
+	/**
+	 * @deprecated Use {@link #getOldPKCache()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	volatile PubkeyStore oldPKCache;
 	volatile SSKStore oldSSKCache;
 
 	volatile CHKStore oldCHKClientCache;
+
+	/**
+	 * @deprecated Use {@link #getOldPKClientCache()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	volatile PubkeyStore oldPKClientCache;
 	volatile SSKStore oldSSKClientCache;
 
@@ -271,9 +301,9 @@ public class Node implements TimeSkewDetectorCallback {
 				name = myName;
 			}
 			if(name.startsWith("Node id|")|| name.equals("MyFirstFreenetNode") || name.startsWith("Freenet node with no name #")){
-				clientCore.alerts.register(nodeNameUserAlert);
+				clientCore.getAlerts().register(nodeNameUserAlert);
 			}else{
-				clientCore.alerts.unregister(nodeNameUserAlert);
+				clientCore.getAlerts().unregister(nodeNameUserAlert);
 			}
 			return name;
 		}
@@ -283,7 +313,7 @@ public class Node implements TimeSkewDetectorCallback {
 			if(get().equals(val)) return;
 			else if(val.length() > 128)
 				throw new InvalidConfigValueException("The given node name is too long ("+val+')');
-			else if("".equals(val))
+			else if(val.isEmpty())
 				val = "~none~";
 			synchronized(this) {
 				myName = val;
@@ -433,10 +463,20 @@ public class Node implements TimeSkewDetectorCallback {
 	 * and they're all used elsewhere anyway, so there's no point trying not to keep them in memory. */
 	private MasterKeys keys;
 
-	/** Stats */
+	/**
+	 * Stats
+	 * @deprecated Use {@link #getNodeStats()} instead of accessing this directly.
+	 **/
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final NodeStats nodeStats;
 
-	/** Config object for the whole node. */
+	/**
+	 * Config object for the whole node.
+	 * @deprecated Use {@link #getConfig()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final PersistentConfig config;
 
 	// Static stuff related to logger
@@ -579,27 +619,71 @@ public class Node implements TimeSkewDetectorCallback {
 	 * sharing purposes. */
 	private boolean writeLocalToDatastore;
 
+	/**
+	 * @deprecated Use {@link #getGetPubKey()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	final NodeGetPubkey getPubKey;
 
-	/** FetchContext for ARKs */
+	/**
+	 * FetchContext for ARKs
+	 * @deprecated Use {@link #getArkFetcherContext()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final FetchContext arkFetcherContext;
 
-	/** IP detector */
+	/**
+	 * IP detector
+	 * @deprecated Use {@link #getIpDetector()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final NodeIPDetector ipDetector;
-	/** For debugging/testing, set this to true to stop the
-	 * probabilistic decrement at the edges of the HTLs. */
+
+	/**
+	 * For debugging/testing, set this to true to stop the
+	 * probabilistic decrement at the edges of the HTLs.
+	 * @deprecated Use {@link #isDisableProbabilisticHTLs()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	boolean disableProbabilisticHTLs;
 
+	/**
+	 * @deprecated Use {@link #getTracker()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final RequestTracker tracker;
-	
+
 	/** Semi-unique ID for swap requests. Used to identify us so that the
 	 * topology can be reconstructed. */
 	public long swapIdentifier;
 	private String myName;
+
+	/**
+	 * @deprecated Use {@link #getLocationManager()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final LocationManager lm;
-	/** My peers */
+
+	/**
+	 * My peers
+	 * @deprecated Use {@link #getPeers()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final PeerManager peers;
-	/** Node-reference directory (node identity, peers, etc) */
+
+	/**
+	 * Node-reference directory (node identity, peers, etc)
+	 * @deprecated Use {@link #getNodeDir()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	final ProgramDirectory nodeDir;
 	/** Config directory (l10n overrides, etc) */
 	final ProgramDirectory cfgDir;
@@ -615,19 +699,47 @@ public class Node implements TimeSkewDetectorCallback {
 	/** Directory to put extra peer data into */
 	final File extraPeerDataDir;
 	private volatile boolean hasPanicked;
-	/** Strong RNG */
+
+	/**
+	 * Strong RNG
+	 * @deprecated Use {@link #getRandom()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final RandomSource random;
+
 	/** JCA-compliant strong RNG. WARNING: DO NOT CALL THIS ON THE MAIN NETWORK
 	 * HANDLING THREADS! In some configurations it can block, potentially 
-	 * forever, on nextBytes()! */
+	 * forever, on nextBytes()!
+	 * @deprecated Use {@link #getSecureRandom()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final SecureRandom secureRandom;
-	/** Weak but fast RNG */
+
+	/**
+	 * Weak but fast RNG
+	 * @deprecated Use {@link #getFastWeakRandom()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final Random fastWeakRandom;
-	/** The object which handles incoming messages and allows us to wait for them */
+
+	/**
+	 * The object which handles incoming messages and allows us to wait for them
+	 * @deprecated Use {@link #getUSM()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	final MessageCore usm;
 
 	// Darknet stuff
 
+	/**
+	 * @deprecated Use {@link #getDarknetCrypto()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	NodeCrypto darknetCrypto;
 	// Back compat
 	private boolean showFriendsVisibilityAlert;
@@ -635,6 +747,12 @@ public class Node implements TimeSkewDetectorCallback {
 	// Opennet stuff
 
 	private final NodeCryptoConfig opennetCryptoConfig;
+
+	/**
+	 * @deprecated Use {@link #getOpennet()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	OpennetManager opennet;
 	private volatile boolean isAllowedToConnectToSeednodes;
 	private int maxOpennetPeers;
@@ -643,28 +761,110 @@ public class Node implements TimeSkewDetectorCallback {
 
 	// General stuff
 
+	/**
+	 * @deprecated Use {@link #getExecutor()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final Executor executor;
+
+	/**
+	 * @deprecated Use {@link #getPacketSender()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final PacketSender ps;
+
+	/**
+	 * @deprecated Use {@link #getTicker()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final PrioritizedTicker ticker;
+
+	/**
+	 * @deprecated Use {@link #getDNSRequester()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	final DNSRequester dnsr;
+
+	/**
+	 * @deprecated Use {@link #getDispatcher()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	final NodeDispatcher dispatcher;
+
+	/**
+	 * @deprecated Use {@link #getUptimeEstimator()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final UptimeEstimator uptime;
+
+	/**
+	 * @deprecated Use {@link #getOutputThrottle()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final TokenBucket outputThrottle;
+
+	/**
+	 * @deprecated Use {@link #isThrottleLocalData()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public boolean throttleLocalData;
 	private int outputBandwidthLimit;
 	private int inputBandwidthLimit;
 	private long amountOfDataToCheckCompressionRatio;
 	private int minimumCompressionPercentage;
-	private int maxTimeForSingleCompressor;
 	private boolean connectionSpeedDetection;
 	boolean inputLimitDefault;
+
+	/**
+	 * @deprecated Use {@link #isEnableARKs()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	final boolean enableARKs;
+
+	/**
+	 * @deprecated Use {@link #isEnablePerNodeFailureTables()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	final boolean enablePerNodeFailureTables;
+
+	/**
+	 * @deprecated Use {@link #isEnableULPRDataPropagation()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	final boolean enableULPRDataPropagation;
+
+	/**
+	 * @deprecated Use {@link #isEnableSwapping()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	final boolean enableSwapping;
 	private volatile boolean publishOurPeersLocation;
 	private volatile boolean routeAccordingToOurPeersLocation;
+
+	/**
+	 * @deprecated Use {@link #isEnableSwapQueueing()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	boolean enableSwapQueueing;
+
+	/**
+	 * @deprecated Use {@link #isEnablePacketCoalescing()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	boolean enablePacketCoalescing;
 	public static final short DEFAULT_MAX_HTL = (short)18;
 	private short maxHTL;
@@ -678,6 +878,12 @@ public class Node implements TimeSkewDetectorCallback {
 	public static final boolean PREFER_INSERT_DEFAULT = false;
 	/** Should inserts fork when the HTL reaches cacheability? */
 	public static final boolean FORK_ON_CACHEABLE_DEFAULT = true;
+
+	/**
+	 * @deprecated Use {@link #getCollector()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final IOStatisticCollector collector;
 	/** Type identifier for fproxy node to node messages, as sent on DMT.nodeToNodeMessage's */
 	public static final int N2N_MESSAGE_TYPE_FPROXY = 1;
@@ -706,34 +912,87 @@ public class Node implements TimeSkewDetectorCallback {
 	 * permissions problems, or we suspect that the node has been booted and not
 	 * written the file e.g. if we can't write it. So if we want to compare data
 	 * gathered in the last session and only recorded to disk on a clean shutdown
-	 * to data we have now, we just include the lastBootID. */
+	 * to data we have now, we just include the lastBootID.
+	 * @deprecated Use {@link #getLastBootId()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final long lastBootID;
+
+	/**
+	 * @deprecated Use {@link #getBootId()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final long bootID;
+
+	/**
+	 * @deprecated Use {@link #getStartupTime()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final long startupTime;
 
 	private SimpleToadletServer toadlets;
 
+	/**
+	 * @deprecated Use {@link #getClientCore()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final NodeClientCore clientCore;
 
 	// ULPRs, RecentlyFailed, per node failure tables, are all managed by FailureTable.
+
+	/**
+	 * @deprecated Use {@link #getFailureTable()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	final FailureTable failureTable;
 
-	// The version we were before we restarted.
+	/**
+	 * The version we were before we restarted.
+	 * @deprecated Use {@link #getLastVersion()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public int lastVersion;
 
-	/** NodeUpdater **/
+	/**
+	 * NodeUpdater
+	 * @deprecated Use {@link #getNodeUpdater()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final NodeUpdateManager nodeUpdater;
 
+	/**
+	 * @deprecated Use {@link #getSecurityLevels()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final SecurityLevels securityLevels;
 
 	/** Diagnostics */
 	private final DefaultNodeDiagnostics nodeDiagnostics;
 
-	// Things that's needed to keep track of
+	/**
+	 * Things that's needed to keep track of
+	 * @deprecated Use {@link #getPluginManager()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final PluginManager pluginManager;
 
 	// Helpers
 	public final InetAddress localhostAddress;
+
+	/**
+	 * @deprecated Use {@link #getFreenetLocalhostAddress()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final FreenetInetAddress fLocalhostAddress;
 
 	// The node starter
@@ -800,7 +1059,7 @@ public class Node implements TimeSkewDetectorCallback {
 	private void readNodeFile(String filename) throws IOException {
 		// REDFLAG: Any way to share this code with NodePeer?
 		FileInputStream fis = new FileInputStream(filename);
-		InputStreamReader isr = new InputStreamReader(fis, "UTF-8");
+		InputStreamReader isr = new InputStreamReader(fis, StandardCharsets.UTF_8);
 		BufferedReader br = new BufferedReader(isr);
 		SimpleFieldSet fs = new SimpleFieldSet(br, false, true);
 		br.close();
@@ -829,7 +1088,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		darknetCrypto.readCrypto(fs);
 
-		swapIdentifier = Fields.bytesToLong(darknetCrypto.identityHashHash);
+		swapIdentifier = Fields.bytesToLong(darknetCrypto.getIdentityHashHash());
 		String loc = fs.get("location");
 		double locD = Location.getLocation(loc);
 		if (locD == -1.0)
@@ -899,7 +1158,7 @@ public class Node implements TimeSkewDetectorCallback {
 			fs.writeTo(fos);
 			fos.close();
 			fos = null;
-			FileUtil.renameTo(backup, orig);
+			FileUtil.moveTo(backup, orig);
 		} catch (IOException ioe) {
 			Logger.error(this, "IOE :"+ioe.getMessage(), ioe);
 			return;
@@ -913,7 +1172,7 @@ public class Node implements TimeSkewDetectorCallback {
 		// Don't need to set getDarknetPortNumber()
 		// FIXME use a real IP!
 		darknetCrypto.initCrypto();
-		swapIdentifier = Fields.bytesToLong(darknetCrypto.identityHashHash);
+		swapIdentifier = Fields.bytesToLong(darknetCrypto.getIdentityHashHash());
 		myName = newName();
 	}
 
@@ -955,7 +1214,6 @@ public class Node implements TimeSkewDetectorCallback {
 		this.shutdownHook = SemiOrderedShutdownHook.get();
 		// Easy stuff
 		String tmp = "Initializing Node using Freenet Build #"+Version.buildNumber()+" r"+Version.cvsRevision()+" and freenet-ext Build #"+NodeStarter.extBuildNumber+" r"+NodeStarter.extRevisionNumber+" with "+System.getProperty("java.vendor")+" JVM version "+System.getProperty("java.version")+" running on "+System.getProperty("os.arch")+' '+System.getProperty("os.name")+' '+System.getProperty("os.version");
-		fixCertsFiles();
 		Logger.normal(this, tmp);
 		System.out.println(tmp);
 		collector = new IOStatisticCollector();
@@ -1196,7 +1454,7 @@ public class Node implements TimeSkewDetectorCallback {
                 }
                 clientCacheKey = keys.clientCacheMasterKey;
                 persistentSecret = keys.getPersistentMasterSecret();
-                databaseKey = keys.createDatabaseKey(secureRandom);
+                databaseKey = keys.createDatabaseKey();
                 if(securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.HIGH) {
                     System.err.println("Physical threat level is set to HIGH but no password, resetting to NORMAL - probably timing glitch");
                     securityLevels.resetPhysicalThreatLevel(PHYSICAL_THREAT_LEVEL.NORMAL);
@@ -1228,7 +1486,7 @@ public class Node implements TimeSkewDetectorCallback {
 			} else {
 				byte[] buf = new byte[BOOT_FILE_LENGTH];
 				raf.readFully(buf);
-				String s = new String(buf, "ISO-8859-1");
+				String s = new String(buf, StandardCharsets.ISO_8859_1);
 				try {
 					oldBootID = Fields.bytesToLong(HexUtil.hexToBytes(s));
 				} catch (NumberFormatException e) {
@@ -1237,7 +1495,7 @@ public class Node implements TimeSkewDetectorCallback {
 				raf.seek(0);
 			}
 			String s = HexUtil.bytesToHex(Fields.longToBytes(bootID));
-			byte[] buf = s.getBytes("ISO-8859-1");
+			byte[] buf = s.getBytes(StandardCharsets.ISO_8859_1);
 			if(buf.length != BOOT_FILE_LENGTH)
 				System.err.println("Not 16 bytes for boot ID "+bootID+" - WTF??");
 			raf.write(buf);
@@ -1604,6 +1862,12 @@ public class Node implements TimeSkewDetectorCallback {
 			@Override
 			public void set(Long amountOfDataToCheckCompressionRatio) {
 				synchronized(Node.this) {
+					if (amountOfDataToCheckCompressionRatio < 0 || amountOfDataToCheckCompressionRatio > 100 * 1024 * 1024) {
+						Logger.normal(Node.class, "Amount of data to check for compression should be 100 MiB max, "
+								+ amountOfDataToCheckCompressionRatio + " bytes selected");
+						return;
+					}
+
 					Node.this.amountOfDataToCheckCompressionRatio = amountOfDataToCheckCompressionRatio;
 				}
 			}
@@ -1622,7 +1886,7 @@ public class Node implements TimeSkewDetectorCallback {
 			public void set(Integer minimumCompressionPercentage) {
 				synchronized(Node.this) {
 					if (minimumCompressionPercentage < 0 || minimumCompressionPercentage > 100) {
-						Logger.normal(Node.class, "Wrong minimum compression percentage" + minimumCompressionPercentage);
+						Logger.normal(Node.class, "Wrong minimum compression percentage: must be between 0 and 100, but is " + minimumCompressionPercentage);
 						return;
 					}
 
@@ -1633,22 +1897,9 @@ public class Node implements TimeSkewDetectorCallback {
 
 		minimumCompressionPercentage = nodeConfig.getInt("minimumCompressionPercentage");
 
-		nodeConfig.register("maxTimeForSingleCompressor", "20m", sortOrder++,
-				true, true, "Node.maxTimeForSingleCompressor",
-				"Node.maxTimeForSingleCompressorLong", new IntCallback() {
-			@Override
-			public Integer get() {
-						 return maxTimeForSingleCompressor;
-					 }
-			@Override
-			public void set(Integer maxTimeForSingleCompressor) {
-				synchronized(Node.this) {
-					Node.this.maxTimeForSingleCompressor = maxTimeForSingleCompressor;
-				}
-			}
-		}, Dimension.DURATION);
+		// max time for single compressor makes the insert compression CPU dependent, so it should not have been used.
+		nodeConfig.registerIgnoredOption("maxTimeForSingleCompressor");
 
-		maxTimeForSingleCompressor = nodeConfig.getInt("maxTimeForSingleCompressor");
 
 		nodeConfig.register("connectionSpeedDetection", true, sortOrder++,
 			true, true, "Node.connectionSpeedDetection",
@@ -1721,7 +1972,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		usm.setDispatcher(dispatcher=new NodeDispatcher(this));
 
-		uptime = new UptimeEstimator(runDir, ticker, darknetCrypto.identityHash);
+		uptime = new UptimeEstimator(runDir, ticker, darknetCrypto.getIdentityHash());
 
 		// ULPRs
 
@@ -1734,7 +1985,7 @@ public class Node implements TimeSkewDetectorCallback {
 		toadlets.setCore(clientCore);
 
 		if (JVMVersion.isEOL()) {
-			clientCore.alerts.register(new JVMVersionAlert());
+			clientCore.getAlerts().register(new JVMVersionAlert());
 		}
 
 		if(showFriendsVisibilityAlert)
@@ -1859,7 +2110,7 @@ public class Node implements TimeSkewDetectorCallback {
 							} catch (NodeInitException e) {
 								opennet = null;
 								Logger.error(this, "UNABLE TO ENABLE OPENNET: "+e, e);
-								clientCore.alerts.register(new SimpleUserAlert(false, l10n("enableOpennetFailedTitle"), l10n("enableOpennetFailed", "message", e.getLocalizedMessage()), l10n("enableOpennetFailed", "message", e.getLocalizedMessage()), UserAlert.ERROR));
+								clientCore.getAlerts().register(new SimpleUserAlert(false, l10n("enableOpennetFailedTitle"), l10n("enableOpennetFailed", "message", e.getLocalizedMessage()), l10n("enableOpennetFailed", "message", e.getLocalizedMessage()), UserAlert.ERROR));
 							}
 						}
 					}
@@ -1890,7 +2141,7 @@ public class Node implements TimeSkewDetectorCallback {
 		acceptSeedConnections = opennetConfig.getBoolean("acceptSeedConnections");
 
 		if(acceptSeedConnections && opennet != null)
-			opennet.crypto.socket.getAddressTracker().setHugeTracker();
+			opennet.getCrypto().getSocket().getAddressTracker().setHugeTracker();
 
 		opennetConfig.finishedInitialization();
 
@@ -1972,7 +2223,7 @@ public class Node implements TimeSkewDetectorCallback {
 						}
 						if(storeSize > (maxDatastoreSize = DatastoreUtil.maxDatastoreSize())) {
 							throw new InvalidConfigValueException(
-									l10n("invalidMaxStoreSize", Long.toString(maxDatastoreSize)));
+									l10n("invalidMaxStoreSize", Long.toString(maxDatastoreSize / oneGiB)));
 						}
 
 						long newMaxStoreKeys = storeSize / sizePerKey;
@@ -2123,7 +2374,7 @@ public class Node implements TimeSkewDetectorCallback {
 		);
 		storePreallocate = nodeConfig.getBoolean("storePreallocate");
 
-		if(File.separatorChar == '/' && System.getProperty("os.name").toLowerCase().indexOf("mac os") < 0) {
+		if(File.separatorChar == '/' && !System.getProperty("os.name").toLowerCase().contains("mac os")) {
 			securityLevels.addPhysicalThreatLevelListener(new SecurityLevelListener<SecurityLevels.PHYSICAL_THREAT_LEVEL>() {
 
 				@Override
@@ -2153,14 +2404,14 @@ public class Node implements TimeSkewDetectorCallback {
 						}
 						try {
                             killMasterKeysFile();
-						    clientCore.clientLayerPersister.disableWrite();
-						    clientCore.clientLayerPersister.waitForNotWriting();
-                            clientCore.clientLayerPersister.deleteAllFiles();
+						    clientCore.getClientLayerPersister().disableWrite();
+						    clientCore.getClientLayerPersister().waitForNotWriting();
+                            clientCore.getClientLayerPersister().deleteAllFiles();
 						} catch (IOException e) {
 							masterKeysFile.delete();
 							Logger.error(this, "Unable to securely delete "+masterKeysFile);
 							System.err.println(NodeL10n.getBase().getString("SecurityLevels.cantDeletePasswordFile", "filename", masterKeysFile.getAbsolutePath()));
-							clientCore.alerts.register(new SimpleUserAlert(true, NodeL10n.getBase().getString("SecurityLevels.cantDeletePasswordFileTitle"), NodeL10n.getBase().getString("SecurityLevels.cantDeletePasswordFile"), NodeL10n.getBase().getString("SecurityLevels.cantDeletePasswordFileTitle"), UserAlert.CRITICAL_ERROR));
+							clientCore.getAlerts().register(new SimpleUserAlert(true, NodeL10n.getBase().getString("SecurityLevels.cantDeletePasswordFileTitle"), NodeL10n.getBase().getString("SecurityLevels.cantDeletePasswordFile"), NodeL10n.getBase().getString("SecurityLevels.cantDeletePasswordFileTitle"), UserAlert.CRITICAL_ERROR));
 						}
 					}
 					if(oldLevel == PHYSICAL_THREAT_LEVEL.MAXIMUM && newLevel != PHYSICAL_THREAT_LEVEL.HIGH) {
@@ -2454,12 +2705,12 @@ public class Node implements TimeSkewDetectorCallback {
 		maxSlashdotCacheKeys = (int) Math.min(maxSlashdotCacheSize / sizePerKey, Integer.MAX_VALUE);
 
 		chkSlashdotcache = new CHKStore();
-		chkSlashdotcacheStore = new SlashdotStore<CHKBlock>(chkSlashdotcache, maxSlashdotCacheKeys, slashdotCacheLifetime, PURGE_INTERVAL, ticker, this.clientCore.tempBucketFactory);
+		chkSlashdotcacheStore = new SlashdotStore<CHKBlock>(chkSlashdotcache, maxSlashdotCacheKeys, slashdotCacheLifetime, PURGE_INTERVAL, ticker, this.clientCore.getTempBucketFactory());
 		pubKeySlashdotcache = new PubkeyStore();
-		pubKeySlashdotcacheStore = new SlashdotStore<DSAPublicKey>(pubKeySlashdotcache, maxSlashdotCacheKeys, slashdotCacheLifetime, PURGE_INTERVAL, ticker, this.clientCore.tempBucketFactory);
+		pubKeySlashdotcacheStore = new SlashdotStore<DSAPublicKey>(pubKeySlashdotcache, maxSlashdotCacheKeys, slashdotCacheLifetime, PURGE_INTERVAL, ticker, this.clientCore.getTempBucketFactory());
 		getPubKey.setLocalSlashdotcache(pubKeySlashdotcache);
 		sskSlashdotcache = new SSKStore(getPubKey);
-		sskSlashdotcacheStore = new SlashdotStore<SSKBlock>(sskSlashdotcache, maxSlashdotCacheKeys, slashdotCacheLifetime, PURGE_INTERVAL, ticker, this.clientCore.tempBucketFactory);
+		sskSlashdotcacheStore = new SlashdotStore<SSKBlock>(sskSlashdotcache, maxSlashdotCacheKeys, slashdotCacheLifetime, PURGE_INTERVAL, ticker, this.clientCore.getTempBucketFactory());
 
 		// MAXIMUM seclevel = no slashdot cache.
 
@@ -2662,9 +2913,9 @@ public class Node implements TimeSkewDetectorCallback {
 					@Override
 					public void set(Boolean val) {
 						if (val) {
-							for (UserAlert alert : clientCore.alerts.getAlerts())
+							for (UserAlert alert : clientCore.getAlerts().getAlerts())
 								if (alert instanceof PeersOffersUserAlert)
-									clientCore.alerts.unregister(alert);
+									clientCore.getAlerts().unregister(alert);
 						} else
 							PeersOffersUserAlert.createAlert(node);
 						peersOffersDismissed = val;
@@ -2705,42 +2956,6 @@ public class Node implements TimeSkewDetectorCallback {
 					e.printStackTrace();
 				}
 			}
-		}
-	}
-
-	private void fixCertsFiles() {
-		// Hack to update certificates file to fix update.cmd
-		// startssl.pem: Might be useful for old versions of update.sh too?
-		File certs = new File(PluginDownLoaderOfficialHTTPS.certfileOld);
-		fixCertsFile(certs);
-		if(FileUtil.detectedOS.isWindows) {
-			// updater\startssl.pem: Needed for Windows update.cmd.
-			certs = new File("updater", PluginDownLoaderOfficialHTTPS.certfileOld);
-			fixCertsFile(certs);
-		}
-	}
-
-	private void fixCertsFile(File certs) {
-		long oldLength = certs.exists() ? certs.length() : -1;
-		try {
-			File tmpFile = File.createTempFile(PluginDownLoaderOfficialHTTPS.certfileOld, ".tmp", new File("."));
-			PluginDownLoaderOfficialHTTPS.writeCertsTo(tmpFile);
-			if(FileUtil.renameTo(tmpFile, certs)) {
-				long newLength = certs.length();
-				if(newLength != oldLength)
-					System.err.println("Updated "+certs+" so that update scripts will work");
-			} else {
-				if(certs.length() != tmpFile.length()) {
-					System.err.println("Cannot update "+certs+" : last-resort update scripts (in particular update.cmd on Windows) may not work");
-					File manual = new File(PluginDownLoaderOfficialHTTPS.certfileOld+".new");
-					manual.delete();
-					if(tmpFile.renameTo(manual))
-						System.err.println("Please delete "+certs+" and rename "+manual+" over it");
-					else
-						tmpFile.delete();
-				}
-			}
-		} catch (IOException e) {
 		}
 	}
 
@@ -2890,7 +3105,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 	};
 	private void createPasswordUserAlert() {
-		this.clientCore.alerts.register(masterPasswordUserAlert);
+		this.clientCore.getAlerts().register(masterPasswordUserAlert);
 	}
 
 	private void initRAMClientCacheFS() {
@@ -2916,13 +3131,13 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	private void finishInitSaltHashFS(final String suffix, NodeClientCore clientCore) {
-		if(clientCore.alerts == null) throw new NullPointerException();
-		chkDatastore.getStore().setUserAlertManager(clientCore.alerts);
-		chkDatacache.getStore().setUserAlertManager(clientCore.alerts);
-		pubKeyDatastore.getStore().setUserAlertManager(clientCore.alerts);
-		pubKeyDatacache.getStore().setUserAlertManager(clientCore.alerts);
-		sskDatastore.getStore().setUserAlertManager(clientCore.alerts);
-		sskDatacache.getStore().setUserAlertManager(clientCore.alerts);
+		if(clientCore.getAlerts() == null) throw new NullPointerException();
+		chkDatastore.getStore().setUserAlertManager(clientCore.getAlerts());
+		chkDatacache.getStore().setUserAlertManager(clientCore.getAlerts());
+		pubKeyDatastore.getStore().setUserAlertManager(clientCore.getAlerts());
+		pubKeyDatacache.getStore().setUserAlertManager(clientCore.getAlerts());
+		sskDatastore.getStore().setUserAlertManager(clientCore.getAlerts());
+		sskDatacache.getStore().setUserAlertManager(clientCore.getAlerts());
 	}
 
 	private void initRAMFS() {
@@ -3186,16 +3401,10 @@ public class Node implements TimeSkewDetectorCallback {
 			throw new NodeInitException(NodeInitException.EXIT_COULD_NOT_START_UPDATER, "Could not start Updater: "+e);
 		}
 
-		/* TODO: Make sure that this is called BEFORE any instances of HTTPFilter are created.
-		 * HTTPFilter uses checkForGCJCharConversionBug() which returns the value of the static
-		 * variable jvmHasGCJCharConversionBug - and this is initialized in the following function.
-		 * If this is not possible then create a separate function to check for the GCJ bug and
-		 * call this function earlier.
-		 */
-		checkForEvilJVMBugs();
+		warnIfNotUsingWrapper();
 
 		if(!NativeThread.HAS_ENOUGH_NICE_LEVELS)
-			clientCore.alerts.register(new NotEnoughNiceLevelsUserAlert());
+			clientCore.getAlerts().register(new NotEnoughNiceLevelsUserAlert());
 
 		this.clientCore.start(config);
 
@@ -3229,7 +3438,6 @@ public class Node implements TimeSkewDetectorCallback {
 
 				@Override
 				public void run() {
-					freenet.support.Logger.OSThread.logPID(this);
 					for(PeerNode pn: peers.myPeers()) {
 						pn.updateVersionRoutablity();
 					}
@@ -3237,94 +3445,15 @@ public class Node implements TimeSkewDetectorCallback {
 			}, transition - now);
 	}
 
-
-	private static boolean jvmHasGCJCharConversionBug=false;
-
-	private void checkForEvilJVMBugs() {
-		// Now check whether we are likely to get the EvilJVMBug.
-		// If we are running a Sun/Oracle or Blackdown JVM, on Linux, and LD_ASSUME_KERNEL is not set, then we are.
-
-		String jvmVendor = System.getProperty("java.vm.vendor");
-		String jvmSpecVendor = System.getProperty("java.specification.vendor","");
-		String javaVersion = System.getProperty("java.version");
-		String jvmName = System.getProperty("java.vm.name");
-		String osName = System.getProperty("os.name");
-		String osVersion = System.getProperty("os.version");
-
-		boolean isOpenJDK = false;
-		//boolean isOracle = false;
-
-		if(logMINOR) Logger.minor(this, "JVM vendor: "+jvmVendor+", JVM name: "+jvmName+", JVM version: "+javaVersion+", OS name: "+osName+", OS version: "+osVersion);
-
-		if(jvmName.startsWith("OpenJDK ")) {
-			isOpenJDK = true;
-		}
-		
-		//Add some checks for "Oracle" to futureproof against them renaming from "Sun".
-		//Should have no effect because if a user has downloaded a new enough file for Oracle to have changed the name these bugs shouldn't apply.
-		//Still, one never knows and this code might be extended to cover future bugs.
-		if((!isOpenJDK) && (jvmVendor.startsWith("Sun ") || jvmVendor.startsWith("Oracle ")) || (jvmVendor.startsWith("The FreeBSD Foundation") && (jvmSpecVendor.startsWith("Sun ") || jvmSpecVendor.startsWith("Oracle "))) || (jvmVendor.startsWith("Apple "))) {
-			//isOracle = true;
-			// Sun/Oracle bugs
-
-			// Spurious OOMs
-			// http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4855795
-			// http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=2138757
-			// http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=2138759
-			// Fixed in 1.5.0_10 and 1.4.2_13
-
-			boolean is150 = javaVersion.startsWith("1.5.0_");
-			boolean is160 = javaVersion.startsWith("1.6.0_");
-
-			if(is150 || is160) {
-				String[] split = javaVersion.split("_");
-				String secondPart = split[1];
-				if(secondPart.indexOf("-") != -1) {
-					split = secondPart.split("-");
-					secondPart = split[0];
-				}
-				int subver = Integer.parseInt(secondPart);
-
-				Logger.minor(this, "JVM version: "+javaVersion+" subver: "+subver+" from "+secondPart);
-
-			}
-
-		} else if (jvmVendor.startsWith("Apple ") || jvmVendor.startsWith("\"Apple ")) {
-			//Note that Sun/Oracle does not produce VMs for the Macintosh operating system, dont ask the user to find one...
-		} else if(!isOpenJDK) {
-			if(jvmVendor.startsWith("Free Software Foundation")) {
-				// GCJ/GIJ.
-				try {
-					javaVersion = System.getProperty("java.version").split(" ")[0].replaceAll("[.]","");
-					int jvmVersionInt = Integer.parseInt(javaVersion);
-
-					if(jvmVersionInt <= 422 && jvmVersionInt >= 100) // make sure that no bogus values cause true
-						jvmHasGCJCharConversionBug=true;
-				}
-
-				catch(Throwable t) {
-					Logger.error(this, "GCJ version check is broken!", t);
-				}
-				clientCore.alerts.register(new SimpleUserAlert(true, l10n("usingGCJTitle"), l10n("usingGCJ"), l10n("usingGCJTitle"), UserAlert.WARNING));
-			}
-		}
-
+	private void warnIfNotUsingWrapper() {
 		if(!isUsingWrapper() && !skipWrapperWarning) {
-			clientCore.alerts.register(new SimpleUserAlert(true, l10n("notUsingWrapperTitle"), l10n("notUsingWrapper"), l10n("notUsingWrapperShort"), UserAlert.WARNING));
+			clientCore.getAlerts().register(new SimpleUserAlert(true, l10n("notUsingWrapperTitle"), l10n("notUsingWrapper"), l10n("notUsingWrapperShort"), UserAlert.WARNING));
 		}
-		
-		// Unfortunately debian's version of OpenJDK appears to have segfaulting issues.
-		// Which presumably are exploitable.
-		// So we can't recommend people switch just yet. :(
-		
-//		if(isOracle && Rijndael.AesCtrProvider == null) {
-//			if(!(FileUtil.detectedOS == FileUtil.OperatingSystem.Windows || FileUtil.detectedOS == FileUtil.OperatingSystem.MacOS))
-//				clientCore.alerts.register(new SimpleUserAlert(true, l10n("usingOracleTitle"), l10n("usingOracle"), l10n("usingOracleTitle"), UserAlert.WARNING));
-//		}
 	}
 
+	@Deprecated
 	public static boolean checkForGCJCharConversionBug() {
-		return jvmHasGCJCharConversionBug; // should be initialized on early startup
+		return false;
 	}
 
 	private String l10n(String key) {
@@ -3424,13 +3553,13 @@ public class Node implements TimeSkewDetectorCallback {
 
 		if (kb != null) {
 			// Probably somebody waiting for it. Trip it.
-			if (clientCore != null && clientCore.requestStarters != null) {
+			if (clientCore != null && clientCore.getRequestStarters() != null) {
 				if (kb instanceof CHKBlock) {
-					clientCore.requestStarters.chkFetchSchedulerBulk.tripPendingKey(kb);
-					clientCore.requestStarters.chkFetchSchedulerRT.tripPendingKey(kb);
+					clientCore.getRequestStarters().chkFetchSchedulerBulk.tripPendingKey(kb);
+					clientCore.getRequestStarters().chkFetchSchedulerRT.tripPendingKey(kb);
 				} else {
-					clientCore.requestStarters.sskFetchSchedulerBulk.tripPendingKey(kb);
-					clientCore.requestStarters.sskFetchSchedulerRT.tripPendingKey(kb);
+					clientCore.getRequestStarters().sskFetchSchedulerBulk.tripPendingKey(kb);
+					clientCore.getRequestStarters().sskFetchSchedulerRT.tripPendingKey(kb);
 				}
 			}
 			failureTable.onFound(kb);
@@ -3787,9 +3916,9 @@ public class Node implements TimeSkewDetectorCallback {
 			t.printStackTrace();
 			Logger.error(this, "Caught "+t+" storing data", t);
 		}
-		if(clientCore != null && clientCore.requestStarters != null) {
-			clientCore.requestStarters.chkFetchSchedulerBulk.tripPendingKey(block);
-			clientCore.requestStarters.chkFetchSchedulerRT.tripPendingKey(block);
+		if(clientCore != null && clientCore.getRequestStarters() != null) {
+			clientCore.getRequestStarters().chkFetchSchedulerBulk.tripPendingKey(block);
+			clientCore.getRequestStarters().chkFetchSchedulerRT.tripPendingKey(block);
 		}
 	}
 
@@ -3838,9 +3967,9 @@ public class Node implements TimeSkewDetectorCallback {
 			t.printStackTrace();
 			Logger.error(this, "Caught "+t+" storing data", t);
 		}
-		if(clientCore != null && clientCore.requestStarters != null) {
-			clientCore.requestStarters.sskFetchSchedulerBulk.tripPendingKey(block);
-			clientCore.requestStarters.sskFetchSchedulerRT.tripPendingKey(block);
+		if(clientCore != null && clientCore.getRequestStarters() != null) {
+			clientCore.getRequestStarters().sskFetchSchedulerBulk.tripPendingKey(block);
+			clientCore.getRequestStarters().sskFetchSchedulerRT.tripPendingKey(block);
 		}
 	}
 
@@ -4084,7 +4213,7 @@ public class Node implements TimeSkewDetectorCallback {
 	 * Handle a received node to node message
 	 */
 	public void receivedNodeToNodeMessage(Message m, PeerNode src) {
-		int type = ((Integer) m.getObject(DMT.NODE_TO_NODE_MESSAGE_TYPE)).intValue();
+		int type = (Integer) m.getObject(DMT.NODE_TO_NODE_MESSAGE_TYPE);
 		ShortBuffer messageData = (ShortBuffer) m.getObject(DMT.NODE_TO_NODE_MESSAGE_DATA);
 		receivedNodeToNodeMessage(src, type, messageData, false);
 	}
@@ -4112,7 +4241,7 @@ public class Node implements TimeSkewDetectorCallback {
 			Logger.normal(this, "Received differential node reference node to node message from "+src.getPeer());
 			SimpleFieldSet fs = null;
 			try {
-				fs = new SimpleFieldSet(new String(data, "UTF-8"), false, true, false);
+				fs = new SimpleFieldSet(new String(data, StandardCharsets.UTF_8), false, true, false);
 			} catch (IOException e) {
 				Logger.error(this, "IOException while parsing node to node message data", e);
 				return;
@@ -4142,9 +4271,7 @@ public class Node implements TimeSkewDetectorCallback {
 			Logger.normal(this, "Received N2NTM from '"+darkSource.getPeer()+"'");
 			SimpleFieldSet fs = null;
 			try {
-				fs = new SimpleFieldSet(new String(data, "UTF-8"), false, true, false);
-			} catch (UnsupportedEncodingException e) {
-				throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
+				fs = new SimpleFieldSet(new String(data, StandardCharsets.UTF_8), false, true, false);
 			} catch (IOException e) {
 				Logger.error(this, "IOException while parsing node to node message data", e);
 				return;
@@ -4374,7 +4501,7 @@ public class Node implements TimeSkewDetectorCallback {
 		peers.addPeer(node,false,false);
 	}
 	public void connect(Node node, FRIEND_TRUST trust, FRIEND_VISIBILITY visibility) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException, PeerTooOldException {
-		peers.connect(node.darknetCrypto.exportPublicFieldSet(), darknetCrypto.packetMangler, trust, visibility);
+		peers.connect(node.darknetCrypto.exportPublicFieldSet(), darknetCrypto.getPacketMangler(), trust, visibility);
 	}
 
 	public short maxHTL() {
@@ -4382,7 +4509,7 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	public int getDarknetPortNumber() {
-		return darknetCrypto.portNumber;
+		return darknetCrypto.getPortNumber();
 	}
 
 	public synchronized int getOutputBandwidthLimit() {
@@ -4406,7 +4533,7 @@ public class Node implements TimeSkewDetectorCallback {
 	public synchronized void setTimeSkewDetectedUserAlert() {
 		if(timeSkewDetectedUserAlert == null) {
 			timeSkewDetectedUserAlert = new TimeSkewDetectedUserAlert();
-			clientCore.alerts.register(timeSkewDetectedUserAlert);
+			clientCore.getAlerts().register(timeSkewDetectedUserAlert);
 		}
 	}
 
@@ -4431,12 +4558,12 @@ public class Node implements TimeSkewDetectorCallback {
 
 	public OpennetPeerNode createNewOpennetNode(SimpleFieldSet fs) throws FSParseException, OpennetDisabledException, PeerParseException, ReferenceSignatureVerificationException, PeerTooOldException {
 		if(opennet == null) throw new OpennetDisabledException("Opennet is not currently enabled");
-		return new OpennetPeerNode(fs, this, opennet.crypto, opennet, false);
+		return new OpennetPeerNode(fs, this, opennet.getCrypto(), opennet, false);
 	}
 
 	public SeedServerTestPeerNode createNewSeedServerTestPeerNode(SimpleFieldSet fs) throws FSParseException, OpennetDisabledException, PeerParseException, ReferenceSignatureVerificationException, PeerTooOldException {
 		if(opennet == null) throw new OpennetDisabledException("Opennet is not currently enabled");
-		return new SeedServerTestPeerNode(fs, this, opennet.crypto, true);
+		return new SeedServerTestPeerNode(fs, this, opennet.getCrypto(), true);
 	}
 
 	public OpennetPeerNode addNewOpennetNode(SimpleFieldSet fs, ConnectionType connectionType) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
@@ -4446,11 +4573,11 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	public byte[] getOpennetPubKeyHash() {
-		return opennet.crypto.ecdsaPubKeyHash;
+		return opennet.getCrypto().getEcdsaPubKeyHash();
 	}
 
 	public byte[] getDarknetPubKeyHash() {
-		return darknetCrypto.ecdsaPubKeyHash;
+		return darknetCrypto.getEcdsaPubKeyHash();
 	}
 
 	public synchronized boolean isOpennetEnabled() {
@@ -4462,7 +4589,7 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	public SimpleFieldSet exportOpennetPublicFieldSet() {
-		return opennet.crypto.exportPublicFieldSet();
+		return opennet.getCrypto().exportPublicFieldSet();
 	}
 
 	public SimpleFieldSet exportDarknetPrivateFieldSet() {
@@ -4470,7 +4597,7 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	public SimpleFieldSet exportOpennetPrivateFieldSet() {
-		return opennet.crypto.exportPrivateFieldSet();
+		return opennet.getCrypto().exportPrivateFieldSet();
 	}
 
 	/**
@@ -4481,14 +4608,14 @@ public class Node implements TimeSkewDetectorCallback {
 		// Only return true if bindTo is set on all ports which are in use
 		if(!darknetCrypto.getBindTo().isRealInternetAddress(false, true, false)) return false;
 		if(opennet != null) {
-			if(opennet.crypto.getBindTo().isRealInternetAddress(false, true, false)) return false;
+			if(opennet.getCrypto().getBindTo().isRealInternetAddress(false, true, false)) return false;
 		}
 		return true;
 	}
 
 	public int getOpennetFNPPort() {
 		if(opennet == null) return -1;
-		return opennet.crypto.portNumber;
+		return opennet.getCrypto().getPortNumber();
 	}
 
 	public OpennetManager getOpennet() {
@@ -4507,11 +4634,11 @@ public class Node implements TimeSkewDetectorCallback {
 	public Set<ForwardPort> getPublicInterfacePorts() {
 		HashSet<ForwardPort> set = new HashSet<ForwardPort>();
 		// FIXME IPv6 support
-		set.add(new ForwardPort("darknet", false, ForwardPort.PROTOCOL_UDP_IPV4, darknetCrypto.portNumber));
+		set.add(new ForwardPort("darknet", false, ForwardPort.PROTOCOL_UDP_IPV4, darknetCrypto.getPortNumber()));
 		if(opennet != null) {
-			NodeCrypto crypto = opennet.crypto;
+			NodeCrypto crypto = opennet.getCrypto();
 			if(crypto != null) {
-				set.add(new ForwardPort("opennet", false, ForwardPort.PROTOCOL_UDP_IPV4, crypto.portNumber));
+				set.add(new ForwardPort("opennet", false, ForwardPort.PROTOCOL_UDP_IPV4, crypto.getPortNumber()));
 			}
 		}
 		return set;
@@ -4529,10 +4656,10 @@ public class Node implements TimeSkewDetectorCallback {
 	public synchronized UdpSocketHandler[] getPacketSocketHandlers() {
 		// FIXME better way to get these!
 		if(opennet != null) {
-			return new UdpSocketHandler[] { darknetCrypto.socket, opennet.crypto.socket };
+			return new UdpSocketHandler[] { darknetCrypto.getSocket(), opennet.getCrypto().getSocket() };
 			// TODO Auto-generated method stub
 		} else {
-			return new UdpSocketHandler[] { darknetCrypto.socket };
+			return new UdpSocketHandler[] { darknetCrypto.getSocket() };
 		}
 	}
 
@@ -4546,7 +4673,7 @@ public class Node implements TimeSkewDetectorCallback {
 			om = opennet;
 		}
 		if(om != null) {
-			Announcer announcer = om.announcer;
+			Announcer announcer = om.getAnnouncer();
 			if(announcer != null) {
 				announcer.maybeSendAnnouncement();
 			}
@@ -4580,7 +4707,7 @@ public class Node implements TimeSkewDetectorCallback {
 			om = this.opennet;
 		}
 		if(om == null) return false;
-		NodeCrypto crypto = om.crypto;
+		NodeCrypto crypto = om.getCrypto();
 		if(crypto == null) return false;
 		return crypto.definitelyPortForwarded();
 	}
@@ -4611,7 +4738,18 @@ public class Node implements TimeSkewDetectorCallback {
 
 	private SimpleUserAlert alertMTUTooSmall;
 
+	/**
+	 * @deprecated Use {@link #getNonPersistentClientBulk()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final RequestClient nonPersistentClientBulk = new RequestClientBuilder().build();
+
+	/**
+	 * @deprecated Use {@link #getNonPersistentClientRT()} instead of accessing this directly.
+	 */
+	@Deprecated
+	/* It’s not the field that is deprecated but accessing it directly is. */
 	public final RequestClient nonPersistentClientRT = new RequestClientBuilder().realTime().build();
 
 	public void setDispatcherHook(NodeDispatcherCallback cb) {
@@ -4634,7 +4772,7 @@ public class Node implements TimeSkewDetectorCallback {
 		    if(keys == null) {
 		        // Decrypting.
 		        keys = MasterKeys.read(masterKeysFile, secureRandom, password);
-		        databaseKey = keys.createDatabaseKey(secureRandom);
+		        databaseKey = keys.createDatabaseKey();
 		    } else {
 		        // Setting password when changing to HIGH from another mode.
 		        keys.changePassword(masterKeysFile, password, secureRandom);
@@ -4658,7 +4796,7 @@ public class Node implements TimeSkewDetectorCallback {
 		if(wantClientCache)
 			activatePasswordedClientCache(keys);
 		if(wantDatabase)
-			lateSetupDatabase(keys.createDatabaseKey(secureRandom));
+			lateSetupDatabase(keys.createDatabaseKey());
 	}
 
 
@@ -4718,8 +4856,8 @@ public class Node implements TimeSkewDetectorCallback {
 
 	public void panic() {
 		hasPanicked = true;
-		clientCore.clientLayerPersister.panic();
-		clientCore.clientLayerPersister.killAndWaitForNotRunning();
+		clientCore.getClientLayerPersister().panic();
+		clientCore.getClientLayerPersister().killAndWaitForNotRunning();
 		try {
 			MasterKeys.killMasterKeys(getMasterPasswordFile());
 		} catch (IOException e) {
@@ -4751,14 +4889,14 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	public boolean hasDatabase() {
-	    return !clientCore.clientLayerPersister.isKilledOrNotLoaded();
+	    return !clientCore.getClientLayerPersister().isKilledOrNotLoaded();
 	}
 
         /**
          * @return canonical path of the database file in use.
          */
         public String getDatabasePath() throws IOException {
-            return clientCore.clientLayerPersister.getWriteFilename().toString();
+            return clientCore.getClientLayerPersister().getWriteFilename().toString();
         }
 
 	/** Should we commit the block to the store rather than the cache?
@@ -4850,7 +4988,7 @@ public class Node implements TimeSkewDetectorCallback {
 	};
 	
 	private void registerFriendsVisibilityAlert() {
-		if(clientCore == null || clientCore.alerts == null) {
+		if(clientCore == null || clientCore.getAlerts() == null) {
 			// Wait until startup completed.
 			this.getTicker().queueTimedJob(new Runnable() {
 
@@ -4862,11 +5000,11 @@ public class Node implements TimeSkewDetectorCallback {
 			}, 0);
 			return;
 		}
-		clientCore.alerts.register(visibilityAlert);
+		clientCore.getAlerts().register(visibilityAlert);
 	}
 	
 	private void unregisterFriendsVisibilityAlert() {
-		clientCore.alerts.unregister(visibilityAlert);
+		clientCore.getAlerts().unregister(visibilityAlert);
 	}
 
 	public int getMinimumMTU() {
@@ -4883,10 +5021,10 @@ public class Node implements TimeSkewDetectorCallback {
 
 
 	public void updateMTU() {
-		this.darknetCrypto.socket.calculateMaxPacketSize();
+		this.darknetCrypto.getSocket().calculateMaxPacketSize();
 		OpennetManager om = opennet;
 		if(om != null) {
-			om.crypto.socket.calculateMaxPacketSize();
+			om.getCrypto().getSocket().calculateMaxPacketSize();
 		}
 	}
 
@@ -4920,7 +5058,7 @@ public class Node implements TimeSkewDetectorCallback {
 	public boolean updateIsUrgent() {
 		OpennetManager om = getOpennet();
 		if(om != null) {
-			if(om.announcer != null && om.announcer.isWaitingForUpdater())
+			if(om.getAnnouncer() != null && om.getAnnouncer().isWaitingForUpdater())
 				return true;
 		}
 		if(peers.getPeerNodeStatusSize(PeerManager.PEER_NODE_STATUS_TOO_NEW, true) > PeerManager.OUTDATED_MIN_TOO_NEW_DARKNET)
@@ -4956,4 +5094,161 @@ public class Node implements TimeSkewDetectorCallback {
     public boolean isNodeDiagnosticsEnabled() {
         return enableNodeDiagnostics;
     }
+
+    public NodeStats getNodeStats() {
+        return nodeStats;
+    }
+
+    public PersistentConfig getConfig() {
+        return config;
+    }
+
+    public NodeGetPubkey getGetPubKey() {
+        return getPubKey;
+    }
+
+    public NodeIPDetector getIpDetector() {
+        return ipDetector;
+    }
+
+    public boolean isDisableProbabilisticHTLs() {
+        return disableProbabilisticHTLs;
+    }
+
+    public RequestTracker getTracker() {
+        return tracker;
+    }
+
+    public PeerManager getPeers() {
+        return peers;
+    }
+
+    public RandomSource getRandom() {
+        return random;
+    }
+
+    public SecureRandom getSecureRandom() {
+        return secureRandom;
+    }
+
+    public Random getFastWeakRandom() {
+        return fastWeakRandom;
+    }
+
+    public NodeCrypto getDarknetCrypto() {
+        return darknetCrypto;
+    }
+
+    public Executor getExecutor() {
+        return executor;
+    }
+
+    public PacketSender getPacketSender() {
+        return ps;
+    }
+
+    public DNSRequester getDNSRequester() {
+        return dnsr;
+    }
+
+    public NodeDispatcher getDispatcher() {
+        return dispatcher;
+    }
+
+    public UptimeEstimator getUptimeEstimator() {
+        return uptime;
+    }
+
+    public TokenBucket getOutputThrottle() {
+        return outputThrottle;
+    }
+
+    public boolean isThrottleLocalData() {
+        return throttleLocalData;
+    }
+
+    public boolean isEnableARKs() {
+        return enableARKs;
+    }
+
+    public boolean isEnablePerNodeFailureTables() {
+        return enablePerNodeFailureTables;
+    }
+
+    public boolean isEnableULPRDataPropagation() {
+        return enableULPRDataPropagation;
+    }
+
+    public boolean isEnableSwapping() {
+        return enableSwapping;
+    }
+
+    public boolean isEnableSwapQueueing() {
+        return enableSwapQueueing;
+    }
+
+    public boolean isEnablePacketCoalescing() {
+        return enablePacketCoalescing;
+    }
+
+    public IOStatisticCollector getCollector() {
+        return collector;
+    }
+
+    public NodeClientCore getClientCore() {
+        return clientCore;
+    }
+
+    public FailureTable getFailureTable() {
+        return failureTable;
+    }
+
+    public int getLastVersion() {
+        return lastVersion;
+    }
+
+    public SecurityLevels getSecurityLevels() {
+        return securityLevels;
+    }
+
+    public FreenetInetAddress getFreenetLocalhostAddress() {
+        return fLocalhostAddress;
+    }
+
+    public FetchContext getArkFetcherContext() {
+        return arkFetcherContext;
+    }
+
+    public long getLastBootId() {
+        return lastBootID;
+    }
+
+    public long getBootId() {
+        return bootID;
+    }
+
+    public long getStartupTime() {
+        return startupTime;
+    }
+
+    public RequestClient getNonPersistentClientBulk() {
+        return nonPersistentClientBulk;
+    }
+
+    public RequestClient getNonPersistentClientRT() {
+        return nonPersistentClientRT;
+    }
+
+    public PubkeyStore getOldPK() {
+        return oldPK;
+    }
+
+    public PubkeyStore getOldPKCache() {
+        return oldPKCache;
+    }
+
+    public PubkeyStore getOldPKClientCache() {
+        return oldPKClientCache;
+    }
+
 }

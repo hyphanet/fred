@@ -3,6 +3,10 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.useralerts;
 
+import static java.util.Arrays.stream;
+
+import java.io.IOException;
+import java.io.StringWriter;
 import java.text.Format;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -13,7 +17,23 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.function.Consumer;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+
+import com.sun.org.apache.xml.internal.serializer.OutputPropertiesFactory;
 import freenet.clients.fcp.FCPConnectionHandler;
 import freenet.l10n.NodeL10n;
 import freenet.node.NodeClientCore;
@@ -77,7 +97,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 	private void notifySubscribers(final UserAlert alert) {
 		// Run off-thread, because of locking, and because client
 		// callbacks may take some time
-		core.clientContext.mainExecutor.execute(new Runnable() {
+		core.getClientContext().getMainExecutor().execute(new Runnable() {
 			@Override
 			public void run() {
 				for (FCPConnectionHandler subscriber : subscribers)
@@ -233,7 +253,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 		if (userAlert.userCanDismiss()) {
 			HTMLNode dismissFormNode = result.addChild("form", new String[] { "action", "method" }, new String[] { "/alerts/", "post" }).addChild("div");
 			dismissFormNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "disable", String.valueOf(userAlert.hashCode()) });
-			dismissFormNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
+			dismissFormNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.getFormPassword() });
 			dismissFormNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "dismiss-user-alert", userAlert.dismissButtonText() });
 			
 			if (redirectToAfterDisable != null) {
@@ -387,7 +407,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 		subscribers.add(subscriber);
 		// Run off-thread, because of locking, and because client
 		// callbacks may take some time
-		core.clientContext.mainExecutor.execute(new Runnable() {
+		core.getClientContext().getMainExecutor().execute(new Runnable() {
 			@Override
 			public void run() {
 				for (UserAlert alert : getAlerts())
@@ -414,32 +434,115 @@ public class UserAlertManager implements Comparator<UserAlert> {
 		String messagesURI = startURI + "/alerts/";
 		String feedURI = startURI + "/feed/";
 
-		StringBuilder sb = new StringBuilder();
-		sb.append("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
-		sb.append("<feed xmlns=\"http://www.w3.org/2005/Atom\">\n");
-		sb.append("\n");
-		sb.append("  <title>").append(l10n("feedTitle")).append("</title>\n");
-		sb.append("  <link href=\"").append(feedURI).append("\" rel=\"self\"/>\n");
-		sb.append("  <link href=\"").append(startURI).append("\"/>\n");
-		sb.append("  <updated>").append(formatTime(lastUpdated)).append("</updated>\n");
-		sb.append("  <id>urn:node:").append(Base64.encode(core.node.getDarknetPubKeyHash())).append("</id>\n");
-		sb.append("  <logo>").append("/favicon.ico").append("</logo>\n");
-		UserAlert[] alerts = getAlerts();
-		for(int i = alerts.length - 1; i >= 0; i--) {
-			UserAlert alert = alerts[i];
-			if (alert.isValid()) {
-				sb.append("\n");
-				sb.append("  <entry>\n");
-				sb.append("    <title>").append(alert.getTitle()).append("</title>\n");
-				sb.append("    <link href=\"").append(messagesURI).append("#").append(alert.anchor()).append("\"/>\n");
-				sb.append("    <summary>").append(alert.getShortText()).append("</summary>\n");
-				sb.append("    <content type=\"text\">").append(alert.getText()).append("</content>\n");
-				sb.append("    <id>urn:feed:").append(alert.anchor()).append("</id>\n");
-				sb.append("    <updated>").append(formatTime(alert.getUpdatedTime())).append("</updated>\n");
-				sb.append("  </entry>\n");
+		XmlBuilder xmlBuilder = new XmlBuilder();
+		xmlBuilder.addNamespaceElement("http://www.w3.org/2005/Atom", "feed", feed -> {
+			feed.addElement("title", l10n("feedTitle"));
+			feed.addElement("link", link -> {
+				link.setAttribute("rel", "self");
+				link.setAttribute("href", feedURI);
+			});
+			feed.addElement("link", link -> link.setAttribute("href", startURI));
+			feed.addElement("id", "urn:node:" + Base64.encode(core.getNode().getDarknetPubKeyHash()));
+			feed.addElement("updated", formatTime(lastUpdated));
+			feed.addElement("logo", "/favicon.ico");
+
+			stream(getAlerts())
+					.filter(UserAlert::isValid)
+					.forEach(alert -> {
+						feed.addElement("entry", entry -> {
+							entry.addElement("id", "urn:feed:" + alert.anchor());
+							entry.addElement("link", link -> link.setAttribute("href", messagesURI + "#" + alert.anchor()));
+							entry.addElement("updated", formatTime(alert.getUpdatedTime()));
+							entry.addElement("title", alert.getTitle());
+							entry.addElement("summary", alert.getShortText());
+							entry.addElement("content", alert.getText(), content -> content.setAttribute("type", "text"));
+						});
+					});
+		});
+		return xmlBuilder.generate();
+	}
+
+	private interface ElementBuilder {
+
+		void addElement(String name, Consumer<ElementBuilder> elementBuilder);
+		void addElement(String name, String content, Consumer<ElementBuilder> elementBuilder);
+		void addNamespaceElement(String namespace, String name, Consumer<ElementBuilder> elementBuilder);
+		void setAttribute(String name, String value);
+
+		default void addElement(String name, String content) {
+			addElement(name, content, elementBuilder -> {});
+		}
+
+	}
+
+	private static class XmlBuilder implements ElementBuilder {
+
+		@Override
+		public void addElement(String name, Consumer<ElementBuilder> elementBuilder) {
+			Element element = document.createElement(name);
+			elementBuilder.accept(new XmlBuilder(document, element));
+			((this.element == null) ? document : this.element).appendChild(element);
+		}
+
+		@Override
+		public void addElement(String name, String content, Consumer<ElementBuilder> elementBuilder) {
+			Element element = document.createElement(name);
+			element.setTextContent(content);
+			elementBuilder.accept(new XmlBuilder(document, element));
+			((this.element == null) ? document : this.element).appendChild(element);
+		}
+
+		@Override
+		public void addNamespaceElement(String namespace, String name, Consumer<ElementBuilder> elementBuilder) {
+			Element element = document.createElementNS(namespace, name);
+			elementBuilder.accept(new XmlBuilder(document, element));
+			((this.element == null) ? document : this.element).appendChild(element);
+		}
+
+		@Override
+		public void setAttribute(String name, String value) {
+			if (element != null) {
+				element.setAttribute(name, value);
 			}
 		}
-		sb.append("\n</feed>\n");
-		return sb.toString();
+
+		public String generate() {
+			DOMSource source = new DOMSource(document);
+			try (StringWriter stringWriter = new StringWriter()) {
+				StreamResult result = new StreamResult(stringWriter);
+				transformer.transform(source, result);
+				return stringWriter.toString();
+			} catch (TransformerException | IOException e) {
+				throw new RuntimeException(e);
+			}
+		}
+
+		public XmlBuilder() {
+			this(documentBuilder.newDocument(), null);
+		}
+
+		private XmlBuilder(Document document, Element element) {
+			this.document = document;
+			this.element = element;
+		}
+
+		private final Document document;
+		private final Element element;
+		private static DocumentBuilder documentBuilder;
+		private static final TransformerFactory transformerFactory = TransformerFactory.newInstance();
+		private static final Transformer transformer;
+
+		static {
+			try {
+				documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+				transformer = transformerFactory.newTransformer();
+				transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+				transformer.setOutputProperty(OutputPropertiesFactory.S_KEY_INDENT_AMOUNT, "2");
+			} catch (ParserConfigurationException | TransformerConfigurationException e) {
+				throw new RuntimeException(e);
+			}
+		}
+
 	}
+
 }

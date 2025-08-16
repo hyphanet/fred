@@ -53,8 +53,7 @@ public class ConnectivityToadlet extends Toadlet {
 		PageMaker pageMaker = ctx.getPageMaker();
 		
 		PageNode page = pageMaker.getPageNode(NodeL10n.getBase().getString("ConnectivityToadlet.title"), ctx);
-		HTMLNode pageNode = page.outer;
-		HTMLNode contentNode = page.content;
+		HTMLNode contentNode = page.getContentNode();
 
 		/* add alert summary box */
 		if(ctx.isAllowedFullAccess())
@@ -65,9 +64,9 @@ public class ConnectivityToadlet extends Toadlet {
 		portInfobox.addChild("div", "class", "infobox-header", l10nConn("nodePortsTitle"));
 		HTMLNode portInfoboxContent = portInfobox.addChild("div", "class", "infobox-content");
 		HTMLNode portInfoList = portInfoboxContent.addChild("ul");
-		SimpleFieldSet fproxyConfig = node.config.get("fproxy").exportFieldSet(true);
-		SimpleFieldSet fcpConfig = node.config.get("fcp").exportFieldSet(true);
-		SimpleFieldSet tmciConfig = node.config.get("console").exportFieldSet(true);
+		SimpleFieldSet fproxyConfig = node.getConfig().get("fproxy").exportFieldSet(true);
+		SimpleFieldSet fcpConfig = node.getConfig().get("fcp").exportFieldSet(true);
+		SimpleFieldSet tmciConfig = node.getConfig().get("console").exportFieldSet(true);
 		portInfoList.addChild("li", NodeL10n.getBase().getString("DarknetConnectionsToadlet.darknetFnpPort", new String[] { "port" }, new String[] { Integer.toString(node.getFNPPort()) }));
 		int opennetPort = node.getOpennetFNPPort();
 		if(opennetPort > 0)
@@ -94,7 +93,7 @@ public class ConnectivityToadlet extends Toadlet {
 		
 		// Add connection type box.
 		
-		node.ipDetector.addConnectionTypeBox(contentNode);
+		node.getIpDetector().addConnectionTypeBox(contentNode);
 		
 		UdpSocketHandler[] handlers = node.getPacketSocketHandlers();
 		
@@ -190,7 +189,7 @@ public class ConnectivityToadlet extends Toadlet {
 		
 		}
 		
-		writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+		writeHTMLReply(ctx, 200, "OK", page.generate());
 	}
 	
 	private String l10nConn(String string) {

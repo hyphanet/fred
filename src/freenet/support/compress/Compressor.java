@@ -115,7 +115,7 @@ public interface Compressor {
 		public static COMPRESSOR_TYPE[] getCompressorsArrayNoDefault(String compressordescriptor) throws InvalidCompressionCodecException {
 			if (compressordescriptor == null)
 				return null;
-			if (compressordescriptor.trim().length() == 0)
+			if (compressordescriptor.trim().isEmpty())
 				return null;
 			String[] codecs = compressordescriptor.split(",");
 			ArrayList<COMPRESSOR_TYPE> result = new ArrayList<COMPRESSOR_TYPE>(codecs.length);

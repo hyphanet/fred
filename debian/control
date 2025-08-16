@@ -1,0 +1,28 @@
+Source: freenet
+Section: net
+Priority: optional
+Maintainer: DC* <des@riseup.net>
+Build-Depends: debhelper (>= 9), javahelper, quilt, adduser (>= 3.11),
+ git-core, default-jdk, wget, service-wrapper, git-buildpackage
+Standards-Version: 4.5.1
+Homepage: http://freenetproject.org/
+
+Package: freenet
+Architecture: any
+Depends: adduser, procps, gettext, default-jre-headless, libservice-wrapper-java, service-wrapper,
+ ${shlibs:Depends}, ${misc:Depends}, ${java:Depends}
+Replaces: fred
+Conflicts: fred
+Tag: interface::daemon, network::server
+Description: Lets you anonymously share files, browse and publish "freesites" (web
+ sites accessible only through Freenet) and chat on forums, without fear of
+ censorship. Freenet is decentralised to make it less vulnerable to attack, and
+ if used in "darknet" mode, where users only connect to their friends, is very
+ difficult to detect. Communications by Freenet nodes are encrypted and are
+ routed through other nodes to make it extremely difficult to determine who is
+ requesting the information and what its content is.
+ .
+ This package contains the Freenet REference Daemon (fred), which provides low
+ level access to data stored on Freenet, and a web proxy for viewing freesites.
+ Note that fred creates a datastore of at least 256 MB on first startup.
+ .

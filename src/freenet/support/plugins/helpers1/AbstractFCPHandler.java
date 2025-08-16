@@ -62,12 +62,12 @@ public abstract class AbstractFCPHandler {
 			return;
 		}
 
-		if (identifier == null || identifier.trim().length() == 0) {
+		if (identifier == null || identifier.trim().isEmpty()) {
 			sendError(replysender, FCPException.MISSING_IDENTIFIER, "<invalid>", "Empty identifier!");
 			return;
 		}
 
-		if (command == null || command.trim().length() == 0) {
+		if (command == null || command.trim().isEmpty()) {
 			sendError(replysender, FCPException.MISSING_COMMAND, identifier, "Empty Command name");
 			return;
 		}

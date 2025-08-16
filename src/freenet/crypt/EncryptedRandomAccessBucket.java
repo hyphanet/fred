@@ -220,12 +220,9 @@ public class EncryptedRandomAccessBucket implements RandomAccessBucket, Serializ
             this.cipherWrite = cipher;
         }
         
-        private final byte[] one = new byte[1];
-        
         @Override
         public void write(int x) throws IOException {
-            one[0] = (byte)x;
-            write(one);
+            write(new byte[]{(byte) x}, 0, 1);
         }
         
         @Override
@@ -265,14 +262,15 @@ public class EncryptedRandomAccessBucket implements RandomAccessBucket, Serializ
             super(in);
             this.cipherRead = cipher;
         }
-        
-        private byte[] one = new byte[1];
-        
+
         @Override
         public int read() throws IOException {
-            int readBytes = read(one);
-            if(readBytes <= 0) return readBytes;
-            return one[0] & 0xFF;
+            byte[] buf = new byte[1];
+            int length = read(buf, 0, 1);
+            if (length > 0) {
+                return Byte.toUnsignedInt(buf[0]);
+            }
+            return -1;
         }
         
         @Override

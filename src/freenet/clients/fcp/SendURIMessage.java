@@ -1,8 +1,8 @@
 package freenet.clients.fcp;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
+import java.nio.charset.StandardCharsets;
 
 import freenet.keys.FreenetURI;
 import freenet.node.DarknetPeerNode;
@@ -41,12 +41,10 @@ public class SendURIMessage extends SendPeerMessage {
 		try {
 			if(dataLength() > 0) {
 				byte[] description = BucketTools.toByteArray(bucket);
-				return pn.sendDownloadFeed(uri, new String(description, "UTF-8"));
+				return pn.sendDownloadFeed(uri, new String(description, StandardCharsets.UTF_8));
 			}
 			else
 				return pn.sendDownloadFeed(uri, null);
-		} catch (UnsupportedEncodingException e) {
-			throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
 		} catch (IOException e) {
 			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "", null, false);
 		}

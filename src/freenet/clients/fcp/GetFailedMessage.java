@@ -139,6 +139,7 @@ public class GetFailedMessage extends FCPMessage implements Serializable {
 		if(verbose)
 			sfs.putSingle("ShortCodeDescription", getShortFailedMessage());
 		sfs.putSingle("Identifier", identifier);
+		sfs.put("Global", global);
 		if(expectedDataLength > -1) {
 			sfs.put("ExpectedDataLength", expectedDataLength);
 		}

@@ -1,5 +1,8 @@
 package freenet.clients.http.wizardsteps;
 
+import java.util.List;
+import java.util.ArrayList;
+
 import freenet.clients.http.FirstTimeWizardToadlet;
 import freenet.l10n.NodeL10n;
 import freenet.support.HTMLNode;
@@ -53,25 +56,17 @@ public class BROWSER_WARNING implements Step {
 
 		HTMLNode contentNode = helper.getPageContent(WizardL10n.l10n("browserWarningPageTitle"));
 
-		String infoBoxHeader;
-		if(incognito) {
-			infoBoxHeader = WizardL10n.l10n("browserWarningIncognitoShort");
-		} else if (isRelativelySafe) {
-			infoBoxHeader = WizardL10n.l10n("browserWarningShortRelativelySafe");
-		} else {
-			infoBoxHeader = WizardL10n.l10n("browserWarningShort");
-		}
-		
+		String infoBoxHeader = infoBoxHeaderText(incognito, isRelativelySafe);
 		HTMLNode infoboxContent = helper.getInfobox("infobox-normal", infoBoxHeader, contentNode, null, false);
 
-		if(isOldFirefox) {
+		List<String> oldBrowserWarnings = oldBrowserWarnings(
+				incognito,
+				isOldFirefox,
+				showTabWarning);
+		if(!oldBrowserWarnings.isEmpty()) {
 			HTMLNode p = infoboxContent.addChild("p");
-			p.addChild("#", WizardL10n.l10n("browserWarningOldFirefox"));
-			if (showTabWarning) {
-				p.addChild("#", " " + WizardL10n.l10n("browserWarningFirefoxMightHaveClobberedTabs"));
-			} else if(!incognito) {
-				p.addChild("#", " " + WizardL10n.l10n("browserWarningOldFirefoxNewerHasPrivacyMode"));
-			}
+			p.addChild("#", oldBrowserWarnings.remove(0));
+			oldBrowserWarnings.forEach(s -> p.addChild("#", " " + s));
 		}
 
 		if(isRelativelySafe) {
@@ -102,6 +97,32 @@ public class BROWSER_WARNING implements Step {
 		form.addChild("input",
 		        new String[] { "type", "name", "value" },
 		        new String[] { "submit", "next", NodeL10n.getBase().getString("Toadlet.next")});
+	}
+
+	public List<String> oldBrowserWarnings(
+			boolean incognito,
+			boolean isOldFirefox,
+			boolean showTabWarning) {
+		ArrayList<String> oldBrowserWarnings = new ArrayList<>();
+		if(isOldFirefox) {
+			oldBrowserWarnings.add(WizardL10n.l10n("browserWarningOldFirefox"));
+			if (showTabWarning) {
+				oldBrowserWarnings.add(WizardL10n.l10n("browserWarningFirefoxMightHaveClobberedTabs"));
+			} else if(!incognito) {
+				oldBrowserWarnings.add(WizardL10n.l10n("browserWarningOldFirefoxNewerHasPrivacyMode"));
+			}
+		}
+		return oldBrowserWarnings;
+	}
+
+	public String infoBoxHeaderText(boolean incognito, boolean isRelativelySafe) {
+		if(incognito) {
+			return WizardL10n.l10n("browserWarningIncognitoShort");
+		}
+        if (isRelativelySafe) {
+			return WizardL10n.l10n("browserWarningShortRelativelySafe");
+		}
+        return WizardL10n.l10n("browserWarningShort");
 	}
 
 	/**

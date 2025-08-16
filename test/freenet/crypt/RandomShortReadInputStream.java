@@ -29,9 +29,9 @@ public class RandomShortReadInputStream extends FilterInputStream {
     public int read(byte[] buf, int offset, int length) throws IOException {
         if(length > 3 && random.nextBoolean()) {
             if(length > 16 && random.nextBoolean()) {
-                length = random.nextInt(16);
+                length = random.nextInt(15) + 1;
             } else {
-                length = random.nextInt(length);
+                length = random.nextInt(length - 1) + 1;
             }
         }
         return in.read(buf, offset, length);

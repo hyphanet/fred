@@ -29,11 +29,16 @@ public class NodeAndClientLayerTestBase {
         
     };
     
-    protected InsertBlock generateBlock(DummyRandomSource random) throws MalformedURLException {
+    protected InsertBlock generateBlock(DummyRandomSource random, boolean createUsk) throws MalformedURLException {
         byte[] data = new byte[FILE_SIZE];
         random.nextBytes(data);
         RandomAccessBucket bucket = new SimpleReadOnlyArrayBucket(data);
         FreenetURI uri = InsertableClientSSK.createRandom(random, "test").getInsertURI();
+        if (createUsk) {
+            uri = uri.setDocName("foo-0");
+            uri = uri.uskForSSK();
+            uri = uri.setSuggestedEdition(-1);
+        }
         return new InsertBlock(bucket, new ClientMetadata(null), uri);
     }
     

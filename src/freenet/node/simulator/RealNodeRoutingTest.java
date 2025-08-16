@@ -123,8 +123,8 @@ public class RealNodeRoutingTest extends RealNodeTest {
 			double totalSwapInterval = 0.0;
 			double totalSwapTime = 0.0;
 			for(int i = 0; i < nodes.length; i++) {
-				totalSwapInterval += nodes[i].lm.getSendSwapInterval();
-				totalSwapTime += nodes[i].lm.getAverageSwapTime();
+				totalSwapInterval += nodes[i].getLocationManager().getSendSwapInterval();
+				totalSwapTime += nodes[i].getLocationManager().getAverageSwapTime();
 			}
 			System.err.println("Average swap time: " + (totalSwapTime / nodes.length));
 			System.err.println("Average swap sender interval: " + (totalSwapInterval / nodes.length));

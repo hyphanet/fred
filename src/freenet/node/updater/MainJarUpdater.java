@@ -55,8 +55,8 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 		dependencyCtx.dontEnterImplicitArchives = false;
 		dependencyCtx.maxNonSplitfileRetries = -1;
 		dependencyCtx.maxSplitfileBlockRetries = -1;
-		clientContext = core.clientContext;
-		dependencies = new MainJarDependenciesChecker(this, manager.node.executor);
+		clientContext = core.getClientContext();
+		dependencies = new MainJarDependenciesChecker(this, manager.getNode().getExecutor());
 	}
 
 	private final MainJarDependenciesChecker dependencies;
@@ -153,7 +153,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 				fetched = true;
 				f = uomFetcher;
 			}
-			MainJarUpdater.this.node.executor.execute(new Runnable() {
+			MainJarUpdater.this.node.getExecutor().execute(new Runnable() {
 
 				@Override
 				public void run() {
@@ -191,7 +191,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
                 tempFile.delete();
                 return;
             }
-			if(!FileUtil.renameTo(tempFile, filename)) {
+			if(!FileUtil.moveTo(tempFile, filename)) {
 				Logger.error(this, "Unable to rename temp file "+tempFile+" to "+filename);
 				System.err.println("Download of "+filename+" for update failed because cannot rename from "+tempFile);
 				if(cb != null)
@@ -240,7 +240,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 				if(fetched) return;
 				if(!essential) return;
 			}
-			UOMDependencyFetcher f = manager.uom.fetchDependency(expectedHash, expectedLength, filename, executable,
+			UOMDependencyFetcher f = manager.getUpdateOverMandatory().fetchDependency(expectedHash, expectedLength, filename, executable,
 					new UOMDependencyFetcherCallback() {
 
 						@Override
@@ -289,7 +289,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 				essentialFetchers.add(fetcher);
 		}
 		fetcher.start();
-		if(manager.uom.fetchingUOM()) {
+		if(manager.getUpdateOverMandatory().fetchingUOM()) {
 			if(essential)
 				fetcher.fetchFromUOM();
 		}
@@ -345,7 +345,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 
 	@Override
 	public void addDependency(byte[] expectedHash, File filename) {
-		manager.uom.addDependency(expectedHash, filename);
+		manager.getUpdateOverMandatory().addDependency(expectedHash, filename);
 	}
 
     @Override
@@ -361,7 +361,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
         } else {
             final long now = System.currentTimeMillis();
             System.err.println("Not deploying multi-file update for "+atomicDeployer.name+" because auto-update is not enabled.");
-            node.clientCore.alerts.register(new UserAlert() {
+            node.getClientCore().getAlerts().register(new UserAlert() {
 
                 private String l10n(String key) {
                     return NodeL10n.getBase().getString("MainJarUpdater.ConfirmMultiFileUpdater."+key);

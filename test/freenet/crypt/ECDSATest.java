@@ -1,17 +1,18 @@
 package freenet.crypt;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
-import java.io.UnsupportedEncodingException;
-import java.math.BigInteger;
 import java.security.PublicKey;
-
-import org.junit.Before;
-import org.junit.Test;
 
 import freenet.crypt.ECDSA.Curves;
 import freenet.node.FSParseException;
 import freenet.support.SimpleFieldSet;
+import org.junit.Before;
+import org.junit.Test;
 
 
 public class ECDSATest {
@@ -75,45 +76,4 @@ public class ECDSATest {
         ECDSA ecdsa2 = new ECDSA(sfs.getSubset(curveToTest.name()), curveToTest);
         assertEquals(ecdsa.getPublicKey(), ecdsa2.getPublicKey());
     }
-    
-    /**
-     * @param args
-     */
-    public static void main(String[] args) throws Exception {
-        Curves curve = ECDSA.Curves.P256;
-        ECDSA ecdsa = new ECDSA(curve);
-        String toSign = "test";
-        byte[] signedBytes = toSign.getBytes("utf-8");
-        //byte[] sig = ecdsa.sign(signedBytes);
-        byte[] sig = ecdsa.signToNetworkFormat(signedBytes);
-        System.out.println("Curve in use : " + curve.toString());
-        System.out.println(ecdsa.getPublicKey().toString());
-        System.out.println("ToSign   : "+toSign + " ("+toHex(signedBytes)+")");
-        System.out.println("Signature: "+ toHex(sig));
-        System.out.println("Verify?  : "+ecdsa.verify(sig, signedBytes));
-        
-        SimpleFieldSet sfs = ecdsa.asFieldSet(true);
-        System.out.println("\nSerialized to: ");
-        System.out.println(sfs.toString());
-        System.out.println("Restored to: ");
-        ECDSA ecdsa2 = new ECDSA(sfs.getSubset(curve.name()), curve);
-        System.out.println(ecdsa2.getPublicKey());
-        System.out.println("Verify?  : "+ecdsa2.verify(sig, signedBytes));
-        
-        System.out.println("Let's ensure that the signature always fits into "+ecdsa.curve.maxSigSize+" bytes.");
-        int max = 0;
-        for(int i=0; i<10000; i++) {
-            max = Math.max(max, ecdsa.sign(signedBytes).length);
-        }
-        System.out.println(max);
-    }
-    
-    public static String toHex(byte[] arg) {
-        return String.format("%040x", new BigInteger(1,arg));
-    }
-    
-    public static String toHex(String arg) throws UnsupportedEncodingException {
-        return toHex(arg.getBytes("utf-8"));
-    }
-
 }

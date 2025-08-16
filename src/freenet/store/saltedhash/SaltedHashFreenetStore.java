@@ -1080,7 +1080,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 			final long newHdLen = (headerBlockLength + dataBlockLength + hdPadding) * storeMaxEntries;
 
 			if (preallocate) {
-				try (WrapperKeepalive wrapperKeepalive = new WrapperKeepalive();)
+				try (WrapperKeepalive wrapperKeepalive = new WrapperKeepalive())
 				{
 					wrapperKeepalive.start();
 					if (oldMetaLen < newMetaLen) {
@@ -1266,7 +1266,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 				raf.close();
 		}
 
-		FileUtil.renameTo(tempConfig, configFile);
+		FileUtil.moveTo(tempConfig, configFile);
 	} catch (IOException ioe) {
 		Logger.error(this, "error writing config file for " + name, ioe);
 	} finally {

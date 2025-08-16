@@ -65,8 +65,7 @@ public class FileInsertWizardToadlet extends Toadlet implements LinkEnabledCallb
 		final PageMaker pageMaker = ctx.getPageMaker();
 
 		PageNode page = pageMaker.getPageNode(l10n("pageTitle"), ctx);
-		HTMLNode pageNode = page.outer;
-		HTMLNode contentNode = page.content;
+		HTMLNode contentNode = page.getContentNode();
 
 		/* add alert summary box */
 		if (ctx.isAllowedFullAccess()) contentNode.addChild(ctx.getAlertManager().createSummary());
@@ -75,23 +74,25 @@ public class FileInsertWizardToadlet extends Toadlet implements LinkEnabledCallb
 		if(ctx.isAdvancedModeEnabled())
 			contentNode.addChild(createFilterBox(pageMaker, ctx));
 		
-		writeHTMLReply(ctx, 200, "OK", null, pageNode.generate());
+		writeHTMLReply(ctx, 200, "OK", null, page.generate());
 	}
 	
 	private HTMLNode createInsertBox (PageMaker pageMaker, ToadletContext ctx, boolean isAdvancedModeEnabled) {
 		/* the insert file box */
 		InfoboxNode infobox = pageMaker.getInfobox(
 		        NodeL10n.getBase().getString("QueueToadlet.insertFile"), "insert-queue", true);
-		HTMLNode insertBox = infobox.outer;
-		HTMLNode insertContent = infobox.content;
+		HTMLNode insertBox = infobox.getOuterNode();
+		HTMLNode insertContent = infobox.getContentNode();
 		insertContent.addChild("p", l10n("insertIntro"));
-		NETWORK_THREAT_LEVEL seclevel = core.node.securityLevels.getNetworkThreatLevel();
+		NETWORK_THREAT_LEVEL seclevel = core.getNode().getSecurityLevels().getNetworkThreatLevel();
 		HTMLNode insertForm = ctx.addFormChild(insertContent, QueueToadlet.PATH_UPLOADS, "queueInsertForm");
+		boolean preselectSsk = (!rememberedLastTime && seclevel != NETWORK_THREAT_LEVEL.LOW)
+				|| (rememberedLastTime && !wasCanonicalLastTime)
+				|| seclevel == NETWORK_THREAT_LEVEL.MAXIMUM;
 		HTMLNode input = insertForm.addChild("input",
 		        new String[] { "type", "name", "value", "id" },
 		        new String[] { "radio", "keytype", "CHK", "keytypeChk" });
-		if ((!rememberedLastTime && seclevel == NETWORK_THREAT_LEVEL.LOW) ||
-		        (rememberedLastTime && wasCanonicalLastTime && seclevel != NETWORK_THREAT_LEVEL.MAXIMUM)) {
+		if (!preselectSsk) {
 			input.addAttribute("checked", "checked");
 		}
 		insertForm.addChild("label",
@@ -105,7 +106,7 @@ public class FileInsertWizardToadlet extends Toadlet implements LinkEnabledCallb
 		input = insertForm.addChild("input",
 		        new String[] { "type", "name", "value", "id" },
 		        new String[] { "radio", "keytype", "SSK", "keytypeSsk" });
-		if (seclevel == NETWORK_THREAT_LEVEL.MAXIMUM || (rememberedLastTime && !wasCanonicalLastTime)) {
+		if (preselectSsk) {
 			input.addAttribute("checked", "checked");
 		}
 		insertForm.addChild("label",
@@ -191,8 +192,8 @@ public class FileInsertWizardToadlet extends Toadlet implements LinkEnabledCallb
 		/* the insert file box */
 		InfoboxNode infobox = pageMaker.getInfobox(
 		        l10n("previewFilterFile"), "insert-queue", true);
-		HTMLNode insertBox = infobox.outer;
-		HTMLNode insertContent = infobox.content;
+		HTMLNode insertBox = infobox.getOuterNode();
+		HTMLNode insertContent = infobox.getContentNode();
 		HTMLNode insertForm = ctx.addFormChild(insertContent, ContentFilterToadlet.PATH, "filterPreviewForm");
 	    insertForm.addChild("#", l10n("filterFileLabel"));
 	    insertForm.addChild("br");

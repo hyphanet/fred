@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/freenet/fred.svg?branch=next)](https://travis-ci.org/freenet/fred)
+[![Build status](https://img.shields.io/github/check-runs/hyphanet/fred/next?label=build)](https://github.com/hyphanet/fred/actions)
 [![Coverity status](https://scan.coverity.com/projects/2316/badge.svg?flat=1)](https://scan.coverity.com/projects/freenet-fred)
 
 # Freenet
@@ -11,7 +11,7 @@ Fred stands for Freenet REference Daemon.
 
 ## Building
 
-We've included the [Gradle Wrapper](https://docs.gradle.org/3.2/userguide/gradle_wrapper.html) as
+We've included the [Gradle Wrapper](https://docs.gradle.org/8.11/userguide/gradle_wrapper.html) as
 recommended by the Gradle project. If you trust the version we've committed you can build
 immediately:
 
@@ -23,13 +23,23 @@ immediately:
 
     > gradlew jar
 
-We've [configured it](gradle/wrapper/gradle-wrapper.properties) to [verify the checksum](https://docs.gradle.org/3.2/userguide/gradle_wrapper.html#sec:verification)
+We've [configured it](gradle/wrapper/gradle-wrapper.properties) to [verify the checksum](https://docs.gradle.org/8.11/userguide/gradle_wrapper.html#wrapper_checksum_verification)
 of the archive it downloads from `https://services.gradle.org`.
 
 ### Build with ant
 
     $ mkdir -p lib; cd lib && grep -o CHK.* ../dependencies.properties  | xargs -P16 -I {} bash -c 'fcpget -v {} "$(echo {} | sed s,^.*/,,)"'
     $ ant -propertyfile build.properties -f build-clean.xml -Dtest.skip=true -Dfindbugs.skip=true
+
+## Building the installers
+
+The installers are built from specialized repositories:
+
+- The GNU/Linux, macOS and *nix installer is built from [hyphanet/java_installer](https://github.com/hyphanet/java_installer).
+- The Windows installer is built from [hyphanet/wininstaller-innosetup](https://github.com/hyphanet/wininstaller-innosetup) and signed with [hyphanet/sign-windows-installer](https://github.com/hyphanet/sign-windows-installer).
+
+Free code signing for the Windows installer is provided by [SignPath.io](https://about.signpath.io/), the certificate by the [SignPath Foundation](https://signpath.org/).
+
 
 ## Testing
 
@@ -51,7 +61,7 @@ To test your version of Freenet, build it with ,./gradlew jar`,
 stop your node, replace `freenet.jar` in your
 Freenet directory with `build/libs/freenet.jar`, and start your node again.
 
-To override values set in `build.gradle` put them into [the file](https://docs.gradle.org/3.2/userguide/build_environment.html)
+To override values set in `build.gradle` put them into [the file](https://docs.gradle.org/8.11/userguide/build_environment.html)
 `gradle.properties` in the format `variable = value`. For instance:
 
     org.gradle.parallel = true
@@ -66,6 +76,13 @@ To override values set in `build.gradle` put them into [the file](https://docs.g
 ## Contributing
 
 See our [contributor guidelines](CONTRIBUTING.md).
+
+### Get in contact
+
+* Ask the [development mailing list](https://www.hyphanet.org/pages/help.html#mailing-lists)
+  or join us in [IRC](https://web.libera.chat/?nick=Rabbit|?#freenet) - `#freenet` on
+  `irc.libera.chat`.
+* You can file problems in the [bug tracker](https://freenet.mantishub.io/my_view_page.php).
 
 ## Add a new dependency
 

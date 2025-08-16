@@ -209,18 +209,21 @@ public class BaseL10nTest {
         assertEquals("test.nonexistent", value);
     }
 
+    @Test
     public void testGetDefaultString() {
         BaseL10n l10n = createTestL10n(LANGUAGE.GERMAN);
         String value = l10n.getDefaultString("test.badSubstitutionFallback");
         assertEquals("Fallback ${tag}", value);
     }
 
+    @Test
     public void testGetDefaultStringFallback() {
         BaseL10n l10n = createTestL10n(LANGUAGE.GERMAN);
         String value = l10n.getDefaultString("test.sanity");
         assertEquals("Sane", value);
     }
 
+    @Test
     public void testGetDefaultStringNonexistent() {
         BaseL10n l10n = createTestL10n(LANGUAGE.GERMAN);
         String value = l10n.getDefaultString("test.nonexistent");
@@ -248,13 +251,23 @@ public class BaseL10nTest {
 
     public static final BaseL10n createL10n(LANGUAGE lang) {
         File overrideFile = new File(TestProperty.L10nPath_main, "freenet.l10n.${lang}.override.properties");
-        return new BaseL10n(TestProperty.L10nPath_main, "freenet.l10n.${lang}.properties",
+        return new BaseL10n("freenet/l10n/", "freenet.l10n.${lang}.properties",
                 overrideFile.getPath(), lang);
     }
 
     public static final BaseL10n createTestL10n(LANGUAGE lang) {
         File overrideFile = new File(TestProperty.L10nPath_test, "freenet.l10n.${lang}.override.properties");
-        return new BaseL10n(TestProperty.L10nPath_test, "freenet.l10n.${lang}.properties",
+        return new BaseL10n("freenet/l10n/", "freenet.l10n.${lang}.test.properties",
                 overrideFile.getPath(), lang);
     }
+
+    /**
+     * Installs a {@link #createTestL10n(LANGUAGE) BaseL10n} with
+     * translations read from the test classpath into the global
+     * {@link NodeL10n}, allowing tests for translation keys.
+     */
+    public static void useTestTranslation() {
+        NodeL10n.setBase(createTestL10n(LANGUAGE.ENGLISH));
+    }
+
 }

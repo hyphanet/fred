@@ -29,7 +29,7 @@ public class PushFailoverToadlet extends Toadlet {
 	public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		String requestId = req.getParam("requestId");
 		String originalRequestId = req.getParam("originalRequestId");
-		boolean result = ((SimpleToadletServer) ctx.getContainer()).pushDataManager.failover(originalRequestId, requestId);
+		boolean result = ((SimpleToadletServer) ctx.getContainer()).getPushDataManager().failover(originalRequestId, requestId);
 		if (logMINOR) {
 			Logger.minor(this, "Failover from:" + originalRequestId + " to:" + requestId + " with result:" + result);
 		}

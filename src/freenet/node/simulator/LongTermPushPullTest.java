@@ -140,7 +140,7 @@ public class LongTermPushPullTest extends LongTermTest {
 			// PUSH N+1 BLOCKS
 			for (int i = 0; i <= MAX_N; i++) {
 			    RandomAccessBucket data = randomData(node);
-				HighLevelSimpleClient client = node.clientCore.makeClient((short) 0, false, false);
+				HighLevelSimpleClient client = node.getClientCore().makeClient((short) 0, false, false);
 				FreenetURI uri = new FreenetURI("KSK@" + uid + "-" + dateFormat.format(today.getTime()) + "-" + i);
 				System.out.println("PUSHING " + uri);
 				client.addEventHook(new ClientEventListener() {
@@ -192,7 +192,7 @@ public class LongTermPushPullTest extends LongTermTest {
 
 			// PULL N+1 BLOCKS
 			for (int i = 0; i <= MAX_N; i++) {
-				HighLevelSimpleClient client = node2.clientCore.makeClient((short) 0, false, false);
+				HighLevelSimpleClient client = node2.getClientCore().makeClient((short) 0, false, false);
 				Calendar targetDate = (Calendar) today.clone();
 				targetDate.add(Calendar.DAY_OF_MONTH, -((1 << i) - 1));
 
@@ -392,12 +392,12 @@ public class LongTermPushPullTest extends LongTermTest {
 	
 
 	private static RandomAccessBucket randomData(Node node) throws IOException {
-	    RandomAccessBucket data = node.clientCore.tempBucketFactory.makeBucket(TEST_SIZE);
+	    RandomAccessBucket data = node.getClientCore().getTempBucketFactory().makeBucket(TEST_SIZE);
 		OutputStream os = data.getOutputStream();
 		try {
 		byte[] buf = new byte[4096];
 		for (long written = 0; written < TEST_SIZE;) {
-			node.fastWeakRandom.nextBytes(buf);
+			node.getFastWeakRandom().nextBytes(buf);
 			int toWrite = (int) Math.min(TEST_SIZE - written, buf.length);
 			os.write(buf, 0, toWrite);
 			written += toWrite;

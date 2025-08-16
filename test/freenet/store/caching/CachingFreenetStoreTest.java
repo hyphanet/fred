@@ -8,6 +8,7 @@ import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -198,7 +199,7 @@ public class CachingFreenetStoreTest {
 
 	/*
 	 * Check that if we are going over the maximum size, the caching store will call
-	 * pushAll and all blocks is in the *undelying* store and the size is 0
+	 * pushAll and all blocks is in the *underlying* store and the size is 0
 	 */
 	@Test
  	public void testOverMaximumSize()
@@ -298,7 +299,7 @@ public class CachingFreenetStoreTest {
 				// Write one key to the store.
 
 				String test = "test";
-				SimpleReadOnlyArrayBucket bucket = new SimpleReadOnlyArrayBucket(test.getBytes("UTF-8"));
+				SimpleReadOnlyArrayBucket bucket = new SimpleReadOnlyArrayBucket(test.getBytes(StandardCharsets.UTF_8));
 				ClientSSKBlock block = ik.encode(bucket, false, false, (short) -1, bucket.size(), random,
 						Compressor.DEFAULT_COMPRESSORDESCRIPTOR);
 				SSKBlock sskBlock = (SSKBlock) block.getBlock();
@@ -314,7 +315,7 @@ public class CachingFreenetStoreTest {
 
 				// Write a colliding key.
 				test = "test1";
-				bucket = new SimpleReadOnlyArrayBucket(test.getBytes("UTF-8"));
+				bucket = new SimpleReadOnlyArrayBucket(test.getBytes(StandardCharsets.UTF_8));
 				block = ik.encode(bucket, false, false, (short) -1, bucket.size(), random,
 						Compressor.DEFAULT_COMPRESSORDESCRIPTOR);
 				sskBlock = (SSKBlock) block.getBlock();
@@ -397,7 +398,7 @@ public class CachingFreenetStoreTest {
 				// Write one key to the store.
 
 				String test = "test";
-				SimpleReadOnlyArrayBucket bucket = new SimpleReadOnlyArrayBucket(test.getBytes("UTF-8"));
+				SimpleReadOnlyArrayBucket bucket = new SimpleReadOnlyArrayBucket(test.getBytes(StandardCharsets.UTF_8));
 				ClientSSKBlock block = ik.encode(bucket, false, false, (short) -1, bucket.size(), random,
 						Compressor.DEFAULT_COMPRESSORDESCRIPTOR);
 				SSKBlock sskBlock = (SSKBlock) block.getBlock();
@@ -465,7 +466,7 @@ public class CachingFreenetStoreTest {
 
 				// Write one key to the cache. It will not be written through to disk.
 				String test = "test";
-				SimpleReadOnlyArrayBucket bucket = new SimpleReadOnlyArrayBucket(test.getBytes("UTF-8"));
+				SimpleReadOnlyArrayBucket bucket = new SimpleReadOnlyArrayBucket(test.getBytes(StandardCharsets.UTF_8));
 				ClientSSKBlock block = ik.encode(bucket, false, false, (short) -1, bucket.size(), random,
 						Compressor.DEFAULT_COMPRESSORDESCRIPTOR);
 				SSKBlock sskBlock = (SSKBlock) block.getBlock();
@@ -495,7 +496,7 @@ public class CachingFreenetStoreTest {
 				// the block, and
 				// thus must return 0.
 				test = "test1";
-				bucket = new SimpleReadOnlyArrayBucket(test.getBytes("UTF-8"));
+				bucket = new SimpleReadOnlyArrayBucket(test.getBytes(StandardCharsets.UTF_8));
 				block = ik.encode(bucket, false, false, (short) -1, bucket.size(), random,
 						Compressor.DEFAULT_COMPRESSORDESCRIPTOR);
 				SSKBlock sskBlock2 = (SSKBlock) block.getBlock();
@@ -696,11 +697,11 @@ public class CachingFreenetStoreTest {
 		ClientCHKBlock cb = new ClientCHKBlock(verify, key);
 		Bucket output = cb.decode(new ArrayBucketFactory(), 32768, false);
 		byte[] buf = BucketTools.toByteArray(output);
-		return new String(buf, "UTF-8");
+		return new String(buf, StandardCharsets.UTF_8);
 	}
 
 	private ClientCHKBlock encodeBlockCHK(String test) throws CHKEncodeException, IOException {
-		byte[] data = test.getBytes("UTF-8");
+		byte[] data = test.getBytes(StandardCharsets.UTF_8);
 		SimpleReadOnlyArrayBucket bucket = new SimpleReadOnlyArrayBucket(data);
 		return ClientCHKBlock.encode(bucket, false, false, (short) -1, bucket.size(),
 				Compressor.DEFAULT_COMPRESSORDESCRIPTOR, null, (byte) 0);
@@ -889,7 +890,7 @@ public class CachingFreenetStoreTest {
 						Key.ALGO_AES_PCFB_256_SHA256);
 
 				String test = "test";
-				SimpleReadOnlyArrayBucket bucket = new SimpleReadOnlyArrayBucket(test.getBytes("UTF-8"));
+				SimpleReadOnlyArrayBucket bucket = new SimpleReadOnlyArrayBucket(test.getBytes(StandardCharsets.UTF_8));
 				ClientSSKBlock block = ik.encode(bucket, false, false, (short) -1, bucket.size(), random,
 						Compressor.DEFAULT_COMPRESSORDESCRIPTOR);
 				SSKBlock sskBlock = (SSKBlock) block.getBlock();
@@ -904,7 +905,7 @@ public class CachingFreenetStoreTest {
 				}
 
 				String test1 = "test1";
-				SimpleReadOnlyArrayBucket bucket1 = new SimpleReadOnlyArrayBucket(test1.getBytes("UTF-8"));
+				SimpleReadOnlyArrayBucket bucket1 = new SimpleReadOnlyArrayBucket(test1.getBytes(StandardCharsets.UTF_8));
 				ClientSSKBlock block1 = ik.encode(bucket1, false, false, (short) -1, bucket1.size(), random,
 						Compressor.DEFAULT_COMPRESSORDESCRIPTOR);
 				SSKBlock sskBlock1 = (SSKBlock) block1.getBlock();
@@ -952,12 +953,12 @@ public class CachingFreenetStoreTest {
 		ClientSSKBlock cb = ClientSSKBlock.construct(verify, key);
 		Bucket output = cb.decode(new ArrayBucketFactory(), 32768, false);
 		byte[] buf = BucketTools.toByteArray(output);
-		return new String(buf, "UTF-8");
+		return new String(buf, StandardCharsets.UTF_8);
 	}
 
 	private ClientSSKBlock encodeBlockSSK(String test, RandomSource random)
 			throws IOException, SSKEncodeException, InvalidCompressionCodecException {
-		byte[] data = test.getBytes("UTF-8");
+		byte[] data = test.getBytes(StandardCharsets.UTF_8);
 		SimpleReadOnlyArrayBucket bucket = new SimpleReadOnlyArrayBucket(data);
 		InsertableClientSSK ik = InsertableClientSSK.createRandom(random, test);
 		return ik.encode(bucket, false, false, (short) -1, bucket.size(), random, Compressor.DEFAULT_COMPRESSORDESCRIPTOR);

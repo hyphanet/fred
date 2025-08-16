@@ -10,7 +10,7 @@ import freenet.node.DarknetPeerNode;
 import freenet.node.PeerNode;
 import freenet.support.HTMLNode;
 
-public class DownloadFeedUserAlert extends AbstractUserAlert {
+public class DownloadFeedUserAlert extends AbstractUserAlert implements NodeToNodeMessageUserAlert {
 	private final WeakReference<PeerNode> peerRef;
 	private final FreenetURI uri;
 	private final int fileNumber;
@@ -29,8 +29,8 @@ public class DownloadFeedUserAlert extends AbstractUserAlert {
 		this.composed = composed;
 		this.sent = sent;
 		this.received = received;
-		peerRef = sourcePeerNode.getWeakRef();
-		sourceNodeName = sourcePeerNode.getName();
+		this.peerRef = sourcePeerNode.getWeakRef();
+		this.sourceNodeName = sourcePeerNode.getName();
 	}
 
 	@Override
@@ -42,7 +42,7 @@ public class DownloadFeedUserAlert extends AbstractUserAlert {
 	public String getText() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(l10n("fileURI")).append(" ").append(uri).append("\n");
-		if(description != null && description.length() != 0)
+		if(description != null && !description.isEmpty())
 			sb.append(l10n("fileDescription")).append(" ").append(description);
 		return sb.toString();
 	}
@@ -56,7 +56,7 @@ public class DownloadFeedUserAlert extends AbstractUserAlert {
 	public HTMLNode getHTMLText() {
 		HTMLNode alertNode = new HTMLNode("div");
 		alertNode.addChild("a", "href", "/" + uri).addChild("#", uri.toShortString());
-		if (description != null && description.length() != 0) {
+		if (description != null && !description.isEmpty()) {
 			String[] lines = description.split("\n");
 			alertNode.addChild("br");
 			alertNode.addChild("br");
@@ -104,4 +104,5 @@ public class DownloadFeedUserAlert extends AbstractUserAlert {
 			sourceNodeName = pn.getName();
 		return true;
 	}
+
 }

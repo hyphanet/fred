@@ -6,7 +6,7 @@ import org.junit.Test;
 
 public class FilterUtilsTest {
 	@Test
-	public void testValidLenthUnits() {
+	public void testValidLengthUnits() {
 		// Test all valid length units for CSS and valid values
 		assertTrue(FilterUtils.isLength("1em", false));
 		assertTrue(FilterUtils.isLength("1.12em", false));
@@ -43,5 +43,35 @@ public class FilterUtilsTest {
 		assertFalse(FilterUtils.isLength("1", false));
 		assertFalse(FilterUtils.isLength("1.", false));
 		assertFalse(FilterUtils.isLength("", false));
+	}
+	
+	@Test
+	public void testValidColors() {
+		assertTrue(FilterUtils.isColor("rebeccapurple"));
+		assertTrue(FilterUtils.isColor("Transparent"));
+		assertTrue(FilterUtils.isColor("WindowText"));
+		assertTrue(FilterUtils.isColor("#123ABC"));
+		assertTrue(FilterUtils.isColor("#123"));
+		assertTrue(FilterUtils.isColor("#123F"));
+		assertTrue(FilterUtils.isColor("#123456ff"));
+		assertTrue(FilterUtils.isColor("rgb(0,10,255)"));
+		assertTrue(FilterUtils.isColor("rgb(0 10 255)"));
+		assertTrue(FilterUtils.isColor("rgba(100 200 255 / 0.25)"));
+		assertTrue(FilterUtils.isColor("rgba(010 00200 255 / 25%)"));
+		assertTrue(FilterUtils.isColor("rgba(none 0 0% /)"));
+	}
+	
+	@Test
+	public void testInvalidColors() {
+		assertFalse(FilterUtils.isColor("rgb(0.1 0.2 0.3)")); // should be between 0 and 255, not 0.1
+		assertFalse(FilterUtils.isColor("rgb(")); // completely empty; don't trigger out of range access here!
+		assertFalse(FilterUtils.isColor("rgb()")); // completely empty; don't trigger out of range access here!
+		assertFalse(FilterUtils.isColor("rgb(/)")); // completely empty; don't trigger out of range access here!
+		assertFalse(FilterUtils.isColor("#ABCDEFGH")); // #ABCDEF followed by G and H
+		assertFalse(FilterUtils.isColor("112233")); // missing #
+		assertFalse(FilterUtils.isColor("#12")); // not #RGB
+		assertFalse(FilterUtils.isColor("#12345")); // not #RGBA neither #RRGGBB
+		assertFalse(FilterUtils.isColor("#1234567")); // not #RRGGBB neither #RRGGBBAA
+		assertFalse(FilterUtils.isColor("url(/KSK@foo)")); // url not color!
 	}
 }

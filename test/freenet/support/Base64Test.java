@@ -18,6 +18,7 @@ package freenet.support;
 
 import static org.junit.Assert.*;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Random;
 
@@ -51,8 +52,8 @@ public class Base64Test {
 	 * to verify if it encode works correctly.
 	 */
 	@Test
-	public void testEncode() throws Exception {
-		byte[] aByteArrayToEncode = toEncode.getBytes("UTF-8");
+	public void testEncode() {
+		byte[] aByteArrayToEncode = toEncode.getBytes(StandardCharsets.UTF_8);
 		assertEquals(Base64.encode(aByteArrayToEncode), toDecode);
 	}
 
@@ -73,8 +74,8 @@ public class Base64Test {
 	 * This is the same as encode() from generator/js/src/freenet/client/tools/Base64.java
 	 */
 	@Test
-	public void testEncodeStandard() throws Exception {
-		byte[] aByteArrayToEncode = testSample.getBytes("UTF-8");
+	public void testEncodeStandard() {
+		byte[] aByteArrayToEncode = testSample.getBytes(StandardCharsets.UTF_8);
 		assertEquals(Base64.encodeStandard(aByteArrayToEncode), testSampleStandardEncoding);
 	}
 
@@ -84,7 +85,7 @@ public class Base64Test {
 	 */
 	@Test
 	public void testDecodeStandard() throws Exception {
-		String decodedString = new String(Base64.decodeStandard(testSampleStandardEncoding), "UTF-8");
+		String decodedString = new String(Base64.decodeStandard(testSampleStandardEncoding), StandardCharsets.UTF_8);
 		assertEquals(decodedString, testSample);
 	}
 
@@ -151,7 +152,7 @@ public class Base64Test {
 	 */
 	@Test
 	public void testIllegalBaseCharacter() {
-//		TODO: check many other possibile cases!
+//		TODO: check many other possible cases!
 		String illegalCharString = "abcd=fghilmn";
 		try {
 			Base64.decode(illegalCharString);

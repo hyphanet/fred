@@ -46,7 +46,7 @@ public abstract class WebInterfaceToadlet extends Toadlet implements LinkEnabled
 	 */
 	protected String normalizePath(String path) {
 		String result = path.substring(_path.length());
-		if (result.length() == 0) {
+		if (result.isEmpty()) {
 			return "/";
 		}
 		if (result.endsWith("/")) {
@@ -56,7 +56,7 @@ public abstract class WebInterfaceToadlet extends Toadlet implements LinkEnabled
 	}
 
 	/**
-	 * Validates whether the request contains a formPassword which matches {@link NodeClientCore#formPassword}. See the JavaDoc there for an explanation
+	 * Validates whether the request contains a formPassword which matches {@link NodeClientCore#getFormPassword() formPassword}. See the JavaDoc there for an explanation
 	 * of the purpose of this mechanism.
 	 * 
 	 * <p><b>ATTENTION</b>: It is critically important to use this function when processing requests which "change the server state". Other words for this
@@ -71,7 +71,7 @@ public abstract class WebInterfaceToadlet extends Toadlet implements LinkEnabled
 		String passwd = req.getParam("formPassword", null);
 		if (passwd == null)
 			passwd = req.getPartAsStringFailsafe("formPassword", 32);
-		return (passwd != null) && passwd.equals(pluginContext.clientCore.formPassword);
+		return (passwd != null) && passwd.equals(pluginContext.clientCore.getFormPassword());
 	}
 
 	public HTMLNode createErrorBox(List<String> errors) {
@@ -80,7 +80,7 @@ public abstract class WebInterfaceToadlet extends Toadlet implements LinkEnabled
 
 	public HTMLNode createErrorBox(List<String> errors, String path, FreenetURI retryUri, String extraParams) {
 		InfoboxNode box = pluginContext.pageMaker.getInfobox("infobox-alert", "ERROR");
-		HTMLNode errorBox = box.content;
+		HTMLNode errorBox = box.getContentNode();
 		for (String error : errors) {
 			errorBox.addChild("#", error);
 			errorBox.addChild("br");
@@ -90,6 +90,6 @@ public abstract class WebInterfaceToadlet extends Toadlet implements LinkEnabled
 			errorBox.addChild(new HTMLNode("a", "href", path + "?key="
 					+ ((extraParams == null) ? retryUri : (retryUri + extraParams)), retryUri.toString(false, false)));
 		}
-		return box.outer;
+		return box.getOuterNode();
 	}
 }

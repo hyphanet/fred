@@ -6,9 +6,9 @@ package freenet.clients.http;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Method;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
@@ -314,7 +314,7 @@ public abstract class Toadlet {
 	}
 
 	protected void writeReply(ToadletContext context, int code, String mimeType, String desc, MultiValueTable<String, String> headers, String reply, boolean forceDisableJavascript) throws ToadletContextClosedException, IOException {
-	    byte[] buffer = reply.getBytes("UTF-8");
+	    byte[] buffer = reply.getBytes(StandardCharsets.UTF_8);
 	    writeReply(context, code, mimeType, desc, headers, buffer, 0, buffer.length, forceDisableJavascript);
 	}
 
@@ -349,21 +349,15 @@ public abstract class Toadlet {
 	 * @throws IOException
 	 */
 	static void writePermanentRedirect(ToadletContext ctx, String msg, String location) throws ToadletContextClosedException, IOException {
-		MultiValueTable<String, String> mvt = new MultiValueTable<String, String>();
-		mvt.put("Location", location);
 		if(msg == null) msg = "";
 		else msg = HTMLEncoder.encode(msg);
 		String redirDoc =
 			"<html><head><title>"+msg+"</title></head><body><h1>" +
 			l10n("permRedirectWithReason", "reason", msg)+
 			"</h1><a href=\""+HTMLEncoder.encode(location)+"\">"+l10n("clickHere")+"</a></body></html>";
-		byte[] buf;
-		try {
-			buf = redirDoc.getBytes("UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
-		}
-		ctx.sendReplyHeaders(301, "Moved Permanently", mvt, "text/html; charset=UTF-8", buf.length);
+		byte[] buf = redirDoc.getBytes(StandardCharsets.UTF_8);
+		MultiValueTable<String, String> headers = MultiValueTable.from("Location", location);
+		ctx.sendReplyHeaders(301, "Moved Permanently", headers, "text/html; charset=UTF-8", buf.length);
 		ctx.writeData(buf, 0, buf.length);
 	}
 
@@ -380,8 +374,6 @@ public abstract class Toadlet {
 	 * @throws IOException
 	 */
 	protected void writeTemporaryRedirect(ToadletContext ctx, String msg, String location) throws ToadletContextClosedException, IOException {
-		MultiValueTable<String, String> mvt = new MultiValueTable<String, String>();
-		mvt.put("Location", location);
 		if(msg == null) msg = "";
 		else msg = HTMLEncoder.encode(msg);
 		String redirDoc =
@@ -389,12 +381,8 @@ public abstract class Toadlet {
 			l10n("tempRedirectWithReason", "reason", msg)+
 			"</h1><a href=\""+HTMLEncoder.encode(location)+"\">" +
 			l10n("clickHere") + "</a></body></html>";
-		byte[] buf;
-		try {
-			buf = redirDoc.getBytes("UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
-		}
+		byte[] buf = redirDoc.getBytes(StandardCharsets.UTF_8);
+		MultiValueTable<String, String> mvt = MultiValueTable.from("Location", location);
 		ctx.sendReplyHeaders(302, "Found", mvt, "text/html; charset=UTF-8", buf.length);
 		ctx.writeData(buf, 0, buf.length);
 	}
@@ -411,8 +399,7 @@ public abstract class Toadlet {
 	 */
 	protected void sendErrorPage(ToadletContext ctx, int code, String desc, HTMLNode message) throws ToadletContextClosedException, IOException {
 		PageNode page = ctx.getPageMaker().getPageNode(desc, ctx);
-		HTMLNode pageNode = page.outer;
-		HTMLNode contentNode = page.content;
+		HTMLNode contentNode = page.getContentNode();
 
 		HTMLNode infoboxContent = ctx.getPageMaker().getInfobox("infobox-error", desc, contentNode, null, true);
 		infoboxContent.addChild(message);
@@ -421,7 +408,7 @@ public abstract class Toadlet {
 		infoboxContent.addChild("br");
 		addHomepageLink(infoboxContent);
 
-		writeHTMLReply(ctx, code, desc, pageNode.generate());
+		writeHTMLReply(ctx, code, desc, page.generate());
 	}
 
 	/**
@@ -435,8 +422,7 @@ public abstract class Toadlet {
 	 */
 	protected void sendErrorPage(ToadletContext ctx, String desc, String message, Throwable t) throws ToadletContextClosedException, IOException {
 		PageNode page = ctx.getPageMaker().getPageNode(desc, ctx);
-		HTMLNode pageNode = page.outer;
-		HTMLNode contentNode = page.content;
+		HTMLNode contentNode = page.getContentNode();
 
 		HTMLNode infoboxContent = ctx.getPageMaker().getInfobox("infobox-error", desc, contentNode, null, true);
 		infoboxContent.addChild("#", message);
@@ -452,7 +438,7 @@ public abstract class Toadlet {
 		infoboxContent.addChild("a", "href", ".", l10n("returnToPrevPage"));
 		addHomepageLink(infoboxContent);
 
-		writeHTMLReply(ctx, 500, desc, pageNode.generate());
+		writeHTMLReply(ctx, 500, desc, page.generate());
 	}
 
 	/**

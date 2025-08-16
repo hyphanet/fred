@@ -1,207 +1,73 @@
 package freenet.support;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.regex.PatternSyntaxException;
 
 import freenet.support.FileLoggerHook.IntervalParseException;
 import freenet.support.LoggerHook.InvalidThresholdException;
-import freenet.support.io.Closer;
 
 /**
  * @author Iakin
 
 */
 public abstract class Logger {
+	@Deprecated
 	public final static class OSThread {
-		
-		private static boolean getPIDEnabled = false;
-		private static boolean getPPIDEnabled = false;
-		private static boolean logToFileEnabled = false;
-		private static LogLevel logToFileVerbosity = LogLevel.DEBUG;
-		private static boolean logToStdOutEnabled = false;
-		private static boolean procSelfStatEnabled = false;
-	
 		/**
-		 * Get the thread's process ID or return -1 if it's unavailable for some reason
+		 * @deprecated always returns -1
 		 */
-		public synchronized static int getPID(Object o) {
-			if (!getPIDEnabled) {
-				return -1;
-			}
-			return getPIDFromProcSelfStat(o);
+		@Deprecated
+		public static int getPID(Object o) {
+			return -1;
 		}
-	
+
 		/**
-		 * Get the thread's parent process ID or return -1 if it's unavailable for some reason
+		 * @deprecated always returns -1
 		 */
-		public synchronized static int getPPID(Object o) {
-			if (!getPPIDEnabled) {
-				return -1;
-			}
-			return getPPIDFromProcSelfStat(o);
+		@Deprecated
+		public static int getPPID(Object o) {
+			return -1;
 		}
-	
+
 		/**
-		 * Get a specified field from /proc/self/stat or return null if
-		 * it's unavailable for some reason.
+		 * @deprecated always returns null
 		 */
-		public synchronized static String getFieldFromProcSelfStat(int fieldNumber, Object o) {
-			String readLine = null;
-	
-			if (!procSelfStatEnabled) {
-				return null;
-			}
-	
-			// read /proc/self/stat and parse for the specified field
-			InputStream is = null;
-			BufferedReader br = null;
-			File procFile = new File("/proc/self/stat");
-			if (procFile.exists()) {
-				try {
-					is = new FileInputStream(procFile);
-					br = new BufferedReader(new InputStreamReader(is, "ISO-8859-1" /* ASCII */));
-				} catch (FileNotFoundException e1) {
-					logStatic(o, "'/proc/self/stat' not found", logToFileVerbosity);
-					procSelfStatEnabled = false;
-					br = null;
-				} catch (UnsupportedEncodingException e) {
-					// Impossible.
-					throw new Error(e);
-				}
-				if (null != br) {
-					try {
-						readLine = br.readLine();
-					} catch (IOException e) {
-						error(o, "Caught IOException in br.readLine() of OSThread.getFieldFromProcSelfStat()", e);
-						readLine = null;
-					} finally {
-						Closer.close(br);
-					}
-					if (null != readLine) {
-						try {
-							String[] procFields = readLine.trim().split(" ");
-							if (4 <= procFields.length) {
-								return procFields[ fieldNumber ];
-							}
-						} catch (PatternSyntaxException e) {
-							error(o, "Caught PatternSyntaxException in readLine.trim().split(\" \") of OSThread.getFieldFromProcSelfStat() while parsing '"+readLine+"'", e);
-						}
-					}
-				} else {
-					Closer.close(is);
-				}
-			}
+		@Deprecated
+		public static String getFieldFromProcSelfStat(int fieldNumber, Object o) {
 			return null;
 		}
-	
+
 		/**
-		 * Get the thread's process ID using the /proc/self/stat method or
-		 * return -1 if it's unavailable for some reason.  This is an ugly
-		 * hack required by Java to get the OS process ID of a thread on
-		 * Linux without using JNI.
+		 * @deprecated always returns -1
 		 */
-		public synchronized static int getPIDFromProcSelfStat(Object o) {
-			int pid = -1;
-	
-			if (!getPIDEnabled) {
-				return -1;
-			}
-			if (!procSelfStatEnabled) {
-				return -1;
-			}
-			String pidString = getFieldFromProcSelfStat(0, o);
-			if (null == pidString) {
-				return -1;
-			}
-			try {
-				pid = Integer.parseInt( pidString.trim() );
-			} catch (NumberFormatException e) {
-				error(o, "Caught NumberFormatException in Integer.parseInt() of OSThread.getPIDFromProcSelfStat() while parsing '"+pidString+"'", e);
-			}
-			return pid;
+		@Deprecated
+		public static int getPIDFromProcSelfStat(Object o) {
+			return -1;
 		}
-	
+
 		/**
-		 * Get the thread's parent process ID using the /proc/self/stat
-		 * method or return -1 if it's unavailable for some reason.  This
-		 * is ugly hack required by Java to get the OS parent process ID of
-		 * a thread on Linux without using JNI.
+		 * @deprecated always returns -1
 		 */
-		public synchronized static int getPPIDFromProcSelfStat(Object o) {
-			int ppid = -1;
-	
-			if (!getPPIDEnabled) {
-				return -1;
-			}
-			if (!procSelfStatEnabled) {
-				return -1;
-			}
-			String ppidString = getFieldFromProcSelfStat(3, o);
-			if (null == ppidString) {
-				return -1;
-			}
-			try {
-				ppid = Integer.parseInt( ppidString.trim() );
-			} catch (NumberFormatException e) {
-				error(o, "Caught NumberFormatException in Integer.parseInt() of OSThread.getPPIDFromProcSelfStat() while parsing '"+ppidString+"'", e);
-			}
-			return ppid;
+		@Deprecated
+		public static int getPPIDFromProcSelfStat(Object o) {
+			return -1;
 		}
-	
+
 		/**
-		 * Log the thread's process ID or return -1 if it's unavailable for some reason
+		 * @deprecated always returns -1
 		 */
-		public synchronized static int logPID(Object o) {
-			if (!getPIDEnabled) {
-				return -1;
-			}
-			int pid = getPID(o);
-			String msg;
-			if (-1 != pid) {
-				msg = "This thread's OS PID is " + pid;
-			} else {
-				msg = "This thread's OS PID could not be determined";
-			}
-			if (logToStdOutEnabled) {
-				System.out.println(msg + ": " + o);
-			}
-			if (logToFileEnabled) {
-				logStatic(o, msg, logToFileVerbosity);
-			}
-			return pid;
+		@Deprecated
+		public static int logPID(Object o) {
+			return -1;
 		}
-	
+
 		/**
-		 * Log the thread's process ID or return -1 if it's unavailable for some reason
+		 * @deprecated always returns -1
 		 */
-		public synchronized static int logPPID(Object o) {
-			if (!getPPIDEnabled) {
-				return -1;
-			}
-			int ppid = getPPID(o);
-			String msg;
-			if (-1 != ppid) {
-				msg = "This thread's OS PPID is " + ppid;
-			} else {
-				msg = "This thread's OS PPID could not be determined";
-			}
-			if (logToStdOutEnabled) {
-				System.out.println(msg + ": " + o);
-			}
-			if (logToFileEnabled) {
-				logStatic(o, msg, logToFileVerbosity);
-			}
-			return ppid;
+		@Deprecated
+		public static int logPPID(Object o) {
+			return -1;
 		}
 	}
 
@@ -621,17 +487,6 @@ public abstract class Logger {
 		};
 
 		registerLogThresholdCallback(ltc);
-	}
-	
-	/**
-	 * Report a fatal error and exit.
-	 * @param cause the object or class involved
-	 * @param retcode the return code
-	 * @param message the reason why
-	 */
-	public static void fatal(Object cause, int retcode, String message) {
-		error(cause, message);
-		System.exit(retcode);
 	}
 
 	/** Add a logger hook to the global logger hook chain. Messages which

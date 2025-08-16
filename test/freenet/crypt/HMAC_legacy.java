@@ -3,11 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.crypt;
 
-import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-
-import freenet.support.HexUtil;
 
 /**
  * Implements the HMAC Keyed Message Authentication function, as described
@@ -80,75 +76,15 @@ public class HMAC_legacy {
 		}
 	}
 
-	public static void main(String[] args) throws UnsupportedEncodingException {
-		HMAC_legacy s = null;
-		try {
-			s = new HMAC_legacy(MessageDigest.getInstance("SHA1"));
-		} catch(NoSuchAlgorithmException e) {
-			throw new RuntimeException(e);
-		}
-		byte[] key = new byte[20];
-		System.err.println("20x0b, 'Hi There':");
-		byte[] text;
-		text = "Hi There".getBytes("UTF-8");
-
-		for(int i = 0; i < key.length; i++)
-			key[i] = (byte) 0x0b;
-
-		byte[] mv = s.mac(key, text, 20);
-		System.out.println(HexUtil.bytesToHex(mv, 0, mv.length));
-
-		System.err.println("20xaa, 50xdd:");
-		for(int i = 0; i < key.length; i++)
-			key[i] = (byte) 0xaa;
-		text = new byte[50];
-		for(int i = 0; i < text.length; i++)
-			text[i] = (byte) 0xdd;
-		mv = s.mac(key, text, 20);
-		System.out.println(HexUtil.bytesToHex(mv, 0, mv.length));
-
-		key = new byte[25];
-		System.err.println("25x[i+1], 50xcd:");
-		for(int i = 0; i < key.length; i++)
-			key[i] = (byte) (i + 1);
-		for(int i = 0; i < text.length; i++)
-			text[i] = (byte) 0xcd;
-		mv = s.mac(key, text, 20);
-		System.out.println(HexUtil.bytesToHex(mv, 0, mv.length));
-
-		key = new byte[20];
-		System.err.println("20x0c, 'Test With Truncation':");
-		for(int i = 0; i < key.length; i++)
-			key[i] = (byte) 0x0c;
-		text = "Test With Truncation".getBytes("UTF-8");
-		mv = s.mac(key, text, 20);
-		System.out.println(HexUtil.bytesToHex(mv, 0, mv.length));
-		mv = s.mac(key, text, 12);
-		System.out.println(HexUtil.bytesToHex(mv, 0, mv.length));
-
-	}
-
 	public static byte[] macWithSHA256(byte[] K, byte[] text, int macbytes) {
-		MessageDigest sha256 = null;
-		try {
-			sha256 = SHA256.getMessageDigest();
-			HMAC_legacy hash = new HMAC_legacy(sha256);
-			return hash.mac(K, text, macbytes);
-		} finally {
-			if(sha256 != null)
-				SHA256.returnMessageDigest(sha256);
-		}
+		MessageDigest sha256 = SHA256.getMessageDigest();
+		HMAC_legacy hash = new HMAC_legacy(sha256);
+		return hash.mac(K, text, macbytes);
 	}
 
 	public static boolean verifyWithSHA256(byte[] K, byte[] text, byte[] mac) {
-		MessageDigest sha256 = null;
-		try {
-			sha256 = SHA256.getMessageDigest();
-			HMAC_legacy hash = new HMAC_legacy(sha256);
-			return hash.verify(K, text, mac);
-		} finally {
-			if(sha256 != null)
-				SHA256.returnMessageDigest(sha256);
-		}
+		MessageDigest sha256 = SHA256.getMessageDigest();
+		HMAC_legacy hash = new HMAC_legacy(sha256);
+		return hash.verify(K, text, mac);
 	}
 }
