@@ -436,7 +436,7 @@ public class BucketTools {
 	public static Bucket pad(Bucket oldBucket, int blockLength, BucketFactory bf, int length) throws IOException {
 		byte[] hash = BucketTools.hash(oldBucket);
 		Bucket b = bf.makeBucket(blockLength);
-		MersenneTwister mt = new MersenneTwister(hash);
+		MersenneTwister mt = MersenneTwister.createUnsynchronized(hash);
 		OutputStream os = b.getOutputStreamUnbuffered();
 		try {
 			BucketTools.copyTo(oldBucket, os, length);

@@ -29,8 +29,9 @@ import freenet.support.Fields;
 */
 
 /**
-** This is a synchronized wrapper around {@link org.spaceroots.mantissa.random.MersenneTwister}
-** which also adds additional {@code setSeed()} methods.
+** This is a wrapper around {@link org.spaceroots.mantissa.random.MersenneTwister} which adds
+** additional {@code setSeed()} methods. Instances are synchronized unless created through
+** {@link #createUnsynchronized}.
 **
 ** @author infinity0
 */
@@ -50,7 +51,13 @@ public class MersenneTwister extends org.spaceroots.mantissa.random.MersenneTwis
 	/** Creates a new random number generator using a single long seed. */
 	public MersenneTwister(long seed) { super(seed); }
 
-	/** Creates a new random number generator using a byte array seed. */
+	/**
+	 * Creates a new random number generator using a byte array seed.
+	 *
+	 * @deprecated use {@link #createSynchronized} or {@link #createUnsynchronized}
+	 * depending on thread-safety requirements
+	 **/
+	@Deprecated
 	public MersenneTwister(byte[] seed) {
 		super(Fields.bytesToInts(seed, 0, seed.length));
 	}
@@ -78,4 +85,71 @@ public class MersenneTwister extends org.spaceroots.mantissa.random.MersenneTwis
 	/** {@inheritDoc} */
 	@Override protected synchronized int next(int bits) { return super.next(bits); }
 
+	/**
+	 * Creates a new random number generator using a random seed from the provided source.
+	 * Note that this is significantly slower than the unsynchronized (hence not thread-safe)
+	 * variant that can be obtained from {@link #createUnsynchronized}.
+	 **/
+	public static MersenneTwister createSynchronized(byte[] seed) {
+		return new MersenneTwister(Fields.bytesToInts(seed));
+	}
+
+	/**
+	 * Creates a new random number generator using a byte array seed.
+	 * The returned generator is not synchronized and is therefore NOT thread-safe.
+	 **/
+	public static MersenneTwister createUnsynchronized(byte[] seed) {
+		return new Unsynchronized(seed);
+	}
+
+	private static final class Unsynchronized extends MersenneTwister {
+		private Unsynchronized(byte[] seed) {
+			super(Fields.bytesToInts(seed));
+		}
+
+		@Override
+		protected int next(int bits) {
+			return unsynchronizedNext(bits);
+		}
+
+		@Override
+		public void setSeed(int seed) {
+			unsynchronizedSetSeed(seed);
+		}
+
+		@Override
+		public void setSeed(int[] seed) {
+			unsynchronizedSetSeed(seed);
+		}
+
+		@Override
+		public void setSeed(long seed) {
+			unsynchronizedSetSeed(seed);
+		}
+
+		@Override
+		public void setSeed(byte[] seed) {
+			unsynchronizedSetSeed(seed);
+		}
+	}
+
+	final int unsynchronizedNext(int bits) {
+		return super.next(bits);
+	}
+
+	final void unsynchronizedSetSeed(int seed) {
+		super.setSeed(seed);
+	}
+
+	final void unsynchronizedSetSeed(int[] seed) {
+		super.setSeed(seed);
+	}
+
+	final void unsynchronizedSetSeed(long seed) {
+		super.setSeed(seed);
+	}
+
+	final void unsynchronizedSetSeed(byte[] seed) {
+		super.setSeed(Fields.bytesToInts(seed));
+	}
 }

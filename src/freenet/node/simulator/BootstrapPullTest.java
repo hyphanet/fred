@@ -11,8 +11,6 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 
-import freenet.support.math.MersenneTwister;
-
 import freenet.client.FetchException;
 import freenet.client.HighLevelSimpleClient;
 import freenet.crypt.RandomSource;
@@ -20,13 +18,14 @@ import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
+import freenet.support.Logger.LogLevel;
+import freenet.support.LoggerHook.InvalidThresholdException;
 import freenet.support.PooledExecutor;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
-import freenet.support.Logger.LogLevel;
-import freenet.support.LoggerHook.InvalidThresholdException;
 import freenet.support.io.FileUtil;
 import freenet.support.io.LineReadingInputStream;
+import freenet.support.math.MersenneTwister;
 
 /**
  * Insert a random block of data to an established node via FCP, then
@@ -65,7 +64,7 @@ public class BootstrapPullTest {
         RandomSource random = NodeStarter.globalTestInit(dir.getPath(), false, LogLevel.ERROR, "", false);
         byte[] seed = new byte[64];
         random.nextBytes(seed);
-        MersenneTwister fastRandom = new MersenneTwister(seed);
+        MersenneTwister fastRandom = MersenneTwister.createUnsynchronized(seed);
         File seednodes = new File("seednodes.fref");
         if(!seednodes.exists() || seednodes.length() == 0 || !seednodes.canRead()) {
         	System.err.println("Unable to read seednodes.fref, it doesn't exist, or is empty");
