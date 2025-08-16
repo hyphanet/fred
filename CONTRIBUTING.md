@@ -1,5 +1,4 @@
 # Welcome!
-
 This document assumes you have already [set up a development
 environment](https://wiki.freenetproject.org/Building_from_source) and have made
 a change you want to submit for review. If you'd like an idea for something to
@@ -11,9 +10,8 @@ start with:
   List only bugs filed against this repository by selecting "Freenet" in the
   "Project" drop-down in the upper right. Do any of these look interesting?
 * Check the [projects](https://wiki.freenetproject.org/Projects) page.
-* Ask the [development mailing list](https://freenetproject.org/pages/help.html#mailing-lists)
-  or join us in [IRC](https://web.libera.chat/?nick=Rabbit|?#freenet) - `#freenet` on
-  `irc.libera.chat`.
+* Join us in [IRC](https://web.libera.chat/?nick=Rabbit|?#freenet) - `#freenet` on
+  `irc.libera.chat` or in FMS.
 
 # Code review
 
@@ -23,7 +21,7 @@ against the `next` branch. It's usually a good idea to work on a topic / feature
 branch that starts at `next` and is specific to the pull request. Once you have
 submitted a pull request, people will start reviewing it and providing feedback.
 If you don't hear anything for a while feel free to bring it to the attention of
-people in [IRC](https://www.hyphanet.org/pages/help.html#chat-with-us) or the [mailing list](https://www.hyphanet.org/pages/help.html#mailing-lists) - we may
+people in [IRC](https://www.hyphanet.org/pages/help.html#chat-with-us) or FMS - we may
 have missed it.
 
 All commits with functional changes must be reviewed, including those from
@@ -41,7 +39,7 @@ producing software that is readable, correct, and sufficiently efficient.
 Breaking API creates an immense amount of work for developers of other projects,
 so it is *not* something to be done lightly. If you feel you must make a change
 that breaks API and cannot maintain backwards compatibility, please first raise
-the issue with the community - the [mailing list](https://www.hyphanet.org/pages/help.html#mailing-lists)
+the issue with the community - FMS
 and [IRC](https://www.hyphanet.org/pages/help.html#chat-with-us) are good places to contact us.
 
 Changing dependencies must be accompanied with changes in every
@@ -83,3 +81,4 @@ For more discussion see the [git patch submission documentation](https://git.ker
 
 Text editors can be configured to assist in formatting messages this way, and
 git packages sometimes ship with such configuration.
+
