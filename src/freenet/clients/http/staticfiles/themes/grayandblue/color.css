@@ -289,3 +289,9 @@ tr.priority6, td.priority6 {
   background-color: transparent !important;
 }
 
+
+.copy-to-clipboard-element:active {
+  color: red;
+  font-weight: bold;
+}
+
