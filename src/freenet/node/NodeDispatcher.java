@@ -288,7 +288,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 
 	private void rejectRequest(Message m, ByteCounter ctr) {
 		long uid = m.getLong(DMT.UID);
-		Message msg = DMT.createFNPRejectedOverload(uid, true, false, false);
+		Message msg = DMT.createFNPRejectedOverload(uid, true);
 		try {
 			m.getSource().sendAsync(msg, null, ctr);
 		} catch (NotConnectedException e) {
@@ -354,7 +354,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			nodeStats.shouldRejectRequest(true, false, isSSK, false, true, source, false, false, realTimeFlag, tag);
 		if(reject != null) {
 			Logger.normal(this, "Rejecting FNPGetOfferedKey from "+source+" for "+key+" : "+reject);
-			Message rejected = DMT.createFNPRejectedOverload(uid, true, true, realTimeFlag);
+			Message rejected = DMT.createFNPRejectedOverload(uid, true);
 			if(reject.soft)
 				rejected.addSubMessage(DMT.createFNPRejectIsSoft());
 			try {
@@ -366,13 +366,10 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			return true;
 		}
 		
-		} catch (Error e) {
+		} catch (Error | RuntimeException e) {
 			tag.unlockHandler();
 			throw e;
-		} catch (RuntimeException e) {
-			tag.unlockHandler();
-			throw e;
-		} // Otherwise, sendOfferedKey is responsible for unlocking. 
+		} // Otherwise, sendOfferedKey is responsible for unlocking.
 		
 		// Accept it.
 		
@@ -630,7 +627,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		if(target < 0.0 || target >= 1.0 || htl <= 0 || 
 				paddedLength < 0 || paddedLength > OpennetManager.MAX_OPENNET_NODEREF_LENGTH ||
 				noderefLength > paddedLength) {
-			Message msg = DMT.createFNPRejectedOverload(uid, true, false, false);
+			Message msg = DMT.createFNPRejectedOverload(uid, true);
 			try {
 				source.sendAsync(msg, null, node.getNodeStats().announceByteCounter);
 			} catch (NotConnectedException e) {
@@ -663,7 +660,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 					om.getSeedTracker().rejectedAnnounce((SeedClientPeerNode)source);
 				Message msg = null;
 				if (NodeStats.AnnouncementDecision.OVERLOAD == shouldAcceptAnnouncement) {
-					msg = DMT.createFNPRejectedOverload(uid, true, false, false);
+					msg = DMT.createFNPRejectedOverload(uid, true);
 					if (logMINOR)
 						Logger.minor(this,
 							     "Rejected announcement (overall overload) from "
@@ -689,7 +686,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 				if(om != null && source instanceof SeedClientPeerNode)
 					om.getSeedTracker().rejectedAnnounce((SeedClientPeerNode)source);
 				node.getNodeStats().endAnnouncement(uid);
-				Message msg = DMT.createFNPRejectedOverload(uid, true, false, false);
+				Message msg = DMT.createFNPRejectedOverload(uid, true);
 				try {
 					source.sendAsync(msg, null, node.getNodeStats().announceByteCounter);
 				} catch (NotConnectedException e) {
@@ -701,7 +698,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			if(om != null && source instanceof SeedClientPeerNode) {
 				if(!om.getSeedTracker().acceptAnnounce((SeedClientPeerNode)source, node.getFastWeakRandom())) {
 					node.getNodeStats().endAnnouncement(uid);
-					Message msg = DMT.createFNPRejectedOverload(uid, true, false, false);
+					Message msg = DMT.createFNPRejectedOverload(uid, true);
 					try {
 						source.sendAsync(msg, null, node.getNodeStats().announceByteCounter);
 					} catch (NotConnectedException e) {

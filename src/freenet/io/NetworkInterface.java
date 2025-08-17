@@ -114,8 +114,7 @@ public class NetworkInterface implements Closeable {
 	 * Creates a new network interface that can bind to several addresses and
 	 * allows connection filtering on IP address level.
 	 * 
-	 * @param bindTo
-	 *            A comma-separated list of addresses to bind to
+	 * @param port
 	 * @param allowedHosts
 	 *            A comma-separated list of allowed addresses
 	 */
