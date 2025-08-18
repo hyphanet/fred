@@ -199,9 +199,10 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		if(path.endsWith("myref.fref")) {
 			SimpleFieldSet fs = getNoderef();
 			String noderefString = fs.toOrderedStringWithBase64();
-			MultiValueTable<String, String> extraHeaders = new MultiValueTable<String, String>();
-			// Force download to disk
-			extraHeaders.put("Content-Disposition", "attachment; filename=myref.fref");
+			MultiValueTable<String, String> extraHeaders = MultiValueTable.from(
+				// Force download to disk
+				"Content-Disposition", "attachment; filename=myref.fref"
+			);
 			writeReply(ctx, 200, "application/x-freenet-reference", "OK", extraHeaders, noderefString);
 			return;
 		}
@@ -249,8 +250,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 
 		PageNode page = ctx.getPageMaker().getPageNode(getPageTitle(titleCountString), ctx);
 		final boolean advancedMode = ctx.isAdvancedModeEnabled();
-		HTMLNode pageNode = page.outer;
-		HTMLNode contentNode = page.content;
+		HTMLNode contentNode = page.getContentNode();
 		
 		// FIXME! We need some nice images
 		long now = System.currentTimeMillis();
@@ -503,7 +503,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 								//i now points to the proper location (equal, insertion point, or end-of-list)
 								//maybe better called "reverseGroup"?
 								List<PeerNodeStatus> peerGroup;
-								if (i<max && locations.get(i).doubleValue()==location) {
+								if (i<max && locations.get(i) ==location) {
 									peerGroup=peerGroups.get(i);
 								} else {
 									peerGroup=new ArrayList<PeerNodeStatus>();
@@ -595,7 +595,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			drawNoderefBox(contentNode, getNoderef());
 		}
 		
-		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+		this.writeHTMLReply(ctx, 200, "OK", page.generate());
 	}
 
 	protected abstract boolean acceptRefPosts();
@@ -742,8 +742,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			}
 			
 			PageNode page = ctx.getPageMaker().getPageNode(l10n("reportOfNodeAddition"), ctx);
-			HTMLNode pageNode = page.outer;
-			HTMLNode contentNode = page.content;
+			HTMLNode contentNode = page.getContentNode();
 			
 			//We create a table to show the results
 			HTMLNode detailedStatusBox=new HTMLNode("table");
@@ -765,7 +764,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			infoboxContent.addChild("p").addChild("a", "href", path(), l10n("goFriendConnectionStatus"));
 			addHomepageLink(infoboxContent.addChild("p"));
 			
-			writeHTMLReply(ctx, 500, l10n("reportOfNodeAddition"), pageNode.generate());
+			writeHTMLReply(ctx, 500, l10n("reportOfNodeAddition"), page.generate());
 		} else handleAltPost(uri, request, ctx, logMINOR);
 		
 		
@@ -1154,7 +1153,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			String messageName = entry.getKey();
 			Long messageCount = entry.getValue();
 			messageNames.add(messageName);
-			messageCounts.put(messageName, new Long[] { messageCount, Long.valueOf(0) });
+			messageCounts.put(messageName, new Long[] { messageCount, 0L});
 		}
 		for (Map.Entry<String,Long> entry : peerNodeStatus.getLocalMessagesSent().entrySet() ) {
 			String messageName =  entry.getKey();
@@ -1164,7 +1163,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			}
 			Long[] existingCounts = messageCounts.get(messageName);
 			if (existingCounts == null) {
-				messageCounts.put(messageName, new Long[] { Long.valueOf(0), messageCount });
+				messageCounts.put(messageName, new Long[] {0L, messageCount });
 			} else {
 				existingCounts[1] = messageCount;
 			}
@@ -1209,8 +1208,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 	 */
 	protected void sendErrorPage(ToadletContext ctx, int code, String desc, String message, boolean returnToAddFriends) throws ToadletContextClosedException, IOException {
 		PageNode page = ctx.getPageMaker().getPageNode(desc, ctx);
-		HTMLNode pageNode = page.outer;
-		HTMLNode contentNode = page.content;
+		HTMLNode contentNode = page.getContentNode();
 		
 		HTMLNode infoboxContent = ctx.getPageMaker().getInfobox("infobox-error", desc, contentNode, null, true);
 		infoboxContent.addChild("#", message);
@@ -1225,7 +1223,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		}
 		addHomepageLink(infoboxContent);
 		
-		writeHTMLReply(ctx, code, desc, pageNode.generate());
+		writeHTMLReply(ctx, code, desc, page.generate());
 	}
 
 }

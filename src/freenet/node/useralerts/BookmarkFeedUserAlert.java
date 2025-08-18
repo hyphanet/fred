@@ -9,7 +9,7 @@ import freenet.node.DarknetPeerNode;
 import freenet.node.PeerNode;
 import freenet.support.HTMLNode;
 
-public class BookmarkFeedUserAlert extends AbstractUserAlert {
+public class BookmarkFeedUserAlert extends AbstractUserAlert implements NodeToNodeMessageUserAlert {
 	private final WeakReference<PeerNode> peerRef;
 	private final FreenetURI uri;
 	private final int fileNumber;
@@ -33,8 +33,8 @@ public class BookmarkFeedUserAlert extends AbstractUserAlert {
 		this.composed = composed;
 		this.sent = sent;
 		this.received = received;
-		peerRef = sourcePeerNode.getWeakRef();
-		sourceNodeName = sourcePeerNode.getName();
+		this.peerRef = sourcePeerNode.getWeakRef();
+		this.sourceNodeName = sourcePeerNode.getName();
 	}
 
 	@Override
@@ -115,4 +115,5 @@ public class BookmarkFeedUserAlert extends AbstractUserAlert {
 			sourceNodeName = pn.getName();
 		return true;
 	}
+
 }

@@ -349,8 +349,6 @@ public abstract class Toadlet {
 	 * @throws IOException
 	 */
 	static void writePermanentRedirect(ToadletContext ctx, String msg, String location) throws ToadletContextClosedException, IOException {
-		MultiValueTable<String, String> mvt = new MultiValueTable<String, String>();
-		mvt.put("Location", location);
 		if(msg == null) msg = "";
 		else msg = HTMLEncoder.encode(msg);
 		String redirDoc =
@@ -358,7 +356,8 @@ public abstract class Toadlet {
 			l10n("permRedirectWithReason", "reason", msg)+
 			"</h1><a href=\""+HTMLEncoder.encode(location)+"\">"+l10n("clickHere")+"</a></body></html>";
 		byte[] buf = redirDoc.getBytes(StandardCharsets.UTF_8);
-		ctx.sendReplyHeaders(301, "Moved Permanently", mvt, "text/html; charset=UTF-8", buf.length);
+		MultiValueTable<String, String> headers = MultiValueTable.from("Location", location);
+		ctx.sendReplyHeaders(301, "Moved Permanently", headers, "text/html; charset=UTF-8", buf.length);
 		ctx.writeData(buf, 0, buf.length);
 	}
 
@@ -375,8 +374,6 @@ public abstract class Toadlet {
 	 * @throws IOException
 	 */
 	protected void writeTemporaryRedirect(ToadletContext ctx, String msg, String location) throws ToadletContextClosedException, IOException {
-		MultiValueTable<String, String> mvt = new MultiValueTable<String, String>();
-		mvt.put("Location", location);
 		if(msg == null) msg = "";
 		else msg = HTMLEncoder.encode(msg);
 		String redirDoc =
@@ -385,6 +382,7 @@ public abstract class Toadlet {
 			"</h1><a href=\""+HTMLEncoder.encode(location)+"\">" +
 			l10n("clickHere") + "</a></body></html>";
 		byte[] buf = redirDoc.getBytes(StandardCharsets.UTF_8);
+		MultiValueTable<String, String> mvt = MultiValueTable.from("Location", location);
 		ctx.sendReplyHeaders(302, "Found", mvt, "text/html; charset=UTF-8", buf.length);
 		ctx.writeData(buf, 0, buf.length);
 	}
@@ -401,8 +399,7 @@ public abstract class Toadlet {
 	 */
 	protected void sendErrorPage(ToadletContext ctx, int code, String desc, HTMLNode message) throws ToadletContextClosedException, IOException {
 		PageNode page = ctx.getPageMaker().getPageNode(desc, ctx);
-		HTMLNode pageNode = page.outer;
-		HTMLNode contentNode = page.content;
+		HTMLNode contentNode = page.getContentNode();
 
 		HTMLNode infoboxContent = ctx.getPageMaker().getInfobox("infobox-error", desc, contentNode, null, true);
 		infoboxContent.addChild(message);
@@ -411,7 +408,7 @@ public abstract class Toadlet {
 		infoboxContent.addChild("br");
 		addHomepageLink(infoboxContent);
 
-		writeHTMLReply(ctx, code, desc, pageNode.generate());
+		writeHTMLReply(ctx, code, desc, page.generate());
 	}
 
 	/**
@@ -425,8 +422,7 @@ public abstract class Toadlet {
 	 */
 	protected void sendErrorPage(ToadletContext ctx, String desc, String message, Throwable t) throws ToadletContextClosedException, IOException {
 		PageNode page = ctx.getPageMaker().getPageNode(desc, ctx);
-		HTMLNode pageNode = page.outer;
-		HTMLNode contentNode = page.content;
+		HTMLNode contentNode = page.getContentNode();
 
 		HTMLNode infoboxContent = ctx.getPageMaker().getInfobox("infobox-error", desc, contentNode, null, true);
 		infoboxContent.addChild("#", message);
@@ -442,7 +438,7 @@ public abstract class Toadlet {
 		infoboxContent.addChild("a", "href", ".", l10n("returnToPrevPage"));
 		addHomepageLink(infoboxContent);
 
-		writeHTMLReply(ctx, 500, desc, pageNode.generate());
+		writeHTMLReply(ctx, 500, desc, page.generate());
 	}
 
 	/**

@@ -3,9 +3,6 @@ package freenet.client.filter;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.EOFException;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -245,23 +242,6 @@ public class MP3Filter implements ContentDataFilter {
 
 	private String l10n(String key) {
 		return NodeL10n.getBase().getString("MP3Filter."+key);
-	}
-
-	public static void main(String[] args) throws DataFilterException, IOException {
-		File f = new File(args[0]);
-		FileInputStream fis = new FileInputStream(f);
-		File out = new File(args[0]+".filtered.mp3");
-		FileOutputStream fos = new FileOutputStream(out);
-		MP3Filter filter = new MP3Filter();
-//		// Skip some bytes for testing resyncing.
-//		byte[] buf = new byte[4096];
-//		fis.read(buf);
-//		fis.read(buf);
-//		fis.read(buf);
-//		fis.read(buf);
-		filter.readFilter(fis, fos, null, null, null, null);
-		fis.close();
-		fos.close();
 	}
 
 }

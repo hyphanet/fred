@@ -18,8 +18,12 @@
  */
 package freenet.io.xfer;
 
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Deque;
+import java.util.HashSet;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import freenet.io.comm.AsyncMessageCallback;
 import freenet.io.comm.AsyncMessageFilterCallback;
@@ -32,18 +36,22 @@ import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerContext;
 import freenet.io.comm.RetrievalException;
-import freenet.node.MessageItem;
 import freenet.io.comm.SlowAsyncMessageFilterCallback;
+import freenet.node.FastRunnable;
+import freenet.node.HighHtlAware;
+import freenet.node.MessageItem;
+import freenet.node.Node;
 import freenet.node.PrioRunnable;
 import freenet.support.BitArray;
 import freenet.support.Executor;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.Ticker;
 import freenet.support.TimeUtil;
-import freenet.support.Logger.LogLevel;
 import freenet.support.io.NativeThread;
-import freenet.support.math.MedianMeanRunningAverage;
+import freenet.support.math.RunningAverage;
+import freenet.support.math.TrivialRunningAverage;
 
 /**
  * @author ian
@@ -61,6 +69,12 @@ import freenet.support.math.MedianMeanRunningAverage;
  */
 public class BlockTransmitter {
 
+	/**
+	 * Maximum of the wait time for packets 31 and 32. Empirical value by reporter.
+	 * TODO: doublecheck whether this can be reduced safely, since 1000 ms
+	 * cause a total insert latency increase of 2.5s on average.
+	 */
+	private static final int MAX_ARTIFICIAL_FINAL_PACKETS_DELAY = 1000;
 	private static volatile boolean logMINOR;
 
 	static {
@@ -81,7 +95,7 @@ public class BlockTransmitter {
 	private final boolean realTime;
 	final PartiallyReceivedBlock _prb;
 	private Deque<Integer> _unsent;
-	private BlockSenderJob _senderThread = new BlockSenderJob();
+	private final BlockSenderJob _senderThread = new BlockSenderJob();
 	private BitArray _sentPackets;
 	private long timeAllSent = -1;
 	final ByteCounter _ctr;
@@ -112,17 +126,20 @@ public class BlockTransmitter {
 	static int runningBlockTransmits = 0;
 	
 	class BlockSenderJob implements PrioRunnable {
-		
-		private boolean running = false;
-		
+		private static final int STATE_IDLE = 0; // not running
+		private static final int STATE_RUNNING = 1; // currently running
+		private static final int STATE_WAITING = 2; // waiting for a scheduled delay
+
+		private final AtomicInteger state = new AtomicInteger();
+		private int count = 0;
+
 		@Override
 		public void run() {
-			synchronized(this) {
-				if(running) return;
-				running = true;
+			if (!state.compareAndSet(STATE_IDLE, STATE_RUNNING)) {
+				return;
 			}
 			try {
-				while(true) {
+				while(state.get() == STATE_RUNNING) {
 					int packetNo = -1;
 					BitArray copy;
 					synchronized(_senderThread) {
@@ -140,17 +157,25 @@ public class BlockTransmitter {
 						}
 						copy = _sentPackets.copy();
 						_sentPackets.setBit(packetNo, true);
+						// add a random delay between 30th message and 31st message, as well as 31st and 32nd
+						// the variable count is used to count which message is being processed now
+						// the HTL is taken into consideration when adding delay too
+						count++;
+						if (isHighHtl() && count >= (Node.PACKETS_IN_BLOCK - 2)) {
+							state.set(STATE_WAITING);
+							long delayMillis = (long) (Math.random() * MAX_ARTIFICIAL_FINAL_PACKETS_DELAY);
+							_ticker.queueTimedJob((FastRunnable) this::schedule, delayMillis);
+						}
 					}
 					if(!innerRun(packetNo, copy)) return;
 				}
 			} finally {
-				synchronized(this) {
-					running = false;
-				}
+				state.compareAndSet(STATE_RUNNING, STATE_IDLE);
 			}
 		}
-		
-		public void schedule() {
+
+		void schedule() {
+			state.compareAndSet(STATE_WAITING, STATE_IDLE);
 			if(_failed || _receivedSendCompletion || _completed) {
 				if(logMINOR) Logger.minor(this, "Not scheduling for "+_uid+" to "+_destination+" :"+
 						(_failed ? "(failed) " : "") + (_receivedSendCompletion ? "(receivedSendCompletion) " : "") + (_completed ? "(completed) " : ""));
@@ -291,7 +316,7 @@ public class BlockTransmitter {
 			timeAllSent = System.currentTimeMillis();
 			if(logMINOR)
 				Logger.minor(this, "Sent all blocks, none unsent on "+this);
-			_senderThread.notifyAll();
+			_senderThread.schedule();
 			return true;
 		}
 		if(blockSendsPending == 0 && _failed) {
@@ -471,10 +496,8 @@ public class BlockTransmitter {
 			if(logMINOR) {
 				long endTime = System.currentTimeMillis();
 				long transferTime = (endTime - startTime);
-				synchronized(avgTimeTaken) {
-					avgTimeTaken.report(transferTime);
-					Logger.minor(this, "Block send took "+transferTime+" : "+avgTimeTaken+" on "+BlockTransmitter.this);
-				}
+				avgTimeTaken.report(transferTime);
+				Logger.minor(this, "Block send took "+transferTime+" : average "+avgTimeTaken.currentValue()+" on "+BlockTransmitter.this);
 			}
 			synchronized(_senderThread) {
 				_receivedSendCompletion = true;
@@ -590,7 +613,7 @@ public class BlockTransmitter {
 		synchronized(_senderThread) {
 			timeAllSent = -1;
 			_failed = true;
-			_senderThread.notifyAll();
+			_senderThread.schedule();
 			fail = maybeFail(reason, description);
 		}
 		fail.execute();
@@ -633,6 +656,13 @@ public class BlockTransmitter {
 						onAborted(reason, description);
 					}
 				});
+			}
+			// if the 32 pieces are ready, shuffle them for mix the insertion order
+			if (isHighHtl() && _unsent.size() == Node.PACKETS_IN_BLOCK) {
+				List<Integer> temp = new ArrayList<>(_unsent);
+				_unsent.clear();
+				Collections.shuffle(temp);
+				_unsent.addAll(temp);
 			}
 			_senderThread.schedule();
 
@@ -764,7 +794,7 @@ public class BlockTransmitter {
 	
 	private long lastSentPacket = -1;
 	
-	private static MedianMeanRunningAverage avgTimeTaken = new MedianMeanRunningAverage();
+	private static final RunningAverage avgTimeTaken = new TrivialRunningAverage();
 	
 	/** LOCKING: Must be called with _senderThread held. */
 	private int getNumSent() {
@@ -808,4 +838,11 @@ public class BlockTransmitter {
 	public synchronized static int getRunningSends() {
 		return runningBlockTransmits;
 	}
+
+    private boolean isHighHtl() {
+        if (_ctr instanceof HighHtlAware) {
+            return ((HighHtlAware) _ctr).isHighHtl();
+        }
+        return false;
+    }
 }

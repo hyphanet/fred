@@ -209,19 +209,21 @@ public class PeerManager {
 			if(peersFile.exists())
 				if(readPeers(peersFile, crypto, opennet, oldOpennetPeers)) {
 					String msg;
-					if(oldOpennetPeers)
+					if (oldOpennetPeers) {
 						msg = "Read " + opennet.countOldOpennetPeers() + " old-opennet-peers from " + peersFile;
-					else if(isOpennet)
+					} else if(isOpennet) {
 						msg = "Read " + getOpennetPeers().length + " opennet peers from " + peersFile;
-					else
+					} else {
 						msg = "Read " + getDarknetPeers().length + " darknet peers from " + peersFile;
+					}
 					Logger.normal(this, msg);
 					System.out.println(msg);
 					return;
 				}
 		}
-		if(!isOpennet)
+		if (!isOpennet) {
 			System.out.println("No darknet peers file found.");
+		}
 		// The other cases are less important.
 	}
 
@@ -238,64 +240,68 @@ public class PeerManager {
 		BufferedReader br = new BufferedReader(ris);
 		File brokenPeersFile = new File(peersFile.getPath() + ".broken");
 		DroppedOldPeersUserAlert droppedOldPeers = new DroppedOldPeersUserAlert(brokenPeersFile);
-		try { // FIXME: no better way?
-			while(true) {
-				// Read a single NodePeer
-				SimpleFieldSet fs;
-				fs = new SimpleFieldSet(br, false, true);
-				try {
-					PeerNode pn = PeerNode.create(fs, node, crypto, opennet, this);
-					if(oldOpennetPeers) {
-					    if(!(pn instanceof OpennetPeerNode))
-					        Logger.error(this, "Darknet node in old opennet peers?!: "+pn);
-					    else
-					        opennet.addOldOpennetNode((OpennetPeerNode)pn);
-					} else
-						addPeer(pn, true, false);
-				} catch(FSParseException e2) {
-					Logger.error(this, "Could not parse peer: " + e2 + '\n' + fs.toString(), e2);
-					System.err.println("Cannot parse a friend from the peers file: "+e2);
-					someBroken = true;
-					continue;
-				} catch(PeerParseException e2) {
-					Logger.error(this, "Could not parse peer: " + e2 + '\n' + fs.toString(), e2);
-					System.err.println("Cannot parse a friend from the peers file: "+e2);
-					someBroken = true;
-					continue;
-				} catch(ReferenceSignatureVerificationException e2) {
-					Logger.error(this, "Could not parse peer: " + e2 + '\n' + fs.toString(), e2);
-					System.err.println("Cannot parse a friend from the peers file: "+e2);
-					someBroken = true;
-					continue;
-				} catch (RuntimeException e2) {
-					Logger.error(this, "Could not parse peer: " + e2 + '\n' + fs.toString(), e2);
-					System.err.println("Cannot parse a friend from the peers file: "+e2);
-					someBroken = true;
-					continue;
-					// FIXME tell the user???
-				} catch (PeerTooOldException e) {
-				    if(crypto.isOpennet()) {
-				        // Ignore.
-				        Logger.error(this, "Dropping too-old opennet peer");
-				    } else {
-				        // A lot more noisy!
-				        droppedOldPeers.add(e, fs.get("myName"));
-				    }
-                    someBroken = true;
-                    continue;
-                }
+		List<SimpleFieldSet> peerEntries = new ArrayList<>();
+		// read the peers file
+		try {
+			while (true) {
+				peerEntries.add(new SimpleFieldSet(br, false, true));
 			}
 		} catch(EOFException e) {
 			// End of file, fine
 		} catch(IOException e1) {
 			Logger.error(this, "Could not read peers file: " + e1, e1);
 		}
+
+		List<PeerNode> createdNodes = new ArrayList<>();
+		for (SimpleFieldSet fs : peerEntries) {
+			try {
+				createdNodes.add(PeerNode.create(fs, node, crypto, opennet, this));
+			} catch (FSParseException e2) {
+				Logger.error(this, "Could not parse peer due to broken fieldset syntax: " + e2 + '\n' + fs.toString(), e2);
+				System.err.println("Cannot parse a friend from the peers file due to broken fieldset syntax: "+e2);
+				someBroken = true;
+			} catch (PeerParseException e2) {
+				Logger.error(this, "Could not parse peer: " + e2 + '\n' + fs.toString(), e2);
+				System.err.println("Cannot parse a friend from the peers file: "+e2);
+				someBroken = true;
+			} catch (ReferenceSignatureVerificationException e2) {
+				Logger.error(this, "Could not verify signature of peer: " + e2 + '\n' + fs.toString(), e2);
+				System.err.println("Cannot verify signature of a friend from the peers file: "+e2);
+				someBroken = true;
+			} catch (RuntimeException e2) {
+				Logger.error(this, "Could not parse peer: " + e2 + '\n' + fs.toString(), e2);
+				System.err.println("Cannot parse a friend from the peers file: " + e2);
+				someBroken = true;
+				// FIXME tell the user???
+			}  catch (PeerTooOldException e) {
+				someBroken = true;
+				if (crypto.isOpennet()) {
+					// Ignore.
+					Logger.error(this, "Dropping too-old opennet peer");
+				} else {
+					// A lot more noisy
+					droppedOldPeers.add(e, fs.get("myName"));
+				}
+			}
+		}
+
+		for (PeerNode pn : createdNodes) {
+				if (oldOpennetPeers) {
+					if (!(pn instanceof OpennetPeerNode)) {
+						Logger.error(this, "Darknet node in old opennet peers?!: "+pn);
+					} else {
+						opennet.addOldOpennetNode((OpennetPeerNode)pn);
+					}
+				} else {
+					addPeer(pn, true, false);
+                }
+		}
 		try {
 			br.close();
 		} catch(IOException e3) {
 			Logger.error(this, "Ignoring " + e3 + " caught reading " + peersFile, e3);
 		}
-		if(someBroken) {
+		if (someBroken) {
 			try {
 				brokenPeersFile.delete();
 				FileOutputStream fos = new FileOutputStream(brokenPeersFile);
@@ -308,14 +314,14 @@ public class PeerManager {
 				System.err.println("Unable to copy broken peers file.");
 			}
 		}
-		if(!droppedOldPeers.isEmpty()) {
-		    try {
-		        node.getClientCore().getAlerts().register(droppedOldPeers);
-		        Logger.error(this, droppedOldPeers.getText());
-		    } catch (Throwable t) {
-		        // Startup MUST complete, don't let client layer problems kill it.
-		        Logger.error(this, "Caught error telling user about dropped peers", t);
-		    }
+		if (!droppedOldPeers.isEmpty()) {
+			try {
+				node.getClientCore().getAlerts().register(droppedOldPeers);
+				Logger.error(this, droppedOldPeers.getText());
+			} catch (Throwable t) {
+				// Startup MUST complete, don't let client layer problems kill it.
+				Logger.error(this, "Caught error telling user about dropped peers", t);
+			}
 		}
 		return !someBroken;
 	}
@@ -1534,14 +1540,14 @@ public class PeerManager {
 							thisFile.delete();
 						} else {
 							if(thisFile.exists()) {
-								FileUtil.renameTo(thisFile, prevFile);
+								FileUtil.moveTo(thisFile, prevFile);
 							}
 						}
 						prevFile = thisFile;
 					}
-					FileUtil.renameTo(f, prevFile);
+					FileUtil.moveTo(f, prevFile);
 				} else {
-					FileUtil.renameTo(f, getBackupFilename(filename, 0));
+					FileUtil.moveTo(f, getBackupFilename(filename, 0));
 				}
 			} catch(IOException e) {
 				try {
@@ -1789,11 +1795,9 @@ public class PeerManager {
 	
 	public void changePeerNodeStatus(PeerNode peerNode, int oldPeerNodeStatus,
 			int peerNodeStatus, boolean noLog) {
-		Integer newStatus = Integer.valueOf(peerNodeStatus);
-		Integer oldStatus = Integer.valueOf(oldPeerNodeStatus);
-		this.allPeersStatuses.changePeerNodeStatus(peerNode, oldStatus, newStatus, noLog);
+		this.allPeersStatuses.changePeerNodeStatus(peerNode, oldPeerNodeStatus, peerNodeStatus, noLog);
 		if(!peerNode.isOpennet())
-			this.darknetPeersStatuses.changePeerNodeStatus(peerNode, oldStatus, newStatus, noLog);
+			this.darknetPeersStatuses.changePeerNodeStatus(peerNode, oldPeerNodeStatus, peerNodeStatus, noLog);
 		node.getExecutor().execute(new Runnable() {
 
 			@Override
@@ -1808,10 +1812,9 @@ public class PeerManager {
 	 * Add a PeerNode status to the map. Used internally when a peer is added.
 	 */
 	private void addPeerNodeStatus(int pnStatus, PeerNode peerNode, boolean noLog) {
-		Integer peerNodeStatus = Integer.valueOf(pnStatus);
-		this.allPeersStatuses.addStatus(peerNodeStatus, peerNode, noLog);
+		this.allPeersStatuses.addStatus(pnStatus, peerNode, noLog);
 		if(!peerNode.isOpennet())
-			this.darknetPeersStatuses.addStatus(peerNodeStatus, peerNode, noLog);
+			this.darknetPeersStatuses.addStatus(pnStatus, peerNode, noLog);
 	}
 
 	/**
@@ -1830,10 +1833,9 @@ public class PeerManager {
 	 * @param isInPeers If true, complain if the node is not in the peers list; if false, complain if it is.
 	 */
 	private void removePeerNodeStatus(int pnStatus, PeerNode peerNode, boolean noLog) {
-		Integer peerNodeStatus = Integer.valueOf(pnStatus);
-		this.allPeersStatuses.removeStatus(peerNodeStatus, peerNode, noLog);
+		this.allPeersStatuses.removeStatus(pnStatus, peerNode, noLog);
 		if(!peerNode.isOpennet())
-			this.darknetPeersStatuses.removeStatus(peerNodeStatus, peerNode, noLog);
+			this.darknetPeersStatuses.removeStatus(pnStatus, peerNode, noLog);
 	}
 
 	/**

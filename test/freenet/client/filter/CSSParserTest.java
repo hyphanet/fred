@@ -39,7 +39,7 @@ public class CSSParserTest {
 	private final static HashMap<String,String> CSS1_SELECTOR= new HashMap<>();
 	static {
 		CSS1_SELECTOR.put("h1 {}","h1");
-		CSS1_SELECTOR.put("h1:link {}","h1:link");
+		CSS1_SELECTOR.put("h1:link {color:transparent}","");
 		CSS1_SELECTOR.put("h1:visited {}","");
 		CSS1_SELECTOR.put("h1.warning {}","h1.warning");
 		CSS1_SELECTOR.put("h1#myid {}","h1#myid");
@@ -90,9 +90,9 @@ public class CSSParserTest {
 		CSS2_SELECTOR.put("div > p:FIRST-CHILD { text-indent: 0 }", "div>p:FIRST-CHILD { text-indent: 0 }");
 		CSS2_SELECTOR.put("p:first-child em { font-weight : bold }", "p:first-child em { font-weight: bold }");
 		CSS2_SELECTOR.put("* > a:first-child {}", "*>a:first-child {}");
-		CSS2_SELECTOR.put(":link { color: red }", ":link { color: red }");
 		// REDFLAG: link vs visited is safe for Freenet as there is no scripting.
 		// If there was scripting it would not be safe, although datastore probing is probably the greater threat.
+		CSS2_SELECTOR.put(":link { color: red }", "");
 		CSS2_SELECTOR.put("a.external:visited { color: blue }", "");
 		CSS2_SELECTOR.put("a:focus:hover { background: white }", "a:focus:hover { background: white }");
 		CSS2_SELECTOR.put("p:first-line { text-transform: uppercase;}", "p:first-line { text-transform: uppercase;}");
@@ -137,6 +137,10 @@ public class CSSParserTest {
 		CSS2_BAD_SELECTOR.add("h1[foo,=bar] {}");
 
 		CSS2_BAD_SELECTOR.add("h1:langblahblah(fr) {}");
+		// java.lang.StringIndexOutOfBoundsException
+		CSS2_BAD_SELECTOR.add("h1:golang {}");
+		// missing argument
+		CSS2_BAD_SELECTOR.add("h1:lang {}");
 
 		// THE FOLLOWING ARE VALID BUT DISALLOWED
 		// ] inside string inside attribute selector: way too confusing for parsers.
@@ -222,8 +226,69 @@ public class CSSParserTest {
 		// Whitespace not supported at all.
 		CSS3_BAD_SELECTOR.add("tr:nth-child( n+2) {}");
 		CSS3_BAD_SELECTOR.add("tr:nth-child(n + 2) {}");
+		// java.lang.StringIndexOutOfBoundsException
+		CSS3_BAD_SELECTOR.add("tr:tenth-child {}");
+		CSS3_BAD_SELECTOR.add("tr:tenth-child(2n+1) {}");
 	}
 
+	private final static HashMap<String,String> CSS_SELECTOR_LEVEL4= new HashMap<>();
+	static {
+		CSS_SELECTOR_LEVEL4.put("div:dir(ltr) {}", "div:dir(ltr)");
+		CSS_SELECTOR_LEVEL4.put("div:dir(rtl) {}", "div:dir(rtl)");
+		CSS_SELECTOR_LEVEL4.put(":target {}", ":target");
+		CSS_SELECTOR_LEVEL4.put(":any-link {}", ":any-link");
+		CSS_SELECTOR_LEVEL4.put(":empty {}", ":empty");
+		CSS_SELECTOR_LEVEL4.put(":focus-visible {}", ":focus-visible");
+		CSS_SELECTOR_LEVEL4.put(":only-child {}", ":only-child");
+		CSS_SELECTOR_LEVEL4.put(":only-of-type {}", ":only-of-type");
+		CSS_SELECTOR_LEVEL4.put(":root {font-size: xxx-large;}", ":root {font-size: xxx-large;}");
+		// forms
+		CSS_SELECTOR_LEVEL4.put("input:default {}", "input:default");
+		CSS_SELECTOR_LEVEL4.put("input:disabled {}", "input:disabled");
+		CSS_SELECTOR_LEVEL4.put("input:enabled {}", "input:enabled");
+		CSS_SELECTOR_LEVEL4.put("input:indeterminate {}", "input:indeterminate");
+		CSS_SELECTOR_LEVEL4.put("input:in-range {}", "input:in-range");
+		CSS_SELECTOR_LEVEL4.put("input:invalid {}", "input:invalid");
+		CSS_SELECTOR_LEVEL4.put("input:optional {}", "input:optional");
+		CSS_SELECTOR_LEVEL4.put("input:out-of-range {}", "input:out-of-range");
+		CSS_SELECTOR_LEVEL4.put("input:placeholder-shown {}", "input:placeholder-shown");
+		CSS_SELECTOR_LEVEL4.put("input:read-only {}", "input:read-only");
+		CSS_SELECTOR_LEVEL4.put("input:read-write {}", "input:read-write");
+		CSS_SELECTOR_LEVEL4.put("input:required {}", "input:required");
+	}
+
+	private final static HashSet<String> CSS_BAD_SELECTOR_LEVEL4= new HashSet<>();
+	static {
+		// not dir
+		CSS_BAD_SELECTOR_LEVEL4.add("div:bidir(ltr) {}");
+		// missing ltr or rtl
+		CSS_BAD_SELECTOR_LEVEL4.add("div:dir {}");
+		// these selectors don't have arguments
+		CSS_BAD_SELECTOR_LEVEL4.add(":target() {}");
+		CSS_BAD_SELECTOR_LEVEL4.add(":any-link() {}");
+		CSS_BAD_SELECTOR_LEVEL4.add(":empty() {}");
+		CSS_BAD_SELECTOR_LEVEL4.add(":focus-visible() {}");
+		CSS_BAD_SELECTOR_LEVEL4.add(":only-child() {}");
+		CSS_BAD_SELECTOR_LEVEL4.add(":only-of-type() {}");
+		CSS_BAD_SELECTOR_LEVEL4.add(":root() {}");
+		// these forms selectors don't have arguments
+		CSS_BAD_SELECTOR_LEVEL4.add("input:default() {}");
+		CSS_BAD_SELECTOR_LEVEL4.add("input:disabled() {}");
+		CSS_BAD_SELECTOR_LEVEL4.add("input:enabled() {}");
+		CSS_BAD_SELECTOR_LEVEL4.add("input:indeterminate() {}");
+		CSS_BAD_SELECTOR_LEVEL4.add("input:in-range() {}");
+		CSS_BAD_SELECTOR_LEVEL4.add("input:invalid() {}");
+		CSS_BAD_SELECTOR_LEVEL4.add("input:optional() {}");
+		CSS_BAD_SELECTOR_LEVEL4.add("input:out-of-range() {}");
+		CSS_BAD_SELECTOR_LEVEL4.add("input:placeholder-shown() {}");
+		CSS_BAD_SELECTOR_LEVEL4.add("input:read-only() {}");
+		CSS_BAD_SELECTOR_LEVEL4.add("input:read-write() {}");
+		CSS_BAD_SELECTOR_LEVEL4.add("input:required() {}");
+		// banned
+		CSS_BAD_SELECTOR_LEVEL4.add(":defined {}");
+		CSS_BAD_SELECTOR_LEVEL4.add(":defined() {}");
+	}
+	
 	private static final String CSS_STRING_NEWLINES = "* { content: \"this string does not terminate\n}\nbody {\nbackground: url(http://www.google.co.uk/intl/en_uk/images/logo.gif); }\n\" }";
 	private static final String CSS_STRING_NEWLINESC = "* {}\nbody { }\n";
 
@@ -688,6 +753,7 @@ public class CSSParserTest {
 		propertyTests.put("#inner { float: right; width: 130px; color: blue }", "#inner { float: right; width: 130px; color: blue }");
 		propertyTests.put(".abc { z-index: auto; } h1 p { z-index: 3; } h2 p { z-index: inherit }", ".abc { z-index: auto; } h1 p { z-index: 3; } h2 p { z-index: inherit }");
 		propertyTests.put("blockquote { direction: rtl; unicode-bidi: BIDI-OVERRIDE }", "blockquote { direction: rtl; unicode-bidi: BIDI-OVERRIDE }");
+		propertyTests.put("div { border-inline-start-color: transparent; border-inline-start-style: dotted; border-inline-start-width: thick; }", "div { border-inline-start-color: transparent; border-inline-start-style: dotted; border-inline-start-width: thick; }");
 
 		// Visual details
 		propertyTests.put("p { width: 100px } h1,h2,h3 { width: 150% } body { width: auto }", "p { width: 100px } h1,h2,h3 { width: 150% } body { width: auto }");
@@ -751,7 +817,9 @@ public class CSSParserTest {
 		propertyTests.put("p { text-indent: 3em }", "p { text-indent: 3em }");
 		propertyTests.put("p { text-indent: 33% }", "p { text-indent: 33% }");
 		propertyTests.put("div.important { text-align: center }", "div.important { text-align: center }");
-		propertyTests.put("a:visited,a:link { text-decoration: underline }", "a:link { text-decoration: underline }");
+		propertyTests.put("a:visited,a:link { text-decoration: underline }", "");
+		propertyTests.put("a:any-link { text-decoration: underline }", "a:any-link { text-decoration: underline }");
+		propertyTests.put("a:any-link { text-decoration: underline red }", "a:any-link { text-decoration: underline red }");
 		propertyTests.put("blockquote { text-decoration: underline overline line-through blink } h1 { text-decoration: none } h2 { text-decoration: inherit }","blockquote { text-decoration: underline overline line-through blink } h1 { text-decoration: none } h2 { text-decoration: inherit }");
 		propertyTests.put("blockquote { letter-spacing: 0.1em }", "blockquote { letter-spacing: 0.1em }");
 		propertyTests.put("blockquote { letter-spacing: normal }", "blockquote { letter-spacing: normal }");
@@ -776,10 +844,8 @@ public class CSSParserTest {
 		propertyTests.put("table { empty-cells: show }", "table { empty-cells: show }");
 
 		// User interface
-		propertyTests.put(":link,:visited { cursor: url(example.svg#linkcursor) url(hyper.cur) pointer }", ":link { cursor: url(\"example.svg#linkcursor\") url(\"hyper.cur\") pointer }");
-		propertyTests.put(":link,:visited { cursor: url(example.svg#linkcursor), url(hyper.cur), pointer }", ":link { cursor: url(\"example.svg#linkcursor\"), url(\"hyper.cur\"), pointer }");
-		propertyTests.put(":link,:visited { cursor: url(example.svg#linkcursor) 2 5, url(hyper.cur), pointer }", ":link { cursor: url(\"example.svg#linkcursor\") 2 5, url(\"hyper.cur\"), pointer }");
-                propertyTests.put(":link,:visited { cursor: url(example.svg#linkcursor) 2, url(hyper.cur), pointer }", ":link { }");
+		propertyTests.put(":link,:visited { cursor: url(example.svg#linkcursor) url(hyper.cur) pointer }", "");
+        propertyTests.put(":any-link { cursor: url(example.svg#linkcursor) 2, url(hyper.cur), pointer }", ":any-link { }");
 
 		// UI colors
 		propertyTests.put("p { color: WindowText; background-color: Window }", "p { color: WindowText; background-color: Window }");
@@ -902,6 +968,62 @@ public class CSSParserTest {
 		propertyTests.put("div { transition-delay: \"test\"; }", "div { }");
 		propertyTests.put("div { transition-property: \"test\"; }", "div { }");
 		propertyTests.put("div { transition-timing-function: \"test\"; }", "div { }");
+		
+		// writing mode
+		propertyTests.put("#a { writing-mode: vertical-rl; text-underline-position: left; }", "#a { writing-mode: vertical-rl; text-underline-position: left; }");
+		propertyTests.put("#b { writing-mode: horizontal-tb; text-underline-position: auto; inline-size: max-content; block-size: 200px; }", "#b { writing-mode: horizontal-tb; text-underline-position: auto; inline-size: max-content; block-size: 200px; }");
+
+		// Compositing and Blending
+		propertyTests.put("#foo { background: url(\"1.png\"); background-blend-mode: darken; }", "#foo { background: url(\"1.png\"); background-blend-mode: darken; }");
+		propertyTests.put("#foo {mix-blend-mode: luminosity; }", "#foo {mix-blend-mode: luminosity; }");
+		
+		// new property values
+		propertyTests.put("div { overflow: clip; clear: inline-end; text-decoration: revert; float: inline-end;}", "div { overflow: clip; clear: inline-end; text-decoration: revert; float: inline-end;}");
+		propertyTests.put("#a {unicode-bidi: isolate;}", "#a {unicode-bidi: isolate;}");
+		propertyTests.put("textarea#x {caret-color: currentcolor;}", "textarea#x {caret-color: currentcolor;}");
+		propertyTests.put("div { word-wrap: anywhere; overflow-wrap: anywhere; }", "div { word-wrap: anywhere; overflow-wrap: anywhere; }");
+		propertyTests.put("div { white-space-collapse: collapse; }", "div { white-space-collapse: collapse; }");
+		propertyTests.put("#a { word-break: keep-all; font-kerning: none; }", "#a { word-break: keep-all; font-kerning: none; }");
+		propertyTests.put("#a { tab-size: 4; }", "#a { tab-size: 4; }");
+		propertyTests.put("#a { tab-size: 12pt; }", "#a { tab-size: 12pt; }");
+		propertyTests.put("img#a { object-fit: scale-down; }", "img#a { object-fit: scale-down; }");
+		propertyTests.put("#x { list-style-type: korean-hanja-formal }", "#x { list-style-type: korean-hanja-formal }");
+		propertyTests.put("#x { list-style-type: \"*\" }", "#x { list-style-type: \"*\" }");
+		propertyTests.put("#x { max-inline-size: none; min-block-size: auto; }", "#x { max-inline-size: none; min-block-size: auto; }");
+		propertyTests.put("#x { text-combine-upright: all; }", "#x { text-combine-upright: all; }");
+		propertyTests.put("#x { text-decoration-thickness: 5px; }", "#x { text-decoration-thickness: 5px; }");
+		propertyTests.put("#x { dominant-baseline: alphabetic; }", "#x { dominant-baseline: alphabetic; }");
+		propertyTests.put("#x { margin-block: 3px 3%; margin-inline: 5%; margin-inline-end: 4px; margin-inline-start: auto; }", "#x { margin-block: 3px 3%; margin-inline: 5%; margin-inline-end: 4px; margin-inline-start: auto; }");
+		propertyTests.put("#x { padding-block: 3px 3%; padding-inline: 5%; padding-inline-end: 4px; padding-inline-start: 1em; }", "#x { padding-block: 3px 3%; padding-inline: 5%; padding-inline-end: 4px; padding-inline-start: 1em; }");
+		propertyTests.put("#x { text-orientation: upright; }", "#x { text-orientation: upright; }");
+		propertyTests.put("#x { scroll-snap-align: start end; }", "#x { scroll-snap-align: start end; }");
+		propertyTests.put("#x { scroll-snap-stop: always; }", "#x { scroll-snap-stop: always; }");
+		propertyTests.put("#x { scroll-snap-type: both proximity; } #y { scroll-snap-type: x; }", "#x { scroll-snap-type: both proximity; } #y { scroll-snap-type: x; }");
+		propertyTests.put("#box1:hover {rotate: 90deg;} #box2:hover {rotate: y 180deg;} #box3:hover {rotate: 1 2 1 360deg;} #box4:hover {rotate: none;}", "#box1:hover {rotate: 90deg;} #box2:hover {rotate: y 180deg;} #box3:hover {rotate: 1 2 1 360deg;} #box4:hover {rotate: none;}");
+		propertyTests.put("#a {rotate: 1;} #b {rotate: 0.1;} #c {rotate: 1 2 3 4;} #d {rotate: x;}", "#a {} #b {} #c {} #d {}");
+		propertyTests.put("#a {object-position: top;} #b {object-position: 25% 75%;} #c {object-position: 1cm top;} #d {object-position: bottom 10px right 20px;}", "#a {object-position: top;} #b {object-position: 25% 75%;} #c {object-position: 1cm top;} #d {object-position: bottom 10px right 20px;}");
+		propertyTests.put("#a {background-position: top;} #b {background-position: 25% 75%;} #c {background-position: 1cm top;} #d {background-position: bottom 10px right 20px;}", "#a {background-position: top;} #b {background-position: 25% 75%;} #c {background-position: 1cm top;} #d {background-position: bottom 10px right 20px;}");
+		propertyTests.put("#a {object-position: top top;} #b {object-position: 25% top 75% left;} #c {object-position: left 10px right 20px;} #d {object-position: top right bottom left;}", "#a {} #b {} #c {} #d {}");
+		propertyTests.put("td { border-inline-end: 2px dotted; border-block-start: medium dashed blue }", "td { border-inline-end: 2px dotted; border-block-start: medium dashed blue }");
+
+		// text-emphasis
+		propertyTests.put("#x { text-emphasis: triangle blue; }", "#x { text-emphasis: triangle blue; }"); // java.lang.NullPointerException
+		propertyTests.put("#x { text-emphasis: filled triangle blue; }", "#x { text-emphasis: filled triangle blue; }");
+		propertyTests.put("#x { text-emphasis-style: triangle; text-emphasis-color: blue; }", "#x { text-emphasis-style: triangle; text-emphasis-color: blue; }");
+		// text-shadow
+		propertyTests.put("#x { text-shadow: 1px 1px 2px black; }", "#x { text-shadow: 1px 1px 2px black; }");
+		propertyTests.put("#x { text-shadow: #fc0 1px 0 10px; }", "#x { text-shadow: #fc0 1px 0 10px; }");
+		propertyTests.put("#x { text-shadow: 5px 5px #558abb; }", "#x { text-shadow: 5px 5px #558abb; }");
+		propertyTests.put("#x { text-shadow: white 2px 5px; }", "#x { text-shadow: white 2px 5px; }");
+		propertyTests.put("#x { text-shadow: 5px 10px; }", "#x { text-shadow: 5px 10px; }");
+		propertyTests.put("#x { text-shadow: 1px 1px 2px 1px black; }", "#x { }");
+		// not possible to parse a comma separated list?
+		//propertyTests.put("#x { text-shadow: 1px 1px 2px red, 0 0 1em blue, 0 0 0.2em blue; }", "#x { text-shadow: 1px 1px 2px red, 0 0 1em blue, 0 0 0.2em blue; }");
+
+		// dark mode
+		propertyTests.put(":root { color-scheme: light dark; }", ":root { color-scheme: light dark; }");
+		propertyTests.put(":root { color-scheme: only light; }", ":root { color-scheme: only light; }");
+
 	}
 
 	FilterMIMEType cssMIMEType;
@@ -960,7 +1082,17 @@ public class CSSParserTest {
 		testCssSelectorFiltering(CSS3_SELECTOR);
 		testBadSelectorFiltering(CSS3_BAD_SELECTOR);
 	}
+	
+	@Test
+	public void testCSS4Selector() throws IOException, URISyntaxException {
+		testCssSelectorFiltering(CSS_SELECTOR_LEVEL4);
+	}
 
+	@Test
+	public void testCSS4SelectorBad() throws IOException, URISyntaxException {
+		testBadSelectorFiltering(CSS_BAD_SELECTOR_LEVEL4);
+	}
+	
 	@Test
 	public void testNewlines() throws IOException, URISyntaxException {
 		assertEquals(

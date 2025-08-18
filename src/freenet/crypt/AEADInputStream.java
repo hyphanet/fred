@@ -7,8 +7,6 @@ import java.io.InputStream;
 
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.InvalidCipherTextException;
-import org.bouncycastle.crypto.engines.AESEngine;
-import org.bouncycastle.crypto.engines.AESLightEngine;
 import org.bouncycastle.crypto.modes.AEADBlockCipher;
 import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
@@ -48,18 +46,19 @@ public class AEADInputStream extends FilterInputStream {
     public final int getIVSize() {
         return cipher.getUnderlyingCipher().getBlockSize() / 8;
     }
-    
-    private final byte[] onebyte = new byte[1];
-    
+
     private final byte[] excess;
     private int excessEnd;
     private int excessPtr;
     
     @Override
     public int read() throws IOException {
-        int length = read(onebyte);
-        if(length <= 0) return -1;
-        else return onebyte[0];
+        byte[] buf = new byte[1];
+        int length = read(buf, 0, 1);
+        if (length > 0) {
+            return Byte.toUnsignedInt(buf[0]);
+        }
+        return -1;
     }
     
     @Override
@@ -190,8 +189,8 @@ public class AEADInputStream extends FilterInputStream {
     }
     
     public static AEADInputStream createAES(InputStream is, byte[] key) throws IOException {
-        AESEngine mainCipher = new AESEngine();
-        AESLightEngine hashCipher = new AESLightEngine();
+        BlockCipher mainCipher = BlockCiphers.aes();
+        BlockCipher hashCipher = BlockCiphers.aes();
         return new AEADInputStream(is, key, hashCipher, mainCipher);
     }
 

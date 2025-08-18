@@ -50,7 +50,7 @@ public class Version {
 	public static final String protocolVersion = "1.0";
 
 	/** The build number of the current revision */
-	private static final int buildNumber = 1498;
+	private static final int buildNumber = 1503;
 
 	/** Oldest build of fred we will talk to *before* _cal */
 	private static final int oldLastGoodBuild = 1474;
@@ -444,19 +444,4 @@ public class Version {
 			&& (v.length >= 4);
 	}
 
-	public static void main(String[] args) throws Throwable {
-		System.out.println(
-			"Freenet: "
-				+ nodeName
-				+ ' '
-                    + nodeVersion
-				+ " (protocol "
-				+ protocolVersion
-				+ ") build "
-				+ buildNumber
-				+ " (last good build: "
-				+ lastGoodBuild()
-				+ ") "
-				+ cvsRevision);
-	}
 }

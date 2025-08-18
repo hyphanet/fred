@@ -51,4 +51,16 @@ public class NodeL10n {
 		}
 		return b;
 	}
+
+	/**
+	 * Sets the {@link BaseL10n} used to localize the node.
+	 * <p>
+	 * This method should only be used in tests, via {@code BaseL10nTest#useTestTranslation()}!
+	 *
+	 * @param baseL10n The {@link BaseL10n} object used for localization
+	 */
+	static void setBase(BaseL10n baseL10n) {
+		b = baseL10n;
+	}
+
 }

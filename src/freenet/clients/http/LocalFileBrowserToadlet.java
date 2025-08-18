@@ -7,6 +7,7 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.l10n.NodeL10n;
 import freenet.node.NodeClientCore;
 import freenet.support.HTMLNode;
+import freenet.support.SizeUtil;
 import freenet.support.api.HTTPRequest;
 
 import java.io.File;
@@ -290,20 +291,19 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 
 		if (currentPath != null && !allowedDir(currentPath)) {
 			PageNode page = pageMaker.getPageNode(l10n("listingTitle", "path", attemptedPath), ctx);
-			pageMaker.getInfobox("infobox-error",  "Forbidden", page.content, "access-denied", true).
+			pageMaker.getInfobox("infobox-error",  "Forbidden", page.getContentNode(), "access-denied", true).
 			        addChild("#", l10n("dirAccessDenied"));
 
 			sendErrorPage(ctx, 403, "Forbidden", l10n("dirAccessDenied"));
 			return;
 		}
-		
-		HTMLNode pageNode;
+
+		PageNode page;
 
 		if (currentPath != null && currentPath.exists() && currentPath.isDirectory() && currentPath.canRead()) {
-			PageNode page = pageMaker.getPageNode(l10n("listingTitle", "path",
+			page = pageMaker.getPageNode(l10n("listingTitle", "path",
 			        currentPath.getAbsolutePath()), ctx);
-			pageNode = page.outer;
-			HTMLNode contentNode = page.content;
+			HTMLNode contentNode = page.getContentNode();
 			if (ctx.isAllowedFullAccess()) contentNode.addChild(ctx.getAlertManager().createSummary());
 			
 			HTMLNode infoboxDiv = contentNode.addChild("div", "class", "infobox");
@@ -333,7 +333,7 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 					return firstFile.getName().compareToIgnoreCase(secondFile.getName());
 				}
 			});
-			HTMLNode listingTable = listingDiv.addChild("table");
+			HTMLNode listingTable = listingDiv.addChild("table", "class", "directory-listing");
 			HTMLNode headerRow = listingTable.addChild("tr");
 			headerRow.addChild("th");
 			headerRow.addChild("th", l10n("fileHeader"));
@@ -406,20 +406,19 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 						
 						fileRow.addChild("td", currentFile.getName());
 						fileRow.addChild("td", "class", "right-align",
-						        String.valueOf(currentFile.length()));
+						        SizeUtil.formatSize(currentFile.length(), true));
 					} else {
 						fileRow.addChild("td");
 						fileRow.addChild("td", "class", "unreadable-file",
 						        currentFile.getName());
 						fileRow.addChild("td", "class", "right-align",
-						        String.valueOf(currentFile.length()));
+						        SizeUtil.formatSize(currentFile.length(), true));
 					}
 				}
 			}
 		} else {
-			PageNode page = pageMaker.getPageNode(l10n("listingTitle", "path", attemptedPath), ctx);
-			pageNode = page.outer;
-			HTMLNode contentNode = page.content;
+			page = pageMaker.getPageNode(l10n("listingTitle", "path", attemptedPath), ctx);
+			HTMLNode contentNode = page.getContentNode();
 			if (ctx.isAllowedFullAccess()) contentNode.addChild(ctx.getAlertManager().createSummary());
 			
 			HTMLNode infoboxDiv = contentNode.addChild("div", "class", "infobox");
@@ -432,7 +431,7 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 			ulNode.addChild("li", l10n("checkPathIsDir"));
 			ulNode.addChild("li", l10n("checkPathReadable"));
 		}
-		writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+		writeHTMLReply(ctx, 200, "OK", page.generate());
 	}
 
 	private String l10n (String key, String pattern, String value) {

@@ -68,7 +68,6 @@ public class PrioritizedTicker implements Ticker, Runnable {
 	@Override
 	public void run() {
 		if(logMINOR) Logger.minor(this, "In Ticker.run()");
-		freenet.support.Logger.OSThread.logPID(this);
 		while(true) {
 			try {
 				realRun();
@@ -90,7 +89,7 @@ public class PrioritizedTicker implements Ticker, Runnable {
 		synchronized(timedJobsByTime) {
 			while(!timedJobsByTime.isEmpty()) {
 				Long tRun = timedJobsByTime.firstKey();
-				if(tRun.longValue() <= now) {
+				if(tRun <= now) {
 					if(jobsToRun == null)
 						jobsToRun = new ArrayList<Job>();
 					Object o = timedJobsByTime.remove(tRun);
@@ -105,7 +104,7 @@ public class PrioritizedTicker implements Ticker, Runnable {
 						timedJobsQueued.remove(r);
 					}
 				} else {
-					sleepTime = Math.min(sleepTime, tRun.longValue() - now);
+					sleepTime = Math.min(sleepTime, tRun - now);
 					break;
 				}
 			}

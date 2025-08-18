@@ -301,10 +301,4 @@ public final class ISO639_3 {
 		
 	}
 	
-	public static void main(String[] args) {
-		for(LanguageCode c : loadFromTabFile().values()) {
-			System.out.println(c);
-		}
-	}
-	
 }

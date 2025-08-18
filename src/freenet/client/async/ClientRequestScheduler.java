@@ -289,7 +289,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 		final Key key = block.getKey();
 		if(schedTransient.anyProbablyWantKey(key, clientContext)) {
-			this.clientContext.mainExecutor.execute(new PrioRunnable() {
+			this.clientContext.getMainExecutor().execute(new PrioRunnable() {
 
 				@Override
 				public void run() {

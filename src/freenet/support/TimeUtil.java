@@ -24,9 +24,15 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-import java.text.DecimalFormat;
-import java.text.SimpleDateFormat;
-import java.util.*;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
+import java.util.Date;
+import java.util.Locale;
+import java.util.TimeZone;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Time formatting utility.
@@ -35,6 +41,8 @@ import java.util.*;
 public class TimeUtil {
 
 	public static final TimeZone TZ_UTC = TimeZone.getTimeZone("UTC");
+	private static final Pattern TIME_INTERVAL_PATTERN =
+			Pattern.compile("-?(?:(\\d+)w)?(?:(\\d+)d)?(?:(\\d+)h)?(?:(\\d+)m)?(?:(\\d+)([.]\\d+)?s)?");
 
 	/**
 	 * It converts a given time interval into a 
@@ -108,18 +116,13 @@ public class TimeUtil {
         }
         if(withSecondFractions && ((maxTerms - termCount) >= 2)) {
             if (l > 0) {
-                double fractionalSeconds = l / (1000.0D);
-                DecimalFormat fix3 = new DecimalFormat("0.000");
-                sb.append(fix3.format(fractionalSeconds)).append('s');
-                termCount++;
-                //l = l - ((long)fractionalSeconds * (long)1000);
+                double fractionalSeconds = l / (1000.0);
+                sb.append(String.format(Locale.ROOT, "%.3f", fractionalSeconds)).append('s');
             }
         } else {
             long seconds = SECONDS.convert(l, MILLISECONDS);
             if (seconds > 0) {
                 sb.append(seconds).append('s');
-                termCount++;
-                //l = l - ((long)seconds * (long)1000);
             }
         }
         //
@@ -135,77 +138,49 @@ public class TimeUtil {
     }
 
     public static long toMillis(String timeInterval) {
-        byte sign = 1;
-        if (timeInterval.contains("-")) {
-            sign = -1;
-            timeInterval = timeInterval.substring(1);
+        Matcher matcher = TIME_INTERVAL_PATTERN.matcher(timeInterval);
+        if (!matcher.matches()) {
+            throw new NumberFormatException("Unknown format: " + timeInterval);
         }
 
-        String[] terms = timeInterval.split("(?<=[a-z])");
-
+        String group;
         long millis = 0;
-        for (String term : terms) {
-            if (term.isEmpty()) continue;
-
-            char measure = term.charAt(term.length() - 1);
-            switch(measure){
-                case 'w':
-                    millis += 7 * MILLISECONDS.convert(Long.parseLong(term.substring(0, term.length() - 1)), DAYS);
-                    break;
-                case 'd':
-                    millis += MILLISECONDS.convert(Short.parseShort(term.substring(0, term.length() - 1)), DAYS);
-                    break;
-                case 'h':
-                    millis += MILLISECONDS.convert(Short.parseShort(term.substring(0, term.length() - 1)), HOURS);
-                    break;
-                case 'm':
-                    millis += MILLISECONDS.convert(Short.parseShort(term.substring(0, term.length() - 1)), MINUTES);
-                    break;
-                case 's':
-                    if (term.contains(".")) {
-                        millis += Integer.parseInt(term.replaceAll("[a-z.]", ""));
-                    } else {
-                        millis += MILLISECONDS.convert(Short.parseShort(term.substring(0, term.length() - 1)), SECONDS);
-                    }
-                    break;
-                default:
-                    throw new NumberFormatException("Unknown format: " + (sign > 0 ? "" : "-") + timeInterval);
-            }
+        if ((group = matcher.group(1)) != null) { // weeks
+            millis += DAYS.toMillis(7 * Long.parseLong(group));
+        }
+        if ((group = matcher.group(2)) != null) { // days
+            millis += DAYS.toMillis(Long.parseLong(group));
+        }
+        if ((group = matcher.group(3)) != null) { // hours
+            millis += HOURS.toMillis(Long.parseLong(group));
+        }
+        if ((group = matcher.group(4)) != null) { // minutes
+            millis += MINUTES.toMillis(Long.parseLong(group));
+        }
+        if ((group = matcher.group(5)) != null) { // seconds
+            millis += SECONDS.toMillis(Long.parseLong(group));
+        }
+        if ((group = matcher.group(6)) != null) { // fractional seconds
+            millis += (long) (Double.parseDouble(group) * 1000);
         }
 
-        return millis * sign;
+        return timeInterval.startsWith("-") ? -millis : millis;
     }
 
 	/**
 	 * Helper to format time HTTP conform
-	 * @param time
-	 * @return
+	 *
+	 * @param time time in milliseconds since epoch
+	 * @return RFC 1123 formatted date
 	 */
 	public static String makeHTTPDate(long time) {
-		// For HTTP, GMT == UTC
-		SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'",Locale.US);
-		sdf.setTimeZone(TZ_UTC);
-		return sdf.format(new Date(time));
+		return DateTimeFormatter.RFC_1123_DATE_TIME.format(Instant.ofEpochMilli(time).atOffset(ZoneOffset.UTC));
 	}
-	
-// FIXME: For me it returns a parsed time with 2 hours difference, so it seems to parse localtime. WHY?
-	
-//	public static Date parseHTTPDate(String date) throws ParseException {
-//		SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'",Locale.US);
-//		sdf.setTimeZone(TZ_UTC);
-//		return sdf.parse(date);
-//	}
-
 	
 	/**
 	 * @return Returns the passed date with the same year/month/day but with the time set to 00:00:00.000
 	 */
 	public static Date setTimeToZero(final Date date) {
-		// We need to cut off the hour/minutes/seconds
-		final GregorianCalendar calendar = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
-		calendar.setTimeInMillis(date.getTime()); // We must not use setTime(date) in case the date is not UTC.
-		calendar.set(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH), 0, 0, 0);
-		calendar.set(Calendar.MILLISECOND, 0);
-		return calendar.getTime();
+		return Date.from(date.toInstant().truncatedTo(ChronoUnit.DAYS));
 	}
 }

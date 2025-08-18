@@ -51,7 +51,7 @@ public class MessageType {
 		this.isLossyPacketMessage = isLossyPacketMessage;
 		internalOnly = internal;
 		// XXX hashCode() is NOT required to be unique!
-		Integer id = Integer.valueOf(name.hashCode());
+		Integer id = name.hashCode();
 		if (_specs.containsKey(id)) {
 			throw new RuntimeException("A message type by the name of " + name + " already exists!");
 		}
@@ -59,7 +59,7 @@ public class MessageType {
 	}
 
 	public void unregister() {
-		_specs.remove(Integer.valueOf(_name.hashCode()));
+		_specs.remove(_name.hashCode());
 	}
 	
 	public void addLinkedListField(String name, Class<?> parameter) {

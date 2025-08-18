@@ -39,7 +39,7 @@ import freenet.io.xfer.BulkTransmitter;
 import freenet.io.xfer.PartiallyReceivedBulk;
 import freenet.keys.FreenetURI;
 import freenet.l10n.NodeL10n;
-import freenet.node.useralerts.AbstractUserAlert;
+import freenet.node.useralerts.AbstractNodeToNodeFileOfferUserAlert;
 import freenet.node.useralerts.BookmarkFeedUserAlert;
 import freenet.node.useralerts.DownloadFeedUserAlert;
 import freenet.node.useralerts.N2NTMUserAlert;
@@ -472,7 +472,7 @@ public class DarknetPeerNode extends PeerNode {
 			synchronized(extraPeerDataFileNumbers) {
 				extraPeerDataFileNumbers.add(fileNumber);
 			}
-			readResult = readExtraPeerDataFile(extraPeerDataFile, fileNumber.intValue());
+			readResult = readExtraPeerDataFile(extraPeerDataFile, fileNumber);
 			if(!readResult) {
 				gotError = true;
 			}
@@ -733,7 +733,7 @@ public class DarknetPeerNode extends PeerNode {
 			localFileNumbers = extraPeerDataFileNumbers.toArray(new Integer[extraPeerDataFileNumbers.size()]);
 		}
 		for (Integer localFileNumber : localFileNumbers) {
-			deleteExtraPeerDataFile(localFileNumber.intValue());
+			deleteExtraPeerDataFile(localFileNumber);
 		}
 		extraPeerDataPeerDir.delete();
 	}
@@ -826,7 +826,7 @@ public class DarknetPeerNode extends PeerNode {
 		}
 		Arrays.sort(localFileNumbers);
 		for (Integer localFileNumber : localFileNumbers) {
-			rereadExtraPeerDataFile(localFileNumber.intValue());
+			rereadExtraPeerDataFile(localFileNumber);
 		}
 	}
 
@@ -1019,7 +1019,7 @@ public class DarknetPeerNode extends PeerNode {
 		}
 
 		protected void onReceiveFailure() {
-			UserAlert alert = new AbstractUserAlert() {
+			UserAlert alert = new AbstractNodeToNodeFileOfferUserAlert() {
 				@Override
 				public String dismissButtonText() {
 					return NodeL10n.getBase().getString("UserAlert.hide");
@@ -1112,7 +1112,7 @@ public class DarknetPeerNode extends PeerNode {
 		}
 
 		private void onReceiveSuccess() {
-			UserAlert alert = new AbstractUserAlert() {
+			UserAlert alert = new AbstractNodeToNodeFileOfferUserAlert() {
 				@Override
 				public String dismissButtonText() {
 					return NodeL10n.getBase().getString("UserAlert.hide");
@@ -1185,7 +1185,8 @@ public class DarknetPeerNode extends PeerNode {
 
 		/** Ask the user whether (s)he wants to download a file from a direct peer */
 		public UserAlert askUserUserAlert() {
-			return new AbstractUserAlert() {
+			return new AbstractNodeToNodeFileOfferUserAlert() {
+
 				@Override
 				public String dismissButtonText() {
 					return null; // Cannot hide, but can reject
@@ -1371,7 +1372,7 @@ public class DarknetPeerNode extends PeerNode {
 
 	public int sendTextFeed(String message) {
 		long now = System.currentTimeMillis();
-		long msgid = Math.abs(node.getRandom().nextLong());
+		long msgid = Math.abs(random.nextLong());
 		// split large messages
 		int requiredN2nCount = 1 + ((message.length() - 1) / 1024);
 		String messagePart;
@@ -1425,7 +1426,7 @@ public class DarknetPeerNode extends PeerNode {
 	}
 
 	private int sendFileOffer(String fnam, String mime, String message, RandomAccessBuffer data) throws IOException {
-		long uid = node.getRandom().nextLong();
+		long uid = random.nextLong();
 		long now = System.currentTimeMillis();
 		FileOffer fo = new FileOffer(uid, data, fnam, mime, message);
 		synchronized(this) {
@@ -1883,7 +1884,7 @@ public class DarknetPeerNode extends PeerNode {
 				return;
 			}
 			byte[] data = baos.toByteArray();
-			long uid = node.getFastWeakRandom().nextLong();
+			long uid = random.nextLong();
 			RandomAccessBuffer raf = new ByteArrayRandomAccessBuffer(data);
 			PartiallyReceivedBulk prb = new PartiallyReceivedBulk(node.getUSM(), data.length, Node.PACKET_SIZE, raf, true);
 			try {

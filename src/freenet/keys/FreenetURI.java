@@ -25,7 +25,6 @@ import freenet.client.InsertException;
 import freenet.client.InsertException.InsertExceptionMode;
 import freenet.support.Base64;
 import freenet.support.Fields;
-import freenet.support.HexUtil;
 import freenet.support.IllegalBase64Exception;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -222,35 +221,14 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 		this.suggestedEdition = uri.suggestedEdition;
 		if(logDEBUG) Logger.debug(this, "Copied: "+toString()+" from "+uri.toString(), new Exception("debug"));
 	}
-	
-	boolean noCacheURI = false;
-	
-	/** Optimize for memory. */
+
+	/**
+	 * @return this FreenetURI instance
+	 * @deprecated mutable data cannot safely be interned
+	 */
+	@Deprecated
 	public FreenetURI intern() {
-		boolean changedAnything = false;
-		byte[] x = extra;
-		if(keyType.equals("CHK"))
-			x = ClientCHK.internExtra(x);
-		else
-			x = ClientSSK.internExtra(x);
-		if(x != extra) changedAnything = true;
-		String[] newMetaStr = null;
-		if(metaStr != null) {
-			newMetaStr = new String[metaStr.length];
-			for(int i=0;i<metaStr.length;i++) {
-				newMetaStr[i] = metaStr[i].intern();
-				if(metaStr[i] != newMetaStr[i]) changedAnything = true;
-			}
-		}
-		String dn = docName == null ? null : docName.intern();
-		if(dn != docName) changedAnything = true;
-		if(!changedAnything) {
-			noCacheURI = true;
-			return this;
-		}
-		FreenetURI u = new FreenetURI(keyType, dn, newMetaStr, routingKey, cryptoKey, extra, suggestedEdition);
-		u.noCacheURI = true;
-		return u;
+		return this;
 	}
 
 	public FreenetURI(String keyType, String docName) {
@@ -511,25 +489,6 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 	    this.extra = null;
 	    this.docName = null;
 	    this.suggestedEdition = 0;
-	}
-
-	/** Dump the individual components of the key to System.out. */
-	public void decompose() {
-		String r = routingKey == null ? "none" : HexUtil.bytesToHex(routingKey);
-		String k = cryptoKey == null ? "none" : HexUtil.bytesToHex(cryptoKey);
-		String e = extra == null ? "none" : HexUtil.bytesToHex(extra);
-		System.out.println("FreenetURI" + this);
-		System.out.println("Key type   : " + keyType);
-		System.out.println("Routing key: " + r);
-		System.out.println("Crypto key : " + k);
-		System.out.println("Extra      : " + e);
-		System.out.println(
-			"Doc name   : " + (docName == null ? "none" : docName));
-		System.out.print("Meta strings: ");
-		if(metaStr == null)
-			System.out.println("none");
-		else
-			System.out.println(Arrays.asList(metaStr).toString());
 	}
 
 	public String getGuessableKey() {
@@ -815,11 +774,6 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 				b.append('/').append(URLEncoder.encode(s, "/", false, " "));
 			}
 		return b.toString();
-	}
-
-	/** Run this class to decompose the argument. */
-	public static void main(String[] args) throws Exception {
-		(new FreenetURI(args[0])).decompose();
 	}
 
 	/** Get the extra bytes. SSKs and CHKs have extra bytes, these come

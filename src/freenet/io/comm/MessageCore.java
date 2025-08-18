@@ -135,11 +135,12 @@ public class MessageCore {
 					if(!timedOutFilters.add(f))
 						Logger.error(this, "Filter "+f+" is in filter list twice!");
 					if(logMINOR) {
-						for (Message m : _unclaimed) {
+						for (ListIterator<Message> it = _unclaimed.listIterator(); it.hasNext();) {
+							Message m = it.next();
 							MATCHED status = f.match(m, true, tStart);
 							if (status == MATCHED.MATCHED) {
 								// Don't match it, we timed out; two-level timeouts etc may want it for the next filter.
-								Logger.error(this, "Timed out but should have matched in _unclaimed: " + m + " for " + f);
+								Logger.error(this, "Timed out but should have matched in _unclaimed: "+m+" for "+f);
 								break;
 							}
 						}
@@ -610,14 +611,15 @@ public class MessageCore {
 	public Map<String, Integer> getUnclaimedFIFOMessageCounts() {
 		Map<String, Integer> messageCounts = new HashMap<String, Integer>();
 		synchronized(_filters) {
-			for (Message m : _unclaimed) {
+			for (ListIterator<Message> i = _unclaimed.listIterator(); i.hasNext();) {
+				Message m = i.next();
 				String messageName = m.getSpec().getName();
 				Integer messageCount = messageCounts.get(messageName);
 				if (messageCount == null) {
-					messageCounts.put(messageName, Integer.valueOf(1));
+					messageCounts.put(messageName, 1);
 				} else {
-					messageCount = Integer.valueOf(messageCount.intValue() + 1);
-					messageCounts.put(messageName, messageCount);
+					messageCount = messageCount + 1;
+					messageCounts.put(messageName, messageCount );
 				}
 			}
 		}

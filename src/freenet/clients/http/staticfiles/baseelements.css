@@ -592,6 +592,16 @@ div.n2ntm-message-text {
 	font-weight: bold;
 }
 
+/*
+ * Alerts Page
+ */
+
+div.dismiss-all-alerts-container {
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+}
+
 /* 
  * Translation
  */

@@ -44,7 +44,8 @@ import freenet.support.ShortBuffer;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
 import freenet.support.io.NativeThread;
-import freenet.support.math.MedianMeanRunningAverage;
+import freenet.support.math.RunningAverage;
+import freenet.support.math.TrivialRunningAverage;
 
 /**
  * @author amphibian
@@ -228,7 +229,6 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 	static final int MAX_HIGH_HTL_FAILURES = 5;
 	
     private void realRun() {
-	    freenet.support.Logger.OSThread.logPID(this);
         if(isSSK && (pubKey == null)) {
         	pubKey = ((NodeSSK)key).getPubKey();
         }
@@ -1312,7 +1312,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 		 * not increase the expiry time.
 		 */
 		
-		// First take the original TIME_LEFT. This will start at 10 minutes if we get rejected in
+		// First take the original TIME_LEFT. This will start at 3 (FailureTable.REJECT_TIME) minutes if we get rejected in
 		// the same millisecond as the failure table block was added.
 		int timeLeft = msg.getInt(DMT.TIME_LEFT);
 		int origTimeLeft = timeLeft;
@@ -1542,9 +1542,9 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     	}
     }
     
-	private static MedianMeanRunningAverage avgTimeTaken = new MedianMeanRunningAverage();
+	private static final RunningAverage avgTimeTaken = new TrivialRunningAverage();
 	
-	private static MedianMeanRunningAverage avgTimeTakenTransfer = new MedianMeanRunningAverage();
+	private static final RunningAverage avgTimeTakenTransfer = new TrivialRunningAverage();
 	
 	private long transferTime;
 	
@@ -1583,13 +1583,11 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
         if(status == SUCCESS) {
         	if((!isSSK) && transferTime > 0 && logMINOR) {
         		long timeTaken = System.currentTimeMillis() - startTime;
-        		synchronized(avgTimeTaken) {
-       				avgTimeTaken.report(timeTaken);
-           			avgTimeTakenTransfer.report(transferTime);
-       				if(logMINOR) Logger.minor(this, "Successful CHK request took "+timeTaken+" average "+avgTimeTaken);
-           			if(logMINOR) Logger.minor(this, "Successful CHK request transfer "+transferTime+" average "+avgTimeTakenTransfer);
-           			if(logMINOR) Logger.minor(this, "Search phase: median "+(avgTimeTaken.currentValue() - avgTimeTakenTransfer.currentValue())+"ms, mean "+(avgTimeTaken.meanValue() - avgTimeTakenTransfer.meanValue())+"ms");
-        		}
+				avgTimeTaken.report(timeTaken);
+				avgTimeTakenTransfer.report(transferTime);
+				Logger.minor(this, "Successful CHK request took "+timeTaken+" average "+avgTimeTaken.currentValue());
+				Logger.minor(this, "Successful CHK request transfer "+transferTime+" average "+avgTimeTakenTransfer.currentValue());
+				Logger.minor(this, "Search phase: mean "+(avgTimeTaken.currentValue() - avgTimeTakenTransfer.currentValue())+"ms");
         	}
         	if(next != null) {
         		next.onSuccess(false, isSSK);

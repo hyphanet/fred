@@ -59,8 +59,9 @@ public class RequestTag extends UIDTag {
 
 	public synchronized void setSender(RequestSender rs, boolean coalesced) {
 		// If it's because of transfer coalescing, we won't get anything from the RequestSender, so we should not wait for it.
-		if(!coalesced)
+		if(!coalesced) {
 			sent = true;
+		}
 		sender = new WeakReference<RequestSender>(rs);
 	}
 	

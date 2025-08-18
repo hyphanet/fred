@@ -10,7 +10,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
 import freenet.support.Logger;
-import freenet.support.math.MersenneTwister;
 
 /**
  * Provides access to operating system-specific {@code fallocate} and
@@ -20,6 +19,7 @@ import freenet.support.math.MersenneTwister;
 public final class Fallocate {
 
   private static final boolean IS_LINUX = Platform.isLinux();
+  private static final boolean IS_WINDOWS = Platform.isWindows();
   private static final boolean IS_POSIX = !Platform.isWindows() && !Platform.isMac() && !Platform.isOpenBSD();
   private static final boolean IS_ANDROID = Platform.isAndroid();
 
@@ -45,42 +45,49 @@ public final class Fallocate {
     return new Fallocate(channel, getDescriptor(fd), final_filesize);
   }
 
+  /**
+   * @throws IllegalArgumentException
+   */
   public Fallocate fromOffset(long offset) {
     if(offset < 0 || offset > final_filesize) throw new IllegalArgumentException();
     this.offset = offset;
     return this;
   }
 
+  /**
+   * This method only works for Linux, do not use it.
+   * @throws UnsupportedOperationException
+   */
+  @Deprecated
   public Fallocate keepSize() {
-    requireLinux("fallocate keep size");
+    if (!IS_LINUX) {
+      throw new UnsupportedOperationException("fallocate keep size is not supported on this file system");
+    }
     mode |= FALLOC_FL_KEEP_SIZE;
     return this;
-  }
-
-  private void requireLinux(String feature) {
-    if (!IS_LINUX) {
-      throwUnsupported(feature);
-    }
-  }
-
-  private void throwUnsupported(String feature) {
-    throw new UnsupportedOperationException(feature + " is not supported on this file system");
   }
 
   public void execute() throws IOException {
     int errno = 0;
     boolean isUnsupported = false;
-    if (IS_LINUX) {
-      final int result = FallocateHolder.fallocate(fd, mode, offset, final_filesize-offset);
-      errno = result == 0 ? 0 : Native.getLastError();
-    } else if (IS_POSIX) {
-      errno = FallocateHolderPOSIX.posix_fallocate(fd, offset, final_filesize-offset);
+    if (fd > 2) {
+      if (IS_LINUX) {
+        final int result = FallocateHolder.fallocate(fd, mode, offset, final_filesize-offset);
+        errno = result == 0 ? 0 : Native.getLastError();
+      } else if (IS_POSIX) {
+        errno = FallocateHolderPOSIX.posix_fallocate(fd, offset, final_filesize-offset);
+      } else {
+        isUnsupported = true;
+      }
     } else {
       isUnsupported = true;
     }
 
     if (isUnsupported || errno != 0) {
-      Logger.normal(this, "fallocate() failed; using legacy method; errno="+errno);
+      if (errno != 0) {
+        // OS supports fallocate() but it failed. Do not log if the OS does not support fallocate().
+        Logger.normal(this, "fallocate() failed; using legacy method; errno=" + errno);
+      }
       legacyFill(channel, final_filesize, offset);
     }
   }
@@ -108,7 +115,8 @@ public final class Fallocate {
       field.setAccessible(true);
       return getDescriptor((FileDescriptor) field.get(channel));
     } catch (final Exception e) {
-      throw new UnsupportedOperationException("unsupported FileChannel implementation", e);
+      // File descriptor is not supported: fd is null and unavailable, return 0
+      return 0;
     }
   }
 
@@ -119,20 +127,26 @@ public final class Fallocate {
       field.setAccessible(true);
       return (int) field.get(descriptor);
     } catch (final Exception e) {
-      throw new UnsupportedOperationException("unsupported FileDescriptor implementation", e);
+      // File descriptor is not supported: fd is null and unavailable, return 0
+      return 0;
     }
   }
 
   private static void legacyFill(FileChannel fc, long newLength, long offset) throws IOException {
-    MersenneTwister mt = new MersenneTwister();
-    byte[] b = new byte[4096];
-    ByteBuffer bb = ByteBuffer.wrap(b);
-    while (offset < newLength) {
-      bb.rewind();
-      mt.nextBytes(b);
-      offset += fc.write(bb, offset);
-      if (offset % (1024 * 1024 * 1024L) == 0) {
-        mt = new MersenneTwister();
+    if (IS_WINDOWS) {
+      // Windows do not create sparse files by default, so just write a byte at the end.
+      fc.write(ByteBuffer.allocate(1), newLength - 1);
+    } else {
+      // fill fc with zeros (4MiB each time)
+      byte[] b = new byte[4096 * 1024];
+      ByteBuffer bb = ByteBuffer.wrap(b);
+      while ((offset < newLength) && (newLength - offset >= b.length)) {
+        bb.rewind();
+        offset += fc.write(bb, offset);
+      }
+      // Remaining data can be written at once. If less bytes are written then try again.
+      while (offset < newLength) {
+        offset += fc.write(ByteBuffer.wrap(new byte[Math.toIntExact(newLength - offset)]), offset);
       }
     }
   }

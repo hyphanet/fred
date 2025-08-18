@@ -204,9 +204,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
         MessageDigest md = SHA256.getMessageDigest();
         md.update(key.getRoutingKey());
         md.update(localSalt);
-        byte[] ret = md.digest();
-        SHA256.returnMessageDigest(md);
-        return ret;
+        return md.digest();
     }
     
     /** The segment bloom filters should only need to be written ONCE, and can all be written at 

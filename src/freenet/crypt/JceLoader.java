@@ -12,11 +12,10 @@ import java.security.Provider;
 import java.security.Security;
 import java.security.Signature;
 
-import javax.crypto.KeyAgreement;
-import javax.crypto.KeyGenerator;
-
 import freenet.support.Logger;
 import freenet.support.io.Closer;
+import javax.crypto.KeyAgreement;
+import javax.crypto.KeyGenerator;
 
 public class JceLoader {
 	static public final Provider BouncyCastle;
@@ -150,9 +149,6 @@ public class JceLoader {
 			}
 			return nssProvider;
 		}
-	}
-	static public void main(String[] args) {
-		dumpLoaded();
 	}
 	
 	static public void dumpLoaded() {

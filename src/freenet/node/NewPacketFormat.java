@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -26,8 +28,6 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.SparseBitmap;
-
-import static java.util.concurrent.TimeUnit.MINUTES;
 
 public class NewPacketFormat implements PacketFormat {
 
@@ -278,7 +278,7 @@ public class NewPacketFormat implements PacketFormat {
 					}
 				}
 
-				synchronized(sendBufferLock) {
+				synchronized(receiveBufferSizeLock) {
 					receiveBufferUsed -= recvBuffer.messageLength;
 					if(logDEBUG) Logger.debug(this, "Removed " + recvBuffer.messageLength + " from buffer. Total is now " + receiveBufferUsed);
 				}
@@ -299,7 +299,7 @@ public class NewPacketFormat implements PacketFormat {
 				wakeUp = true;
 			if(addedAck) {
 				if(!wakeUp) {
-					synchronized(sendBufferLock) {
+					synchronized(receiveBufferSizeLock) {
 						if(receiveBufferUsed > MAX_RECEIVE_BUFFER_SIZE / 2)
 							wakeUp = true;
 					}
@@ -590,69 +590,26 @@ public class NewPacketFormat implements PacketFormat {
 			if(logDEBUG) Logger.debug(this, "Added acks for "+this+" for "+pn.shortToString());
 		}
 		
-		byte[] haveAddedStatsBulk = null;
-		byte[] haveAddedStatsRT = null;
-		
 		if(!ackOnly) {
 			
 			boolean addedFragments = false;
 			
-			while(true) {
-				
-				boolean addStatsBulk = false;
-				boolean addStatsRT = false;
-				
-				synchronized(sendBufferLock) {
-					// Always finish what we have started before considering sending more packets.
-					// Anything beyond this is beyond the scope of NPF and is PeerMessageQueue's job.
-addOldLoop:			for(Map<Integer, MessageWrapper> started : startedByPrio) {
-						//Try to finish messages that have been started
-						Iterator<MessageWrapper> it = started.values().iterator();
-						while(it.hasNext() && packet.getLength() < maxPacketSize) {
-							MessageWrapper wrapper = it.next();
-							while(packet.getLength() < maxPacketSize) {
-								MessageFragment frag = wrapper.getMessageFragment(maxPacketSize - packet.getLength());
-								if(frag == null) break;
-								mustSend = true;
-								addedFragments = true;
-								packet.addMessageFragment(frag);
-								sentPacket.addFragment(frag);
-								if(wrapper.allSent()) {
-									if((haveAddedStatsBulk == null) && wrapper.getItem().sendLoadBulk) {
-										addStatsBulk = true;
-										// Add the lossy message outside the lock.
-										break addOldLoop;
-									}
-									if((haveAddedStatsRT == null) && wrapper.getItem().sendLoadRT) {
-										addStatsRT = true;
-										// Add the lossy message outside the lock.
-										break addOldLoop;
-									}
-								}
-							}
+			synchronized(sendBufferLock) {
+				// Always finish what we have started before considering sending more packets.
+				// Anything beyond this is beyond the scope of NPF and is PeerMessageQueue's job.
+				for (Map<Integer, MessageWrapper> started : startedByPrio) {
+					//Try to finish messages that have been started
+					Iterator<MessageWrapper> it = started.values().iterator();
+					while (it.hasNext() && packet.getLength() < maxPacketSize) {
+						MessageWrapper wrapper = it.next();
+						while (packet.getLength() < maxPacketSize) {
+							MessageFragment frag = wrapper.getMessageFragment(maxPacketSize - packet.getLength());
+							if (frag == null) break;
+							mustSend = true;
+							addedFragments = true;
+							packet.addMessageFragment(frag);
+							sentPacket.addFragment(frag);
 						}
-					}
-				}
-				
-				if(!(addStatsBulk || addStatsRT)) break;
-				
-				if(addStatsBulk) {
-					MessageItem item = pn.makeLoadStats(false, false, true);
-					if(item != null) {
-						byte[] buf = item.getData();
-						haveAddedStatsBulk = buf;
-						// FIXME if this fails, drop some messages.
-						packet.addLossyMessage(buf, maxPacketSize);
-					}
-				}
-				
-				if(addStatsRT) {
-					MessageItem item = pn.makeLoadStats(true, false, true);
-					if(item != null) {
-						byte[] buf = item.getData();
-						haveAddedStatsRT = buf;
-						// FIXME if this fails, drop some messages.
-						packet.addLossyMessage(buf, maxPacketSize);
 					}
 				}
 			}
@@ -720,164 +677,78 @@ addOldLoop:			for(Map<Integer, MessageWrapper> started : startedByPrio) {
 			return null;
 		}
 		
-		boolean sendStatsBulk = false, sendStatsRT = false;
-		
-		if(!ackOnly) {
-			
-			sendStatsBulk = pn.grabSendLoadStatsASAP(false);
-			sendStatsRT = pn.grabSendLoadStatsASAP(true);
-			
-			if(sendStatsBulk || sendStatsRT) {
-				if(!checkedCanSend)
-					cantSend = !canSend(sessionKey);
-				checkedCanSend = true;
-				if(cantSend) {
-					if(sendStatsBulk)
-						pn.setSendLoadStatsASAP(false);
-					if(sendStatsRT)
-						pn.setSendLoadStatsASAP(true);
-				} else {
-					mustSend = true;
-				}
-			}
-		}
-		
 		if(ackOnly && numAcks == 0) return null;
 		
 		if((!ackOnly) && (!cantSend)) {
-			
-			if(sendStatsBulk) {
-				MessageItem item = pn.makeLoadStats(false, true, false);
-				if(item != null) {
-					if(haveAddedStatsBulk != null) {
-						packet.removeLossyMessage(haveAddedStatsBulk);
-					}
-					messageQueue.pushfrontPrioritizedMessageItem(item);
-					haveAddedStatsBulk = item.buf;
-				}
-			}
-			
-			if(sendStatsRT) {
-				MessageItem item = pn.makeLoadStats(true, true, false);
-				if(item != null) {
-					if(haveAddedStatsRT != null) {
-						packet.removeLossyMessage(haveAddedStatsRT);
-					}
-					messageQueue.pushfrontPrioritizedMessageItem(item);
-					haveAddedStatsRT = item.buf;
-				}
-			}
-			
+
 			fragments:
 				for(int i = 0; i < startedByPrio.size(); i++) {
+					//Add messages from the message queue
+					while ((packet.getLength() + 10) < maxPacketSize) { //Fragment header is max 9 bytes, allow min 1 byte data
 
-					prio:
-					while(true) {
-						
-						boolean addStatsBulk = false;
-						boolean addStatsRT = false;
-						
-						//Add messages from the message queue
-						while ((packet.getLength() + 10) < maxPacketSize) { //Fragment header is max 9 bytes, allow min 1 byte data
-							
-							if(!checkedCanSend) {
-								// Check in advance to avoid reordering message items.
-								cantSend = !canSend(sessionKey);
-							}
-							checkedCanSend = false;
-							if(cantSend) break;
-							boolean wasGeneratedPing = false;
-							
-							MessageItem item = messageQueue.grabQueuedMessageItem(i);
-							if(item == null) {
-								if(mustSendKeepalive && packet.noFragments()) {
-									// Create a ping for keepalive purposes.
-									// It will be acked, this ensures both sides don't timeout.
-									Message msg;
-									synchronized(this) {
-										msg = DMT.createFNPPing(pingCounter++);
-									}
-									item = new MessageItem(msg, null, null);
-									item.setDeadline(now + PacketSender.MAX_COALESCING_DELAY);
-									wasGeneratedPing = true;
-									// Should we report this on the PeerNode's stats? We'd need to run a job off-thread, so probably not worth it.
-								} else {
-									break prio;
+						if (!checkedCanSend) {
+							// Check in advance to avoid reordering message items.
+							cantSend = !canSend(sessionKey);
+						}
+						checkedCanSend = false;
+						if (cantSend) break;
+						boolean wasGeneratedPing = false;
+
+						MessageItem item = messageQueue.grabQueuedMessageItem(i);
+						if (item == null) {
+							if (mustSendKeepalive && packet.noFragments()) {
+								// Create a ping for keepalive purposes.
+								// It will be acked, this ensures both sides don't timeout.
+								Message msg;
+								synchronized (this) {
+									msg = DMT.createFNPPing(pingCounter++);
 								}
+								item = new MessageItem(msg, null, null);
+								item.setDeadline(now + PacketSender.MAX_COALESCING_DELAY);
+								wasGeneratedPing = true;
+								// Should we report this on the PeerNode's stats? We'd need to run a job off-thread, so probably not worth it.
+							} else {
+								break;
 							}
-							
-							int messageID = getMessageID();
-							if(messageID == -1) {
-								// CONCURRENCY: This will fail sometimes if we send messages to the same peer from different threads.
-								// This doesn't happen at the moment because we use a single PacketSender for all ports and all peers.
-								// We might in future split it across multiple threads but it'd be best to keep the same peer on the same thread.
-								Logger.error(this, "No availiable message ID, requeuing and sending packet (we already checked didn't we???)");
-								if(!wasGeneratedPing) {
-									messageQueue.pushfrontPrioritizedMessageItem(item);
-									// No point adding to queue if it's just a ping:
-									//  We will try again next time.
-									//  But odds are the connection is broken and the other side isn't responding...
-								}
-								break fragments;
-							}
-							
-							if(logDEBUG) Logger.debug(this, "Allocated "+messageID+" for "+item+" for "+this);
-							
-							MessageWrapper wrapper = new MessageWrapper(item, messageID);
-							MessageFragment frag = wrapper.getMessageFragment(maxPacketSize - packet.getLength());
-							if(frag == null) {
+						}
+
+						int messageID = getMessageID();
+						if (messageID == -1) {
+							// CONCURRENCY: This will fail sometimes if we send messages to the same peer from different threads.
+							// This doesn't happen at the moment because we use a single PacketSender for all ports and all peers.
+							// We might in future split it across multiple threads but it'd be best to keep the same peer on the same thread.
+							Logger.error(this, "No availiable message ID, requeuing and sending packet (we already checked didn't we???)");
+							if (!wasGeneratedPing) {
 								messageQueue.pushfrontPrioritizedMessageItem(item);
-								break prio;
+								// No point adding to queue if it's just a ping:
+								//  We will try again next time.
+								//  But odds are the connection is broken and the other side isn't responding...
 							}
-							packet.addMessageFragment(frag);
-							sentPacket.addFragment(frag);
-							
-							//Priority of the one we grabbed might be higher than i
-							Map<Integer, MessageWrapper> queue = startedByPrio.get(item.getPriority());
-							synchronized(sendBufferLock) {
-								// CONCURRENCY: This could go over the limit if we allow createPacket() for the same node on two threads in parallel. That's probably a bad idea anyway.
-								sendBufferUsed += item.buf.length;
-								if(logDEBUG) Logger.debug(this, "Added " + item.buf.length + " to remote buffer. Total is now " + sendBufferUsed + " for "+pn.shortToString());
-								queue.put(messageID, wrapper);
-							}
-							
-							if(wrapper.allSent()) {
-								if((haveAddedStatsBulk == null) && wrapper.getItem().sendLoadBulk) {
-									addStatsBulk = true;
-									break;
-								}
-								if((haveAddedStatsRT == null) && wrapper.getItem().sendLoadRT) {
-									addStatsRT = true;
-									break;
-								}
-							}
+							break fragments;
+						}
 
+						if (logDEBUG)
+							Logger.debug(this, "Allocated " + messageID + " for " + item + " for " + this);
+
+						MessageWrapper wrapper = new MessageWrapper(item, messageID);
+						MessageFragment frag = wrapper.getMessageFragment(maxPacketSize - packet.getLength());
+						if (frag == null) {
+							messageQueue.pushfrontPrioritizedMessageItem(item);
+							break;
 						}
-						
-						if(!(addStatsBulk || addStatsRT)) break;
-						
-						if(addStatsBulk) {
-							MessageItem item = pn.makeLoadStats(false, false, true);
-							if(item != null) {
-								byte[] buf = item.getData();
-								haveAddedStatsBulk = item.buf;
-								// FIXME if this fails, drop some messages.
-								packet.addLossyMessage(buf, maxPacketSize);
-							}
+						packet.addMessageFragment(frag);
+						sentPacket.addFragment(frag);
+
+						//Priority of the one we grabbed might be higher than i
+						Map<Integer, MessageWrapper> queue = startedByPrio.get(item.getPriority());
+						synchronized (sendBufferLock) {
+							// CONCURRENCY: This could go over the limit if we allow createPacket() for the same node on two threads in parallel. That's probably a bad idea anyway.
+							sendBufferUsed += item.buf.length;
+							if (logDEBUG)
+								Logger.debug(this, "Added " + item.buf.length + " to remote buffer. Total is now " + sendBufferUsed + " for " + pn.shortToString());
+							queue.put(messageID, wrapper);
 						}
-						
-						if(addStatsRT) {
-							MessageItem item = pn.makeLoadStats(true, false, true);
-							if(item != null) {
-								byte[] buf = item.getData();
-								haveAddedStatsRT = item.buf;
-								// FIXME if this fails, drop some messages.
-								packet.addLossyMessage(buf, maxPacketSize);
-							}
-						}
-						
-						if(cantSend) break;
-					}						
+					}
 				}
 		
 		}

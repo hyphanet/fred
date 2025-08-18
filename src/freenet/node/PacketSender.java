@@ -112,7 +112,6 @@ public class PacketSender implements Runnable {
 	@Override
 	public void run() {
 		if(logMINOR) Logger.minor(this, "In PacketSender.run()");
-		freenet.support.Logger.OSThread.logPID(this);
 
                 schedulePeriodicJob();
 		/*

@@ -107,9 +107,7 @@ public class NodeSSK extends Key {
 		MessageDigest md256 = SHA256.getMessageDigest();
 		md256.update(ehDocname);
 		md256.update(pkHash);
-		byte[] key = md256.digest();
-		SHA256.returnMessageDigest(md256);
-		return key;
+		return md256.digest();
 	}
 	
 	@Override

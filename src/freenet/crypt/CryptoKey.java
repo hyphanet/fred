@@ -10,7 +10,6 @@ import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.math.BigInteger;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 
 import freenet.support.HexUtil;
 import freenet.support.Logger;
@@ -18,15 +17,6 @@ import freenet.support.Logger;
 public abstract class CryptoKey implements CryptoElement, Serializable {
 
     private static final long serialVersionUID = 1L;
-    protected static final MessageDigest shactx;
-	static {
-		try {
-			shactx = MessageDigest.getInstance("SHA1", Util.mdProviders.get("SHA1"));
-		} catch(NoSuchAlgorithmException e) {
-			// impossible
-			throw new Error(e);
-		}
-	}
 
 	CryptoKey() {
 	}
@@ -57,13 +47,12 @@ public abstract class CryptoKey implements CryptoElement, Serializable {
 	public abstract byte[] asBytes();
 
 	protected byte[] fingerprint(BigInteger[] quantities) {
-		synchronized (shactx) {
-			for (BigInteger quantity: quantities) {
-				byte[] mpi = Util.MPIbytes(quantity);
-				shactx.update(mpi, 0, mpi.length);
-			}
-			return shactx.digest();
+		MessageDigest shactx = HashType.SHA1.get();
+		for (BigInteger quantity: quantities) {
+			byte[] mpi = Util.MPIbytes(quantity);
+			shactx.update(mpi, 0, mpi.length);
 		}
+		return shactx.digest();
 	}
 
 	public String verboseToString() {
@@ -108,13 +97,6 @@ public abstract class CryptoKey implements CryptoElement, Serializable {
 			.append(' ')
 			.append(fphex.substring(36, 40));
 		return b.toString();
-	}
-
-	public static void main(String[] args) throws Exception {
-		for (;;) {
-			CryptoKey kp = CryptoKey.read(System.in);
-			System.err.println("-+ " + kp.verboseToString());
-		}
 	}
 
 }

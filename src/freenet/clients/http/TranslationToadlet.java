@@ -55,16 +55,17 @@ public class TranslationToadlet extends Toadlet {
 				return;
 			}
 			byte[] data = sfs.toOrderedString().getBytes(StandardCharsets.UTF_8);
-			MultiValueTable<String, String> head = new MultiValueTable<String, String>();
-			head.put("Content-Disposition", "attachment; filename=\"" + this.base.getL10nOverrideFileName(this.base.getSelectedLanguage()) + '"');
+			MultiValueTable<String, String> head = MultiValueTable.from(
+				"Content-Disposition",
+				"attachment; filename=\"" + this.base.getL10nOverrideFileName(this.base.getSelectedLanguage()) + '"'
+			);
 			ctx.sendReplyHeaders(200, "Found", head, "text/plain; charset=utf-8", data.length);
 			ctx.writeData(data);
 			return;
 		} else if (request.isParameterSet("translation_updated")) {
 			String key = request.getParam("translation_updated");
 			PageNode page = ctx.getPageMaker().getPageNode(l10n("translationUpdatedTitle"), ctx);
-			HTMLNode pageNode = page.outer;
-			HTMLNode contentNode = page.content;
+			HTMLNode contentNode = page.getContentNode();
 
 			HTMLNode translationNode = contentNode.addChild("div", "class", "translation");
 			HTMLNode legendTable = translationNode.addChild("table", "class", "translation");
@@ -92,14 +93,13 @@ public class TranslationToadlet extends Toadlet {
 			footer.addChild("%", "&nbsp;&nbsp;");
 			footer.addChild("a", "href", TOADLET_URL + (showEverything ? "" : "?toTranslateOnly")).addChild("#", l10n("returnToTranslations"));
 
-			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+			this.writeHTMLReply(ctx, 200, "OK", page.generate());
 			return;				
 		} else if (request.isParameterSet("translate")) {
 			boolean gotoNext = request.isParameterSet("gotoNext");
 			String key = request.getParam("translate");
 			PageNode page = ctx.getPageMaker().getPageNode(l10n("translationUpdateTitle"), ctx);
-			HTMLNode pageNode = page.outer;
-			HTMLNode contentNode = page.content;
+			HTMLNode contentNode = page.getContentNode();
 
 			HTMLNode translationNode = contentNode.addChild("div", "class", "translation");
 			HTMLNode updateForm =  ctx.addFormChild(translationNode, TOADLET_URL, "trans_update");
@@ -138,13 +138,12 @@ public class TranslationToadlet extends Toadlet {
 				updateForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "toTranslateOnly", key });
 			
 			updateForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.cancel") });
-			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+			this.writeHTMLReply(ctx, 200, "OK", page.generate());
 			return;
 		} else if (request.isParameterSet("remove")) {
 			String key = request.getParam("remove");
 			PageNode page = ctx.getPageMaker().getPageNode(l10n("removeOverrideTitle"), ctx);
-			HTMLNode pageNode = page.outer;
-			HTMLNode contentNode = page.content;
+			HTMLNode contentNode = page.getContentNode();
 
 			HTMLNode content = ctx.getPageMaker().getInfobox("infobox-warning", l10n("removeOverrideWarningTitle"), contentNode, "translation-override", true);
 			content.addChild("p").addChild("#",
@@ -157,13 +156,12 @@ public class TranslationToadlet extends Toadlet {
 			removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "remove_confirmed", l10n("remove") });
 			removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.cancel") });
 			
-			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+			this.writeHTMLReply(ctx, 200, "OK", page.generate());
 			return;
 		}
 
 		PageNode page = ctx.getPageMaker().getPageNode(l10n("translationUpdateTitle"), ctx);
-		HTMLNode pageNode = page.outer;
-		HTMLNode contentNode = page.content;
+		HTMLNode contentNode = page.getContentNode();
 
 		final HTMLNode translatingForBox = ctx.getPageMaker().getInfobox(null, l10n("selectTranslation"), contentNode);
 		ArrayList<String> elementsToTranslate = new ArrayList<String>();
@@ -219,7 +217,7 @@ public class TranslationToadlet extends Toadlet {
 			contentRow.addChild("td", "class", "translation-new").addChild(_setOrRemoveOverride(key, isOverriden, showEverything));
 		}
 		
-		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+		this.writeHTMLReply(ctx, 200, "OK", page.generate());
 	}
 
 	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
@@ -278,10 +276,8 @@ public class TranslationToadlet extends Toadlet {
 	}
 	
 	private void redirectTo(ToadletContext ctx, String target) throws ToadletContextClosedException, IOException {
-		MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-		headers.put("Location", target);
+		MultiValueTable<String, String> headers = MultiValueTable.from("Location", target);
 		ctx.sendReplyHeaders(302, "Found", headers, null, 0);
-		return;
 	}
 
 	private HTMLNode _setOrRemoveOverride(String key, boolean isOverriden, boolean showEverything) {

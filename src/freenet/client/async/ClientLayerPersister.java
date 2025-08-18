@@ -558,7 +558,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
     protected void save(boolean shutdown) {
         if(writeToFilename == null) return;
         if(writeToFilename.exists()) {
-            FileUtil.renameTo(writeToFilename, writeToBackupFilename);
+            FileUtil.moveTo(writeToFilename, writeToBackupFilename);
         }
         if(innerSave(shutdown)) {
             if(deleteAfterSuccessfulWrite != null) {

@@ -383,7 +383,6 @@ public class NetworkInterface implements Closeable {
 		 */
 		@Override
 		public void run() {
-		    freenet.support.Logger.OSThread.logPID(this);
 			while (!closed) {
 				try {
 					Socket clientSocket = serverSocket.accept();

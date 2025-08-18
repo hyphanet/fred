@@ -1,9 +1,11 @@
 package freenet.client.async;
 
-import java.util.Calendar;
-import java.util.GregorianCalendar;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.time.temporal.TemporalField;
+import java.time.temporal.WeekFields;
+import java.util.Arrays;
 import java.util.Locale;
-import java.util.TimeZone;
 
 import freenet.keys.ClientSSK;
 import freenet.keys.FreenetURI;
@@ -12,15 +14,12 @@ import freenet.keys.USK;
 
 /** Utility class for date-based edition hints */
 public class USKDateHint {
-	
+
 	public enum Type {
 		YEAR,
 		MONTH,
 		DAY,
 		WEEK;
-
-		/** cached values(). Never modify or pass this array to outside code! */
-		private static final Type[] values = values();
 
 		public boolean alwaysMorePreciseThan(Type type) {
 			if(this.equals(type)) return false;
@@ -34,57 +33,63 @@ public class USKDateHint {
 				return false;
 		}
 	}
-	
-	private GregorianCalendar cal;
 
-	private USKDateHint() {
-		cal = new GregorianCalendar(TimeZone.getTimeZone("GMT"), Locale.US);
+	private static final TemporalField WEEK_OF_YEAR = WeekFields.of(Locale.US).weekOfWeekBasedYear();
+	private static final TemporalField WEEK_YEAR = WeekFields.of(Locale.US).weekBasedYear();
+
+	private final LocalDate dateUtc;
+
+	USKDateHint(LocalDate dateUtc) {
+		this.dateUtc = dateUtc;
 	}
 	
 	public static USKDateHint now() {
-		return new USKDateHint();
+		return new USKDateHint(LocalDate.now(ZoneOffset.UTC));
 	}
 	
-	public String get(Type t) {
-		StringBuffer sb = new StringBuffer();
-		sb.append(cal.get(Calendar.YEAR));
-		if(t == Type.YEAR) return sb.toString();
-		if(t == Type.WEEK) {
-			sb.append("-WEEK-");
-			sb.append(cal.get(Calendar.WEEK_OF_YEAR));
+	public String get(Type type) {
+		if(type == Type.WEEK) {
+			return dateUtc.get(WEEK_YEAR) + "-WEEK-" + dateUtc.get(WEEK_OF_YEAR);
+		}
+
+		StringBuilder sb = new StringBuilder();
+		sb.append(dateUtc.getYear());
+		if (type == Type.YEAR) {
 			return sb.toString();
 		}
-		sb.append("-");
-		sb.append(cal.get(Calendar.MONTH));
-		if(t == Type.MONTH) return sb.toString();
-		sb.append("-");
-		sb.append(cal.get(Calendar.DAY_OF_MONTH));
+
+		sb.append('-');
+		sb.append(dateUtc.getMonthValue() - 1);  // zero-indexed month
+		if(type == Type.MONTH) {
+			return sb.toString();
+		}
+
+		sb.append('-');
+		sb.append(dateUtc.getDayOfMonth());
 		return sb.toString();
 	}
 	
 	/** Return the data to insert to each hint slot. */
 	public String getData(long edition) {
-		return "HINT\n"+Long.toString(edition)+"\n"+get(Type.DAY)+"\n";
+		return String.format("HINT\n%d\n%s\n", edition, get(Type.DAY));
 	}
-	
-	static final String PREFIX = "-DATEHINT-";
-	
+
 	/** Return the URL's to insert hint data to */
 	public FreenetURI[] getInsertURIs(InsertableUSK key) {
-		FreenetURI[] uris = new FreenetURI[Type.values.length];
-		int x = 0;
-		for(Type t : Type.values)
-			uris[x++] = key.getInsertableSSK(key.siteName+PREFIX+get(t)).getInsertURI();
-		return uris;
+		return Arrays.stream(Type.values())
+				.map(type -> key.getInsertableSSK(getDocName(key, type)).getInsertURI())
+				.toArray(FreenetURI[]::new);
 	}
 
 	/** Return the URL's to fetch hint data from */
 	public ClientSSK[] getRequestURIs(USK key) {
-		ClientSSK[] uris = new ClientSSK[Type.values.length];
-		int x = 0;
-		for(Type t : Type.values)
-			uris[x++] = key.getSSK(key.siteName+PREFIX+get(t));
-		return uris;
+		return Arrays.stream(Type.values())
+				.map(type -> key.getSSK(getDocName(key, type)))
+				.toArray(ClientSSK[]::new);
+	}
+
+	private String getDocName(USK key, Type type) {
+		return String.format("%s-DATEHINT-%s", key.siteName, get(type));
 	}
 
 }

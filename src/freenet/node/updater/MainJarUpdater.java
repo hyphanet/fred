@@ -191,7 +191,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
                 tempFile.delete();
                 return;
             }
-			if(!FileUtil.renameTo(tempFile, filename)) {
+			if(!FileUtil.moveTo(tempFile, filename)) {
 				Logger.error(this, "Unable to rename temp file "+tempFile+" to "+filename);
 				System.err.println("Download of "+filename+" for update failed because cannot rename from "+tempFile);
 				if(cb != null)

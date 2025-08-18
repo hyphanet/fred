@@ -50,8 +50,7 @@ public class DarknetAddRefToadlet extends Toadlet {
 		PageMaker pageMaker = ctx.getPageMaker();
 		
 		PageNode page = pageMaker.getPageNode(l10n("title"), ctx);
-		HTMLNode pageNode = page.outer;
-		HTMLNode contentNode = page.content;
+		HTMLNode contentNode = page.getContentNode();
 		
 		contentNode.addChild(ctx.getAlertManager().createSummary());
 		
@@ -88,7 +87,7 @@ public class DarknetAddRefToadlet extends Toadlet {
 		
 		friendsToadlet.drawNoderefBox(contentNode, getNoderef());
 		
-		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+		this.writeHTMLReply(ctx, 200, "OK", page.generate());
 	}
 
 	protected SimpleFieldSet getNoderef() {

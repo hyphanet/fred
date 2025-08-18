@@ -16,6 +16,7 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 import freenet.client.ClientMetadata;
+import freenet.client.FECCodec;
 import freenet.client.FailureCodeTracker;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
@@ -25,7 +26,6 @@ import freenet.client.Metadata;
 import freenet.client.Metadata.SplitfileAlgorithm;
 import freenet.client.MetadataParseException;
 import freenet.client.MetadataUnresolvedException;
-import freenet.client.FECCodec;
 import freenet.crypt.ChecksumChecker;
 import freenet.crypt.ChecksumFailedException;
 import freenet.crypt.HashType;
@@ -45,8 +45,8 @@ import freenet.support.Ticker;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.api.LockableRandomAccessBuffer;
-import freenet.support.api.LockableRandomAccessBufferFactory;
 import freenet.support.api.LockableRandomAccessBuffer.RAFLock;
+import freenet.support.api.LockableRandomAccessBufferFactory;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.ArrayBucketFactory;
 import freenet.support.io.BucketTools;
@@ -463,7 +463,7 @@ public class SplitFileFetcherStorage {
         keyListener.finishedSetup();
         
         if(crossCheckBlocks != 0) {
-            Random crossSegmentRandom = new MersenneTwister(Metadata.getCrossSegmentSeed(metadata.getHashes(), metadata.getHashThisLayerOnly()));
+            Random crossSegmentRandom = MersenneTwister.createUnsynchronized(Metadata.getCrossSegmentSeed(metadata.getHashes(), metadata.getHashThisLayerOnly()));
             // Cross segment redundancy: Allocate the blocks.
             crossSegments = new SplitFileFetcherCrossSegmentStorage[segments.length];
             int segLen = blocksPerSegment;

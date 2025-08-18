@@ -760,7 +760,7 @@ outer:	for(;choosenPriorityClass <= RequestStarter.MINIMUM_FETCHABLE_PRIORITY_CL
     
     public void wakeUp(ClientContext context) {
         // Break out of locks. Can be called within RGAs etc!
-        context.mainExecutor.execute(new Runnable() {
+        context.getMainExecutor().execute(new Runnable() {
 
             @Override
             public void run() {

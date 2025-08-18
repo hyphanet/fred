@@ -192,7 +192,6 @@ public class FCPServer implements Runnable, DownloadCache {
 
 	@Override
 	public void run() {
-	    freenet.support.Logger.OSThread.logPID(this);
 		while(true) {
 			try {
 				networkInterface.waitBound();

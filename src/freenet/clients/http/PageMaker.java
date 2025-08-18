@@ -243,7 +243,7 @@ public final class PageMaker {
 	}
 	
 	public HTMLNode createBackLink(ToadletContext toadletContext, String name) {
-		String referer = toadletContext.getHeaders().get("referer");
+		String referer = toadletContext.getHeaders().getFirst("referer");
 		if (referer != null) {
 			return new HTMLNode("a", new String[] { "href", "title" }, new String[] { referer, name }, name);
 		}
@@ -686,8 +686,8 @@ public final class PageMaker {
 	/** Create an infobox, attach it to the given parent, and return the content node. */
 	public HTMLNode getInfobox(String category, String header, HTMLNode parent, String title, boolean isUnique) {
 		InfoboxNode node = getInfobox(category, header, title, isUnique);
-		parent.addChild(node.outer);
-		return node.content;
+		parent.addChild(node.getOuterNode());
+		return node.getContentNode();
 	}
 
 	/**

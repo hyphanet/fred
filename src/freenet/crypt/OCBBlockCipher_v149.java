@@ -2,7 +2,8 @@
  * GPL compatible. */
 package freenet.crypt;
 
-import java.util.Vector;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
@@ -49,7 +50,7 @@ public class OCBBlockCipher_v149
      * KEY-DEPENDENT
      */
     // NOTE: elements are lazily calculated
-    private Vector<byte[]> L;
+    private List<byte[]> L;
     private byte[] L_Asterisk, L_Dollar;
 
     /*
@@ -195,8 +196,8 @@ public class OCBBlockCipher_v149
 
         this.L_Dollar = OCB_double(L_Asterisk);
 
-        this.L = new Vector<byte[]>();
-        this.L.addElement(OCB_double(L_Dollar));
+        this.L = new ArrayList<>();
+        this.L.add(OCB_double(L_Dollar));
 
         /*
          * NONCE-DEPENDENT AND PER-ENCRYPTION/DECRYPTION INITIALISATION
@@ -456,9 +457,9 @@ public class OCBBlockCipher_v149
     {
         while (n >= L.size())
         {
-            L.addElement(OCB_double(L.lastElement()));
+            L.add(OCB_double(L.get(L.size() - 1)));
         }
-        return L.elementAt(n);
+        return L.get(n);
     }
 
     protected void processHashBlock()

@@ -3,7 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.io;
 
-import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.File;
@@ -15,31 +14,30 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
-import java.lang.reflect.Method;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
-import java.security.SecureRandom;
 import java.util.Random;
-
-import org.bouncycastle.crypto.BufferedBlockCipher;
-import org.bouncycastle.crypto.engines.AESFastEngine;
-import org.bouncycastle.crypto.io.CipherInputStream;
-import org.bouncycastle.crypto.modes.SICBlockCipher;
-import org.bouncycastle.crypto.params.KeyParameter;
-import org.bouncycastle.crypto.params.ParametersWithIV;
 
 import freenet.client.DefaultMIMETypes;
 import freenet.node.NodeStarter;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.StringValidityChecker;
 import freenet.support.Logger.LogLevel;
+import freenet.support.StringValidityChecker;
+import freenet.support.math.MersenneTwister;
 
 final public class FileUtil {
 
 	public static final int BUFFER_SIZE = 32*1024;
+	private static final Random SEED_GENERATOR = MersenneTwister.createSynchronized(NodeStarter.getGlobalSecureRandom().generateSeed(32));
 
 	/**
 	 * Returns a line reading stream for the content of <code>logfile</code>. The stream will
@@ -305,32 +303,11 @@ final public class FileUtil {
      * @throws IOException if an I/O error occurs
      */
 	public static StringBuilder readUTF(File file, long offset) throws FileNotFoundException, IOException {
-		StringBuilder result = new StringBuilder();
-		FileInputStream fis = null;
-		BufferedInputStream bis = null;
-		InputStreamReader isr = null;
-
-		try {
-			fis = new FileInputStream(file);
-			skipFully(fis, offset);
-			bis = new BufferedInputStream(fis);
-			isr = new InputStreamReader(bis, StandardCharsets.UTF_8);
-
-			char[] buf = new char[4096];
-			int length = 0;
-
-			while((length = isr.read(buf)) > 0) {
-				result.append(buf, 0, length);
-			}
-
-		} finally {
-			Closer.close(isr);
-			Closer.close(bis);
-			Closer.close(fis);
+		try (FileInputStream fis = new FileInputStream(file)) {
+			return readUTF(fis, offset);
 		}
-		return result;
 	}
-	
+
 	/**
 	 * Reads the entire content of a stream as UTF-8 and returns it.
 	 * @param stream The stream to read
@@ -349,20 +326,16 @@ final public class FileUtil {
 	 * @throws IOException if an I/O error occurs
 	 */
 	public static StringBuilder readUTF(InputStream stream, long offset) throws IOException {
-	    StringBuilder result = new StringBuilder();
 	    skipFully(stream, offset);
-	    InputStreamReader reader = null;
-	    try {
-	        reader = new InputStreamReader(stream, StandardCharsets.UTF_8);
+	    try (InputStreamReader reader = new InputStreamReader(stream, StandardCharsets.UTF_8)) {
+	        StringBuilder result = new StringBuilder();
 	        char[] buf = new char[4096];
-	        int length = 0;
-	        while((length = reader.read(buf)) > 0) {
+	        int length;
+	        while ((length = reader.read(buf)) > 0) {
 	            result.append(buf, 0, length);
 	        }
-	    } finally {
-	        Closer.close(reader);
+	        return result;
 	    }
-	    return result;
 	}
 
 	/**
@@ -377,88 +350,69 @@ final public class FileUtil {
 		}
 	}
 
-	public static boolean writeTo(InputStream input, File target) throws FileNotFoundException, IOException {
-		DataInputStream dis = null;
-		FileOutputStream fos = null;
+	public static boolean writeTo(InputStream input, File target) throws IOException {
 		File file = File.createTempFile("temp", ".tmp", target.getParentFile());
-		if(logMINOR)
-			Logger.minor(FileUtil.class, "Writing to "+file+" to be renamed to "+target);
-
-		try {
-			dis = new DataInputStream(input);
-			fos = new FileOutputStream(file);
-
-			int len = 0;
-			byte[] buffer = new byte[4096];
-			while ((len = dis.read(buffer)) > 0) {
-				fos.write(buffer, 0, len);
-			}
-		} finally {
-			if(dis != null) dis.close();
-			if(fos != null) fos.close();
+		if(logMINOR) {
+			Logger.minor(FileUtil.class, "Writing to " + file + " to be renamed to " + target);
 		}
 
-		if(FileUtil.renameTo(file, target))
-			return true;
-		else {
+		try (FileOutputStream fos = new FileOutputStream(target)) {
+			copy(input, fos, -1);
+		}
+
+		if (!moveTo(file, target)) {
 			file.delete();
 			return false;
 		}
+		return true;
 	}
 
-        public static boolean renameTo(File orig, File dest) {
-            // Try an atomic rename
-            // Shall we prevent symlink-race-conditions here ?
-            if(orig.equals(dest))
-                throw new IllegalArgumentException("Huh? the two file descriptors are the same!");
-            if(!orig.exists()) {
-            	throw new IllegalArgumentException("Original doesn't exist!");
-            }
-            if (!orig.renameTo(dest)) {
-                // Not supported on some systems (Windows)
-                if (!dest.delete()) {
-                    if (dest.exists()) {
-                        Logger.error("FileUtil", "Could not delete " + dest + " - check permissions");
-                        System.err.println("Could not delete " + dest + " - check permissions");
-                    }
-                }
-                if (!orig.renameTo(dest)) {
-                	String err = "Could not rename " + orig + " to " + dest +
-                    	(dest.exists() ? " (target exists)" : "") +
-                    	(orig.exists() ? " (source exists)" : "") +
-                    	" - check permissions";
-                    Logger.error(FileUtil.class, err);
-                    System.err.println(err);
-                    return false;
-                }
-            }
-            return true;
-        }
+	/**
+	 * @deprecated use {@link #moveTo(File, File)} or {@link #moveTo(File, File, boolean)}
+	 */
+	@Deprecated
+	public static boolean renameTo(File orig, File dest) {
+		return moveTo(orig, dest);
+	}
 
-        /**
-         * Like renameTo(), but can move across filesystems, by copying the data.
-         * @param orig
-         * @param dest
-         * @param overwrite
-         */
-    	public static boolean moveTo(File orig, File dest, boolean overwrite) {
-            if(orig.equals(dest))
-                throw new IllegalArgumentException("Huh? the two file descriptors are the same!");
-            if(!orig.exists()) {
-            	throw new IllegalArgumentException("Original doesn't exist!");
-            }
-            if(dest.exists()) {
-            	if(overwrite)
-            		dest.delete();
-            	else {
-            		System.err.println("Not overwriting "+dest+" - already exists moving "+orig);
-            		return false;
-            	}
-            }
-    		if(!orig.renameTo(dest))
-    		    return copyFile(orig, dest);
-    		else return true;
-    	}
+	/**
+	 * Move or rename a file to a destination file.
+	 *
+	 * @param orig the file to move
+	 * @param dest the destination file
+	 * @param overwrite when true, allows replacing the destination file if it exists
+	 * @return whether the file was successfully moved
+	 */
+	public static boolean moveTo(File orig, File dest, boolean overwrite) {
+		if (!overwrite && dest.exists()) {
+			return false;
+		}
+		return moveTo(orig, dest);
+	}
+
+	/**
+	 * Move or rename a file to a destination file, replacing the destination file if it exists.
+	 * An atomic move is attempted, but not guaranteed. When not supported, the file is moved non-atomically.
+	 *
+	 * @param orig the file to move
+	 * @param dest the destination file
+	 * @return whether the file was successfully moved
+	 */
+	public static boolean moveTo(File orig, File dest) {
+		Path source = orig.toPath();
+		Path target = dest.toPath();
+		try {
+			try {
+				Files.move(source, target, StandardCopyOption.ATOMIC_MOVE);
+			} catch (AtomicMoveNotSupportedException | FileAlreadyExistsException e) {
+				Files.move(source, target, StandardCopyOption.REPLACE_EXISTING);
+			}
+		} catch (IOException e) {
+			Logger.error(FileUtil.class, "Could not move " + orig + " to " + dest + ": " + e);
+			return false;
+		}
+		return true;
+	}
 
     /**
      * Sanitizes the given filename to be valid on the given operating system.
@@ -616,20 +570,15 @@ final public class FileUtil {
 	 *             if an I/O error occurs
 	 */
 	public static void copy(InputStream source, OutputStream destination, long length) throws IOException {
-		long remaining = length;
-		byte[] buffer = new byte[BUFFER_SIZE];
-		int read = 0;
-		while ((remaining == -1) || (remaining > 0)) {
-			read = source.read(buffer, 0, ((remaining > BUFFER_SIZE) || (remaining == -1)) ? BUFFER_SIZE : (int) remaining);
-			if (read == -1) {
-				if (length == -1) {
-					return;
-				}
-				throw new EOFException("stream reached eof");
-			}
+		long remaining = length == -1 ? Long.MAX_VALUE : length;
+		byte[] buffer = new byte[(int) Math.min(remaining, BUFFER_SIZE)];
+		int read;
+		while (remaining > 0 && (read = source.read(buffer, 0, (int) Math.min(remaining, BUFFER_SIZE))) != -1) {
 			destination.write(buffer, 0, read);
-			if (remaining > 0)
-				remaining -= read;
+			remaining -= read;
+		}
+		if (remaining > 0 && length != -1) {
+			throw new EOFException("stream reached eof");
 		}
 	}
 	
@@ -720,41 +669,13 @@ final public class FileUtil {
 	** Set owner-only permissions on the given file.
 	*/
 	public static boolean setOwnerPerm(File f, boolean r, boolean w, boolean x) {
-		/* JDK6 replace when we upgrade
-		boolean b = f.setReadable(false, false);
-		b &= f.setWritable(false, false);
-		b &= f.setExecutable(false, false);
-		b &= f.setReadable(r, true);
-		b &= f.setWritable(w, true);
-		b &= f.setExecutable(x, true);
-		return b;
-		*/
-
 		boolean success = true;
-		try {
-
-			String[] methods = {"setReadable", "setWritable", "setExecutable"};
-			boolean[] perms = {r, w, x};
-
-			for (int i=0; i<methods.length; ++i) {
-				Method m = File.class.getDeclaredMethod(methods[i], boolean.class, boolean.class);
-				if (m != null) {
-					success &= (Boolean)m.invoke(f, false, false);
-					success &= (Boolean)m.invoke(f, perms[i], true);
-				}
-			}
-
-		} catch (NoSuchMethodException e) {
-			success = false;
-		} catch (java.lang.reflect.InvocationTargetException e) {
-			success = false;
-		} catch (IllegalAccessException e) {
-			success = false;
-		} catch (ExceptionInInitializerError e) {
-			success = false;
-		} catch (RuntimeException e) {
-			success = false;
-		}
+		success &= f.setReadable(false, false);
+		success &= f.setReadable(r, true);
+		success &= f.setWritable(false, false);
+		success &= f.setWritable(w, true);
+		success &= f.setExecutable(false, false);
+		success &= f.setExecutable(x, true);
 		return success;
 	}
 
@@ -775,29 +696,24 @@ final public class FileUtil {
 		return File.createTempFile(prefix, suffix, directory);
 	}
 
+	/**
+	 * Copies the file from the source to the target location, including its attributes.
+	 *
+	 * @param copyFrom the source filename
+	 * @param copyTo the target filename
+	 * @return whether the file was copied successfully
+	 */
 	public static boolean copyFile(File copyFrom, File copyTo) {
-		copyTo.delete();
-		boolean executable = copyFrom.canExecute();
-		FileBucket outBucket = new FileBucket(copyTo, false, true, false, false);
-		FileBucket inBucket = new FileBucket(copyFrom, true, false, false, false);
 		try {
-			BucketTools.copy(inBucket, outBucket);
-			if(executable) {
-			    if(!(copyTo.setExecutable(true) || copyTo.canExecute())) {
-			        System.err.println("Unable to preserve executable bit when copying "+copyFrom+" to "+copyTo+" - you may need to make it executable!");
-			        // return false; ??? FIXME debatable.
-			    }
-			}
+			Path source = copyFrom.toPath();
+			Path target = copyTo.toPath();
+			Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
 			return true;
-		} catch (IOException e) {
-			System.err.println("Unable to copy from "+copyFrom+" to "+copyTo);
+		} catch (IOException | InvalidPathException e) {
+			System.err.println("Unable to copy from " + copyFrom + " to " + copyTo);
 			return false;
 		}
 	}
-	
-	private static CipherInputStream cis;
-	private static ZeroInputStream zis = new ZeroInputStream();
-	private static long cisCounter;
 	
 	/** Write hard to identify random data to the OutputStream. Does not drain the global secure 
 	 * random number generator, and is significantly faster than it.
@@ -806,52 +722,27 @@ final public class FileUtil {
 	 * @throws IOException If unable to write to the stream.
 	 */
 	public static void fill(OutputStream os, long length) throws IOException {
-	    long remaining = length;
-	    byte[] buffer = new byte[BUFFER_SIZE];
-	    int read = 0;
-	    while ((remaining == -1) || (remaining > 0)) {
-	        synchronized(FileUtil.class) {
-	            if(cis == null || cisCounter > Long.MAX_VALUE/2) {
-	                // Reset it well before the birthday paradox (note this is actually counting bytes).
-	                byte[] key = new byte[16];
-	                byte[] iv = new byte[16];
-	                SecureRandom rng = NodeStarter.getGlobalSecureRandom();
-	                rng.nextBytes(key);
-	                rng.nextBytes(iv);
-	                AESFastEngine e = new AESFastEngine();
-	                SICBlockCipher ctr = new SICBlockCipher(e);
-	                ctr.init(true, new ParametersWithIV(new KeyParameter(key),iv));
-	                cis = new CipherInputStream(zis, new BufferedBlockCipher(ctr));
-	                cisCounter = 0;
-	            }
-	            read = cis.read(buffer, 0, ((remaining > BUFFER_SIZE) || (remaining == -1)) ? BUFFER_SIZE : (int) remaining);
-	            cisCounter += read;
-	        }
-	        if (read == -1) {
-	            if (length == -1) {
-	                return;
-	            }
-	            throw new EOFException("stream reached eof");
-	        }
-	        os.write(buffer, 0, read);
-	        if (remaining > 0)
-	            remaining -= read;
-	    }
-	    
+		byte[] seed = new byte[16];
+		SEED_GENERATOR.nextBytes(seed);
+		writeRandomBytes(os, MersenneTwister.createUnsynchronized(seed), length);
 	}
 
 	/** @deprecated */
 	@Deprecated
-    public static void fill(OutputStream os, Random random, long length) throws IOException {
-        long moved = 0;
-        byte[] buf = new byte[BUFFER_SIZE];
-        while(moved < length) {
-            int toRead = (int)Math.min(BUFFER_SIZE, length - moved);
-            random.nextBytes(buf);
-            os.write(buf, 0, toRead);
-            moved += toRead;
-        }
-    }
+	public static void fill(OutputStream os, Random random, long length) throws IOException {
+		writeRandomBytes(os, random, length);
+	}
+
+	private static void writeRandomBytes(OutputStream os, Random random, long length) throws IOException {
+		byte[] buffer = new byte[(int) Math.min(length, BUFFER_SIZE)];
+		long remaining = length;
+		while (remaining > 0) {
+			random.nextBytes(buffer);
+			int writeLength = (int) Math.min(remaining, BUFFER_SIZE);
+			os.write(buffer, 0, writeLength);
+			remaining -= writeLength;
+		}
+	}
 
     public static boolean equalStreams(InputStream a, InputStream b, long size) throws IOException {
         byte[] aBuffer = new byte[BUFFER_SIZE];

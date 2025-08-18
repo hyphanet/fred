@@ -102,7 +102,7 @@ task buildJar(type: Jar) {
         exclude 'freenet/node/Version$1.class'
     }
     from(compileVersion.destinationDirectory)
-    preserveFileTimestamps = true
+    preserveFileTimestamps = false
     reproducibleFileOrder = true
     duplicatesStrategy = DuplicatesStrategy.FAIL
     archivesBaseName = "freenet"
@@ -202,11 +202,8 @@ test {
     // no inner class
     include 'freenet/**/*Test.class'
     exclude 'freenet/**/*$*Test.class'
-    workingDir = layout.buildDirectory.dir("classes/java/test/")
     scanForTestClasses = false
     systemProperties += [
-        "test.l10npath_test": "freenet/l10n/",
-        "test.l10npath_main": "../main/freenet/l10n/"
 //	"test.extensive":
 //	"test.verbose":
 //	"test.benchmark":

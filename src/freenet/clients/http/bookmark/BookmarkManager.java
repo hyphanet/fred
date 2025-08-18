@@ -373,7 +373,7 @@ public class BookmarkManager implements RequestClient {
 			sfs.writeToBigBuffer(fos);
 			fos.close();
 			fos = null;
-			if(!FileUtil.renameTo(backupBookmarksFile, bookmarksFile))
+			if(!FileUtil.moveTo(backupBookmarksFile, bookmarksFile))
 				Logger.error(this, "Unable to rename " + backupBookmarksFile.toString() + " to " + bookmarksFile.toString());
 		} catch(IOException ioe) {
 			Logger.error(this, "An error has occured saving the bookmark file :" + ioe.getMessage(), ioe);

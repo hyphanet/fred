@@ -178,8 +178,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 		String editorTitle = NodeL10n.getBase().getString("BookmarkEditorToadlet.title");
 		String error = NodeL10n.getBase().getString("BookmarkEditorToadlet.error");
 		PageNode page = pageMaker.getPageNode(editorTitle, ctx);
-		HTMLNode pageNode = page.outer;
-		HTMLNode content = page.content;
+		HTMLNode content = page.getContentNode();
 		String originalBookmark = req.getParam("bookmark");
 		if(!req.getParam("action").isEmpty() && !originalBookmark.isEmpty()) {
 			String action = req.getParam("action");
@@ -189,7 +188,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 			} catch(URLEncodedFormatException e) {
 				pageMaker.getInfobox("infobox-error", error, content, "bookmark-url-decode-error", false).
 					addChild("#", NodeL10n.getBase().getString("BookmarkEditorToadlet.urlDecodeError"));
-				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+				writeHTMLReply(ctx, 200, "OK", page.generate());
 				return;
 			}
 			Bookmark bookmark;
@@ -202,7 +201,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 			if(bookmark == null) {
 				pageMaker.getInfobox("infobox-error", error, content, "bookmark-does-not-exist", false).
 					addChild("#", NodeL10n.getBase().getString("BookmarkEditorToadlet.bookmarkDoesNotExist", new String[]{"bookmark"}, new String[]{bookmarkPath}));
-				this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+				this.writeHTMLReply(ctx, 200, "OK", page.generate());
 				return;
 			} else
 				if("del".equals(action)) {
@@ -328,9 +327,9 @@ public class BookmarkEditorToadlet extends Toadlet {
 		addDefaultBookmarksForm.addChild("input", new String[]{"type", "name", "value"}, new String[]{"submit", "AddDefaultBookmarks", NodeL10n.getBase().getString("BookmarkEditorToadlet.addDefaultBookmarks")});
 
 		if(logDEBUG)
-			Logger.debug(this, "Returning:\n"+pageNode.generate());
+			Logger.debug(this, "Returning:\n"+page.generate());
 		
-		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+		this.writeHTMLReply(ctx, 200, "OK", page.generate());
 	}
 
 	public void handleMethodPOST(URI uri, HTTPRequest req, ToadletContext ctx)
@@ -338,8 +337,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 		PageMaker pageMaker = ctx.getPageMaker();
 		BookmarkManager bookmarkManager = ctx.getBookmarkManager();
 		PageNode page = pageMaker.getPageNode(NodeL10n.getBase().getString("BookmarkEditorToadlet.title"), ctx);
-		HTMLNode pageNode = page.outer;
-		HTMLNode content = page.content;
+		HTMLNode content = page.getContentNode();
 
 		if(req.isPartSet("AddDefaultBookmarks")) {
 			bookmarkManager.reAddDefaultBookmarks();
@@ -358,7 +356,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 			if(bookmark == null && !req.isPartSet("cancelCut")) {
 				pageMaker.getInfobox("infobox-error", NodeL10n.getBase().getString("BookmarkEditorToadlet.error"), content, "bookmark-error", false).
 					addChild("#", NodeL10n.getBase().getString("BookmarkEditorToadlet.bookmarkDoesNotExist", new String[]{"bookmark"}, new String[]{bookmarkPath}));
-				this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+				this.writeHTMLReply(ctx, 200, "OK", page.generate());
 				return;
 			}
 
@@ -379,7 +377,10 @@ public class BookmarkEditorToadlet extends Toadlet {
 				if(req.isPartSet("name"))
 					name = req.getPartAsStringFailsafe("name", MAX_NAME_LENGTH);
 
-				if("edit".equals(action)) {
+				Bookmark targetBookmark = bookmarkManager.getBookmarkByPath(bookmarkManager.parentPath(bookmarkPath) + name);
+				if (!isValidName(name) || (targetBookmark != null && targetBookmark != bookmark)) {
+					addNameError(pageMaker, content);
+				} else if ("edit".equals(action)) {
 					bookmarkManager.renameBookmark(bookmarkPath, name);
 					boolean hasAnActivelink = req.isPartSet("hasAnActivelink");
 					if(bookmark instanceof BookmarkItem) {
@@ -394,7 +395,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 
 				} else if("addItem".equals(action) || "addCat".equals(action)) {
 
-					Bookmark newBookmark = null;
+					Bookmark newBookmark;
 					if("addItem".equals(action)) {
 						FreenetURI key = new FreenetURI(req.getPartAsStringFailsafe("key", MAX_KEY_LENGTH));
 						/* TODO:
@@ -404,29 +405,21 @@ public class BookmarkEditorToadlet extends Toadlet {
 						 * - values as "on", "true", "yes" should be accepted.
 						 */
 						boolean hasAnActivelink = req.isPartSet("hasAnActivelink");
-						if (!isValidName(name)) {
-              addNameError(pageMaker, content);
-						} else
-							newBookmark = new BookmarkItem(key, name,
-							        req.getPartAsStringFailsafe("descB", MAX_KEY_LENGTH),
-							        req.getPartAsStringFailsafe("explain", MAX_EXPLANATION_LENGTH),
-							        hasAnActivelink, bookmarkManager, ctx.getAlertManager());
-					} else
-						if (!isValidName(name)) {
-              addNameError(pageMaker, content);
-						} else
-							newBookmark = new BookmarkCategory(name);
-					
-					if (newBookmark != null) {
-
-						bookmarkManager.addBookmark(bookmarkPath, newBookmark);
-						bookmarkManager.storeBookmarks();
-						if(newBookmark instanceof BookmarkItem)
-							sendBookmarkFeeds(req, (BookmarkItem) newBookmark, req.getPartAsStringFailsafe("publicDescB", MAX_KEY_LENGTH));
-
-						pageMaker.getInfobox("infobox-success", NodeL10n.getBase().getString("BookmarkEditorToadlet.addedNewBookmarkTitle"), content, "bookmark-add-new", false).
-							addChild("p", NodeL10n.getBase().getString("BookmarkEditorToadlet.addedNewBookmark"));
+						newBookmark = new BookmarkItem(key, name,
+								req.getPartAsStringFailsafe("descB", MAX_KEY_LENGTH),
+								req.getPartAsStringFailsafe("explain", MAX_EXPLANATION_LENGTH),
+								hasAnActivelink, bookmarkManager, ctx.getAlertManager());
+					} else {
+						newBookmark = new BookmarkCategory(name);
 					}
+
+					bookmarkManager.addBookmark(bookmarkPath, newBookmark);
+					bookmarkManager.storeBookmarks();
+					if(newBookmark instanceof BookmarkItem)
+						sendBookmarkFeeds(req, (BookmarkItem) newBookmark, req.getPartAsStringFailsafe("publicDescB", MAX_KEY_LENGTH));
+
+					pageMaker.getInfobox("infobox-success", NodeL10n.getBase().getString("BookmarkEditorToadlet.addedNewBookmarkTitle"), content, "bookmark-add-new", false).
+						addChild("p", NodeL10n.getBase().getString("BookmarkEditorToadlet.addedNewBookmark"));
 				}
 			}
 			else if("share".equals(action))
@@ -441,7 +434,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 		HTMLNode addDefaultBookmarksForm = ctx.addFormChild(content, "", "AddDefaultBookmarks");
 		addDefaultBookmarksForm.addChild("input", new String[]{"type", "name", "value"}, new String[]{"submit", "AddDefaultBookmarks", NodeL10n.getBase().getString("BookmarkEditorToadlet.addDefaultBookmarks")});
 
-		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+		this.writeHTMLReply(ctx, 200, "OK", page.generate());
 	}
 
 	@Override

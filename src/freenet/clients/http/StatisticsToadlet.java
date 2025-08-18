@@ -16,15 +16,15 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import freenet.client.async.ClientRequester;
 import freenet.client.HighLevelSimpleClient;
+import freenet.client.async.ClientRequester;
 import freenet.config.SubConfig;
 import freenet.crypt.ciphers.Rijndael;
 import freenet.io.comm.IncomingPacketFilterImpl;
 import freenet.io.xfer.BlockReceiver;
 import freenet.io.xfer.BlockTransmitter;
-import freenet.l10n.NodeL10n;
 import freenet.keys.FreenetURI;
+import freenet.l10n.NodeL10n;
 import freenet.node.Location;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
@@ -135,8 +135,8 @@ public class StatisticsToadlet extends Toadlet {
 
 		node.getClientCore().getBandwidthStatsPutter().updateData(node);
 
-		HTMLNode pageNode;
-		
+		PageNode page = ctx.getPageMaker().getPageNode(l10n("fullTitle"), ctx);
+
 		// Synchronize to avoid problems with DecimalFormat.
 		synchronized(this) {
 		
@@ -171,10 +171,8 @@ public class StatisticsToadlet extends Toadlet {
 		int numberOfDisconnecting = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_DISCONNECTING);
 		int numberOfNoLoadStats = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_NO_LOAD_STATS);
 
-		PageNode page = ctx.getPageMaker().getPageNode(l10n("fullTitle"), ctx);
 		boolean advancedMode = ctx.isAdvancedModeEnabled();
-		pageNode = page.outer;
-		HTMLNode contentNode = page.content;
+		HTMLNode contentNode = page.getContentNode();
 
 		// FIXME! We need some nice images
 		final long now = System.currentTimeMillis();
@@ -482,9 +480,8 @@ public class StatisticsToadlet extends Toadlet {
 			overviewTableRow = overviewTable.addChild("tr");
 			nextTableCell = overviewTableRow.addChild("td", "class", "first");
 			// specialisation box
-			int[] incomingRequestCountArray = new int[1];
-			int[] incomingRequestLocation = stats.getIncomingRequestLocation(incomingRequestCountArray);
-			int incomingRequestsCount = incomingRequestCountArray[0];
+			int[] incomingRequestLocation = stats.getIncomingRequestLocation();
+			int incomingRequestsCount = Arrays.stream(incomingRequestLocation).sum();
 			
 			if(incomingRequestsCount > 0) {
 				HTMLNode nodeSpecialisationInfobox = nextTableCell.addChild("div", "class", "infobox");
@@ -494,12 +491,10 @@ public class StatisticsToadlet extends Toadlet {
 			}
 			
 			nextTableCell = overviewTableRow.addChild("td");
-			int[] outgoingLocalRequestCountArray = new int[1];
-			int[] outgoingLocalRequestLocation = stats.getOutgoingLocalRequestLocation(outgoingLocalRequestCountArray);
-			int outgoingLocalRequestsCount = outgoingLocalRequestCountArray[0];
-			int[] outgoingRequestCountArray = new int[1];
-			int[] outgoingRequestLocation = stats.getOutgoingRequestLocation(outgoingRequestCountArray);
-			int outgoingRequestsCount = outgoingRequestCountArray[0];
+			int[] outgoingLocalRequestLocation = stats.getOutgoingLocalRequestLocation();
+			int outgoingLocalRequestsCount = Arrays.stream(outgoingLocalRequestLocation).sum();
+			int[] outgoingRequestLocation = stats.getOutgoingRequestLocation();
+			int outgoingRequestsCount = Arrays.stream(outgoingRequestLocation).sum();
 			
 			if(outgoingLocalRequestsCount > 0 && outgoingRequestsCount > 0) {
 				HTMLNode nodeSpecialisationInfobox = nextTableCell.addChild("div", "class", "infobox");
@@ -528,16 +523,15 @@ public class StatisticsToadlet extends Toadlet {
 		
 		}
 
-		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+		this.writeHTMLReply(ctx, 200, "OK", page.generate());
 	}
 
 	private void showRequesters(HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		PageNode page = ctx.getPageMaker().getPageNode(l10n("fullTitle"), ctx);
-		HTMLNode pageNode = page.outer;
-		HTMLNode contentNode = page.content;
+		HTMLNode contentNode = page.getContentNode();
 
 		drawClientRequestersBox(contentNode);
-		writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+		writeHTMLReply(ctx, 200, "OK", page.generate());
 	}
 
 	private void drawLoadBalancingBox(HTMLNode loadStatsInfobox, boolean realTime) {
@@ -1397,15 +1391,15 @@ public class StatisticsToadlet extends Toadlet {
 		for(int i=0; i<locations.length; i++){
 			location = locations[i];
 			locationTime = timestamps[i];
-			age = now - locationTime.longValue();
+			age = now - locationTime;
 			if( age > MAX_CIRCLE_AGE_THRESHOLD ) {
 				age = MAX_CIRCLE_AGE_THRESHOLD;
 			}
 			strength = 1 - ((double) age / MAX_CIRCLE_AGE_THRESHOLD );
-			histogramIndex = (int) (Math.floor(location.doubleValue() * HISTOGRAM_LENGTH));
+			histogramIndex = (int) (Math.floor(location * HISTOGRAM_LENGTH));
 			histogram[histogramIndex]++;
 			
-			nodeCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(location.doubleValue(), false, strength), "connected" }, "x");
+			nodeCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(location, false, strength), "connected" }, "x");
 		}
 		nodeCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(myLocation, true, 1.0), "me" }, "x");
 		//

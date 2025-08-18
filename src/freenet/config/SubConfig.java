@@ -172,7 +172,8 @@ public class SubConfig implements Comparable<SubConfig> {
 		synchronized(this) {
 			o = (IntOption) map.get(optionName);
 		}
-		return o.getValue();
+		// return fallback value for ignored options (null). This avoids breaking plugins which try to get ignored options.
+		return o == null ? -1 : o.getValue();
 	}
 
 	public long getLong(String optionName) {
@@ -180,7 +181,8 @@ public class SubConfig implements Comparable<SubConfig> {
 		synchronized(this) {
 			o = (LongOption) map.get(optionName);
 		}
-		return o.getValue();
+		// return fallback value for ignored options (null). This avoids breaking plugins which try to get ignored options.
+		return o == null ? -1L : o.getValue();
 	}
 
 	public boolean getBoolean(String optionName) {
@@ -188,7 +190,8 @@ public class SubConfig implements Comparable<SubConfig> {
 		synchronized(this) {
 			o = (BooleanOption) map.get(optionName);
 		}
-		return o.getValue();
+		// return fallback value for ignored options (null). This avoids breaking plugins which try to get ignored options.
+		return o == null ? false : o.getValue();
 	}
 
 	public String getString(String optionName) {
@@ -196,7 +199,8 @@ public class SubConfig implements Comparable<SubConfig> {
 		synchronized(this) {
 			o = (StringOption) map.get(optionName);
 		}
-		return o.getValue().trim();
+		// return fallback value for ignored options (null). This avoids breaking plugins which try to get ignored options.
+		return o == null ? "" : o.getValue().trim();
 	}
 
 	public String[] getStringArr(String optionName) {
@@ -204,7 +208,8 @@ public class SubConfig implements Comparable<SubConfig> {
 		synchronized(this) {
 			o = (StringArrOption) map.get(optionName);
 		}
-		return o.getValue();
+		// return fallback value for ignored options (null). This avoids breaking plugins which try to get ignored options.
+		return o == null ? new String[]{} : o.getValue();
 	}
 
 	public short getShort(String optionName) {
@@ -212,7 +217,8 @@ public class SubConfig implements Comparable<SubConfig> {
 		synchronized(this) {
 			o = (ShortOption) map.get(optionName);
 		}
-		return o.getValue();
+		// return fallback value for ignored options (null). This avoids breaking plugins which try to get ignored options.
+		return o == null ? -1 : o.getValue();
 	}
 
 	public Option<?> removeOption(String optionName) {

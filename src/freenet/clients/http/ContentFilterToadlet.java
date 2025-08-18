@@ -34,7 +34,7 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
     /**
      * What to do the the output from the content filter.
      */
-    public static enum ResultHandling {
+    public enum ResultHandling {
         DISPLAY,
         SAVE
     }
@@ -67,14 +67,13 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
         PageMaker pageMaker = ctx.getPageMaker();
 
         PageNode page = pageMaker.getPageNode(l10n("pageTitle"), ctx);
-        HTMLNode pageNode = page.outer;
-        HTMLNode contentNode = page.content;
+        HTMLNode contentNode = page.getContentNode();
 
         contentNode.addChild(ctx.getAlertManager().createSummary());
 
         contentNode.addChild(createContent(pageMaker, ctx));
 
-        writeHTMLReply(ctx, 200, "OK", null, pageNode.generate());
+        writeHTMLReply(ctx, 200, "OK", null, page.generate());
     }
 
     public void handleMethodPOST(URI uri, final HTTPRequest request, final ToadletContext ctx)
@@ -90,17 +89,17 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
                     FilterOperation filterOperation = getFilterOperation(request);
                     ResultHandling resultHandling = getResultHandling(request);
                     String mimeType = request.getPartAsStringFailsafe("mime-type", 100);
-                    MultiValueTable<String, String> responseHeaders = new MultiValueTable<String, String>();
-                    responseHeaders.put("Location", LocalFileFilterToadlet.PATH
-                            + "?filter-operation=" + filterOperation
-                            + "&result-handling=" + resultHandling
-                            + "&mime-type=" + mimeType);
+                    String location = LocalFileFilterToadlet.PATH
+                        + "?filter-operation=" + filterOperation
+                        + "&result-handling=" + resultHandling
+                        + "&mime-type=" + mimeType;
+                    MultiValueTable<String, String> responseHeaders = MultiValueTable.from("Location", location);
                     ctx.sendReplyHeaders(302, "Found", responseHeaders, null, 0);
                 } catch (BadRequestException e) {
                     String invalidPart = e.getInvalidRequestPart();
-                    if (invalidPart == "filter-operation") {
+                    if ("filter-operation".equals(invalidPart)) {
                         writeBadRequestError(l10n("errorMustSpecifyFilterOperationTitle"), l10n("errorMustSpecifyFilterOperation"), ctx, true);
-                    } else if (invalidPart == "result-handling") {
+                    } else if ("result-handling".equals(invalidPart)) {
                         writeBadRequestError(l10n("errorMustSpecifyResultHandlingTitle"), l10n("errorMustSpecifyResultHandling"), ctx, true);
                     } else {
                         writeBadRequestError(l10n("errorBadRequestTitle"), l10n("errorBadRequest"), ctx, true);
@@ -123,8 +122,8 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
 
     private HTMLNode createContent(PageMaker pageMaker, ToadletContext ctx) {
         InfoboxNode infobox = pageMaker.getInfobox(l10n("filterFile"), "filter-file", true);
-        HTMLNode filterBox = infobox.outer;
-        HTMLNode filterContent = infobox.content;
+        HTMLNode filterBox = infobox.getOuterNode();
+        HTMLNode filterContent = infobox.getContentNode();
 
         HTMLNode filterForm = ctx.addFormChild(filterContent, PATH, "filterForm");
 
@@ -188,8 +187,7 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
             throws ToadletContextClosedException, IOException {
         PageMaker pageMaker = context.getPageMaker();
         PageNode page = pageMaker.getPageNode(header, context);
-        HTMLNode pageNode = page.outer;
-        HTMLNode contentNode = page.content;
+        HTMLNode contentNode = page.getContentNode();
         if (context.isAllowedFullAccess()) {
             contentNode.addChild(context.getAlertManager().createSummary());
         }
@@ -200,7 +198,7 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
                     "ContentFilterToadlet.tryAgainFilterFilePage", new String[] { "link" },
                     new HTMLNode[] { HTMLNode.link(ContentFilterToadlet.PATH) });
         }
-        writeHTMLReply(context, 400, "Bad request", pageNode.generate());
+        writeHTMLReply(context, 400, "Bad request", page.generate());
     }
 
     /**
@@ -243,11 +241,11 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
             }
         } catch (BadRequestException e) {
             String invalidPart = e.getInvalidRequestPart();
-            if (invalidPart == "filter-operation") {
+            if ("filter-operation".equals(invalidPart)) {
                 writeBadRequestError(l10n("errorMustSpecifyFilterOperationTitle"), l10n("errorMustSpecifyFilterOperation"), ctx, true);
-            } else if (invalidPart == "result-handling") {
+            } else if ("result-handling".equals(invalidPart)) {
                 writeBadRequestError(l10n("errorMustSpecifyResultHandlingTitle"), l10n("errorMustSpecifyResultHandling"), ctx, true);
-            } else if (invalidPart == "filename") {
+            } else if ("filename".equals(invalidPart)) {
                 writeBadRequestError(l10n("errorNoFileSelectedTitle"), l10n("errorNoFileSelected"), ctx, true);
             } else {
                 writeBadRequestError(l10n("errorBadRequestTitle"), l10n("errorBadRequest"), ctx, true);
@@ -309,7 +307,7 @@ public class ContentFilterToadlet extends Toadlet implements LinkEnabledCallback
                 ctx.sendReplyHeaders(200, "OK", null, resultMimeType, resultBucket.size());
                 ctx.writeData(resultBucket);
             } else if (resultHandling == ResultHandling.SAVE) {
-                MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
+                MultiValueTable<String, String> headers = new MultiValueTable<>();
                 headers.put("Content-Disposition", "attachment; filename=\"" + resultFilename + '"');
                 headers.put("Cache-Control", "private");
                 headers.put("Content-Transfer-Encoding", "binary");

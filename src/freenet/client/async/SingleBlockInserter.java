@@ -192,7 +192,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			resultingKey = key;
 		}
 		if(!persistent) {
-			context.mainExecutor.execute(new Runnable() {
+			context.getMainExecutor().execute(new Runnable() {
 				
 				@Override
 				public void run() {

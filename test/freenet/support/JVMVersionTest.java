@@ -83,7 +83,7 @@ public class JVMVersionTest {
 	        String v1 = orderedVersions[i];
 	        for (int j = 0; j < orderedVersions.length; j++) {
 	            String v2 = orderedVersions[j];
-	            int expected = Integer.signum(Integer.valueOf(i).compareTo(Integer.valueOf(j)));
+	            int expected = Integer.signum(Integer.compare(i, j));
 	            int actual = Integer.signum(JVMVersion.compareVersion(v1, v2));
 	            assertEquals(v1 + " <> " + v2, expected, actual);
 	        }

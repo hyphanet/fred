@@ -169,7 +169,7 @@ public class FilePersistentConfig extends PersistentConfig {
 			}
 			fos.close();
 			fos = null;
-			FileUtil.renameTo(tempFilename, filename);
+			FileUtil.moveTo(tempFilename, filename);
 		}
 		finally {
 			Closer.close(fos);

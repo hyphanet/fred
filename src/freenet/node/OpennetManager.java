@@ -113,7 +113,7 @@ public class OpennetManager {
 	 * (around 20%), and (b) it ensures that nodes with 10 connections still have 3 long links, so 
 	 * long links cannot form chains and the routing still scales if the short routing is broken.
 	 * 
-	 * See USK@ZLwcSLwqpM1527Tw1YmnSiXgzITU0neHQ11Cyl0iLmk,f6FLo3TvsEijIcJq-X3BTjjtm0ErVZwAPO7AUd9V7lY,AQACAAE/fix-link-length/7/
+	 * See USK@ZLwcSLwqpM1527Tw1YmnSiXgzITU0neHQ11Cyl0iLmk,f6FLo3TvsEijIcJq-X3BTjjtm0ErVZwAPO7AUd9V7lY,AQACAAE/fix-link-length/22/
 	 * (FIXME move to wiki or other permanent storage)
 	 */
 	/** Peers with more than this distance are considered "long links". */
@@ -338,7 +338,7 @@ public class OpennetManager {
 			fs.writeTo(bw);
 
 			bw.close();
-			FileUtil.renameTo(backup, orig);
+			FileUtil.moveTo(backup, orig);
 		} catch (IOException e) {
 			Closer.close(bw);
 			Closer.close(osr);

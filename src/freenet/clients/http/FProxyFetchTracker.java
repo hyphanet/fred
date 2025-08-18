@@ -1,7 +1,7 @@
 package freenet.clients.http;
 
-import java.util.ArrayList;
-import java.util.Enumeration;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
@@ -28,7 +28,7 @@ public class FProxyFetchTracker implements Runnable {
 		});
 	}
 	
-	final MultiValueTable<FreenetURI, FProxyFetchInProgress> fetchers;
+	private final MultiValueTable<FreenetURI, FProxyFetchInProgress> fetchers = new MultiValueTable<>();
 	final ClientContext context;
 	private long fetchIdentifiers;
 	private final FetchContext fctx;
@@ -37,7 +37,6 @@ public class FProxyFetchTracker implements Runnable {
 	private boolean requeue;
 
 	public FProxyFetchTracker(ClientContext context, FetchContext fctx, RequestClient rc) {
-		fetchers = new MultiValueTable<FreenetURI, FProxyFetchInProgress>();
 		this.context = context;
 		this.fctx = fctx;
 		this.rc = rc;
@@ -84,25 +83,40 @@ public class FProxyFetchTracker implements Runnable {
 		}
 		return null;
 	}
-	
-	/** Gets an FProxyFetchInProgress identified by the URI and the maxsize. If no such FetchInProgress exists, then returns null.
-	 * @param key - The URI of the fetch
+
+	/**
+	 * Gets an {@link FProxyFetchInProgress} identified by the URI and having provided max size.
+	 * If optional fetch context parameter is specified,
+	 * then fetch context in {@link FProxyFetchInProgress} is compared to provided fetch context.
+	 * If no such FetchInProgress exists, then returns {@code null}.
+	 *
+	 * @param key     - The URI of the fetch
 	 * @param maxSize - The maxSize of the fetch
-	 * @param fctx TODO
-	 * @return The FetchInProgress if found, null otherwise*/
-	public FProxyFetchInProgress getFetchInProgress(FreenetURI key, long maxSize, FetchContext fctx){
+	 * @param fctx    - Optional {@link FetchContext} with fetch parameters
+	 * @return The FetchInProgress if found, {@code null} otherwise
+	 */
+	public FProxyFetchInProgress getFetchInProgress(FreenetURI key, long maxSize, FetchContext fctx) {
 		synchronized (fetchers) {
-			Object[] check = fetchers.getArray(key);
-			if(check != null) {
-				for (Object o : check) {
-					FProxyFetchInProgress progress = (FProxyFetchInProgress) o;
-					if ((progress.maxSize == maxSize && progress.notFinishedOrFatallyFinished())
-							|| progress.hasData()) {
-						if (logMINOR) Logger.minor(this, "Found " + progress);
-						if (fctx != null && !progress.fetchContextEquivalent(fctx)) continue;
-						if (logMINOR) Logger.minor(this, "Using " + progress);
-						return progress;
-					} else if (logMINOR) Logger.minor(this, "Skipping " + progress);
+			for (FProxyFetchInProgress fetch : fetchers.getAllAsList(key)) {
+				if ((fetch.maxSize == maxSize && fetch.notFinishedOrFatallyFinished())
+					|| fetch.hasData()
+				) {
+					if (logMINOR) {
+						Logger.minor(this, "Found " + fetch);
+					}
+					if (fctx != null && !fetch.fetchContextEquivalent(fctx)) {
+						if (logMINOR) {
+							Logger.minor(this, "Fetch context does not match. Skipping " + fetch);
+						}
+						continue;
+					}
+					if (logMINOR) {
+						Logger.minor(this, "Using " + fetch);
+					}
+					return fetch;
+				}
+				if (logMINOR) {
+					Logger.minor(this, "Skipping " + fetch);
 				}
 			}
 		}
@@ -123,8 +137,10 @@ public class FProxyFetchTracker implements Runnable {
 
 	@Override
 	public void run() {
-		if(logMINOR) Logger.minor(this, "Removing old FProxyFetchInProgress's");
-		ArrayList<FProxyFetchInProgress> toRemove = null;
+		if (logMINOR) {
+			Logger.minor(this, "Removing old FProxyFetchInProgress's");
+		}
+		List<FProxyFetchInProgress> toRemove;
 		boolean needRequeue = false;
 		synchronized(fetchers) {
 			if(requeue) {
@@ -134,19 +150,11 @@ public class FProxyFetchTracker implements Runnable {
 				queuedJob = false;
 			}
 			// Horrible hack, FIXME
-			Enumeration<FreenetURI> e = fetchers.keys();
-			while(e.hasMoreElements()) {
-				FreenetURI uri = e.nextElement();
-				// Really horrible hack, FIXME
-				for(FProxyFetchInProgress f : fetchers.iterateAll(uri)) {
-					// FIXME remove on the fly, although cancel must wait
-					if(f.canCancel()) {
-						if(toRemove == null) toRemove = new ArrayList<FProxyFetchInProgress>();
-						toRemove.add(f);
-					}
-				}
-			}
-			if(toRemove != null)
+			toRemove = fetchers.values().stream()
+				// FIXME remove on the fly, although cancel must wait
+				.filter(FProxyFetchInProgress::canCancel)
+				.collect(Collectors.toList());
+
 			for(FProxyFetchInProgress r : toRemove) {
 				if(logMINOR){
 					Logger.minor(this,"Removed fetchinprogress:"+r);
@@ -154,14 +162,15 @@ public class FProxyFetchTracker implements Runnable {
 				fetchers.removeElement(r.uri, r);
 			}
 		}
-		if(toRemove != null)
 		for(FProxyFetchInProgress r : toRemove) {
-			if(logMINOR)
+			if (logMINOR) {
 				Logger.minor(this, "Cancelling for "+r);
+			}
 			r.finishCancel();
 		}
-		if(needRequeue)
+		if(needRequeue) {
 			context.ticker.queueTimedJob(this, FProxyFetchInProgress.LIFETIME);
+		}
 	}
 
 	public int makeRandomElementID() {

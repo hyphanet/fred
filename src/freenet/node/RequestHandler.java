@@ -30,9 +30,9 @@ import freenet.node.OpennetManager.NoderefCallback;
 import freenet.node.OpennetManager.WaitedTooLongForOpennetNoderefException;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
-import freenet.support.Logger.LogLevel;
 import freenet.support.io.NativeThread;
 
 /**
@@ -40,7 +40,7 @@ import freenet.support.io.NativeThread;
  * is separated off into RequestSender so we get transfer coalescing
  * and both ends for free. 
  */
-public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderListener {
+public class RequestHandler implements PrioRunnable, HighHtlAware, ByteCounter, RequestSenderListener {
 
 	private static volatile boolean logMINOR;
 
@@ -102,7 +102,6 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 
 	@Override
 	public void run() {
-		freenet.support.Logger.OSThread.logPID(this);
 		try {
 			realRun();
 		//The last thing that realRun() does is register as a request-sender listener, so any exception here is the end.
@@ -164,14 +163,6 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 
 		Message accepted = DMT.createFNPAccepted(uid);
 		source.sendAsync(accepted, null, this);
-		
-		if(tag.shouldSlowDown()) {
-			try {
-				source.sendAsync(DMT.createFNPRejectedOverload(uid, false, false, realTimeFlag), null, this);
-			} catch (NotConnectedException e) {
-				// Ignore.
-			}
-		}
 		
 		Object o;
 		if(passedInKeyBlock != null) {
@@ -658,6 +649,11 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 		}
 	}
 	boolean sendTerminalCalled = false;
+
+	@Override
+	public boolean isHighHtl() {
+		return this.htl >= (node.maxHTL() - 1);
+	}
 
 	/**
 	 * Note well! These functions are not executed on the RequestHandler thread.
