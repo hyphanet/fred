@@ -679,18 +679,18 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 
 		FProxyFetchResult fr = null;
 
-			FProxyFetchWaiter fetch = null;
-			try {
-				fetch = fetchTracker.makeFetcher(key, maxSize, fctx, ctx.getReFilterPolicy());
-			} catch (FetchException e) {
+		FProxyFetchWaiter fetch = null;
+		try {
+			fetch = fetchTracker.makeFetcher(key, maxSize, fctx, ctx.getReFilterPolicy());
+		} catch (FetchException e) {
             fe = e;
-			}
-			if(fetch != null)
+		}
+		if(fetch != null)
 			while(true) {
 			fr = fetch.getResult(!canSendProgress);
 			if(fr.hasData()) {
 
-				if(fr.getFetchCount() > 1 && !fr.hasWaited() && fr.getFetchCount() > 1 && key.isUSK() && context.uskManager.lookupKnownGood(USK.create(key)) > key.getSuggestedEdition()) {
+				if(fr.getFetchCount() > 1 && !fr.hasWaited() && key.isUSK() && context.uskManager.lookupKnownGood(USK.create(key)) > key.getSuggestedEdition()) {
 					Logger.normal(this, "Loading later edition...");
 					fetch.progress.requestImmediateCancel();
 					fr = null;
@@ -1306,7 +1306,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 
 	private static long[] parseRange(String hdrrange) throws HTTPRangeException {
 
-		long result[] = new long[2];
+		long[] result = new long[2];
 		try {
 			String[] units = hdrrange.split("=", 2);
 			// FIXME are MBytes and co valid? if so, we need to adjust the values and
@@ -1325,10 +1325,8 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			} else {
 				result[1] = -1;
 			}
-		} catch (NumberFormatException nfe) {
+		} catch (NumberFormatException | IndexOutOfBoundsException nfe) {
 			throw new HTTPRangeException(nfe);
-		} catch (IndexOutOfBoundsException ioobe) {
-			throw new HTTPRangeException(ioobe);
 		}
 		return result;
 	}

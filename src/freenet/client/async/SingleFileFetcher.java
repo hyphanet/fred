@@ -86,7 +86,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 	final ArchiveContext actx;
 	/** Archive handler. We can only have one archive handler at a time. */
 	private ArchiveHandler ah;
-	private int recursionLevel;
+	private final int recursionLevel;
 	/** The URI of the currently-being-processed data, for archives etc. */
 	private FreenetURI thisKey;
 	private final LinkedList<COMPRESSOR_TYPE> decompressors;
@@ -173,7 +173,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			throw new FetchException(FetchExceptionMode.TOO_MUCH_RECURSION);
 		this.thisKey = fetcher.thisKey;
 		// Do not copy the decompressors. Whether the metadata/container is compressed
-		// is independant of whether the final data is; when we find the data we will
+		// is independent of whether the final data is; when we find the data we will
 		// call back into the original fetcher.
 		this.decompressors = new LinkedList<COMPRESSOR_TYPE>();
 		if(fetcher.uri == null) throw new NullPointerException();
@@ -389,8 +389,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					if(!persistent) {
 						metadata = metadata.getDefaultDocument();
 					} else {
-						Metadata newMeta = metadata.grabDefaultDocument();
-						metadata = newMeta;
+						metadata = metadata.grabDefaultDocument();
 					}
 					if(metadata == null)
 						throw new FetchException(FetchExceptionMode.NOT_ENOUGH_PATH_COMPONENTS, -1, false, null, uri.addMetaStrings(new String[] { "" }));
@@ -648,7 +647,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			} else if(metadata.isSingleFileRedirect()) {
 				if(logMINOR) Logger.minor(this, "Is single-file redirect");
 				clientMetadata.mergeNoOverwrite(metadata.getClientMetadata()); // even splitfiles can have mime types!
-				if(clientMetadata != null && !clientMetadata.isTrivial()) {
+				if(!clientMetadata.isTrivial()) {
 					rcb.onExpectedMIME(clientMetadata, context);
 					if(logMINOR) Logger.minor(this, "MIME type is "+clientMetadata);
 				}
@@ -737,7 +736,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					if(logMINOR) Logger.minor(this, "Handling implicit container... (splitfile)");
 					continue;
 				} else {
-					if(clientMetadata != null && !clientMetadata.isTrivial())
+					if(!clientMetadata.isTrivial())
 						rcb.onExpectedMIME(clientMetadata, context);
 				}
 
@@ -1168,7 +1167,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		if(!hasInitialMetadata)
 			key = BaseClientKey.getBaseKey(uri);
 		if((!uri.hasMetaStrings()) &&
-				ctx.allowSplitfiles == false && ctx.followRedirects == false &&
+				!ctx.allowSplitfiles && !ctx.followRedirects &&
 				key instanceof ClientKey && (!hasInitialMetadata))
 			return new SimpleSingleFileFetcher((ClientKey)key, maxRetries, ctx, requester, cb, isEssential, false, l, context, false, realTimeFlag);
 		if(key instanceof ClientKey || hasInitialMetadata)

@@ -97,7 +97,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		// xor: check why we do not just return the result of (long1-long2)
 		// j16sdiz: (Long.MAX_VALUE - (-1) ) would overflow and become negative
 		private int compareLongs(long long1, long long2) {
-			int diff = Long.valueOf(long1).compareTo(long2);
+			int diff = Long.compare(long1, long2);
 			if(diff == 0)
 				return 0;
 			else
@@ -105,7 +105,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		}
 		
 		private int compareInts(int int1, int int2) {
-			int diff = Integer.valueOf(int1).compareTo(int2);
+			int diff = Integer.compare(int1, int2);
 			if(diff == 0)
 				return 0;
 			else
@@ -213,16 +213,16 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			writeTextReply(ctx, 200, "OK", noderefString);
 			return;
 		}
-		
+
 		final DecimalFormat fix1 = new DecimalFormat("##0.0%");
-				
+
 		final boolean fProxyJavascriptEnabled = node.isFProxyJavascriptEnabled();
 		boolean drawMessageTypes = path.endsWith("displaymessagetypes.html");
-		
+
 		/* gather connection statistics */
 		PeerNodeStatus[] peerNodeStatuses = getPeerNodeStatuses(!drawMessageTypes);
 		Arrays.sort(peerNodeStatuses, comparator(request.getParam("sortBy", null), request.isParameterSet("reversed")));
-		
+
 		int numberOfConnected = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_CONNECTED);
 		int numberOfRoutingBackedOff = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF);
 		int numberOfTooNew = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_TOO_NEW);
@@ -238,7 +238,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		int numberOfDisconnecting = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_DISCONNECTING);
 		int numberOfRoutingDisabled = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_ROUTING_DISABLED);
 		int numberOfNoLoadStats = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_NO_LOAD_STATS);
-		
+
 		int numberOfSimpleConnected = numberOfConnected + numberOfRoutingBackedOff;
 		int numberOfNotConnected = numberOfTooNew + numberOfTooOld +  numberOfNoLoadStats + numberOfDisconnected + numberOfNeverConnected + numberOfDisabled + numberOfBursting + numberOfListening + numberOfListenOnly + numberOfClockProblem + numberOfConnError;
 		String titleCountString = null;
@@ -251,15 +251,15 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		PageNode page = ctx.getPageMaker().getPageNode(getPageTitle(titleCountString), ctx);
 		final boolean advancedMode = ctx.isAdvancedModeEnabled();
 		HTMLNode contentNode = page.getContentNode();
-		
+
 		// FIXME! We need some nice images
 		long now = System.currentTimeMillis();
-	
+
 		if(ctx.isAllowedFullAccess())
 			contentNode.addChild(ctx.getAlertManager().createSummary());
-		
+
 		if(peerNodeStatuses.length>0){
-			
+
 			if(advancedMode) {
 
 				/* node status values */
@@ -284,7 +284,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				HTMLNode overviewTable = contentNode.addChild("table", "class", "column");
 				HTMLNode overviewTableRow = overviewTable.addChild("tr");
 				HTMLNode nextTableCell = overviewTableRow.addChild("td", "class", "first");
-				
+
 				HTMLNode overviewInfobox = nextTableCell.addChild("div", "class", "infobox");
 				overviewInfobox.addChild("div", "class", "infobox-header", "Node status overview");
 				HTMLNode overviewInfoboxContent = overviewInfobox.addChild("div", "class", "infobox-content");
@@ -304,73 +304,71 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				overviewList.addChild("li", "backedOffPercent:\u00a0" + fix1.format(backedOffPercent));
 				overviewList.addChild("li", "pInstantReject:\u00a0" + fix1.format(stats.pRejectIncomingInstantly()));
 				nextTableCell = overviewTableRow.addChild("td");
-				
+
 				// Activity box
 				int numARKFetchers = node.getNumARKFetchers();
-				
+
 				HTMLNode activityInfobox = nextTableCell.addChild("div", "class", "infobox");
 				activityInfobox.addChild("div", "class", "infobox-header", l10n("activityTitle"));
 				HTMLNode activityInfoboxContent = activityInfobox.addChild("div", "class", "infobox-content");
 				HTMLNode activityList = StatisticsToadlet.drawActivity(activityInfoboxContent, node);
-				if (advancedMode && (activityList != null)) {
+				if (activityList != null) {
 					if (numARKFetchers > 0) {
 						activityList.addChild("li", "ARK\u00a0Fetch\u00a0Requests:\u00a0" + numARKFetchers);
 					}
 					StatisticsToadlet.drawBandwidth(activityList, node, nodeUptimeSeconds, advancedMode);
 				}
-				
+
 				nextTableCell = overviewTableRow.addChild("td", "class", "last");
-				
+
 				// Peer statistics box
 				HTMLNode peerStatsInfobox = nextTableCell.addChild("div", "class", "infobox");
 				StatisticsToadlet.drawPeerStatsBox(peerStatsInfobox, advancedMode, numberOfConnected, numberOfRoutingBackedOff, numberOfTooNew, numberOfTooOld, numberOfDisconnected, numberOfNeverConnected, numberOfDisabled, numberOfBursting, numberOfListening, numberOfListenOnly, 0, 0, numberOfRoutingDisabled, numberOfClockProblem, numberOfConnError, numberOfDisconnecting, numberOfNoLoadStats, node);
-				
+
 				// Peer routing backoff reason box
-				if(advancedMode) {
-					HTMLNode backoffReasonInfobox = nextTableCell.addChild("div", "class", "infobox");
-					HTMLNode title = backoffReasonInfobox.addChild("div", "class", "infobox-header", "Peer backoff reasons (realtime)");
-					HTMLNode backoffReasonContent = backoffReasonInfobox.addChild("div", "class", "infobox-content");
-					String [] routingBackoffReasons = peers.getPeerNodeRoutingBackoffReasons(true);
-					int total = 0;
-					if(routingBackoffReasons.length == 0) {
-						backoffReasonContent.addChild("#", NodeL10n.getBase().getString("StatisticsToadlet.notBackedOff"));
-					} else {
-						HTMLNode reasonList = backoffReasonContent.addChild("ul");
-						for(String routingBackoffReason: routingBackoffReasons) {
-							int reasonCount = peers.getPeerNodeRoutingBackoffReasonSize(routingBackoffReason, true);
-							if(reasonCount > 0) {
-								total += reasonCount;
-								reasonList.addChild("li", routingBackoffReason + '\u00a0' + reasonCount);
-							}
+				HTMLNode backoffReasonInfobox = nextTableCell.addChild("div", "class", "infobox");
+				HTMLNode title = backoffReasonInfobox.addChild("div", "class", "infobox-header", "Peer backoff reasons (realtime)");
+				HTMLNode backoffReasonContent = backoffReasonInfobox.addChild("div", "class", "infobox-content");
+				String [] routingBackoffReasons = peers.getPeerNodeRoutingBackoffReasons(true);
+				int total = 0;
+				if(routingBackoffReasons.length == 0) {
+					backoffReasonContent.addChild("#", NodeL10n.getBase().getString("StatisticsToadlet.notBackedOff"));
+				} else {
+					HTMLNode reasonList = backoffReasonContent.addChild("ul");
+					for(String routingBackoffReason: routingBackoffReasons) {
+						int reasonCount = peers.getPeerNodeRoutingBackoffReasonSize(routingBackoffReason, true);
+						if(reasonCount > 0) {
+							total += reasonCount;
+							reasonList.addChild("li", routingBackoffReason + '\u00a0' + reasonCount);
 						}
 					}
-					if(total > 0)
-						title.addChild("#", ": "+total);
-					backoffReasonInfobox = nextTableCell.addChild("div", "class", "infobox");
-					title = backoffReasonInfobox.addChild("div", "class", "infobox-header", "Peer backoff reasons (bulk)");
-					backoffReasonContent = backoffReasonInfobox.addChild("div", "class", "infobox-content");
-					routingBackoffReasons = peers.getPeerNodeRoutingBackoffReasons(false);
-					total = 0;
-					if(routingBackoffReasons.length == 0) {
-						backoffReasonContent.addChild("#", NodeL10n.getBase().getString("StatisticsToadlet.notBackedOff"));
-					} else {
-						HTMLNode reasonList = backoffReasonContent.addChild("ul");
-						for(String routingBackoffReason: routingBackoffReasons) {
-							int reasonCount = peers.getPeerNodeRoutingBackoffReasonSize(routingBackoffReason, false);
-							if(reasonCount > 0) {
-								total += reasonCount;
-								reasonList.addChild("li", routingBackoffReason + '\u00a0' + reasonCount);
-							}
-						}
-					}
-					if(total > 0)
-						title.addChild("#", ": "+total);
 				}
+				if(total > 0)
+					title.addChild("#", ": "+total);
+				backoffReasonInfobox = nextTableCell.addChild("div", "class", "infobox");
+				title = backoffReasonInfobox.addChild("div", "class", "infobox-header", "Peer backoff reasons (bulk)");
+				backoffReasonContent = backoffReasonInfobox.addChild("div", "class", "infobox-content");
+				routingBackoffReasons = peers.getPeerNodeRoutingBackoffReasons(false);
+				total = 0;
+				if(routingBackoffReasons.length == 0) {
+					backoffReasonContent.addChild("#", NodeL10n.getBase().getString("StatisticsToadlet.notBackedOff"));
+				} else {
+					HTMLNode reasonList = backoffReasonContent.addChild("ul");
+					for(String routingBackoffReason: routingBackoffReasons) {
+						int reasonCount = peers.getPeerNodeRoutingBackoffReasonSize(routingBackoffReason, false);
+						if(reasonCount > 0) {
+							total += reasonCount;
+							reasonList.addChild("li", routingBackoffReason + '\u00a0' + reasonCount);
+						}
+					}
+				}
+				if(total > 0)
+					title.addChild("#", ": "+total);
 				// END OVERVIEW TABLE
 			}
-			
+
 			boolean enablePeerActions = showPeerActionsBox();
-			
+
 			// BEGIN PEER TABLE
 			if(fProxyJavascriptEnabled) {
 				String js =
@@ -407,7 +405,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			}
 
 			if (peerNodeStatuses.length == 0) {
-				NodeL10n.getBase().addL10nSubstitution(peerTableInfoboxContent, "DarknetConnectionsToadlet.noPeersWithHomepageLink", 
+				NodeL10n.getBase().addL10nSubstitution(peerTableInfoboxContent, "DarknetConnectionsToadlet.noPeersWithHomepageLink",
 						new String[] { "link" }, new HTMLNode[] { HTMLNode.link("/") });
 			} else {
 				HTMLNode peerForm = null;
@@ -445,7 +443,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "idle")).addChild("span", new String[] { "title", "style" }, new String[] { l10n("idleTime"), "border-bottom: 1px dotted; cursor: help;" }, l10n("idleTimeTitle"));
 				if(hasPrivateNoteColumn())
 					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "privnote")).addChild("span", new String[] { "title", "style" }, new String[] { l10n("privateNote"), "border-bottom: 1px dotted; cursor: help;" }, l10n("privateNoteTitle"));
- 
+
 				if(advancedMode) {
 					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "time_routable")).addChild("#", "%\u00a0Time Routable");
 					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "selection_percentage")).addChild("#", "%\u00a0Selection");
@@ -458,7 +456,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 					peerTableHeaderRow.addChild("th", "Peer\u00a0Capacity\u00a0Bulk");
 					peerTableHeaderRow.addChild("th", "Peer\u00a0Capacity\u00a0Realtime");
 				}
-				
+
 				SimpleColumn[] endCols = endColumnHeaders(advancedMode);
 				if(endCols != null) {
 					for(SimpleColumn col: endCols) {
@@ -588,13 +586,13 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				}
 			}
 		}
-		
+
 		// our reference
 		if(shouldDrawNoderefBox(advancedMode)) {
 			drawAddPeerBox(contentNode, ctx);
 			drawNoderefBox(contentNode, getNoderef());
 		}
-		
+
 		this.writeHTMLReply(ctx, 200, "OK", page.generate());
 	}
 
@@ -617,13 +615,10 @@ public abstract class ConnectionsToadlet extends Toadlet {
         
 		if (request.isPartSet("add")) {
 			// add a new node
-			String urltext = request.getPartAsStringFailsafe("url", 200);
-			urltext = urltext.trim();
-			String reftext = request.getPartAsStringFailsafe("ref", Integer.MAX_VALUE);
-			reftext = reftext.trim();
+			final String urltext = request.getPartAsStringFailsafe("url", 200).trim();
+			String reftext = request.getPartAsStringFailsafe("ref", Integer.MAX_VALUE).trim();
 			if (reftext.length() < 200) {
-				reftext = request.getPartAsStringFailsafe("reffile", Integer.MAX_VALUE);
-				reftext = reftext.trim();
+				reftext = request.getPartAsStringFailsafe("reffile", Integer.MAX_VALUE).trim();
 			}
 			String privateComment = null;
 			if(!isOpennet())
@@ -773,8 +768,8 @@ public abstract class ConnectionsToadlet extends Toadlet {
 	/** Adds a new node. If any error arises, it returns the appropriate return code.
 	 * @param nodeReference - The reference to the new node
 	 * @param privateComment - The private comment when adding a Darknet node
-	 * @param trust 
-	 * @param request To pull any extra fields from
+	 * @param trust - trust level (LOW, NORMAL, HIGH)
+	 * @param visibility - node visibility (NO, NAME_ONLY, YES)
 	 * @return The result of the addition*/
 	private PeerAdditionReturnCodes addNewNode(String nodeReference,String privateComment, FRIEND_TRUST trust, FRIEND_VISIBILITY visibility){
 		SimpleFieldSet fs;
@@ -801,9 +796,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				pn = node.createNewDarknetNode(fs, trust, visibility);
 				((DarknetPeerNode)pn).setPrivateDarknetCommentNote(privateComment);
 			}
-		} catch (FSParseException e1) {
-			return PeerAdditionReturnCodes.CANT_PARSE;
-		} catch (PeerParseException e1) {
+		} catch (FSParseException | PeerParseException e1) {
 			return PeerAdditionReturnCodes.CANT_PARSE;
 		} catch (ReferenceSignatureVerificationException e1){
 			return PeerAdditionReturnCodes.INVALID_SIGNATURE;
