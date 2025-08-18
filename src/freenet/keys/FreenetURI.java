@@ -124,21 +124,30 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 
 	@Override
 	public synchronized int hashCode() {
-		if(hasHashCode)
+		if(hasHashCode) {
 			return hashCode;
+		}
 		int x = keyType.hashCode();
-		if(docName != null)
+		if(docName != null) {
 			x ^= docName.hashCode();
-		if(metaStr != null)
-			for (String s : metaStr) x ^= s.hashCode();
-		if(routingKey != null)
+		}
+		if(metaStr != null){
+			for (String s : metaStr){
+				x ^= s.hashCode();
+			}
+		}
+		if(routingKey != null) {
 			x ^= Fields.hashCode(routingKey);
-		if(cryptoKey != null)
+		}
+		if(cryptoKey != null) {
 			x ^= Fields.hashCode(cryptoKey);
-		if(extra != null)
+		}
+		if(extra != null) {
 			x ^= Fields.hashCode(extra);
-		if(keyType.equals("USK"))
+		}
+		if(keyType.equals("USK")) {
 			x ^= suggestedEdition;
+		}
 		hashCode = x;
 		hasHashCode = true;
 		return x;
@@ -788,7 +797,7 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 	public ArrayList<String> listMetaStrings() {
 		if(metaStr != null) {
 			ArrayList<String> l = new ArrayList<String>(metaStr.length);
-			for (String s : metaStr) l.add(s);
+			l.addAll(Arrays.asList(metaStr));
 			return l;
 		} else return new ArrayList<String>(0);
 	}
@@ -920,13 +929,17 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 				throw new MalformedURLException("Wrong number of extra bytes for SSK");
 			dos.write(extra);
 		}
-		if(!keyType.equals("CHK"))
+		if(!keyType.equals("CHK")) {
 			dos.writeUTF(docName);
+		}
 		if(metaStr != null) {
 			dos.writeInt(metaStr.length);
-			for (String s : metaStr) dos.writeUTF(s);
-		} else
+			for (String s : metaStr) {
+				dos.writeUTF(s);
+			}
+		} else {
 			dos.writeInt(0);
+		}
 	}
 
 	/** Get suggested edition. Only valid for USKs. */

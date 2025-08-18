@@ -86,21 +86,21 @@ public class ClientPutDiskDirMessage extends ClientPutDirMessage {
     		Logger.minor(this, "Listing directory: "+thisdir);
     	
     	HashMap<String, Object> ret = new HashMap<String, Object>();
-    	
-    	File filelist[] = thisdir.listFiles();
+
+        File[] filelist = thisdir.listFiles();
     	if(filelist == null)
     		throw new MessageInvalidException(ProtocolErrorMessage.FILE_NOT_FOUND, "No such directory!", identifier, global);
 		for (File file : filelist) {
-			if (file.isHidden() && !includeHiddenFiles) continue;
+			if (file.isHidden() && !includeHiddenFiles) {
+				continue;
+			}
 			//   Skip unreadable files and dirs
 			//   Skip files nonexistent (dangling symlinks) - check last
 			if (file.canRead() && file.exists()) {
 				if (file.isFile()) {
-					File f = file;
+					FileBucket bucket = new FileBucket(file, true, false, false, false);
 
-					FileBucket bucket = new FileBucket(f, true, false, false, false);
-
-					ret.put(f.getName(), new ManifestElement(f.getName(), prefix + f.getName(), bucket, DefaultMIMETypes.guessMIMEType(f.getName(), true), f.length()));
+					ret.put(file.getName(), new ManifestElement(file.getName(), prefix + file.getName(), bucket, DefaultMIMETypes.guessMIMEType(file.getName(), true), file.length()));
 				} else if (file.isDirectory()) {
 					HashMap<String, Object> subdir = makeBucketsByName(new File(thisdir, file.getName()), prefix
 							+ file.getName() + '/');

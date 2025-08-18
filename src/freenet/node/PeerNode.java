@@ -2759,7 +2759,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		if(getLastGoodVersion() != null)
 			fs.putSingle("lastGoodVersion", lastGoodVersion);
-		for (Peer peer : nominalPeer) fs.putAppend("physical.udp", peer.toString());
+		for (Peer peer : nominalPeer) {
+			fs.putAppend("physical.udp", peer.toString());
+		}
 		fs.put("auth.negTypes", negTypes);
 		fs.putSingle("identity", getIdentityString());
 		fs.put("location", getLocation());

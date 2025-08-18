@@ -435,7 +435,7 @@ public class PersistentRequestClient {
 
 	/**
 	 * Callback called when a request fails
-	 * @param get
+	 * @param req the failed request
 	 */
 	public void notifyFailure(ClientRequest req) {
 		assert(req.persistence == persistence);
@@ -464,17 +464,11 @@ public class PersistentRequestClient {
 		if(statusCache != null)
 			statusCache.clear();
 		synchronized(this) {
-			for(ClientRequest req: runningPersistentRequests) {
-				toKill.add(req);
-			}
+			toKill.addAll(runningPersistentRequests);
 			runningPersistentRequests.clear();
-			for(ClientRequest req : completedUnackedRequests) {
-				toKill.add(req);
-			}
+			toKill.addAll(completedUnackedRequests);
 			completedUnackedRequests.clear();
-			for(ClientRequest req : clientRequestsByIdentifier.values()) {
-				toKill.add(req);
-			}
+			toKill.addAll(clientRequestsByIdentifier.values());
 			clientRequestsByIdentifier.clear();
 		}
 	}
@@ -484,7 +478,9 @@ public class PersistentRequestClient {
 		// FIXME keep a transient hashmap in RAM, use it for fproxy.
 		// FIXME consider supporting inserts too.
 		for (ClientRequest req : completedUnackedRequests) {
-			if (!(req instanceof ClientGet)) continue;
+			if (!(req instanceof ClientGet)) {
+				continue;
+			}
 			ClientGet getter = (ClientGet) req;
 			if (getter.getURI().equals(key)) {
 				return getter;
@@ -523,10 +519,8 @@ public class PersistentRequestClient {
 	}
 	
     public void addPersistentRequesters(List<ClientRequester> requesters) {
-        for(ClientRequest req : runningPersistentRequests)
-            requesters.add(req.getClientRequest());
-        for(ClientRequest req : completedUnackedRequests)
-            requesters.add(req.getClientRequest());
+		runningPersistentRequests.forEach(req -> requesters.add(req.getClientRequest()));
+		completedUnackedRequests.forEach(req -> requesters.add(req.getClientRequest()));
     }
 
     public void resume(ClientRequest clientRequest) {

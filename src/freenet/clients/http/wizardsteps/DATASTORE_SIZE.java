@@ -21,6 +21,7 @@ import freenet.support.io.DatastoreUtil;
 import java.io.File;
 
 import java.io.File;
+import java.util.Arrays;
 
 /**
  * Allows the user to select datastore size, considering available storage space when offering options.
@@ -189,9 +190,7 @@ public class DATASTORE_SIZE implements Step {
 		long freeSpace = storeDir.getUsableSpace();
 		File[] files = storeDir.listFiles();
 
-		for (File file : files) {
-			freeSpace += file.length();
-		}
+		freeSpace += Arrays.stream(files).mapToLong(File::length).reduce(Long::sum).orElse(0);
 
 		if (freeSpace < maxSize) {
 			maxSize = freeSpace;

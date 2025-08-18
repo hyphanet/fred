@@ -1343,10 +1343,8 @@ public class StatisticsToadlet extends Toadlet {
 	private final static int HISTOGRAM_LENGTH = 10;
 	
 	private int simpleHistogramDivisor(int[] a) {
-		int max = 1;
-		for (int j : a) {
-			if (j > max) max = j;
-		}
+		int max;
+		max = Integer.max(Arrays.stream(a).reduce(Integer::max).orElse(1), 1);
 		return max;
 	}
 	
