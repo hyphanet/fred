@@ -768,8 +768,8 @@ public abstract class ConnectionsToadlet extends Toadlet {
 	/** Adds a new node. If any error arises, it returns the appropriate return code.
 	 * @param nodeReference - The reference to the new node
 	 * @param privateComment - The private comment when adding a Darknet node
-	 * @param trust 
-	 * @param visibility
+	 * @param trust - trust level (LOW, NORMAL, HIGH)
+	 * @param visibility - node visibility (NO, NAME_ONLY, YES)
 	 * @return The result of the addition*/
 	private PeerAdditionReturnCodes addNewNode(String nodeReference,String privateComment, FRIEND_TRUST trust, FRIEND_VISIBILITY visibility){
 		SimpleFieldSet fs;
