@@ -444,20 +444,16 @@ public class HTTPRequestImpl implements HTTPRequest {
 
 		// try parsing all values and put the valid Integers in a new list
 		List<Integer> intValueList = new ArrayList<Integer>();
-		for (String s : valueList) {
+		for (String value : valueList) {
 			try {
-				intValueList.add(Integer.valueOf(s));
+				intValueList.add(Integer.valueOf(value));
 			} catch (Exception e) {
 				// ignore invalid parameter values
 			}
 		}
 
 		// convert the valid Integers to an array of ints
-		int[] values = new int[intValueList.size()];
-		for (int i = 0; i < intValueList.size(); i++) {
-			values[i] = intValueList.get(i);
-		}
-		return values;
+		return intValueList.stream().mapToInt(value -> value).toArray();
 	}
 
 
@@ -757,10 +753,8 @@ public class HTTPRequestImpl implements HTTPRequest {
 	@Override
 	public void freeParts() {
 		if (this.parts == null) return;
-		
-		for (Bucket b : this.parts.values()) {
-			b.free();
-		}
+
+		parts.values().forEach(Bucket::free);
 		parts.clear();
 		freedParts = true;
 		// Do not free data. Caller is responsible for that.

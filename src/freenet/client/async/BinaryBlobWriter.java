@@ -119,9 +119,7 @@ public final class BinaryBlobWriter {
 			}
 			Bucket out = _bf.makeBucket(-1);
 			getSnapshot(out, mark);
-			for (Bucket bucket : _buckets) {
-				bucket.free();
-			}
+			_buckets.forEach(Bucket::free);
 			if (mark) {
 				out.setReadOnly();
 			}

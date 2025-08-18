@@ -823,7 +823,6 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				sb.append('/');
 			sb.append(element);
 			if (unparsedAttrs != null) {
-				int n = unparsedAttrs.length;
 				for (String unparsedAttr : unparsedAttrs) {
 					sb.append(' ').append(unparsedAttr);
 				}

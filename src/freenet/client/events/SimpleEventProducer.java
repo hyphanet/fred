@@ -5,6 +5,7 @@ package freenet.client.events;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import freenet.client.async.ClientContext;
 
@@ -30,7 +31,7 @@ public class SimpleEventProducer implements ClientEventProducer, Serializable {
     /** Create a new SimpleEventProducer with the given listeners. */
     public SimpleEventProducer(ClientEventListener[] cela) {
         this();
-		for (ClientEventListener clientEventListener : cela) addEventListener(clientEventListener);
+        Arrays.stream(cela).forEachOrdered(this::addEventListener);
     }
 
     @Override
@@ -82,7 +83,7 @@ public class SimpleEventProducer implements ClientEventProducer, Serializable {
 
     /** Adds all listeners in the given array. */
     public synchronized void addEventListeners(ClientEventListener[] cela) {
-		for (ClientEventListener clientEventListener : cela) addEventListener(clientEventListener);
+        Arrays.stream(cela).forEachOrdered(this::addEventListener);
     }
 
 }

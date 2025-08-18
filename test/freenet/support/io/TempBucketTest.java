@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.Security;
+import java.util.Arrays;
 import java.util.Random;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -45,9 +46,9 @@ public class TempBucketTest {
     }
     
 	public static class TempBucketMigrationTest {
-		private Random weakPRNG = new Random(12340);
-		private Executor exec = new SerialExecutor(NativeThread.NORM_PRIORITY);
-		private FilenameGenerator fg;
+		private final Random weakPRNG = new Random(12340);
+		private final Executor exec = new SerialExecutor(NativeThread.NORM_PRIORITY);
+		private final FilenameGenerator fg;
 
 		public TempBucketMigrationTest() throws IOException {
 			fg = new FilenameGenerator(weakPRNG, false, null, "junit");
@@ -82,8 +83,7 @@ public class TempBucketTest {
 				assertTrue(b[0].isRAMBucket());
 				assertTrue(b[maxRamBucket].isRAMBucket());
 			} finally {
-				for (Bucket bb : b)
-					bb.free();
+				Arrays.stream(b).forEach(Bucket::free);
 			}
 		}
 
@@ -140,8 +140,10 @@ public class TempBucketTest {
 			InputStream is = bucket.getInputStream();
 			bucket.migrateToDisk();
 			byte[] readTo = new byte[16];
-			assertTrue(is.read(readTo, 0, 16) == 16);
-			for (byte b : readTo) assertTrue(b == 0);
+			assertEquals(16, is.read(readTo, 0, 16));
+			for (byte b : readTo) {
+				assertEquals(0, b);
+			}
 			is.close();
 			os.close();
 		}
@@ -160,8 +162,7 @@ public class TempBucketTest {
 			bucket.migrateToDisk();
 			byte[] readTo = new byte[2048];
 			new DataInputStream(is).readFully(readTo);
-			for(int i=0;i<readTo.length;i++)
-				assertTrue(readTo[i] == data[i]);
+			assertArrayEquals(data, readTo);
 			is.close();
 			os.close();
 		}

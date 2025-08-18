@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
+import java.util.Arrays;
 
 import freenet.client.FetchException;
 import freenet.client.FetchException.FetchExceptionMode;
@@ -245,11 +246,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
     public boolean probablyWantKey(Key key, byte[] saltedKey) {
         if(filter.checkFilter(saltedKey)) {
             byte[] salted = localSaltKey(key);
-			for (BinaryBloomFilter segmentFilter : segmentFilters) {
-				if (segmentFilter.checkFilter(salted)) {
-					return true;
-				}
-			}
+            return Arrays.stream(segmentFilters).anyMatch(segmentFilter -> segmentFilter.checkFilter(salted));
         }
         return false;
     }

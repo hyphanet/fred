@@ -593,7 +593,9 @@ public class SimpleFieldSetTest {
 		String[] methodValues = {"boo","bar","zoo"};
 		String expectedResult = "zoo";
 		SimpleFieldSet methodSFS = new SimpleFieldSet(true);
-		for (String methodValue : methodValues) methodSFS.putOverwrite(methodKey, methodValue);
+		for (String methodValue : methodValues) {
+			methodSFS.putOverwrite(methodKey, methodValue);
+		}
 		assertEquals(methodSFS.get(methodKey),expectedResult);
 	}
 	
@@ -620,7 +622,9 @@ public class SimpleFieldSetTest {
 								+"bar"+SimpleFieldSet.MULTI_VALUE_CHAR
 								+"zoo";
 		SimpleFieldSet methodSFS = new SimpleFieldSet(true);
-		for (String methodValue : methodValues) methodSFS.putAppend(methodKey, methodValue);
+		for (String methodValue : methodValues) {
+			methodSFS.putAppend(methodKey, methodValue);
+		}
 		assertEquals(methodSFS.get(methodKey),expectedResult);
 	}
 	
@@ -632,7 +636,9 @@ public class SimpleFieldSetTest {
 		String methodKey = "foo.bar";
 		String[] methodValues = {"boo","bar","zoo"};
 		SimpleFieldSet methodSFS = new SimpleFieldSet(true);
-		for (String methodValue : methodValues) methodSFS.putAppend(methodKey, methodValue);
+		for (String methodValue : methodValues) {
+			methodSFS.putAppend(methodKey, methodValue);
+		}
 		assertTrue(Arrays.equals(methodSFS.getAll(methodKey),methodValues));
 	}
 	
@@ -704,10 +710,7 @@ public class SimpleFieldSetTest {
 	 * @return true if there is the key
 	 */
 	private boolean isAKey(String[][] aStringPairsArray, String aPrefix, String aKey) {
-		for (String[] strings : aStringPairsArray)
-			if (aKey.equals(aPrefix + strings[0]))
-				return true;
-		return false;
+		return Arrays.stream(aStringPairsArray).anyMatch(strings -> aKey.equals(aPrefix + strings[0]));
 	}
 	
 	/**
