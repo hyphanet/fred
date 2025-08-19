@@ -32,8 +32,9 @@ public class ContentFilter {
 
 	/** The HTML mime types are defined here, to allow other modules to identify it*/
 	public static final String[] HTML_MIME_TYPES=new String[]{"text/html", "application/xhtml+xml", "text/xml+xhtml", "text/xhtml", "application/xhtml"};
+	private static final int CHARSET_DETECTION_FALLBACK_BUFFERSIZE = 64;
 
-        private static volatile boolean logMINOR;
+	private static volatile boolean logMINOR;
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
@@ -54,7 +55,7 @@ public class ContentFilter {
 		register(new FilterMIMEType("text/plain", "txt", new String[0], new String[] { "text", "pot" },
 				true, true, null, false, false, false, false, false, false,
 				l10n("textPlainReadAdvice"),
-				true, "US-ASCII", null, false));
+				true, "utf-8", null, false));
 
 		// Images
 		// GIF - has a filter
@@ -349,16 +350,8 @@ public class ContentFilter {
 			if(handler.readFilter != null) {
 				if(handler.takesACharset && ((charset == null) || (charset.isEmpty()))) {
 					int bufferSize = handler.charsetExtractor.getCharsetBufferSize();
-					input.mark(bufferSize);
 					byte[] charsetBuffer = new byte[bufferSize];
-					int bytesRead = 0, offset = 0, toread=0;
-					while(true) {
-						toread = bufferSize - offset;
-						bytesRead = input.read(charsetBuffer, offset, toread);
-						if(bytesRead == -1 || toread == 0) break;
-						offset += bytesRead;
-					}
-					input.reset();
+					int offset = readIntoBuffer(input, bufferSize, charsetBuffer);
 					charset = detectCharset(charsetBuffer, offset, handler, maybeCharset);
 				}
 				try {
@@ -380,6 +373,16 @@ public class ContentFilter {
 			}
 
 			if(handler.safeToRead) {
+				if(handler.takesACharset && ((charset == null) || (charset.isEmpty()))) {
+					byte[] charsetBuffer = new byte[CHARSET_DETECTION_FALLBACK_BUFFERSIZE];
+					int offset = readIntoBuffer(input, CHARSET_DETECTION_FALLBACK_BUFFERSIZE, charsetBuffer);
+					BOMDetection bom = CSSReadFilter.detectCharsetFromBOM(charsetBuffer, CHARSET_DETECTION_FALLBACK_BUFFERSIZE);
+					if (bom != null) {
+						charset = bom.charset;
+					} else if (handler.defaultCharset != null){
+						charset = handler.defaultCharset;
+					}
+				}
 				FileUtil.copy(input, output, -1);
 				output.flush();
 				return new FilterStatus(charset, typeName);
@@ -388,6 +391,20 @@ public class ContentFilter {
 			handler.throwUnsafeContentTypeException();
 		}
 		return null;
+	}
+
+	private static int readIntoBuffer(InputStream input, int bufferSize, byte[] charsetBuffer)
+			throws IOException {
+		input.mark(bufferSize);
+		int bytesRead = 0, offset = 0, toread=0;
+		while(true) {
+			toread = bufferSize - offset;
+			bytesRead = input.read(charsetBuffer, offset, toread);
+			if(bytesRead == -1 || toread == 0) break;
+			offset += bytesRead;
+		}
+		input.reset();
+		return offset;
 	}
 
 	public static String detectCharset(byte[] input, int length, FilterMIMEType handler, String maybeCharset) throws IOException {
