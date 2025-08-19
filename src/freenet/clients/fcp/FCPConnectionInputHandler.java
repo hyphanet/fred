@@ -50,8 +50,7 @@ public class FCPConnectionInputHandler implements Runnable {
 		} catch (TooLongException e) {
 			Logger.normal(this, "Caught "+e.getMessage(), e);
 		} catch (IOException e) {
-			if(logMINOR)
-				Logger.minor(this, "Caught "+e, e);
+			Logger.normal(this, "Caught "+e, e);
 		} catch (Throwable t) {
 			Logger.error(this, "Caught "+t, t);
 			t.printStackTrace();
