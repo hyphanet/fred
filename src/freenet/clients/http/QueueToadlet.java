@@ -1979,7 +1979,11 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 	private HTMLNode createKeyCell(FreenetURI uri, boolean addSlash) {
 		HTMLNode keyCell = new HTMLNode("td", "class", "request-key");
 		if (uri != null) {
-			keyCell.addChild("span", "class", "key_is").addChild("a", "href", '/' + uri.toString() + (addSlash ? "/" : ""), uri.toShortString() + (addSlash ? "/" : ""));
+			keyCell.addChild("span", "class", "key_is")
+					.addChild("a",
+							new String[]{"class", "data-key", "href"},
+							new String[]{"finished_key_link", uri.toString(), '/' + uri.toString() + (addSlash ? "/" : "")}, 
+							uri.toShortString() + (addSlash ? "/" : ""));
 		} else {
 			keyCell.addChild("span", "class", "key_unknown", l10n("unknown"));
 		}
@@ -2115,6 +2119,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		
 		HTMLNode formDiv = new HTMLNode("div", "class", "request-table-form");
 		HTMLNode form = ctx.addFormChild(formDiv, path(), "request-table-form-"+id+(advancedModeEnabled?"-advanced":"-simple"));
+        if (core.getNode().isFProxyJavascriptEnabled()) {
+            form.addChild("script", new String[] {"type", "src"}, new String[] {"text/javascript", "/static/js/clipboard.js"});
+        }
 		
 		createRequestTableButtons(form, pageMaker, ctx, mimeType, hasFriends, advancedModeEnabled, priorityClasses, true, queueType);
 

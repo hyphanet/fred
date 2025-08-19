@@ -229,3 +229,9 @@ table.queue span.progress_fraction_finalized {
 #statusbar div.separator {
 	background-color: #d0d0f0;
 }
+
+.copy-to-clipboard-element:active {
+  color: red;
+  font-weight: bold;
+}
+
