@@ -25,6 +25,7 @@ import java.util.GregorianCalendar;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
@@ -849,8 +850,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 				localHandshakeIP.getHandshakeAddress();
 			}
 		}
-		// De-dupe
-		HashSet<Peer> ret = new HashSet<Peer>();
+		// De-dupe with LinkedHashSet to preserve order
+		Set<Peer> ret = new LinkedHashSet<Peer>();
 		Collections.addAll(ret, localHandshakeIPs);
 		return ret.toArray(new Peer[0]);
 	}
