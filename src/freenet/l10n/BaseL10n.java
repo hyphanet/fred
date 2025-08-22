@@ -137,8 +137,9 @@ public class BaseL10n {
 				// We will return the full names sorted alphabetically. To ensure that the user
 				// notices the special "UNLISTED" language code, we add it to the end of the list
 				// after sorting, so now we skip it.
-				if (allValue != UNLISTED)
+				if (allValue != UNLISTED) {
 					result.add(allValue.fullName);
+				}
 			}
 
 			Collections.sort(result);

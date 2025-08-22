@@ -46,16 +46,16 @@ public class StringArrOption extends Option<String[]> {
 
 	@Override
 	public String toString(String[] arr) {
-		if (arr == null)
+		if (arr == null) {
 			return null;
+		}
 		StringBuilder sb = new StringBuilder();
 		for (String val : arr) {
-			if (val.isEmpty())
-				sb.append(":").append(delimiter);
-			else
-				sb.append(URLEncoder.encode(val, false)).append(delimiter);
+			sb.append(val.isEmpty() ? ":" : URLEncoder.encode(val, false)).append(delimiter);
 		}
-		if(sb.length() > 0) sb.setLength(sb.length()-1); // drop surplus delimiter
+		if(sb.length() > 0) {
+			sb.setLength(sb.length()-1); // drop surplus delimiter
+		}
 		return sb.toString();
 	}
 	

@@ -17,7 +17,9 @@ package freenet.support;
 
 import static org.junit.Assert.*;
 
+import java.util.Arrays;
 import java.util.Enumeration;
+import java.util.List;
 
 import org.junit.Test;
 
@@ -50,21 +52,10 @@ public class LRUQueueTest {
 	private LRUQueue<Object> createSampleQueue(int size) {
 		LRUQueue<Object> methodLRUQueue = new LRUQueue<Object>();
 		Object[] sampleObjects = createSampleObjects(size);
-		for (Object sampleObject : sampleObjects) methodLRUQueue.push(sampleObject);
+		for (Object sampleObject : sampleObjects) {
+			methodLRUQueue.push(sampleObject);
+		}
 		return methodLRUQueue;
-	}
-	
-	/**
-	 * Verifies if an element is present in an array
-	 * @param anArray the array to search into
-	 * @param aElementToSearch the object that must be found
-	 * @return true if there is at least one reference to the object
-	 */
-	private boolean isPresent(Object[] anArray, Object aElementToSearch) {
-		for (Object o : anArray)
-			if (o.equals(aElementToSearch))
-				return true;
-		return false;
 	}
 	
 	/**
@@ -169,9 +160,13 @@ public class LRUQueueTest {
 		LRUQueue<Object> methodLRUQueue = new LRUQueue<Object>();
 		Object[] sampleObjects = createSampleObjects(sampleElemsNumber);
 		//pushing objects
-		for (Object object : sampleObjects) methodLRUQueue.push(object);
+		for (Object object : sampleObjects) {
+			methodLRUQueue.push(object);
+		}
 		//getting objects
-		for (Object sampleObject : sampleObjects) assertEquals(sampleObject, methodLRUQueue.pop());
+		for (Object sampleObject : sampleObjects) {
+			assertEquals(sampleObject, methodLRUQueue.pop());
+		}
 		//the queue must be empty
 		assertNull(methodLRUQueue.pop());				
 	}
@@ -207,7 +202,9 @@ public class LRUQueueTest {
 	public void testRemove() {
 		LRUQueue<Object> methodLRUQueue = new LRUQueue<Object>();
 		Object[] sampleObjects = createSampleObjects(sampleElemsNumber);
-		for (Object sampleObject : sampleObjects) methodLRUQueue.push(sampleObject);
+		for (Object sampleObject : sampleObjects) {
+			methodLRUQueue.push(sampleObject);
+		}
 		//removing all objects in the opposite way used by pop() method
 		for(int i=sampleObjects.length-1;i>=0;i--) {
 			assertTrue(methodLRUQueue.remove(sampleObjects[i]));
@@ -264,7 +261,9 @@ public class LRUQueueTest {
 		Object[] sampleObjects = createSampleObjects(sampleElemsNumber);
 		LRUQueue<Object> methodLRUQueue = new LRUQueue<Object>();
 		//pushing objects
-		for (Object sampleObject : sampleObjects) methodLRUQueue.push(sampleObject);
+		for (Object sampleObject : sampleObjects) {
+			methodLRUQueue.push(sampleObject);
+		}
 		Enumeration<Object> methodEnumeration = methodLRUQueue.elements();
 		int j=0;
 		while(methodEnumeration.hasMoreElements()) {			
@@ -283,12 +282,17 @@ public class LRUQueueTest {
 		Object[] sampleObjects = createSampleObjects(sampleElemsNumber);
 		
 		//pushing objects
-		for (Object object : sampleObjects) methodLRUQueue.push(object);
+		for (Object object : sampleObjects) {
+			methodLRUQueue.push(object);
+		}
 		
 		Object[] resultingArray = methodLRUQueue.toArray();
 		
 		assertEquals(sampleObjects.length, resultingArray.length);
-		for (Object sampleObject : sampleObjects) assertTrue(isPresent(resultingArray, sampleObject));
+		List<Object> resultingList = Arrays.asList(resultingArray);
+		for (Object sampleObject : sampleObjects) {
+			assertTrue(resultingList.contains(sampleObject));
+		}
 	}
 
 	/**
@@ -300,13 +304,18 @@ public class LRUQueueTest {
 		Object[] sampleObjects = createSampleObjects(sampleElemsNumber);
 
 		// pushing objects
-		for (Object object : sampleObjects) methodLRUQueue.push(object);
+		for (Object object : sampleObjects) {
+			methodLRUQueue.push(object);
+		}
 		
 		Object[] resultingArray = new Object[sampleObjects.length];
 		methodLRUQueue.toArray(resultingArray);
 
 		assertEquals(sampleObjects.length, resultingArray.length);
-		for (Object sampleObject : sampleObjects) assertTrue(isPresent(resultingArray, sampleObject));
+		List<Object> resultingList = Arrays.asList(resultingArray);
+		for (Object sampleObject : sampleObjects) {
+			assertTrue(resultingList.contains(sampleObject));
+		}
 	}
 
 	/**
@@ -318,13 +327,12 @@ public class LRUQueueTest {
 		Object[] sampleObjects = createSampleObjects(sampleElemsNumber);
 
 		// pushing objects
-		for (Object sampleObject : sampleObjects) methodLRUQueue.push(sampleObject);
+		for (Object sampleObject : sampleObjects) {
+			methodLRUQueue.push(sampleObject);
+		}
 
 		Object[] resultingArray = methodLRUQueue.toArrayOrdered();
-
-		assertEquals(sampleObjects.length, resultingArray.length);		
-		for (int i = 0; i < sampleObjects.length; i++)
-			assertEquals(sampleObjects[i], resultingArray[i]);
+		assertArrayEquals(sampleObjects, resultingArray);
 	}
 
 	/**
@@ -336,14 +344,13 @@ public class LRUQueueTest {
 		Object[] sampleObjects = createSampleObjects(sampleElemsNumber);
 
 		// pushing objects
-		for (Object sampleObject : sampleObjects) methodLRUQueue.push(sampleObject);
+		for (Object sampleObject : sampleObjects) {
+			methodLRUQueue.push(sampleObject);
+		}
 
 		Object[] resultingArray = new Object[sampleObjects.length];
 		methodLRUQueue.toArrayOrdered(resultingArray);
-		
-		assertEquals(resultingArray.length, sampleObjects.length);
-		for (int i = 0; i < sampleObjects.length; i++)
-			assertEquals(sampleObjects[i], resultingArray[i]);
+		assertArrayEquals(sampleObjects, resultingArray);
 	}
 	
 	

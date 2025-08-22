@@ -55,7 +55,9 @@ public class LRUMapTest {
 	private LRUMap<Object, Object> createSampleHashTable(int size) {
 		LRUMap<Object, Object> methodLRUht = new LRUMap<Object, Object>();
 		Object[][] sampleObjects = createSampleKeyVal(size);
-		for (Object[] sampleObject : sampleObjects) methodLRUht.push(sampleObject[0], sampleObject[1]);
+		for (Object[] sampleObject : sampleObjects) {
+			methodLRUht.push(sampleObject[0], sampleObject[1]);
+		}
 		return methodLRUht;
 	}
 	
@@ -170,9 +172,13 @@ public class LRUMapTest {
 		LRUMap<Object, Object> methodLRUht = new LRUMap<Object, Object>();
 		Object[][] sampleObjects = createSampleKeyVal(sampleElemsNumber);
 		//pushing objects
-		for (Object[] object : sampleObjects) methodLRUht.push(object[0], object[1]);
+		for (Object[] object : sampleObjects) {
+			methodLRUht.push(object[0], object[1]);
+		}
 		//getting keys
-		for (Object[] sampleObject : sampleObjects) assertEquals(sampleObject[0], methodLRUht.popKey());
+		for (Object[] sampleObject : sampleObjects) {
+			assertEquals(sampleObject[0], methodLRUht.popKey());
+		}
 		//the HashTable must be empty
 		assertNull(methodLRUht.popKey());
 	}
@@ -189,9 +195,13 @@ public class LRUMapTest {
 		LRUMap<Object, Object> methodLRUht = new LRUMap<Object, Object>();
 		Object[][] sampleObjects = createSampleKeyVal(sampleElemsNumber);
 		//pushing objects
-		for (Object[] object : sampleObjects) methodLRUht.push(object[0], object[1]);
+		for (Object[] object : sampleObjects) {
+			methodLRUht.push(object[0], object[1]);
+		}
 		//getting values
-		for (Object[] sampleObject : sampleObjects) assertEquals(sampleObject[1], methodLRUht.popValue());
+		for (Object[] sampleObject : sampleObjects) {
+			assertEquals(sampleObject[1], methodLRUht.popValue());
+		}
 		//the HashTable must be empty
 		assertNull(methodLRUht.popKey());
 	}
@@ -217,7 +227,9 @@ public class LRUMapTest {
 		LRUMap<Object, Object> methodLRUht = new LRUMap<Object, Object>();
 		Object[][] sampleObjects = createSampleKeyVal(sampleElemsNumber);
 		//pushing objects
-		for (Object[] object : sampleObjects) methodLRUht.push(object[0], object[1]);
+		for (Object[] object : sampleObjects) {
+			methodLRUht.push(object[0], object[1]);
+		}
 		//getting values
 		for (Object[] sampleObject : sampleObjects) {
 			assertEquals(sampleObject[1], methodLRUht.peekValue());
@@ -243,11 +255,13 @@ public class LRUMapTest {
 		//pushing objects
 		for (int i=0; i<sampleObjects.length; i++) {		
 			methodLRUht.push(sampleObjects[i][0],sampleObjects[i][1]);
-			assertTrue(methodLRUht.size()==i+1); }
+			assertEquals(methodLRUht.size(), i + 1);
+		}
 		//popping keys
 		for (int i=sampleObjects.length-1; i>=0; i--) {
-			methodLRUht.popKey(); 
-			assertTrue(methodLRUht.size()==i); }
+			methodLRUht.popKey();
+			assertEquals(methodLRUht.size(), i);
+		}
 	}
 
 	/**
@@ -262,12 +276,15 @@ public class LRUMapTest {
 		LRUMap<Object, Object> methodLRUht = new LRUMap<Object, Object>();
 		Object[][] sampleObjects = createSampleKeyVal(sampleElemsNumber);
 		//pushing objects
-		for (Object[] sampleObject : sampleObjects) methodLRUht.push(sampleObject[0], sampleObject[1]);
+		for (Object[] sampleObject : sampleObjects) {
+			methodLRUht.push(sampleObject[0], sampleObject[1]);
+		}
 		//popping keys
 		for (int i=sampleObjects.length-1; i>=0; i--) {
 			assertTrue(methodLRUht.removeKey(sampleObjects[i][0]));
 			assertFalse(methodLRUht.containsKey(sampleObjects[i][0]));
-			assertTrue(methodLRUht.size()==i); }
+			assertEquals(methodLRUht.size(), i);
+		}
 	}
 	
 	/**
@@ -351,12 +368,15 @@ public class LRUMapTest {
 		LRUMap<Object, Object> methodLRUht = new LRUMap<Object, Object>();
 		Object[][] sampleObjects = createSampleKeyVal(sampleElemsNumber);
 		//pushing objects
-		for (Object[] sampleObject : sampleObjects) methodLRUht.push(sampleObject[0], sampleObject[1]);
+		for (Object[] sampleObject : sampleObjects) {
+			methodLRUht.push(sampleObject[0], sampleObject[1]);
+		}
 		Enumeration<Object> methodEnumeration = methodLRUht.keys();
 		int j=0;
 		while(methodEnumeration.hasMoreElements()) {			
 			assertEquals(methodEnumeration.nextElement(),sampleObjects[j][0]);
-			j++; }
+			j++;
+		}
 	}
 
 	/**

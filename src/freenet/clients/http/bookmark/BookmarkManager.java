@@ -138,8 +138,9 @@ public class BookmarkManager implements RequestClient {
 			boolean matched = false;
 			boolean updated = false;
 			for (BookmarkItem bookmarkItem : items) {
-				if (!"USK".equals(bookmarkItem.getKeyType()))
+				if (!"USK".equals(bookmarkItem.getKeyType())){
 					continue;
+				}
 
 				try {
 					FreenetURI furi = new FreenetURI(bookmarkItem.getKey());
@@ -148,8 +149,7 @@ public class BookmarkManager implements RequestClient {
 					if (usk.equals(key, false)) {
 						if (logMINOR) Logger.minor(this, "Updating bookmark for " + furi + " to edition " + edition);
 						matched = true;
-						BookmarkItem item = bookmarkItem;
-						updated |= item.setEdition(edition, node);
+						updated |= bookmarkItem.setEdition(edition, node);
 						// We may have bookmarked the same site twice, so continue the search.
 					}
 				} catch (MalformedURLException mue) {
@@ -417,12 +417,12 @@ public class BookmarkManager implements RequestClient {
 					for (int i = 0; i < nbBookmarks; i++) {
 						SimpleFieldSet subset = sfs.getSubset(BookmarkItem.NAME + i);
 						try {
-							BookmarkItem item = new BookmarkItem(subset, this, node.getAlerts());
-							String name = (isRoot ? "" : prefix + category.name) + '/' + item.name;
-							putPaths(name, item);
-							category.addBookmark(item);
-							item.registerUserAlert();
-							subscribeToUSK(item);
+							BookmarkItem bookmarkItem = new BookmarkItem(subset, this, node.getAlerts());
+							String name = (isRoot ? "" : prefix + category.name) + '/' + bookmarkItem.name;
+							putPaths(name, bookmarkItem);
+							category.addBookmark(bookmarkItem);
+							bookmarkItem.registerUserAlert();
+							subscribeToUSK(bookmarkItem);
 						} catch (MalformedURLException e) {
 							throw new FSParseException(e);
 						}

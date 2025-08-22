@@ -731,9 +731,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				//We need to trim then concat 'End' to the node's reference, this way we have a normal reference(the split() removes the 'End'-s!)
 				PeerAdditionReturnCodes result = addNewNode(s.trim().concat("\nEnd"), privateComment, trust, visibility);
 				//Store the result
-				Integer prev = results.get(result);
-				if (prev == null) prev = Integer.valueOf(0);
-				results.put(result, prev + 1);
+				results.put(result, results.getOrDefault(result, 0) + 1);
 			}
 			
 			PageNode page = ctx.getPageMaker().getPageNode(l10n("reportOfNodeAddition"), ctx);

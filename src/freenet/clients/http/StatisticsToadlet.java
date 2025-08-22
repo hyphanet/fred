@@ -1343,9 +1343,7 @@ public class StatisticsToadlet extends Toadlet {
 	private final static int HISTOGRAM_LENGTH = 10;
 	
 	private int simpleHistogramDivisor(int[] a) {
-		int max;
-		max = Integer.max(Arrays.stream(a).reduce(Integer::max).orElse(1), 1);
-		return max;
+		return Integer.max(Arrays.stream(a).reduce(Integer::max).orElse(1), 1);
 	}
 	
 	private int combinedHistogramDivisor(int[] a, int[] b) {
@@ -1524,15 +1522,16 @@ public class StatisticsToadlet extends Toadlet {
 		peerCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(0.875, false, 1.0), "mark" }, "+");
 		peerCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { "position: absolute; top: " + PEER_CIRCLE_RADIUS + "px; left: " + (PEER_CIRCLE_RADIUS + PEER_CIRCLE_ADDITIONAL_FREE_SPACE) + "px", "mark" }, "+");
 
-		PeerNodeStatus peerNodeStatus;
 		double peerLocation;
 		int histogramIndex;
-		int peerCount = peerNodeStatuses.length;
-		for (PeerNodeStatus nodeStatus : peerNodeStatuses) {
-			peerNodeStatus = nodeStatus;
+		for (PeerNodeStatus peerNodeStatus : peerNodeStatuses) {
 			peerLocation = peerNodeStatus.getLocation();
-			if (!peerNodeStatus.isSearchable()) continue;
-			if (!Location.isValid(peerLocation)) continue;
+			if (!peerNodeStatus.isSearchable()) {
+				continue;
+			}
+			if (!Location.isValid(peerLocation)) {
+				continue;
+			}
 			double[] foafLocations = peerNodeStatus.getPeersLocation();
 			if (foafLocations != null && peerNodeStatus.isRoutable()) {
 				for (double foafLocation : foafLocations) {

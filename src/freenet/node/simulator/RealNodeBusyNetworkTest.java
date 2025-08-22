@@ -18,6 +18,7 @@ import freenet.support.io.FileUtil;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
 import static java.util.concurrent.TimeUnit.DAYS;
 
@@ -139,22 +140,20 @@ public class RealNodeBusyNetworkTest extends RealNodeRoutingTest {
         	for(int j=0;j<nodes.length;j++) {
         		clients[j].prefetch(key.getURI(), DAYS.toMillis(1), 32768, null);
         	}
-        	long totalRunningRequests = 0;
-			for (Node node : nodes) {
-				totalRunningRequests += node.getClientCore().countQueuedRequests();
-			}
+        	long totalRunningRequests;
+        	totalRunningRequests = Arrays.stream(nodes).mapToLong(node -> node.getClientCore().countQueuedRequests()).sum();
         	System.err.println("Running requests: "+totalRunningRequests);
         }
 
         // Now wait until finished. How???
 
         while(true) {
-        	long totalRunningRequests = 0;
-			for (Node node : nodes) {
-				totalRunningRequests += node.getClientCore().countQueuedRequests();
-			}
+        	long totalRunningRequests;
+        	totalRunningRequests = Arrays.stream(nodes).mapToLong(node -> node.getClientCore().countQueuedRequests()).sum();
         	System.err.println("Running requests: "+totalRunningRequests);
-        	if(totalRunningRequests == 0) break;
+        	if(totalRunningRequests == 0) {
+        		break;
+        	}
         	Thread.sleep(1000);
         }
         System.exit(0);

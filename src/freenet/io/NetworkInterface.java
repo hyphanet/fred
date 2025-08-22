@@ -161,9 +161,8 @@ public class NetworkInterface implements Closeable {
 		} finally {
 			lock.unlock();
 		}
-		for (String s : bindToTokenList) {
+		for (String address : bindToTokenList) {
 			InetSocketAddress addr = null;
-			String address = s;
 			try {
 				ServerSocket serverSocket = createServerSocket();
 				addr = new InetSocketAddress(address, port);

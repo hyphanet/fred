@@ -66,8 +66,12 @@ public class LoggerHookChain extends LoggerHook {
         LoggerHook[] newHooks = new LoggerHook[hooksLength-1];
         int x=0;
 		for (LoggerHook hook : hooks) {
-			if (hook == lh) continue;
-			if (x == newHooks.length) return; // nothing matched
+			if (hook == lh) {
+				continue;
+			}
+			if (x == newHooks.length) {
+				return; // nothing matched
+			}
 			newHooks[x++] = hook;
 		}
         if(x == newHooks.length) {

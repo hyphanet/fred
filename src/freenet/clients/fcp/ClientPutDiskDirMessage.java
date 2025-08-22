@@ -87,11 +87,12 @@ public class ClientPutDiskDirMessage extends ClientPutDirMessage {
     	
     	HashMap<String, Object> ret = new HashMap<String, Object>();
 
-        File[] filelist = thisdir.listFiles();
-    	if(filelist == null)
-    		throw new MessageInvalidException(ProtocolErrorMessage.FILE_NOT_FOUND, "No such directory!", identifier, global);
+		File[] filelist = thisdir.listFiles();
+    	if(filelist == null) {
+			throw new MessageInvalidException(ProtocolErrorMessage.FILE_NOT_FOUND, "No such directory!", identifier, global);
+		}
 		for (File file : filelist) {
-			if (file.isHidden() && !includeHiddenFiles) {
+			if (!includeHiddenFiles && file.isHidden()) {
 				continue;
 			}
 			//   Skip unreadable files and dirs
@@ -109,8 +110,9 @@ public class ClientPutDiskDirMessage extends ClientPutDirMessage {
 					throw new MessageInvalidException(ProtocolErrorMessage.FILE_NOT_FOUND, "Not directory and not file: " + file, identifier, global);
 				}
 			} else {
-				if (!allowUnreadableFiles)
+				if (!allowUnreadableFiles) {
 					throw new MessageInvalidException(ProtocolErrorMessage.FILE_NOT_FOUND, "Not readable or doesn't exist: " + file, identifier, global);
+				}
 			}
 		}
     	return ret;
