@@ -114,10 +114,10 @@ public class NetworkInterface implements Closeable {
 	 * Creates a new network interface that can bind to several addresses and
 	 * allows connection filtering on IP address level.
 	 * 
-	 * @param bindTo
-	 *            A comma-separated list of addresses to bind to
+	 * @param port The port to bind to
 	 * @param allowedHosts
 	 *            A comma-separated list of allowed addresses
+	 * @param executor The executor used to accept connections
 	 */
 	protected NetworkInterface(int port, String allowedHosts, Executor executor) throws IOException {
 		this.port = port;
@@ -184,12 +184,13 @@ public class NetworkInterface implements Closeable {
 					lock.unlock();
 				}
 			} catch (IOException e) {
-				if (e instanceof SocketException && ignoreUnbindableIP6 && addr != null &&
-						addr.getAddress() instanceof Inet6Address)
+				if(e instanceof SocketException && ignoreUnbindableIP6 && addr != null && 
+						addr.getAddress() instanceof Inet6Address) {
 					continue;
-				System.err.println("Unable to bind to address " + address + " for port " + port);
-				Logger.error(this, "Unable to bind to address " + address + " for port " + port);
-				if (brokenList == null) brokenList = new ArrayList<String>();
+				}
+				System.err.println("Unable to bind to address "+address+" for port "+port);
+				Logger.error(this, "Unable to bind to address "+address+" for port "+port);
+				if(brokenList == null) brokenList = new ArrayList<String>();
 				brokenList.add(address);
 			}
 		}

@@ -143,8 +143,6 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
 	 * @param uri The URI to fetch.
 	 * @param ctx The config settings for the fetch.
 	 * @param priorityClass The priority at which to schedule the request.
-	 * @param clientContext The context object. Used for round-robin query balancing, also indicates whether
-	 * the request is persistent.
 	 * @param returnBucket The bucket to return the data in. Can be null. If not null, the ClientGetter must either
 	 * write the data directly to the bucket, or copy it and free the original temporary bucket. Preferably the
 	 * former, obviously!
@@ -187,8 +185,6 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
 	/** Start the request.
 	 * @param restart If true, restart a finished request.
 	 * @param overrideURI If non-null, change the URI we are fetching (usually when restarting).
-	 * @param container The database, null if this is a non-persistent request; if this is a persistent
-	 * request, we must be on the database thread, and we will pass the database handle around as needed.
 	 * @param context The client context, contains important mostly non-persistent global objects.
 	 * @return True if we restarted, false if we didn't (but only in a few cases).
 	 * @throws FetchException If we were unable to restart.
@@ -1032,13 +1028,7 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
                 currentState = new SplitFileFetcher(this, dis, context);
                 resumedFetcher = true;
                 return true;
-            } catch (StorageFormatException e) {
-                Logger.error(this, "Failed to restore from splitfile, restarting: "+e, e);
-                return false;
-            } catch (ResumeFailedException e) {
-                Logger.error(this, "Failed to restore from splitfile, restarting: "+e, e);
-                return false;
-            } catch (IOException e) {
+            } catch (StorageFormatException | ResumeFailedException | IOException e) {
                 Logger.error(this, "Failed to restore from splitfile, restarting: "+e, e);
                 return false;
             }

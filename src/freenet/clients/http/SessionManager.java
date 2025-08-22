@@ -71,7 +71,7 @@ public final class SessionManager {
 		if(myCookiePath.isAbsolute())
 			throw new IllegalArgumentException("Illegal cookie path, must be relative: " + myCookiePath);
 		
-		if(myCookiePath.toString().startsWith("/") == false)
+		if(!myCookiePath.toString().startsWith("/"))
 			throw new IllegalArgumentException("Illegal cookie path, must start with /: " + myCookiePath);
 		
 		// FIXME: The new constructor was written at 2010-11-15. Uncomment the following safety check after we gave plugins some time to migrate
@@ -417,7 +417,7 @@ public final class SessionManager {
 		while(sessions.hasMoreElements()) {
 			Session session = sessions.nextElement();
 			
-			if(mSessionsByID.containsKey(session.getID()) == false) {
+			if(!mSessionsByID.containsKey(session.getID())) {
 				Logger.error(this, "Sessions by user ID hashtable contains deleted session, removing it: " + session);
 				
 				mSessionsByUserID.remove(session.getUserID());
