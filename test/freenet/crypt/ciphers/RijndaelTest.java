@@ -1078,14 +1078,14 @@ public class RijndaelTest {
 	public void testStandardTestVKJCA() throws UnsupportedCipherException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException {
 		if(!CTRBlockCipherTest.TEST_JCA) return;
 		// KEYSIZE=128
-		for (int i = 0; i < TEST_VK128.length; i++) {
-			SecretKeySpec k = 
-				new SecretKeySpec(TEST_VK128[i][0], "AES");
+		for (byte[][] bytes : TEST_VK128) {
+			SecretKeySpec k =
+					new SecretKeySpec(bytes[0], "AES");
 			Cipher c = Cipher.getInstance("AES/ECB/NOPADDING");
 			c.init(Cipher.ENCRYPT_MODE, k);
-			
+
 			byte[] output = c.doFinal(TEST_VK_PT);
-			assertTrue(Arrays.equals(output, TEST_VK128[i][1]));
+			assertTrue(Arrays.equals(output, bytes[1]));
 		}
 
 		// KEYSIZE=192
@@ -1104,8 +1104,7 @@ public class RijndaelTest {
 	public void testRandom() throws UnsupportedCipherException {
 		final int[] SIZE = new int[] { 128, /*192,*/ 256 };
 
-		for (int k = 0; k < SIZE.length; k++) {
-			int size = SIZE[k];
+		for (int size : SIZE) {
 			Rijndael aes = new Rijndael(size, size);
 
 			byte[] key = new byte[size / 8];
@@ -1123,10 +1122,10 @@ public class RijndaelTest {
 				aes.decipher(cipher, plain2);
 
 				assertTrue("(" + size + "," + size + //
-						") KEY=" + HexUtil.bytesToHex(key) + //
-						", PLAIN=" + HexUtil.bytesToHex(plain) + //
-						", CIPHER=" + HexUtil.bytesToHex(cipher) + //
-						", PLAIN2=" + HexUtil.bytesToHex(plain2),//
+								") KEY=" + HexUtil.bytesToHex(key) + //
+								", PLAIN=" + HexUtil.bytesToHex(plain) + //
+								", CIPHER=" + HexUtil.bytesToHex(cipher) + //
+								", PLAIN2=" + HexUtil.bytesToHex(plain2),//
 						Arrays.equals(plain, plain2));
 			}
 		}

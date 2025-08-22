@@ -444,20 +444,16 @@ public class HTTPRequestImpl implements HTTPRequest {
 
 		// try parsing all values and put the valid Integers in a new list
 		List<Integer> intValueList = new ArrayList<Integer>();
-		for (int i = 0; i < valueList.size(); i++) {
+		for (String value : valueList) {
 			try {
-				intValueList.add(Integer.valueOf(valueList.get(i)));
+				intValueList.add(Integer.valueOf(value));
 			} catch (Exception e) {
 				// ignore invalid parameter values
 			}
 		}
 
 		// convert the valid Integers to an array of ints
-		int[] values = new int[intValueList.size()];
-		for (int i = 0; i < intValueList.size(); i++) {
-			values[i] = intValueList.get(i);
-		}
-		return values;
+		return intValueList.stream().mapToInt(value -> value).toArray();
 	}
 
 
@@ -548,18 +544,22 @@ public class HTTPRequestImpl implements HTTPRequest {
 							continue;
 						String[] valueparts = lineparts[1].split(";");
 
-						for(int i = 0; i < valueparts.length; i++) {
-							String[] subparts = valueparts[i].split("=");
-							if(subparts.length != 2)
+						for (String valuepart : valueparts) {
+							String[] subparts = valuepart.split("=");
+							if (subparts.length != 2){
 								continue;
+							}
 							String fieldname = subparts[0].trim();
 							String value = subparts[1].trim();
-							if(value.startsWith("\"") && value.endsWith("\""))
+							if (value.startsWith("\"") && value.endsWith("\"")){
 								value = value.substring(1, value.length() - 1);
-							if(fieldname.equalsIgnoreCase("name"))
+							}
+							if (fieldname.equalsIgnoreCase("name")){
 								name = value;
-							else if(fieldname.equalsIgnoreCase("filename"))
+							}
+							else if (fieldname.equalsIgnoreCase("filename")){
 								filename = value;
+							}
 						}
 					}
 					else if(hdrname.equalsIgnoreCase("Content-Type")) {
@@ -757,10 +757,8 @@ public class HTTPRequestImpl implements HTTPRequest {
 	@Override
 	public void freeParts() {
 		if (this.parts == null) return;
-		
-		for (Bucket b : this.parts.values()) {
-			b.free();
-		}
+
+		parts.values().forEach(Bucket::free);
 		parts.clear();
 		freedParts = true;
 		// Do not free data. Caller is responsible for that.

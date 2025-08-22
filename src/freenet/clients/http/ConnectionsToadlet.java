@@ -727,13 +727,11 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			}
 			//The peer's additions results
 			Map<PeerAdditionReturnCodes,Integer> results=new HashMap<PeerAdditionReturnCodes, Integer>();
-			for(int i=0;i<nodesToAdd.length;i++){
+			for (String s : nodesToAdd) {
 				//We need to trim then concat 'End' to the node's reference, this way we have a normal reference(the split() removes the 'End'-s!)
-				PeerAdditionReturnCodes result=addNewNode(nodesToAdd[i].trim().concat("\nEnd"), privateComment, trust, visibility);
+				PeerAdditionReturnCodes result = addNewNode(s.trim().concat("\nEnd"), privateComment, trust, visibility);
 				//Store the result
-				Integer prev = results.get(result);
-				if(prev == null) prev = 0;
-				results.put(result, prev+1);
+				results.put(result, results.getOrDefault(result, 0) + 1);
 			}
 			
 			PageNode page = ctx.getPageMaker().getPageNode(l10n("reportOfNodeAddition"), ctx);

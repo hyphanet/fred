@@ -65,11 +65,15 @@ public class LoggerHookChain extends LoggerHook {
         if(hooksLength == 0) return;
         LoggerHook[] newHooks = new LoggerHook[hooksLength-1];
         int x=0;
-        for(int i=0;i<hooksLength;i++) {
-            if(hooks[i] == lh) continue;
-            if(x == newHooks.length) return; // nothing matched
-            newHooks[x++] = hooks[i];
-        }
+		for (LoggerHook hook : hooks) {
+			if (hook == lh) {
+				continue;
+			}
+			if (x == newHooks.length) {
+				return; // nothing matched
+			}
+			newHooks[x++] = hook;
+		}
         if(x == newHooks.length) {
             hooks = newHooks;
         } else {

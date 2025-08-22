@@ -10,6 +10,7 @@ import freenet.node.Location;
 import freenet.node.Node;
 import freenet.node.NodeInitException;
 import freenet.node.NodeStats;
+import freenet.node.PeerManager;
 import freenet.node.PeerNode;
 import freenet.node.DarknetPeerNode.FRIEND_TRUST;
 import freenet.node.DarknetPeerNode.FRIEND_VISIBILITY;
@@ -63,8 +64,8 @@ public class RealNodeTest {
 			// First set the locations up so we don't spend a long time swapping just to stabilise each network.
 			double div = 1.0 / nodes.length;
 			double loc = 0.0;
-			for (int i=0; i<nodes.length; i++) {
-				nodes[i].setLocation(loc);
+			for (Node node : nodes) {
+				node.setLocation(loc);
 				loc += div;
 			}
 		}
@@ -74,20 +75,17 @@ public class RealNodeTest {
 				connect(nodes[i], nodes[next]);
 			}
 		}
-		for (int i=0; i<nodes.length; i++) {
-			Node a = nodes[i];
+		for (Node a : nodes) {
 			// Normalise the probabilities
 			double norm = 0.0;
-			for (int j=0; j<nodes.length; j++) {
-				Node b = nodes[j];
+			for (Node b : nodes) {
 				if (a.getLocation() == b.getLocation()) continue;
-				norm += 1.0 / distance (a, b);
+				norm += 1.0 / distance(a, b);
 			}
 			// Create degree/2 outgoing connections
-			for (int k=0; k<nodes.length; k++) {
-				Node b = nodes[k];
+			for (Node b : nodes) {
 				if (a.getLocation() == b.getLocation()) continue;
-				double p = 1.0 / distance (a, b) / norm;
+				double p = 1.0 / distance(a, b) / norm;
 				for (int n = 0; n < degree / 2; n++) {
 					if (random.nextFloat() < p) {
 						connect(a, b);
@@ -132,7 +130,7 @@ public class RealNodeTest {
 	}
 	
 	static void waitForAllConnected(Node[] nodes) throws InterruptedException {
-		long tStart = System.currentTimeMillis();
+		final long tStart = System.currentTimeMillis();
 		while(true) {
 			int countFullyConnected = 0;
 			int countReallyConnected = 0;
@@ -144,31 +142,36 @@ public class RealNodeTest {
 			double totalPingTime = 0.0;
 			double maxPingTime = 0.0;
 			double minPingTime = Double.MAX_VALUE;
-			for(int i=0;i<nodes.length;i++) {
-				int countConnected = nodes[i].getPeers().countConnectedDarknetPeers();
-				int countAlmostConnected = nodes[i].getPeers().countAlmostConnectedDarknetPeers();
-				int countTotal = nodes[i].getPeers().countValidPeers();
-				int countBackedOff = nodes[i].getPeers().countBackedOffPeers(false);
-				int countCompatible = nodes[i].getPeers().countCompatibleDarknetPeers();
+			for (Node node : nodes) {
+				final PeerManager peerManager = node.getPeers();
+				final int countConnected = peerManager.countConnectedDarknetPeers();
+				final int countAlmostConnected = peerManager.countAlmostConnectedDarknetPeers();
+				final int countTotal = peerManager.countValidPeers();
+				final int countBackedOff = peerManager.countBackedOffPeers(false);
+				final int countCompatible = peerManager.countCompatibleDarknetPeers();
 				totalPeers += countTotal;
 				totalConnections += countConnected;
 				totalPartialConnections += countAlmostConnected;
 				totalCompatibleConnections += countCompatible;
 				totalBackedOff += countBackedOff;
-				double pingTime = nodes[i].getNodeStats().getNodeAveragePingTime();
+				double pingTime = node.getNodeStats().getNodeAveragePingTime();
 				totalPingTime += pingTime;
-				if(pingTime > maxPingTime) maxPingTime = pingTime;
-				if(pingTime < minPingTime) minPingTime = pingTime;
-				if(countConnected == countTotal) {
+				maxPingTime = Double.max(maxPingTime, pingTime);
+				minPingTime = Double.min(minPingTime, pingTime);
+				if (countConnected == countTotal) {
 					countFullyConnected++;
-					if(countBackedOff == 0) countReallyConnected++;
+					if (countBackedOff == 0) {
+						countReallyConnected++;
+					}
 				} else {
-					if(logMINOR)
-						Logger.minor(RealNodeTest.class, "Connection count for "+nodes[i]+" : "+countConnected+" partial "+countAlmostConnected);
+					if (logMINOR){
+						Logger.minor(RealNodeTest.class, "Connection count for " + node + " : " + countConnected + " partial " + countAlmostConnected);
+					}
 				}
-				if(countBackedOff > 0) {
-					if(logMINOR)
-						Logger.minor(RealNodeTest.class, "Backed off: "+nodes[i]+" : "+countBackedOff);
+				if (countBackedOff > 0) {
+					if (logMINOR){
+						Logger.minor(RealNodeTest.class, "Backed off: " + node + " : " + countBackedOff);
+					}
 				}
 			}
 			double avgPingTime = totalPingTime / nodes.length;

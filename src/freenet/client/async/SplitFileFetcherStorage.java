@@ -853,14 +853,13 @@ public class SplitFileFetcherStorage {
                 segmentsToTryDecode.add(segment);
             }
         }
-        for(int i=0;i<segments.length;i++) {
-            SplitFileFetcherSegmentStorage segment = segments[i];
-            try {
-                segment.readSegmentKeys();
-            } catch (ChecksumFailedException e) {
-                throw new StorageFormatException("Keys corrupted");
-            }
-        }
+		for (SplitFileFetcherSegmentStorage segment : segments) {
+			try {
+				segment.readSegmentKeys();
+			} catch (ChecksumFailedException e) {
+				throw new StorageFormatException("Keys corrupted");
+			}
+		}
         if(this.crossSegments != null) {
             for(SplitFileFetcherCrossSegmentStorage crossSegment : this.crossSegments)
                 // Must be after reading the metadata for the plain segments.

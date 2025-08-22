@@ -502,7 +502,7 @@ public class ToadletContextImpl implements ToadletContext {
 		sdf.setTimeZone(TZ_UTC);
 		return sdf.parse(httpDate);
 	}
-	
+
 	/**
 	 * Handle an incoming connection. Blocking, obviously.
 	 */

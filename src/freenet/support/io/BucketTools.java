@@ -197,9 +197,9 @@ public class BucketTools {
 
 	public static Bucket[] nonNullBuckets(Bucket[] array) {
 		List<Bucket> list = new ArrayList<Bucket>(array.length);
-		for (int i = 0; i < array.length; i++) {
-			if (array[i] != null) {
-				list.add(array[i]);
+		for (Bucket bucket : array) {
+			if (bucket != null) {
+				list.add(bucket);
 			}
 		}
 

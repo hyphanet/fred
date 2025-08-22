@@ -161,9 +161,8 @@ public class NetworkInterface implements Closeable {
 		} finally {
 			lock.unlock();
 		}
-		for (int serverSocketIndex = 0; serverSocketIndex < bindToTokenList.size(); serverSocketIndex++) {
+		for (String address : bindToTokenList) {
 			InetSocketAddress addr = null;
-			String address = bindToTokenList.get(serverSocketIndex);
 			try {
 				ServerSocket serverSocket = createServerSocket();
 				addr = new InetSocketAddress(address, port);
@@ -173,13 +172,13 @@ public class NetworkInterface implements Closeable {
 				try {
 					acceptor.setSoTimeout(timeout);
 				} catch (SocketException e) {
-					Logger.error(this, "Unable to setSoTimeout in setBindTo() on "+addr);
+					Logger.error(this, "Unable to setSoTimeout in setBindTo() on " + addr);
 				}
 				lock.lock();
 				try {
 					acceptors.add(acceptor);
 					runningAcceptors++;
-					executor.execute(acceptor, "Network Interface Acceptor for "+acceptor.serverSocket);
+					executor.execute(acceptor, "Network Interface Acceptor for " + acceptor.serverSocket);
 				} finally {
 					lock.unlock();
 				}

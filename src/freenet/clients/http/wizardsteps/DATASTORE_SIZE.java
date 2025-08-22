@@ -21,6 +21,7 @@ import freenet.support.io.DatastoreUtil;
 import java.io.File;
 
 import java.io.File;
+import java.util.Arrays;
 
 /**
  * Allows the user to select datastore size, considering available storage space when offering options.
@@ -170,8 +171,12 @@ public class DATASTORE_SIZE implements Step {
 
 	public static long maxDatastoreSize(Node node) {
 		long maxMemory = NodeStarter.getMemoryLimitBytes();
-		if(maxMemory == Long.MAX_VALUE) return 1024*1024*1024; // Treat as don't know.
-		if(maxMemory < 128*1024*1024) return 1024*1024*1024; // 1GB default if don't know or very small memory.
+		if(maxMemory == Long.MAX_VALUE) {
+			return 1024*1024*1024; // Treat as don't know.
+		}
+		if(maxMemory < 128*1024*1024) {
+			return 1024*1024*1024; // 1GB default if don't know or very small memory.
+		}
 		// Don't use the first 100MB for slot filters.
 		long available = maxMemory - 100*1024*1024;
 		// Don't use more than 50% of available memory for slot filters.
@@ -189,13 +194,13 @@ public class DATASTORE_SIZE implements Step {
 		long freeSpace = storeDir.getUsableSpace();
 		File[] files = storeDir.listFiles();
 
-		for (int i = 0; i < files.length; i++) {
-			freeSpace += files[i].length();
+		if (files != null) {
+			freeSpace += Arrays.stream(files).mapToLong(File::length).sum();
+		} else {
+			// I/O error while listing files, or storeDir is not a directory.
 		}
 
-		if (freeSpace < maxSize) {
-			maxSize = freeSpace;
-		}
+		maxSize = Long.min(maxSize, freeSpace);
 
 		// Leave some margin.
 		maxSize = maxSize - 1024*1024*1024;
