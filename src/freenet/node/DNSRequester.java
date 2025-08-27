@@ -242,6 +242,9 @@ public class DNSRequester implements Runnable {
             // 2. Now, manage the attempt. Apply the unified backoff logic. This will return false if the peer is in cooldown.
             boolean attemptMade = managePeerAttempt(pn, now, false, isStartupPhase);
             return attemptMade; // The return value should still depend on whether an actual attempt was made.
+        } else {
+            recentNodeIdentitySet.clear();
+            recentNodeIdentityQueue.clear();
         }
         return false; // No hostname peer was processed.
     }
