@@ -45,8 +45,6 @@ public class DNSRequester implements Runnable {
     private static final long MAX_COOLDOWN_MS = 1 * 60 * 60 * 1000;
     // Prevents long overflow in backoff calculation
     private static final int MAX_BACKOFF_EXPONENT = 30;
-    // If we have fewer than this many hostname candidates, don't bother with complex queueing.
-    private static final int HOSTNAME_CANDIDATE_OPTIMIZATION_THRESHOLD = 5;
     // The percentage of other hostname peers to try before re-trying a recently queried one.
     private static final double HOSTNAME_RECENCY_QUEUE_PERCENTAGE = 0.81;
     // Periodic time (every 6 hours) that runs a cleanup task to keep our maps free of stale peers
@@ -94,8 +92,8 @@ public class DNSRequester implements Runnable {
 
         // Get all peers and partition them
         PeerNode[] allPeers = node.getPeers().myPeers();
+        cleanupStalePeers(now, allPeers);
         PartitionedPeers partitioned = partitionPeers(allPeers);
-        cleanupStalePeers(now, partitioned);
 
         if (logMINOR) {
             if ((now - lastLogTime) > LOG_THROTTLE_MS) {
@@ -138,23 +136,27 @@ public class DNSRequester implements Runnable {
      * removed from the network (i.e., it no longer appears in node.getPeers().myPeers()), its entry
      * might persist in these maps indefinitely, leading to a slow memory leak. This helps keep maps clean.
      * @param now The current time in milliseconds.
-     * @param partitioned The list of all unconnected peers (both IP and hostname).
+     * @param allPeers The list of all unconnected peers (both IP and hostname).
      */
-    private void cleanupStalePeers(long now, PartitionedPeers partitioned) {
+    private void cleanupStalePeers(long now, PeerNode[] allPeers) {
         if (now - lastCleanupTime > CLEANUP_INTERVAL_MS) {
-            if(logMINOR) {
+            if (logMINOR) {
                 Logger.minor(this, "Running periodic cleanup of stale peer state...");
             }
 
-            Set<PeerNode> activePeers = new HashSet<>(partitioned.ipPeers.size() + partitioned.hostnamePeers.size());
-            activePeers.addAll(partitioned.ipPeers);
-            activePeers.addAll(partitioned.hostnamePeers);
+            // Keep only unconnected peers
+            Set<PeerNode> activePeers = new HashSet<>(allPeers.length);
+            for (PeerNode peer : allPeers) {
+                if (!peer.isConnected()) {
+                    activePeers.add(peer);
+                }
+            }
 
             // Efficiently remove any keys (peers) from our state map that are no longer active.
             peerConnectionStates.keySet().retainAll(activePeers);
 
             lastCleanupTime = now;
-            if(logMINOR) {
+            if (logMINOR) {
                 Logger.minor(this, "Stale peer cleanup complete.");
             }
         }
@@ -224,19 +226,14 @@ public class DNSRequester implements Runnable {
 
             // 1. Add the selected peer to the recency set immediately.
             // This ensures we don't pick it again right away, even if it's in cooldown.
-            if (hostnameCandidates.length < HOSTNAME_CANDIDATE_OPTIMIZATION_THRESHOLD) {
-                // no need for optimizations: just clear all state
-                recentNodeIdentitySet.clear();
-                recentNodeIdentityQueue.clear();
-            } else {
-                // do not request this node again,
-                // until at least 81% (HOSTNAME_RECENCY_QUEUE_PERCENTAGE) of the other unconnected nodes have been checked
-                recentNodeIdentitySet.add(pn.getLocation());
-                recentNodeIdentityQueue.offerFirst(pn.getLocation());
-                final int removalThreshold = (int) Math.ceil(HOSTNAME_RECENCY_QUEUE_PERCENTAGE * hostnameCandidates.length);
-                while (recentNodeIdentityQueue.size() > removalThreshold) {
-                    recentNodeIdentitySet.remove(recentNodeIdentityQueue.removeLast());
-                }
+
+            // Do not request this node again, until at least 81% (HOSTNAME_RECENCY_QUEUE_PERCENTAGE)
+            // of the other unconnected nodes have been checked
+            recentNodeIdentitySet.add(pn.getLocation());
+            recentNodeIdentityQueue.offerFirst(pn.getLocation());
+            final int removalThreshold = (int) Math.ceil(HOSTNAME_RECENCY_QUEUE_PERCENTAGE * hostnameCandidates.length);
+            while (recentNodeIdentityQueue.size() > removalThreshold) {
+                recentNodeIdentitySet.remove(recentNodeIdentityQueue.removeLast());
             }
 
             // 2. Now, manage the attempt. Apply the unified backoff logic. This will return false if the peer is in cooldown.
