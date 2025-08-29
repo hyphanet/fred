@@ -592,12 +592,16 @@ final public class FileUtil {
 				return false;
 			}
 		} else {
+			boolean success = true;
 			for(File subfile: wd.listFiles()) {
-				if(!removeAll(subfile)) return false;
+				if(!secureDeleteAll(subfile)){
+					success = false;
+				}
 			}
 			if(!wd.delete()) {
 				Logger.error(FileUtil.class, "Could not delete directory: "+wd);
 			}
+			return success;
 		}
 		return true;
 	}
@@ -613,12 +617,16 @@ final public class FileUtil {
 				return false;
 			}
 		} else {
+			boolean success = true;
 			for(File subfile: wd.listFiles()) {
-				if(!removeAll(subfile)) return false;
+				if(!removeAll(subfile)){
+					success = false;
+				}
 			}
 			if(!wd.delete()) {
 				Logger.error(FileUtil.class, "Could not delete directory: "+wd);
 			}
+			return success;
 		}
 		return true;
 	}

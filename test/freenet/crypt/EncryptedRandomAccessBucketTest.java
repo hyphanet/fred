@@ -145,10 +145,11 @@ public class EncryptedRandomAccessBucketTest extends BucketTestBase {
         }
     }
     
-    private File base = new File("tmp.encrypted-random-access-thing-test");
+    private File base;
     
     @Before
     public void setUp() {
+        base = new File("tmp.encrypted-random-access-thing-test");
         base.mkdir();
     }
     

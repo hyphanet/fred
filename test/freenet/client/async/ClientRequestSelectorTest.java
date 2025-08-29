@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Random;
 
+import org.junit.After;
 import org.junit.Test;
 
 import freenet.client.ClientMetadata;
@@ -84,6 +85,11 @@ public class ClientRequestSelectorTest {
         checker = new CRCChecksumChecker();
         memoryLimitedJobRunner = new MemoryLimitedJobRunner(9 * 1024 * 1024L, 20, executor, NativeThread.JAVA_PRIORITY_RANGE);
         jobRunner = new DummyJobRunner(executor, null);
+    }
+
+    @After
+    public void tearDown() {
+        FileUtil.removeAll(dir);
     }
 
     private static class MyCallback implements SplitFileInserterStorageCallback {

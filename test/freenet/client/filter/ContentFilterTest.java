@@ -10,10 +10,8 @@ import static org.junit.Assert.*;
 
 import freenet.l10n.BaseL10n;
 import freenet.l10n.BaseL10nTest;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+
+import java.io.*;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -357,6 +355,7 @@ public class ContentFilterTest {
         try (
             FileOutputStream fos = new FileOutputStream("output.utf16")
         ){
+            new File("output.utf16").deleteOnExit();
             ArrayBucket out = new ArrayBucket();
             filter.readFilter(new ArrayBucket(total).getInputStream(), out.getOutputStream(), "UTF-16", null, null, null);
             fos.write(out.toByteArray());
@@ -373,6 +372,7 @@ public class ContentFilterTest {
         try (
             FileOutputStream fos = new FileOutputStream("output.filtered")
         ){
+            new File("output.filtered").deleteOnExit();
             ArrayBucket out = new ArrayBucket();
             FilterStatus fo = ContentFilter.filter(new ArrayBucket(total).getInputStream(), out.getOutputStream(), "text/html", null, null, null);
             fos.write(out.toByteArray());
@@ -390,6 +390,7 @@ public class ContentFilterTest {
         if (failed) {
             try (FileOutputStream fos = new FileOutputStream("unfiltered")) {
                 fos.write(total);
+                new File("unfiltered").deleteOnExit();
             }
             throw failures.get(0);
         }
