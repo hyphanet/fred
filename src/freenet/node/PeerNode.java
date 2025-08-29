@@ -5696,4 +5696,42 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		return backedOffPercentBulk;
 	}
 
+	/**
+     * Returns true if any of the addresses known for this PeerNode
+     * are hostname-based (ie, the FreenetInetAddress.hasHostname() is true).
+     */
+    public boolean hasAnyHostnameAddress() {
+        // First check the handshakeIPs snapshot (most up-to-date addresses)
+        Peer[] localHandshake;
+        synchronized(this) {
+            localHandshake = this.handshakeIPs;
+        }
+        if (localHandshake != null) {
+            for (Peer p : localHandshake) {
+                if (p == null) continue;
+                FreenetInetAddress a = p.getFreenetAddress();
+                if (a != null && a.hasHostname()) return true;
+            }
+        }
+
+        // Check nominalPeer list (addresses advertised in node ref)
+        Peer[] localNominal;
+        synchronized(this) {
+            localNominal = nominalPeer.toArray(new Peer[nominalPeer.size()]);
+        }
+        for (Peer p : localNominal) {
+            if (p == null) continue;
+            FreenetInetAddress a = p.getFreenetAddress();
+            if (a != null && a.hasHostname()) return true;
+        }
+
+        // And lastly, indirectly check detectedPeer via getPeer() (if neither list had hostnames)
+        Peer d = getPeer();
+        if (d != null) {
+            FreenetInetAddress a = d.getFreenetAddress();
+            if (a != null && a.hasHostname()) return true;
+        }
+
+        return false;
+    }
 }
