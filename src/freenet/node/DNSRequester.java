@@ -178,10 +178,10 @@ public class DNSRequester implements Runnable {
                 peerConnectionStates.remove(peer);
             } else {
                 // Unconnected: categorize for processing.
-                if (peer.getPeer().getFreenetAddress().hasHostname()) {
-                    hostnamePeers.add(peer);
+                if (pn.hasAnyHostnameAddress()) {
+                    hostnamePeers.add(pn);
                 } else {
-                    ipPeers.add(peer);
+                    ipPeers.add(pn);
                 }
             }
         }
