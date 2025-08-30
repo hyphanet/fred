@@ -69,7 +69,7 @@ public class ClientRequestSelectorTest {
     final PersistentJobRunner jobRunner;
 
     public ClientRequestSelectorTest() throws IOException {
-        dir = new File("split-file-inserter-storage-test");
+        dir = new File("client-request-selector-test");
         dir.mkdir();
         executor = new WaitableExecutor(new PooledExecutor());
         ticker = new CheatingTicker(executor);

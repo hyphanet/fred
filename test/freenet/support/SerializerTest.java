@@ -82,9 +82,9 @@ public class SerializerTest {
 				Object read = Serializer.readFromDataInputStream(datum.getClass(), dis);
 				//Might be an array.
 				if (read instanceof double[]) {
-					assertTrue(Arrays.equals((double[])datum, (double[])read));
+					assertArrayEquals((double[]) datum, (double[]) read, 0.0);
 				} else if (read instanceof float[]) {
-					assertTrue(Arrays.equals((float[])datum, (float[])read));
+					assertArrayEquals((float[]) datum, (float[]) read, 0.0F);
 				} else {
 					assertEquals(datum, read);
 				}

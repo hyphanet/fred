@@ -252,7 +252,7 @@ public class EncryptedRandomAccessBufferTest {
         erat.pwrite(0, result, 0, 20);
     }
     
-    private File base = new File("tmp.encrypted-random-access-thing-test");
+    private final File base = new File("tmp.encrypted-random-access-buffer-test");
     
     @Before
     public void setUp() {
