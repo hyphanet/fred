@@ -850,10 +850,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 				localHandshakeIP.getHandshakeAddress();
 			}
 		}
-		// De-dupe with LinkedHashSet to preserve order
-		Set<Peer> ret = new LinkedHashSet<Peer>();
-		Collections.addAll(ret, localHandshakeIPs);
-		return ret.toArray(new Peer[0]);
+		return Arrays.stream(localHandshakeIPs).distinct().toArray(Peer[]::new);
 	}
 
 	/**
