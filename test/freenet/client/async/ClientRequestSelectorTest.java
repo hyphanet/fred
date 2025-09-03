@@ -7,8 +7,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Random;
 
-import org.junit.After;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import freenet.client.ClientMetadata;
 import freenet.client.HighLevelSimpleClientImpl;
@@ -43,21 +44,18 @@ import freenet.support.io.FileUtil;
 import freenet.support.io.FilenameGenerator;
 import freenet.support.io.NativeThread;
 import freenet.support.io.NullOutputStream;
-import freenet.support.io.PersistentFileTracker;
-import freenet.support.io.PooledFileRandomAccessBufferFactory;
 import freenet.support.io.RAFInputStream;
 import freenet.support.io.ReadOnlyRandomAccessBuffer;
 import freenet.support.io.TempBucketFactory;
-import freenet.support.io.TrivialPersistentFileTracker;
 
 public class ClientRequestSelectorTest {
 
     final LockableRandomAccessBufferFactory smallRAFFactory = new ByteArrayRandomAccessBufferFactory();
     final FilenameGenerator fg;
-    final PersistentFileTracker persistentFileTracker;
-    final LockableRandomAccessBufferFactory bigRAFFactory;
     final BucketFactory smallBucketFactory;
     final BucketFactory bigBucketFactory;
+    @Rule
+    public final TemporaryFolder tempFolder;
     final File dir;
     final InsertContext baseContext;
     final WaitableExecutor executor;
@@ -69,14 +67,13 @@ public class ClientRequestSelectorTest {
     final PersistentJobRunner jobRunner;
 
     public ClientRequestSelectorTest() throws IOException {
-        dir = new File("client-request-selector-test");
-        dir.mkdir();
+        tempFolder = new TemporaryFolder();
+        tempFolder.create();
+        dir = tempFolder.newFolder("client-request-selector-test");
         executor = new WaitableExecutor(new PooledExecutor());
         ticker = new CheatingTicker(executor);
         RandomSource r = new DummyRandomSource(12345);
         fg = new FilenameGenerator(r, true, dir, "freenet-test");
-        persistentFileTracker = new TrivialPersistentFileTracker(dir, fg);
-        bigRAFFactory = new PooledFileRandomAccessBufferFactory(fg, r);
         smallBucketFactory = new ArrayBucketFactory();
         bigBucketFactory = new TempBucketFactory(executor, fg, 0, 0, r, false, 0, null);
         baseContext = HighLevelSimpleClientImpl.makeDefaultInsertContext(bigBucketFactory, new SimpleEventProducer());
@@ -85,11 +82,6 @@ public class ClientRequestSelectorTest {
         checker = new CRCChecksumChecker();
         memoryLimitedJobRunner = new MemoryLimitedJobRunner(9 * 1024 * 1024L, 20, executor, NativeThread.JAVA_PRIORITY_RANGE);
         jobRunner = new DummyJobRunner(executor, null);
-    }
-
-    @After
-    public void tearDown() {
-        FileUtil.removeAll(dir);
     }
 
     private static class MyCallback implements SplitFileInserterStorageCallback {

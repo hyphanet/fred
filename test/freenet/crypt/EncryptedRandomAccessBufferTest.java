@@ -20,8 +20,6 @@ import java.security.Security;
 import java.util.Random;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -29,10 +27,10 @@ import org.junit.rules.ExpectedException;
 import freenet.client.async.ClientContext;
 import freenet.support.io.BucketTools;
 import freenet.support.io.ByteArrayRandomAccessBuffer;
-import freenet.support.io.FileUtil;
 import freenet.support.io.FileRandomAccessBuffer;
 import freenet.support.io.ResumeFailedException;
 import freenet.support.io.StorageFormatException;
+import org.junit.rules.TemporaryFolder;
 
 public class EncryptedRandomAccessBufferTest {
     private final static EncryptedRandomAccessBufferType[] types = 
@@ -44,7 +42,10 @@ public class EncryptedRandomAccessBufferTest {
     static{
         Security.addProvider(new BouncyCastleProvider());
     }
-    
+
+    @Rule
+    public final TemporaryFolder tempFolder = new TemporaryFolder();
+
     @Rule public ExpectedException thrown= ExpectedException.none();
     
     @Test
@@ -251,22 +252,10 @@ public class EncryptedRandomAccessBufferTest {
                     + " be written to.");
         erat.pwrite(0, result, 0, 20);
     }
-    
-    private final File base = new File("tmp.encrypted-random-access-buffer-test");
-    
-    @Before
-    public void setUp() {
-        base.mkdir();
-    }
-    
-    @After
-    public void tearDown() {
-        FileUtil.removeAll(base);
-    }
 
     @Test
     public void testStoreTo() throws IOException, StorageFormatException, ResumeFailedException, GeneralSecurityException {
-        File tempFile = File.createTempFile("test-storeto", ".tmp", base);
+        File tempFile = tempFolder.newFile();
         byte[] buf = new byte[4096];
         Random r = new Random(1267612);
         r.nextBytes(buf);
@@ -298,7 +287,7 @@ public class EncryptedRandomAccessBufferTest {
     
     @Test
     public void testSerialize() throws IOException, StorageFormatException, ResumeFailedException, GeneralSecurityException, ClassNotFoundException {
-        File tempFile = File.createTempFile("test-storeto", ".tmp", base);
+        File tempFile = tempFolder.newFile();
         byte[] buf = new byte[4096];
         Random r = new Random(1267612);
         r.nextBytes(buf);
