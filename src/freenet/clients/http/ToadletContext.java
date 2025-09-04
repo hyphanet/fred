@@ -27,8 +27,6 @@ public interface ToadletContext {
      * @param mvt Any extra headers. Can be null.
      * @param mimeType The MIME type of the reply.
      * @param length The length of the reply.
-     * @param forceDisableJavascript Disable javascript even if it is enabled for the web interface
-     * as a whole.
      */
     void sendReplyHeaders(int code, String desc, MultiValueTable<String,String> mvt, String mimeType, long length) throws ToadletContextClosedException, IOException;
     

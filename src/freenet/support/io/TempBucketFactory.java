@@ -719,7 +719,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessBuf
 	 * just to free up space. Otherwise we will migrate all long-lived buckets but
 	 * not any others. 
 	 * @return True if we migrated any buckets.
-	 * @throws InsufficientSpaceException If there is not enough space to migrate buckets to disk.
+	 * @throws InsufficientDiskSpaceException If there is not enough space to migrate buckets to disk.
 	 */
 	private boolean cleanBucketQueue(long now, boolean force) throws InsufficientDiskSpaceException {
 		boolean shouldContinue = true;
