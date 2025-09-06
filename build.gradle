@@ -267,6 +267,7 @@ dependencies {
     testImplementation "org.mockito:mockito-core:1.9.5"
     testImplementation "org.hamcrest:hamcrest:3.0"
     testImplementation "org.objenesis:objenesis:1.0"
+    testImplementation "org.jsoup:jsoup:1.21.2"
 }
 
 task tar(type: Tar) {
