@@ -239,7 +239,18 @@ public class ToadletContextImpl implements ToadletContext {
 		}
 		sendReplyHeaders(sockOutputStream, replyCode, replyDescription, mvt, mimeType, contentLength, mTime, shouldDisconnect, enableJavascript, allowFrames);
 	}
-	
+
+	/**
+	 * Returns whether one of the {@code sendReplyHeaders} methods has been
+	 * called.
+	 *
+	 * @return {@code true} if reply headers have been sent,
+	 *        {@code false} otherwise
+	 */
+	private boolean hasSentReplyHeaders() {
+		return firstReplySendingException != null;
+	}
+
 	@Override
 	public PageMaker getPageMaker() {
 		return pagemaker;
@@ -673,6 +684,10 @@ public class ToadletContextImpl implements ToadletContext {
 						
 						try {
 							callToadletMethod(t, method, uri, req, ctx, data, sock, redirect);
+
+							if (!ctx.hasSentReplyHeaders()) {
+								ctx.sendReplyHeaders(204, "No Content", null, null, 0);
+							}
 						} catch (RedirectException re) {
 							uri = re.newuri;
 							redirect = true;
