@@ -3370,8 +3370,8 @@ public class Node implements TimeSkewDetectorCallback {
 			Logger.normal(this, "Using wrapper correctly: "+nodeStarter);
 			System.out.println("Using wrapper correctly: "+nodeStarter);
 		} else {
-			Logger.error(this, "NOT using wrapper (at least not correctly).  Your freenet-ext.jar <http://downloads.freenetproject.org/alpha/freenet-ext.jar> and/or wrapper.conf <https://emu.freenetproject.org/svn/trunk/apps/installer/installclasspath/config/wrapper.conf> need to be updated.");
-			System.out.println("NOT using wrapper (at least not correctly).  Your freenet-ext.jar <http://downloads.freenetproject.org/alpha/freenet-ext.jar> and/or wrapper.conf <https://emu.freenetproject.org/svn/trunk/apps/installer/installclasspath/config/wrapper.conf> need to be updated.");
+			Logger.error(this, "NOT using wrapper (at least not correctly).  Your freenet-ext.jar <https://ftp.lysator.liu.se/pub/freenet/fred-releases/build01495/freenet-ext.jar> and/or wrapper.conf <https://github.com/hyphanet/java_installer/raw/refs/heads/next/res/wrapper.conf> need to be updated.");
+			System.out.println("NOT using wrapper (at least not correctly).  Your freenet-ext.jar <https://ftp.lysator.liu.se/pub/freenet/fred-releases/build01495/freenet-ext.jar> and/or wrapper.conf <https://github.com/hyphanet/java_installer/raw/refs/heads/next/res/wrapper.conf> need to be updated.");
 		}
 		Logger.normal(this, "Freenet 0.7.5 Build #"+Version.buildNumber()+" r"+Version.cvsRevision());
 		System.out.println("Freenet 0.7.5 Build #"+Version.buildNumber()+" r"+Version.cvsRevision());
