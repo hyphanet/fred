@@ -614,6 +614,7 @@ public class ToadletContextImpl implements ToadletContext {
 					} catch (NumberFormatException e) {
 						ctx.shouldDisconnect = true;
 						ctx.sendReplyHeaders(400, "Bad Request", null, null, -1);
+						sock.close();
 						return;
 					}
 					if(allowPost && ((!container.publicGatewayMode()) || ctx.isAllowedFullAccess())) {

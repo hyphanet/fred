@@ -1,5 +1,6 @@
 package freenet.clients.http;
 
+import freenet.support.io.ArrayBucketFactory;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -169,6 +170,13 @@ public class ToadletContextImplTest {
 		verify(pageMaker, never()).parseMode(any(), eq(toadletContainer));
 	}
 
+	@Test
+	public void sendingPostRequestWithInvalidContentLengthHeaderClosesConnection() throws IOException {
+		setupInputStream("POST /invalid-content-length HTTP/1.1\r\nConnection: Keep-Alive\r\nContent-Length: invalid\r\n\r\n");
+		ToadletContextImpl.handle(socket, toadletContainer, null, null, null);
+		verify(socket).close();
+	}
+
 	private void setupInputStream(String request) throws IOException {
 		when(socket.getInputStream()).thenReturn(new ByteArrayInputStream(request.getBytes(UTF_8)));
 	}
@@ -184,6 +192,7 @@ public class ToadletContextImplTest {
 	{
 		try {
 			when(socket.getOutputStream()).thenReturn(outputStream);
+			when(toadletContainer.getBucketFactory()).thenReturn(new ArrayBucketFactory());
 
 			doAnswer(invocation -> {
 				ToadletContext toadletContext = (ToadletContext) invocation.getArguments()[2];
