@@ -46,7 +46,7 @@ public class ToadletContextImplTest {
 		when(toadletContainer.findToadlet(any())).thenReturn(homepageToadlet);
 		ToadletContextImpl.handle(socket, toadletContainer, null, null, null);
 		assertThat(parse(outputStream.toByteArray()), contains(allOf(
-				hasStatus(200), hasBody(equalTo("OK\n".getBytes(UTF_8)))
+				hasStatus(200), hasBody(equalTo("GET OK\n".getBytes(UTF_8)))
 		)));
 	}
 
@@ -67,7 +67,7 @@ public class ToadletContextImplTest {
 		when(toadletContainer.findToadlet(new URI("/redirect-toadlet"))).thenReturn(redirectingToadlet);
 		when(toadletContainer.findToadlet(new URI("/new-location"))).thenReturn(homepageToadlet);
 		ToadletContextImpl.handle(socket, toadletContainer, null, null, null);
-		assertThat(parse(outputStream.toByteArray()), contains(allOf(hasStatus(200))));
+		assertThat(parse(outputStream.toByteArray()), contains(allOf(hasStatus(200), hasBody(equalTo("GET OK\n".getBytes(UTF_8))))));
 	}
 
 	@Test
@@ -125,7 +125,7 @@ public class ToadletContextImplTest {
 		ToadletContextImpl.handle(socket, toadletContainer, null, null, null);
 		assertThat(parse(outputStream.toByteArray()), contains(allOf(
 				hasStatus(equalTo(200), equalTo("OK")),
-				hasBody(equalTo("OK\n".getBytes(UTF_8)))
+				hasBody(equalTo("GET OK\n".getBytes(UTF_8)))
 		)));
 	}
 
@@ -231,7 +231,7 @@ public class ToadletContextImplTest {
 		assertThat(parse(outputStream.toByteArray()), contains(allOf(
 				hasStatus(equalTo(200), equalTo("Works")),
 				hasHeader("X-Test-Header", contains("Yes")),
-				hasBody(equalTo("OK\n".getBytes(UTF_8)))
+				hasBody(equalTo("POST OK\n".getBytes(UTF_8)))
 		)));
 	}
 
@@ -245,7 +245,7 @@ public class ToadletContextImplTest {
 		assertThat(parse(outputStream.toByteArray()), contains(allOf(
 				hasStatus(equalTo(200), equalTo("Works")),
 				hasHeader("X-Test-Header", contains("Yes")),
-				hasBody(equalTo("OK\n".getBytes(UTF_8)))
+				hasBody(equalTo("POST OK\n".getBytes(UTF_8)))
 		)));
 	}
 
@@ -270,8 +270,31 @@ public class ToadletContextImplTest {
 		assertThat(parse(outputStream.toByteArray()), contains(allOf(
 				hasStatus(equalTo(200), equalTo("Works")),
 				hasHeader("X-Test-Header", contains("Yes")),
-				hasBody(equalTo("OK\n".getBytes(UTF_8)))
+				hasBody(equalTo("POST OK\n".getBytes(UTF_8)))
 		)));
+	}
+
+	@Test
+	public void putRequestWithoutExtendedMethodHandlingResultsInHttpStatus403() throws IOException {
+		setupInputStream("PUT /no-extended-method-handling HTTP/1.1\r\n\r\n");
+		ToadletContextImpl.handle(socket, toadletContainer, null, null, null);
+		assertThat(parse(outputStream.toByteArray()), contains(hasStatus(equalTo(403), equalTo("Forbidden"))));
+	}
+
+	@Test
+	public void putRequestWithContentResultsInHttpStatus403() throws IOException {
+		setupInputStream("PUT /put-with-content HTTP/1.1\r\nContent-Length: 3\r\n\r\nOK\n");
+		ToadletContextImpl.handle(socket, toadletContainer, null, null, null);
+		assertThat(parse(outputStream.toByteArray()), contains(hasStatus(equalTo(403), equalTo("Forbidden"))));
+	}
+
+	@Test
+	public void putRequestToToadletThatDoesNotSupportPutResultsInHttpStatus405() throws Exception {
+		setupInputStream("PUT /toadlet-without-put HTTP/1.1\r\n\r\n");
+		when(toadletContainer.enableExtendedMethodHandling()).thenReturn(true);
+		when(toadletContainer.findToadlet(any())).thenReturn(homepageToadlet);
+		ToadletContextImpl.handle(socket, toadletContainer, null, null, null);
+		assertThat(parse(outputStream.toByteArray()), contains(hasStatus(equalTo(405), equalTo("Method Not Allowed"))));
 	}
 
 	private void setupInputStream(String request) throws IOException {
@@ -294,8 +317,8 @@ public class ToadletContextImplTest {
 
 			doAnswer(invocation -> {
 				ToadletContext toadletContext = (ToadletContext) invocation.getArguments()[2];
-				toadletContext.sendReplyHeaders(200, "OK", null, "text/plain", 3);
-				toadletContext.writeData(new byte[] { 'O', 'K', '\n' });
+				toadletContext.sendReplyHeaders(200, "OK", null, "text/plain", 7);
+				toadletContext.writeData(new byte[] { 'G', 'E', 'T', ' ', 'O', 'K', '\n' });
 				return null;
 			}).when(homepageToadlet).handleMethodGET(any(), any(), any());
 			when(homepageToadlet.findSupportedMethods()).thenReturn("GET");
@@ -309,8 +332,8 @@ public class ToadletContextImplTest {
 
 		@SuppressWarnings("unused")
 		public void handleMethodPOST(URI uri, HTTPRequest httpRequest, ToadletContext toadletContext) throws ToadletContextClosedException, IOException {
-			toadletContext.sendReplyHeaders(200, "Works", MultiValueTable.from("X-Test-Header", "Yes"), "text/plain", 3);
-			toadletContext.writeData("OK\n".getBytes(UTF_8));
+			toadletContext.sendReplyHeaders(200, "Works", MultiValueTable.from("X-Test-Header", "Yes"), "text/plain", 8);
+			toadletContext.writeData("POST OK\n".getBytes(UTF_8));
 		}
 
 		@Override
