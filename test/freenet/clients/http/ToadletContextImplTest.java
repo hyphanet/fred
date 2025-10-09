@@ -297,6 +297,33 @@ public class ToadletContextImplTest {
 		assertThat(parse(outputStream.toByteArray()), contains(hasStatus(equalTo(405), equalTo("Method Not Allowed"))));
 	}
 
+	@Test
+	public void pipeliningTwoGetRequestsWithPersistentConnectionsEnabledResultsInTwoHttpStatus200() throws Exception {
+		setupInputStream("GET / HTTP/1.1\r\n\r\nGET / HTTP/1.1\r\n\r\n");
+		when(toadletContainer.enablePersistentConnections()).thenReturn(true);
+		when(toadletContainer.findToadlet(any())).thenReturn(homepageToadlet);
+		ToadletContextImpl.handle(socket, toadletContainer, pageMaker, null, null);
+		assertThat(parse(outputStream.toByteArray()), contains(
+				allOf(hasStatus(200), hasBody(equalTo("GET OK\n".getBytes(UTF_8)))),
+				allOf(hasStatus(200), hasBody(equalTo("GET OK\n".getBytes(UTF_8))))
+		));
+	}
+
+	@Test
+	public void pipeliningAPutAndAGetRequestResultsInTwoSuccessfulRequests() throws Exception {
+		setupInputStream("POST /post-request HTTP/1.1\r\nContent-Length: 0\r\n\r\nGET /get-request HTTP/1.1\r\n\r\n");
+		when(toadletContainer.enablePersistentConnections()).thenReturn(true);
+		when(toadletContainer.allowPosts()).thenReturn(true);
+		postToadlet.allowPostWithoutPassword();
+		when(toadletContainer.findToadlet(new URI("/post-request"))).thenReturn(postToadlet);
+		when(toadletContainer.findToadlet(new URI("/get-request"))).thenReturn(homepageToadlet);
+		ToadletContextImpl.handle(socket, toadletContainer, pageMaker, null, null);
+		assertThat(parse(outputStream.toByteArray()), contains(
+				allOf(hasStatus(200), hasBody(equalTo("POST OK\n".getBytes(UTF_8)))),
+				allOf(hasStatus(200), hasBody(equalTo("GET OK\n".getBytes(UTF_8))))
+		));
+	}
+
 	private void setupInputStream(String request) throws IOException {
 		when(socket.getInputStream()).thenReturn(new ByteArrayInputStream(request.getBytes(UTF_8)));
 	}
