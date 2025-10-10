@@ -17,12 +17,15 @@ start with:
 
 Once you have a change ready for review, please submit it as a [pull
 request](https://help.github.com/articles/using-pull-requests/#initiating-the-pull-request)
-against the `next` branch. It's usually a good idea to work on a topic / feature
-branch that starts at `next` and is specific to the pull request. Once you have
-submitted a pull request, people will start reviewing it and providing feedback.
-If you don't hear anything for a while feel free to bring it to the attention of
-people in [IRC](https://www.hyphanet.org/pages/help.html#chat-with-us) or FMS - we may
-have missed it.
+against the `next` branch. It's usually a good idea to work on a topic
+/ feature branch that starts at `next` and is specific to the pull
+request. Please also remove spurious changes, as they cause
+unnecessary churn, making it difficult to review. Once you have
+submitted a pull request, people will start reviewing it and providing
+feedback. If you don't hear anything for a while feel free to bring it
+to the attention of people in
+[IRC](https://www.hyphanet.org/pages/help.html#chat-with-us) or FMS -
+we may have missed it.
 
 All commits with functional changes must be reviewed, including those from
 maintainers. An exception are plugins: updates to official plugins
