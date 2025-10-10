@@ -1,5 +1,8 @@
 package freenet.clients.http;
 
+import freenet.client.HighLevelSimpleClient;
+import freenet.support.MultiValueTable;
+import freenet.support.api.HTTPRequest;
 import freenet.support.io.ArrayBucketFactory;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -171,10 +174,104 @@ public class ToadletContextImplTest {
 	}
 
 	@Test
+	public void sendingPostRequestWithoutContentLengthHeaderResultsInHttpStatus400() throws IOException {
+		setupInputStream("POST /missing-content-length HTTP/1.0\r\n\r\n");
+		ToadletContextImpl.handle(socket, toadletContainer, null, null, null);
+		assertThat(parse(outputStream.toByteArray()), contains(hasStatus(equalTo(400), equalTo("Bad Request"))));
+	}
+
+	@Test
+	public void sendingPostRequestWithInvalidContentLengthHeaderResultsInHttpStatus400() throws IOException {
+		setupInputStream("POST /invalid-content-length HTTP/1.1\r\nConnection: Keep-Alive\r\nContent-Length: invalid\r\n\r\n");
+		ToadletContextImpl.handle(socket, toadletContainer, null, null, null);
+		assertThat(parse(outputStream.toByteArray()), contains(hasStatus(equalTo(400), equalTo("Bad Request"))));
+	}
+
+	@Test
+	public void sendingRequestAfterPostRequestWithInvalidContentLengthHeaderResultsInASingleResponseBeingSent() throws IOException {
+		setupInputStream("POST /invalid-content-length HTTP/1.1\r\nConnection: Keep-Alive\r\nContent-Length: invalid\r\n\r\nGET / HTTP/1.0\r\n\r\n");
+		ToadletContextImpl.handle(socket, toadletContainer, null, null, null);
+		assertThat(parse(outputStream.toByteArray()), contains(hasStatus(equalTo(400), equalTo("Bad Request"))));
+	}
+
+	@Test
 	public void sendingPostRequestWithInvalidContentLengthHeaderClosesConnection() throws IOException {
 		setupInputStream("POST /invalid-content-length HTTP/1.1\r\nConnection: Keep-Alive\r\nContent-Length: invalid\r\n\r\n");
 		ToadletContextImpl.handle(socket, toadletContainer, null, null, null);
 		verify(socket).close();
+	}
+
+	@Test
+	public void postRequestWhenPostRequestsAreNotAllowedResultsInHttpStatus405() throws IOException {
+		setupInputStream("POST /post-not-allowed HTTP/1.0\r\nContent-Length: 0\r\n\r\n");
+		ToadletContextImpl.handle(socket, toadletContainer, null, null, null);
+		assertThat(parse(outputStream.toByteArray()), contains(hasStatus(equalTo(405), equalTo("Method Not Allowed"))));
+	}
+
+	@Test
+	public void postRequestWithoutFormPasswordResultsInRedirectToSameToadlet() throws Exception {
+		setupInputStream("POST /request-without-form-password HTTP/1.0\r\nContent-Length: 0\r\n\r\n");
+		when(toadletContainer.allowPosts()).thenReturn(true);
+		when(toadletContainer.findToadlet(any())).thenReturn(postToadlet);
+		when(toadletContainer.getFormPassword()).thenReturn("form-password");
+		ToadletContextImpl.handle(socket, toadletContainer, null, null, null);
+		assertThat(parse(outputStream.toByteArray()), contains(allOf(
+				hasStatus(equalTo(302), equalTo("Found")),
+				hasHeader("Location", contains("/post-toadlet"))
+		)));
+	}
+
+	@Test
+	public void postRequestWithFormPasswordResultInToadletBeingCalled() throws Exception {
+		setupInputStream("POST /request-with-form-password HTTP/1.0\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: 26\r\n\r\nformPassword=form-password\r\n");
+		when(toadletContainer.allowPosts()).thenReturn(true);
+		when(toadletContainer.getFormPassword()).thenReturn("form-password");
+		when(toadletContainer.findToadlet(any())).thenReturn(postToadlet);
+		ToadletContextImpl.handle(socket, toadletContainer, null, null, null);
+		assertThat(parse(outputStream.toByteArray()), contains(allOf(
+				hasStatus(equalTo(200), equalTo("Works")),
+				hasHeader("X-Test-Header", contains("Yes")),
+				hasBody(equalTo("OK\n".getBytes(UTF_8)))
+		)));
+	}
+
+	@Test
+	public void postRequestWithoutFormPasswordResultInToadletBeingCalledWhenPostWithoutPasswordIsAllowed() throws Exception {
+		setupInputStream("POST /request-without-form-password HTTP/1.0\r\nContent-Length: 0\r\n\r\n");
+		when(toadletContainer.allowPosts()).thenReturn(true);
+		when(toadletContainer.findToadlet(any())).thenReturn(postToadlet);
+		postToadlet.allowPostWithoutPassword();
+		ToadletContextImpl.handle(socket, toadletContainer, null, null, null);
+		assertThat(parse(outputStream.toByteArray()), contains(allOf(
+				hasStatus(equalTo(200), equalTo("Works")),
+				hasHeader("X-Test-Header", contains("Yes")),
+				hasBody(equalTo("OK\n".getBytes(UTF_8)))
+		)));
+	}
+
+	@Test
+	public void postRequestWhenContainerIsPublicGatewayResultsInHttpStatus405() throws Exception {
+		setupInputStream("POST /post-request-public-gateway HTTP/1.0\r\nContent-Length: 0\r\n\r\n");
+		when(toadletContainer.publicGatewayMode()).thenReturn(true);
+		when(toadletContainer.allowPosts()).thenReturn(true);
+		ToadletContextImpl.handle(socket, toadletContainer, pageMaker, null, null);
+		assertThat(parse(outputStream.toByteArray()), contains(hasStatus(equalTo(405), equalTo("Method Not Allowed"))));
+	}
+
+	@Test
+	public void postRequestSucceedsWhenContainerIsPublicGatewayButStillAllowsFullAccess() throws Exception {
+		setupInputStream("POST /post-request-public-gateway-full-access HTTP/1.0\r\nContent-Length: 0\r\n\r\n");
+		when(toadletContainer.allowPosts()).thenReturn(true);
+		when(toadletContainer.publicGatewayMode()).thenReturn(true);
+		when(toadletContainer.findToadlet(any())).thenReturn(postToadlet);
+		when(toadletContainer.isAllowedFullAccess(any())).thenReturn(true);
+		postToadlet.allowPostWithoutPassword();
+		ToadletContextImpl.handle(socket, toadletContainer, pageMaker, null, null);
+		assertThat(parse(outputStream.toByteArray()), contains(allOf(
+				hasStatus(equalTo(200), equalTo("Works")),
+				hasHeader("X-Test-Header", contains("Yes")),
+				hasBody(equalTo("OK\n".getBytes(UTF_8)))
+		)));
 	}
 
 	private void setupInputStream(String request) throws IOException {
@@ -188,6 +285,7 @@ public class ToadletContextImplTest {
 
 	private final Toadlet homepageToadlet = mock(Toadlet.class, RETURNS_DEEP_STUBS);
 	private final Toadlet noOutputToadlet = mock(Toadlet.class, RETURNS_DEEP_STUBS);
+	private final PostToadlet postToadlet = new PostToadlet();
 
 	{
 		try {
@@ -205,6 +303,40 @@ public class ToadletContextImplTest {
 		} catch (IOException | ToadletContextClosedException | RedirectException e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	private static class PostToadlet extends Toadlet {
+
+		@SuppressWarnings("unused")
+		public void handleMethodPOST(URI uri, HTTPRequest httpRequest, ToadletContext toadletContext) throws ToadletContextClosedException, IOException {
+			toadletContext.sendReplyHeaders(200, "Works", MultiValueTable.from("X-Test-Header", "Yes"), "text/plain", 3);
+			toadletContext.writeData("OK\n".getBytes(UTF_8));
+		}
+
+		@Override
+		public void handleMethodGET(URI uri, HTTPRequest request, ToadletContext ctx) {
+		}
+
+		@Override
+		public String path() {
+			return "/post-toadlet";
+		}
+
+		@Override
+		public boolean allowPOSTWithoutPassword() {
+			return allowPostWithoutPassword;
+		}
+
+		private void allowPostWithoutPassword() {
+			allowPostWithoutPassword = true;
+		}
+
+		protected PostToadlet() {
+			super(mock(HighLevelSimpleClient.class));
+		}
+
+		private boolean allowPostWithoutPassword = false;
+
 	}
 
 }
