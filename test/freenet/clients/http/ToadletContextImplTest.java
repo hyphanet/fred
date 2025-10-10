@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.util.Arrays;
 import org.junit.Test;
 
 import static freenet.test.HttpResponse.parse;
@@ -25,6 +26,19 @@ public class ToadletContextImplTest {
 		when(toadletContainer.findToadlet(any())).thenReturn(noOutputToadlet);
 		ToadletContextImpl.handle(socket, toadletContainer, null, null, null);
 		assertThat(parse(outputStream.toByteArray()), contains(hasStatus(equalTo(204), equalTo("No Content"))));
+	}
+
+	@Test
+	public void getRequestWithExtremelyLongUrlResultsInHttpStatus400() throws IOException {
+		setupInputStream("GET /extremely-long-url-" + generateLongString() + " HTTP/1.0\r\nContent-Length: 0\r\n\r\n");
+		ToadletContextImpl.handle(socket, toadletContainer, null, null, null);
+		assertThat(parse(outputStream.toByteArray()), contains(hasStatus(equalTo(400), equalTo("Bad Request"))));
+	}
+
+	private String generateLongString() {
+		char[] longString = new char[33000];
+		Arrays.fill(longString, 'a');
+		return new String(longString);
 	}
 
 	private void setupInputStream(String request) throws IOException {
