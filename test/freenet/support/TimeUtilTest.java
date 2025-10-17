@@ -97,10 +97,11 @@ public class TimeUtilTest {
 				//one second
 				{"1000","1s"}		
 		};
-		for(int i = 0; i < valAndExpected.length; i++) {
-			methodLong = Long.valueOf(valAndExpected[i][0]);
+		for (String[] strings : valAndExpected) {
+			methodLong = Long.valueOf(strings[0]);
 			assertEquals(TimeUtil.formatTime(methodLong),
-					valAndExpected[i][1]); }	
+					strings[1]);
+		}
 	}
 	
 	/**

@@ -3,6 +3,7 @@ package freenet.support;
 import static java.util.concurrent.TimeUnit.MINUTES;
 
 import java.util.ArrayDeque;
+import java.util.Arrays;
 
 import freenet.node.NodeStats;
 import freenet.node.PrioRunnable;
@@ -268,7 +269,6 @@ public class PrioritizedSerialExecutor implements Executor {
 	public boolean onThread() {
 		Thread running = Thread.currentThread();
 		synchronized(jobs) {
-			if(runner == null) return false;
 			return runner.current == running;
 		}
 	}
@@ -309,10 +309,8 @@ public class PrioritizedSerialExecutor implements Executor {
 
 	public boolean anyQueued() {
 		synchronized(jobs) {
-			for(int i=0;i<jobs.length;i++)
-				if(!jobs[i].isEmpty()) return true;
+			return !Arrays.stream(jobs).allMatch(ArrayDeque::isEmpty);
 		}
-		return false;
 	}
 
 }
