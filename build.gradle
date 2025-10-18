@@ -69,7 +69,7 @@ sourceSets {
 }
 
 def gitrev
-task buildInfo {
+tasks.register('buildInfo') {
     try {
         def cmd = "git describe --always --abbrev=4 --dirty"
         def proc = cmd.execute([], project.rootDir)
@@ -92,7 +92,7 @@ tasks.withType(Javadoc) {
     options.encoding = "UTF-8"
 }
 
-task generateVersionSource(type: Copy) {
+tasks.register('generateVersionSource', Copy) {
     dependsOn buildInfo
     from(sourceSets.main.java.srcDirs) {
         include version_src
@@ -103,7 +103,7 @@ task generateVersionSource(type: Copy) {
     into version_buildir
 }
 
-task compileVersion (type: JavaCompile) {
+tasks.register('compileVersion', JavaCompile) {
     dependsOn generateVersionSource, compileJava
     sourceCompatibility = 1.8
     targetCompatibility = 1.8
@@ -113,7 +113,7 @@ task compileVersion (type: JavaCompile) {
     destinationDirectory.set(layout.buildDirectory.dir("java/version/").get())
 }
 
-task buildJar(type: Jar) {
+tasks.register('buildJar', Jar) {
     dependsOn compileVersion, processResources
     from(processResources)
     from(compileJava.destinationDirectory) {
@@ -145,7 +145,7 @@ task buildJar(type: Jar) {
 jar.enabled = false
 jar.dependsOn buildJar
 
-task sourcesJar(type: Jar) {
+tasks.register('sourcesJar', Jar) {
     dependsOn generateVersionSource
     archiveClassifier = 'sources'
     preserveFileTimestamps = false
@@ -180,7 +180,7 @@ gradle.addBuildListener(new BuildAdapter() {
     }
 })
 
-task copyResourcesToClasses2 {
+tasks.register('copyResourcesToClasses2') {
     inputs.files sourceSets.main.allSource
     outputs.dir layout.buildDirectory.dir("classes/java/main/")
     doLast {
@@ -203,7 +203,7 @@ task copyResourcesToClasses2 {
 processResources.dependsOn copyResourcesToClasses2
 compileVersion.dependsOn copyResourcesToClasses2
 
-task copyTestResourcesToClasses2 {
+tasks.register('copyTestResourcesToClasses2') {
     inputs.files sourceSets.test.allSource
     outputs.dir layout.buildDirectory.dir("classes/java/test/")
     doLast {
@@ -244,14 +244,14 @@ tasks.withType(Test) {
     enableAssertions = false
 }
 
-task copyRuntimeLibs(type: Copy) {
+tasks.register('copyRuntimeLibs', Copy) {
     into "${buildDir}/output/"
     from configurations.runtimeClasspath
     from jar
 }
 copyRuntimeLibs.dependsOn jar
 
-task tar(type: Tar) {
+tasks.register('tar', Tar) {
   description = "Build a source release, specifically excluding the build directories and gradle wrapper files"
   compression = Compression.BZIP2
 
