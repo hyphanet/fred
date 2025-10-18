@@ -18,9 +18,9 @@ import java.util.Arrays;
 import java.util.Random;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.junit.After;
-import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import freenet.client.async.ClientContext;
 import freenet.support.api.Bucket;
@@ -30,7 +30,6 @@ import freenet.support.io.ArrayBucket;
 import freenet.support.io.BucketTestBase;
 import freenet.support.io.BucketTools;
 import freenet.support.io.FileBucket;
-import freenet.support.io.FileUtil;
 import freenet.support.io.RAFBucket;
 import freenet.support.io.RandomAccessBufferTestBase;
 import freenet.support.io.ResumeFailedException;
@@ -45,8 +44,11 @@ public class EncryptedRandomAccessBucketTest extends BucketTestBase {
     static{
         Security.addProvider(new BouncyCastleProvider());
     }
-    
-    @Override
+
+    @Rule
+    public final TemporaryFolder tempFolder = new TemporaryFolder();
+
+	@Override
     protected Bucket makeBucket(long size) throws IOException {
         ArrayBucket underlying = new ArrayBucket();
         return new EncryptedRandomAccessBucket(types[0], underlying, secret);
@@ -77,7 +79,7 @@ public class EncryptedRandomAccessBucketTest extends BucketTestBase {
             byte[] buf = new byte[readBytes];
             readBytes = is.read(buf);
             assertTrue(readBytes > 0);
-            assertTrue(Arrays.equals(Arrays.copyOfRange(buf, 0, readBytes), Arrays.copyOfRange(data, moved, moved+readBytes)));
+            assertArrayEquals(Arrays.copyOfRange(buf, 0, readBytes), Arrays.copyOfRange(data, moved, moved + readBytes));
             moved += readBytes;
         }
         is.close();
@@ -104,7 +106,7 @@ public class EncryptedRandomAccessBucketTest extends BucketTestBase {
             byte[] buf = new byte[readBytes];
             readBytes = is.read(buf);
             assertTrue(readBytes > 0);
-            assertTrue(Arrays.equals(Arrays.copyOfRange(buf, 0, readBytes), Arrays.copyOfRange(data, moved, moved+readBytes)));
+            assertArrayEquals(Arrays.copyOfRange(buf, 0, readBytes), Arrays.copyOfRange(data, moved, moved + readBytes));
             moved += readBytes;
         }
         is.close();
@@ -131,7 +133,7 @@ public class EncryptedRandomAccessBucketTest extends BucketTestBase {
             byte[] buf = new byte[readBytes];
             readBytes = is.read(buf);
             assertTrue(readBytes > 0);
-            assertTrue(Arrays.equals(Arrays.copyOfRange(buf, 0, readBytes), Arrays.copyOfRange(data, moved, moved+readBytes)));
+            assertArrayEquals(Arrays.copyOfRange(buf, 0, readBytes), Arrays.copyOfRange(data, moved, moved + readBytes));
             moved += readBytes;
         }
         LockableRandomAccessBuffer raf = bucket.toRandomAccessBuffer();
@@ -144,22 +146,10 @@ public class EncryptedRandomAccessBucketTest extends BucketTestBase {
             RandomAccessBufferTestBase.checkArraySectionEqualsReadData(data, raf, start, end, true);
         }
     }
-    
-    private File base = new File("tmp.encrypted-random-access-thing-test");
-    
-    @Before
-    public void setUp() {
-        base.mkdir();
-    }
-    
-    @After
-    public void tearDown() {
-        FileUtil.removeAll(base);
-    }
 
     @Test
     public void testStoreTo() throws IOException, StorageFormatException, ResumeFailedException, GeneralSecurityException {
-        File tempFile = File.createTempFile("test-storeto", ".tmp", base);
+        File tempFile = tempFolder.newFile();
         byte[] buf = new byte[4096];
         Random r = new Random(1267612);
         r.nextBytes(buf);
@@ -195,7 +185,7 @@ public class EncryptedRandomAccessBucketTest extends BucketTestBase {
     
     @Test
     public void testSerialize() throws IOException, StorageFormatException, ResumeFailedException, GeneralSecurityException, ClassNotFoundException {
-        File tempFile = File.createTempFile("test-storeto", ".tmp", base);
+        File tempFile = tempFolder.newFile();
         byte[] buf = new byte[4096];
         Random r = new Random(1267612);
         r.nextBytes(buf);

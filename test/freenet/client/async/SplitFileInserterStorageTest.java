@@ -14,7 +14,9 @@ import java.util.Random;
 
 import freenet.support.io.*;
 import org.junit.Assert;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import freenet.client.ClientMetadata;
 import freenet.client.FetchContext;
@@ -65,6 +67,8 @@ public class SplitFileInserterStorageTest {
     final LockableRandomAccessBufferFactory bigRAFFactory;
     final BucketFactory smallBucketFactory;
     final BucketFactory bigBucketFactory;
+    @Rule
+    public final TemporaryFolder tempFolder;
     final File dir;
     final InsertContext baseContext;
     final WaitableExecutor executor;
@@ -85,8 +89,9 @@ public class SplitFileInserterStorageTest {
     private InsertContext context;
 
     public SplitFileInserterStorageTest() throws IOException {
-        dir = new File("split-file-inserter-storage-test");
-        dir.mkdir();
+        tempFolder = new TemporaryFolder();
+        tempFolder.create();
+        dir = tempFolder.newFolder("split-file-inserter-storage-test");
         executor = new WaitableExecutor(new PooledExecutor());
         ticker = new CheatingTicker(executor);
         RandomSource r = new DummyRandomSource(12345);

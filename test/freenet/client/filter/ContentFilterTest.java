@@ -8,8 +8,9 @@ import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.startsWith;
 import static org.junit.Assert.*;
 
-import freenet.l10n.BaseL10n;
 import freenet.l10n.BaseL10nTest;
+
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -354,8 +355,9 @@ public class ContentFilterTest {
         HTMLFilter filter = new HTMLFilter();
         boolean failed = false;
         List<RuntimeException> failures = new ArrayList<>();
+        File file = new File("output.utf16");
         try (
-            FileOutputStream fos = new FileOutputStream("output.utf16")
+            FileOutputStream fos = new FileOutputStream(file)
         ){
             ArrayBucket out = new ArrayBucket();
             filter.readFilter(new ArrayBucket(total).getInputStream(), out.getOutputStream(), "UTF-16", null, null, null);
@@ -369,9 +371,12 @@ public class ContentFilterTest {
                 e.getCause().printStackTrace();
             }
             // Ok.
+        } finally {
+            file.delete();
         }
+        file = new File("output.filtered");
         try (
-            FileOutputStream fos = new FileOutputStream("output.filtered")
+            FileOutputStream fos = new FileOutputStream(file)
         ){
             ArrayBucket out = new ArrayBucket();
             FilterStatus fo = ContentFilter.filter(new ArrayBucket(total).getInputStream(), out.getOutputStream(), "text/html", null, null, null);
@@ -385,9 +390,12 @@ public class ContentFilterTest {
                 e.getCause().printStackTrace();
             }
             // Ok.
+        } finally {
+            file.delete();
         }
 
         if (failed) {
+            // Write debug data. Should never be here.
             try (FileOutputStream fos = new FileOutputStream("unfiltered")) {
                 fos.write(total);
             }

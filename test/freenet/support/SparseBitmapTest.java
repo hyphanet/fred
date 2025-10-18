@@ -30,10 +30,7 @@ public class SparseBitmapTest {
 		assertTrue(s.contains(0, 5));
 		assertTrue(s.contains(10, 15));
 
-		try {
-			s.add(5, 0);
-			fail("Didn't throw when adding range 5->0");
-		} catch (IllegalArgumentException e) {}
+		assertThrows(IllegalArgumentException.class, () -> s.add(5, 0));
 
 		assertTrue(s.contains(0, 5));
 		assertTrue(s.contains(10, 15));
@@ -99,7 +96,7 @@ public class SparseBitmapTest {
 				final int notOverlapping = s.notOverlapping(a, b);
 				final int width = b - a + 1;
 				final int overlapping = width - notOverlapping;
-				assertTrue((notOverlapping == 0) == s.contains(a, b));
+				assertEquals((notOverlapping == 0), s.contains(a, b));
 				s.remove(a, b);
 				assertFalse(s.contains(a, b));
 				assertEquals(width, s.notOverlapping(a, b));

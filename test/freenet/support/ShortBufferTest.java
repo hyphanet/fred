@@ -60,8 +60,8 @@ public class ShortBufferTest {
 		System.arraycopy(data, 4, dataSub, 0, 5);
 
 		ShortBuffer buffer = new ShortBuffer(data, 4, 5);
-		
-		assertFalse(dataSub.equals(buffer.getData()));
+
+		assertNotEquals(dataSub, buffer.getData());
 
 		doTestShortBuffer(dataSub, buffer);
 	}
@@ -153,13 +153,13 @@ public class ShortBufferTest {
 		ShortBuffer b1 = new ShortBuffer("ShortBuffer1".getBytes());
 		ShortBuffer b2 = new ShortBuffer("ShortBuffer2".getBytes());
 		ShortBuffer b3 = new ShortBuffer("ShortBuffer1".getBytes());
-		
-		assertFalse(b1.equals(b2));
-		assertTrue(b1.equals(b3));
-		assertFalse(b2.equals(b3));
-		assertTrue(b1.equals(b1));
-		assertTrue(b2.equals(b2));
-		assertTrue(b3.equals(b1));				
+
+		assertNotEquals(b1, b2);
+		assertEquals(b1, b3);
+		assertNotEquals(b2, b3);
+		assertEquals(b1, b1);
+		assertEquals(b2, b2);
+		assertEquals(b3, b1);
 	}
 	
 	@Test
@@ -177,13 +177,13 @@ public class ShortBufferTest {
 
 		// see if b3 survived
 		Object o = hashMap.get(b3);
-		assertFalse(o == b1);
-		assertTrue(o == b3);
+		assertNotSame(o, b1);
+		assertSame(o, b3);
 		
 		// see if b1 survived
 		o = hashMap.get(b1);
-		assertFalse(o == b1);		
-		assertTrue(o == b3);
+		assertNotSame(o, b1);
+		assertSame(o, b3);
 	}
 	
 	@Test

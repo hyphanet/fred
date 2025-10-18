@@ -218,7 +218,7 @@ public abstract class Toadlet {
 	/**
 	 * Write an HTTP response, e.g. a page, an image, an error message, possibly with custom
 	 * headers, for example, we may want to send a redirect, or a file with a specified filename.
-	 * @param ctx The specific request to reply to.
+	 * @param context The specific request to reply to.
 	 * @param code The HTTP reply code to use.
 	 * @param mimeType The MIME type of the data we are returning.
 	 * @param desc The HTTP response description for the code.
@@ -327,8 +327,8 @@ public abstract class Toadlet {
 	 * @param mimeType The MIME type of the data we are returning.
 	 * @param desc The HTTP response description for the code.
 	 * @param headers The additional HTTP headers to send.
-	 * @param data The data to write as the response body.
-	 * @param offset The offset within data of the first byte to send.
+	 * @param buffer The data to write as the response body.
+	 * @param startIndex The offset within data of the first byte to send.
 	 * @param length The number of bytes of data to send as the response body.
 	 */
 	private void writeReply(ToadletContext context, int code, String mimeType, String desc, MultiValueTable<String, String> headers, byte[] buffer, int startIndex, int length, boolean forceDisableJavascript) throws ToadletContextClosedException, IOException {
