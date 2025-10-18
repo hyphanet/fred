@@ -8,7 +8,7 @@ plugins {
 repositories {
     flatDir { dirs uri("${projectDir}/lib") }
     maven {
-        url 'https://mvn.freenetproject.org'
+        url = 'https://mvn.freenetproject.org'
         metadataSources {
             artifact()
         }
@@ -35,18 +35,18 @@ dependencies {
 publishing {
     publications {
         mavenJava(MavenPublication) {
-            groupId 'org.freenetproject'
-            artifactId 'fred'
-            version gitrev
+            groupId = 'org.freenetproject'
+            artifactId = 'fred'
+            version = gitrev
             from components.java
         }
     }
     repositories {
         maven {
-            url 's3://mvn.freenetproject.org/'
+            url = 's3://mvn.freenetproject.org/'
             credentials(AwsCredentials) {
-                accessKey System.getenv('AWS_ACCESS_KEY_ID')
-                secretKey System.getenv('AWS_SECRET_ACCESS_KEY')
+                accessKey = System.getenv('AWS_ACCESS_KEY_ID')
+                secretKey = System.getenv('AWS_SECRET_ACCESS_KEY')
             }
         }
     }
