@@ -5,6 +5,7 @@ import static org.junit.Assert.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.util.Random;
 
 import org.junit.After;
@@ -69,8 +70,7 @@ public class ClientRequestSelectorTest {
     final PersistentJobRunner jobRunner;
 
     public ClientRequestSelectorTest() throws IOException {
-        dir = new File("split-file-inserter-storage-test");
-        dir.mkdir();
+        dir = Files.createTempDirectory("split-file-inserter-storage-test").toFile();
         executor = new WaitableExecutor(new PooledExecutor());
         ticker = new CheatingTicker(executor);
         RandomSource r = new DummyRandomSource(12345);

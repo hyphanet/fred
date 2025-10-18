@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -87,8 +88,7 @@ public class SplitFileInserterStorageTest {
     private InsertContext context;
 
     public SplitFileInserterStorageTest() throws IOException {
-        dir = new File("split-file-inserter-storage-test");
-        dir.mkdir();
+        dir = Files.createTempDirectory("split-file-inserter-storage-test").toFile();
         executor = new WaitableExecutor(new PooledExecutor());
         ticker = new CheatingTicker(executor);
         RandomSource r = new DummyRandomSource(12345);
