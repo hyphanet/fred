@@ -156,30 +156,6 @@ tasks.register('sourcesJar', Jar) {
     from(compileVersion.source)
 }
 
-def jars = []
-gradle.addListener(new TaskExecutionListener() {
-void afterExecute(Task task, TaskState state) {
-    if(task in AbstractArchiveTask && task.enabled) {
-        jars << task.outputs.files.singleFile
-    }
-}
-
-void beforeExecute(Task task) { }
-})
-gradle.addBuildListener(new BuildAdapter() {
-    void buildFinished(BuildResult result) {
-        if(jars) {
-            def hash = {
-                File file -> def sha256 = MessageDigest.getInstance('SHA-256')
-                file.eachByte(1024 * 4) { buffer, len -> sha256.update(buffer, 0, len) }
-                println "SHA-256 of ${file.name}: ${sha256.digest().encodeHex().toString()}"
-            }
-
-            jars.each { hash(it) }
-        }
-    }
-})
-
 tasks.register('copyResourcesToClasses2') {
     inputs.files sourceSets.main.allSource
     outputs.dir layout.buildDirectory.dir("classes/java/main/")
@@ -208,8 +184,8 @@ tasks.register('copyTestResourcesToClasses2') {
     outputs.dir layout.buildDirectory.dir("classes/java/test/")
     doLast {
         copy {
-	    from sourceSets.test.allSource
-	    into layout.buildDirectory.dir("classes/java/test/")
+            from sourceSets.test.allSource
+            into layout.buildDirectory.dir("classes/java/test/")
             include 'freenet/client/filter/*/**'
             include 'freenet/crypt/ciphers/rijndael-gladman-test-data/**'
             include 'freenet/l10n/*properties'
@@ -274,4 +250,32 @@ javadoc {
     doLast {
         failOnError false
     }
+}
+
+tasks.register('archiveDigests') {
+    description = 'Display SHA-256 digests of all archives that were created.'
+    group = 'Help'
+
+    // Do not declare dependencies, we'll print whatever is available
+    def artifacts = configurations.archives.artifacts
+
+    // Run this task at the end of the build
+    shouldRunAfter tasks
+
+    // Print SHA256 digests of all available archive artifacts
+    doLast {
+        def sha256 = MessageDigest.getInstance('SHA-256')
+        artifacts.files.files.findAll {
+            it.canRead()
+        }.each { file ->
+            file.eachByte(1024 * 4) { buffer, len -> sha256.update(buffer, 0, len) }
+            logger.lifecycle('SHA-256 of {}: {}', file.name, sha256.digest().encodeHex())
+        }
+    }
+}
+
+tasks.withType(AbstractArchiveTask).configureEach {
+    // Register the archive for displaying digests at the end of the build
+    artifacts.archives archiveFile
+    finalizedBy archiveDigests
 }
