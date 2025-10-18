@@ -5,28 +5,19 @@ import static org.junit.Assert.*;
 import java.io.File;
 import java.io.IOException;
 
-import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 
 import freenet.crypt.DummyRandomSource;
 import freenet.crypt.MasterSecret;
-import freenet.support.io.FileUtil;
+import org.junit.rules.TemporaryFolder;
 
 public class MasterKeysTest {
     
-    private File base = new File("tmp.master-keys-test");
-    
     @Before
-    public void setUp() {
-        FileUtil.removeAll(base);
-        base.mkdir();
+    public void setUp() throws IOException {
         MasterKeys.ITERATE_TIME = 100; // Speed up test.
-    }
-    
-    @After
-    public void tearDown() {
-        FileUtil.removeAll(base);
     }
     
     @Test
@@ -40,7 +31,7 @@ public class MasterKeysTest {
     }
     
     private void testRestart(String password) throws MasterKeysWrongPasswordException, MasterKeysFileSizeException, IOException {
-        File keysFile = new File(base, "test.master.keys");
+        File keysFile = new File(temporaryFolder.newFolder(), "test.master.keys");
         DummyRandomSource random = new DummyRandomSource(77391);
         MasterKeys original = MasterKeys.read(keysFile, random, password);
         byte[] clientCacheMasterKey = original.clientCacheMasterKey;
@@ -73,7 +64,7 @@ public class MasterKeysTest {
     }
     
     private void testChangePassword(String oldPassword, String newPassword) throws MasterKeysWrongPasswordException, MasterKeysFileSizeException, IOException {
-        File keysFile = new File(base, "test.master.keys");
+        File keysFile = new File(temporaryFolder.newFolder(), "test.master.keys");
         DummyRandomSource random = new DummyRandomSource(77391);
         MasterKeys original = MasterKeys.read(keysFile, random, oldPassword);
         byte[] clientCacheMasterKey = original.clientCacheMasterKey;
@@ -95,5 +86,8 @@ public class MasterKeysTest {
         assertEquals(dkey,restored.createDatabaseKey());
         assertEquals(tempfileMasterSecret, restored.getPersistentMasterSecret());
     }
+
+    @Rule
+    public final TemporaryFolder temporaryFolder = new TemporaryFolder();
 
 }

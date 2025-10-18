@@ -7,7 +7,7 @@ import java.io.DataInputStream;
 import java.io.File;
 import java.io.IOException;
 
-import org.junit.After;
+import org.junit.Rule;
 import org.junit.Test;
 
 import freenet.client.FetchContext;
@@ -33,20 +33,17 @@ import freenet.support.PooledExecutor;
 import freenet.support.TestProperty;
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
-import freenet.support.io.FileUtil;
+import org.junit.rules.TemporaryFolder;
 
 public class NodeAndClientLayerBlobTest extends NodeAndClientLayerTestBase {
 
-    private static final File dir = new File("test-fetch-pull-blob-single-node");
-    
     @Test
     public void testFetchPullBlobSingleNode() throws InvalidThresholdException, NodeInitException, InsertException, FetchException, IOException, BinaryBlobFormatException {
         if(!TestProperty.EXTENSIVE) return;
         DummyRandomSource random = new DummyRandomSource(25312);
         final Executor executor = new PooledExecutor();
-        FileUtil.removeAll(dir);
-        dir.mkdir();
-        NodeStarter.globalTestInit(dir, false, 
+        File dir = temporaryFolder.newFolder();
+        NodeStarter.globalTestInit(dir, false,
                 Logger.LogLevel.ERROR, "", true, random);
         TestNodeParameters params = new TestNodeParameters();
         params.random = new DummyRandomSource(253121);
@@ -102,9 +99,7 @@ public class NodeAndClientLayerBlobTest extends NodeAndClientLayerTestBase {
         assertTrue(BucketTools.equalBuckets(result.asBucket(), block.getData()));
     }
     
-    @After
-    public void cleanUp() {
-        FileUtil.removeAll(dir);
-    }
-    
+    @Rule
+    public final TemporaryFolder temporaryFolder = new TemporaryFolder();
+
 }

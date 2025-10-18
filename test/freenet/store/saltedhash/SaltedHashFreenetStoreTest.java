@@ -7,8 +7,8 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Random;
 
-import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 
 import freenet.crypt.DSAGroup;
@@ -50,7 +50,7 @@ import freenet.support.compress.Compressor;
 import freenet.support.compress.InvalidCompressionCodecException;
 import freenet.support.io.ArrayBucketFactory;
 import freenet.support.io.BucketTools;
-import freenet.support.io.FileUtil;
+import org.junit.rules.TemporaryFolder;
 
 /**
  * SaltedHashFreenetStoreTest
@@ -64,26 +64,17 @@ public class SaltedHashFreenetStoreTest {
 	private Random weakPRNG = new Random(12340);
 	private PooledExecutor exec = new PooledExecutor();
 	private Ticker ticker = new TrivialTicker(exec);
-	private File tempDir;
 
 	@Before
 	public void setUp() throws java.lang.Exception {
-		tempDir = new File("tmp-saltedHashfreenetstoretest");
-		tempDir.mkdir();
 		exec.start();
 		ResizablePersistentIntBuffer.setPersistenceTime(-1);
-	}
-
-	@After
-	public void tearDown() {
-		FileUtil.removeAll(tempDir);
 	}
 
 	/* Simple test with CHK for SaltedHashFreenetStore without slotFilter */
 	@Test
 	public void testSimpleCHK() throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
-		File f = new File(tempDir, "saltstore");
-		FileUtil.removeAll(f);
+		File f = temporaryFolder.newFolder();
 
 		CHKStore store = new CHKStore();
 		SaltedHashFreenetStore<CHKBlock> saltStore = SaltedHashFreenetStore.construct(f, "testSaltedHashFreenetStoreCHK", store, weakPRNG, 10, false, SemiOrderedShutdownHook.get(), true, true, ticker, null);
@@ -105,8 +96,7 @@ public class SaltedHashFreenetStoreTest {
 	/* Simple test with SSK for SaltedHashFreenetStore without slotFilter */
 	@Test
 	public void testSimpleSSK() throws IOException, KeyCollisionException, SSKVerifyException, KeyDecodeException, SSKEncodeException, InvalidCompressionCodecException {
-		File f = new File(tempDir, "saltstore");
-		FileUtil.removeAll(f);
+		File f = temporaryFolder.newFolder();
 
 		final int keys = 5;
 		PubkeyStore pk = new PubkeyStore();
@@ -157,8 +147,7 @@ public class SaltedHashFreenetStoreTest {
 
 	/* Test collisions on SSK */
 	private void checkOnCollisionsSSK(boolean useSlotFilter) throws IOException, SSKEncodeException, InvalidCompressionCodecException, SSKVerifyException, KeyDecodeException, KeyCollisionException {
-		File f = new File(tempDir, "saltstore");
-		FileUtil.removeAll(f);
+		File f = temporaryFolder.newFolder();
 
 		final int keys = 5;
 		PubkeyStore pk = new PubkeyStore();
@@ -240,4 +229,8 @@ public class SaltedHashFreenetStoreTest {
 		InsertableClientSSK ik = InsertableClientSSK.createRandom(random, test);
 		return ik.encode(bucket, false, false, (short)-1, bucket.size(), random, Compressor.DEFAULT_COMPRESSORDESCRIPTOR);
 	}
+
+	@Rule
+	public final TemporaryFolder temporaryFolder = new TemporaryFolder();
+
 }
