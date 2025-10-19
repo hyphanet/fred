@@ -245,36 +245,29 @@ tasks.withType(Test) {
 }
 
 tasks.register('copyRuntimeLibs', Copy) {
-    into "${buildDir}/output/"
+    into layout.buildDirectory.dir('output')
     from configurations.runtimeClasspath
     from jar
 }
 copyRuntimeLibs.dependsOn jar
 
 tasks.register('tar', Tar) {
-  description = "Build a source release, specifically excluding the build directories and gradle wrapper files"
-  compression = Compression.BZIP2
+    description = "Build a source release, specifically excluding the build directories and gradle wrapper files"
 
-  archiveBaseName = "freenet-sources"
+    from(project.rootDir) {
+        exclude '**/build'
+        exclude 'build'
+        exclude '.gradle'
+    }
+    into 'freenet-sources'
 
-  from(project.rootDir) {
-    exclude '**/build'
-    exclude 'build'
-    exclude '.gradle'
-  }
+    compression = Compression.BZIP2
+    destinationDirectory = layout.buildDirectory
+    archiveFileName = 'freenet-sources.tgz'
 
-  into(archiveBaseName)
-
-  preserveFileTimestamps = true
-  reproducibleFileOrder = true
-
-  // Set destination directory.
-  destinationDirectory = file("${project.buildDir}")
-
-  archiveFileName = "${archiveBaseName}.tgz"
-  doLast { // generate md5 checksum
-    ant.checksum file:"$destinationDirectory/$archiveFileName"
-  }
+    doLast { // generate md5 checksum
+        ant.checksum file: file(archiveFile)
+    }
 }
 
 javadoc {
