@@ -5,11 +5,6 @@ plugins {
     id 'maven-publish'
 }
 
-configurations {
-    provided
-    compile
-}
-
 repositories {
     flatDir { dirs uri("${projectDir}/lib") }
     maven {
@@ -19,11 +14,6 @@ repositories {
         }
     }
     mavenCentral()
-}
-
-sourceSets {
-    main.compileClasspath += configurations.provided
-    test.compileClasspath += configurations.provided
 }
 
 def version_buildir = file("$projectDir/build/tmp/compileVersion/")
