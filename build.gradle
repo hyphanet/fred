@@ -1,21 +1,14 @@
 import java.security.MessageDigest
 
-buildscript {
-    repositories {
-        mavenCentral()
-    }
-    dependencies {
-        classpath 'com.android.tools.build:gradle:0.9.+'
-    }
+plugins {
+    id 'java'
+    id 'maven-publish'
 }
 
 configurations {
     provided
     compile
 }
-
-apply plugin: 'java'
-apply plugin: 'maven-publish'
 
 repositories {
     flatDir { dirs uri("${projectDir}/lib") }
