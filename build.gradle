@@ -5,7 +5,7 @@ plugins {
     id 'maven-publish'
 }
 
-// Use version from Git if no version is provided
+// Use version from Git if no version is provided (using `-Pversion=buildXXXXX`)
 if (version == DEFAULT_VERSION) {
     version = versionFromGit
 }
@@ -121,6 +121,11 @@ extendSourceDirectorySet(sourceSets.main.resources, 'dependencies') {
 
 compileJava {
     options.encoding = 'UTF-8'
+    if (!version.endsWith('-dirty')) {
+        // Make sure incremental compilation is disabled on release builds due to reproducibility issues.
+        logger.lifecycle('Potential release build (project version not dirty). Incremental compilation disabled.')
+        options.incremental = false
+    }
 }
 
 compileTestJava {
