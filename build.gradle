@@ -92,10 +92,7 @@ java {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
     withSourcesJar()
-}
-
-tasks.withType(Javadoc) {
-    options.encoding = "UTF-8"
+    withJavadocJar()
 }
 
 tasks.register('versionSource', Copy) {
@@ -154,6 +151,16 @@ tasks.withType(Test) {
     enableAssertions = false
 }
 
+javadoc {
+    title = "Freenet REference Daemon ${version}"
+    options {
+        encoding = 'UTF-8'
+        source = java.sourceCompatibility
+        // Ignore Javadoc linting errors
+        addBooleanOption('Xdoclint:none', true)
+    }
+}
+
 jar {
     archiveFileName = 'freenet.jar'
     manifest {
@@ -175,6 +182,10 @@ jar {
 
 sourcesJar {
     archiveFileName = 'freenet-sources.jar'
+}
+
+javadocJar {
+    archiveFileName = 'freenet-javadoc.jar'
 }
 
 tasks.register('copyRuntimeLibs', Copy) {
@@ -209,12 +220,6 @@ tasks.register('tar', Tar) {
 
     doLast { // generate md5 checksum
         ant.checksum file: file(archiveFile)
-    }
-}
-
-javadoc {
-    doLast {
-        failOnError false
     }
 }
 
