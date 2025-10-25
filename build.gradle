@@ -186,6 +186,12 @@ tasks.register('copyRuntimeLibs', Copy) {
     from jar
 }
 
+assemble {
+    // Add copyRuntimeLibs so `gradlew assemble` collects all build artifacts (except tar).
+    // Note: jar, sourcesJar, javadocJar are added as dependency by default.
+    dependsOn copyRuntimeLibs
+}
+
 tasks.register('tar', Tar) {
     description = 'Build a source release, specifically excluding the build directories and gradle wrapper files.'
     group = 'Build'
