@@ -16,6 +16,42 @@ repositories {
     mavenCentral()
 }
 
+dependencies {
+    implementation 'org.bouncycastle:bcprov-jdk15on:1.59'
+    implementation 'net.java.dev.jna:jna:4.5.2'
+    implementation 'net.java.dev.jna:jna-platform:4.5.2'
+    implementation 'org.freenetproject:freenet-ext:29'
+    implementation 'io.pebbletemplates:pebble:3.1.5'
+    // dependencies of pebble
+    implementation 'org.unbescape:unbescape:1.1.6.RELEASE'
+    implementation 'org.slf4j:slf4j-api:1.7.25'
+
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.mockito:mockito-core:1.9.5'
+    testImplementation 'org.hamcrest:hamcrest:3.0'
+    testImplementation 'org.objenesis:objenesis:1.0'
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            groupId 'org.freenetproject'
+            artifactId 'fred'
+            version gitrev
+            from components.java
+        }
+    }
+    repositories {
+        maven {
+            url 's3://mvn.freenetproject.org/'
+            credentials(AwsCredentials) {
+                accessKey System.getenv('AWS_ACCESS_KEY_ID')
+                secretKey System.getenv('AWS_SECRET_ACCESS_KEY')
+            }
+        }
+    }
+}
+
 def version_buildir = file("$projectDir/build/tmp/compileVersion/")
 def version_src = 'freenet/node/Version.java'
 
@@ -208,49 +244,12 @@ tasks.withType(Test) {
     enableAssertions = false
 }
 
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            groupId 'org.freenetproject'
-            artifactId "fred"
-            version gitrev
-            from components.java
-        }
-    }
-    repositories {
-        maven {
-            url "s3://mvn.freenetproject.org/"
-            credentials(AwsCredentials) {
-                accessKey System.getenv('AWS_ACCESS_KEY_ID')
-                secretKey System.getenv('AWS_SECRET_ACCESS_KEY')
-            }
-        }
-    }
-}
-
 task copyRuntimeLibs(type: Copy) {
     into "${buildDir}/output/"
     from configurations.runtimeClasspath
     from jar
 }
 copyRuntimeLibs.dependsOn jar
-
-// In this section you declare the dependencies for your production and test code
-dependencies {
-    implementation "org.bouncycastle:bcprov-jdk15on:1.59"
-    implementation "net.java.dev.jna:jna:4.5.2"
-    implementation "net.java.dev.jna:jna-platform:4.5.2"
-    implementation "org.freenetproject:freenet-ext:29"
-    implementation "io.pebbletemplates:pebble:3.1.5"
-    // dependencies of pebble
-    implementation "org.unbescape:unbescape:1.1.6.RELEASE"
-    implementation "org.slf4j:slf4j-api:1.7.25"
-
-    testImplementation 'junit:junit:4.13.2'
-    testImplementation "org.mockito:mockito-core:1.9.5"
-    testImplementation "org.hamcrest:hamcrest:3.0"
-    testImplementation "org.objenesis:objenesis:1.0"
-}
 
 task tar(type: Tar) {
   description = "Build a source release, specifically excluding the build directories and gradle wrapper files"
