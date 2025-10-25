@@ -5,6 +5,11 @@ plugins {
     id 'maven-publish'
 }
 
+// Use version from Git if no version is provided
+if (version == DEFAULT_VERSION) {
+    version = versionFromGit
+}
+
 repositories {
     flatDir { dirs uri("${projectDir}/lib") }
     maven {
@@ -37,7 +42,6 @@ publishing {
         mavenJava(MavenPublication) {
             groupId = 'org.freenetproject'
             artifactId = 'fred'
-            version = gitrev
             from components.java
         }
     }
@@ -52,8 +56,7 @@ publishing {
     }
 }
 
-def version_buildir = file("$projectDir/build/tmp/compileVersion/")
-def version_src = 'freenet/node/Version.java'
+def versionJavaFile = 'freenet/node/Version.java'
 
 sourceSets {
     main {
@@ -65,17 +68,6 @@ sourceSets {
         java {
             srcDir 'test/'
         }
-    }
-}
-
-def gitrev
-tasks.register('buildInfo') {
-    try {
-        def cmd = "git describe --always --abbrev=4 --dirty"
-        def proc = cmd.execute([], project.rootDir)
-        gitrev = proc.text.trim()
-    } catch (IOException ignored) {
-        gitrev = "@unknown@"
     }
 }
 
@@ -92,35 +84,30 @@ tasks.withType(Javadoc) {
     options.encoding = "UTF-8"
 }
 
-tasks.register('generateVersionSource', Copy) {
-    dependsOn buildInfo
+tasks.register('versionSource', Copy) {
+    inputs.property('version', version)
     from(sourceSets.main.java.srcDirs) {
-        include version_src
-        filter {
-            String line -> line.replaceAll('@custom@', gitrev)
-        }
+        include versionJavaFile
     }
-    into version_buildir
+    filteringCharset = 'UTF-8'
+    filter {
+        line -> line.replaceAll('@custom@', inputs.properties.version as String)
+    }
+    into temporaryDir
 }
 
-tasks.register('compileVersion', JavaCompile) {
-    dependsOn generateVersionSource, compileJava
-    sourceCompatibility = 1.8
-    targetCompatibility = 1.8
-    source = version_buildir
-    include version_src
-    classpath = files(sourceSets.main.compileClasspath, sourceSets.main.output.classesDirs)
-    destinationDirectory.set(layout.buildDirectory.dir("java/version/").get())
+compileJava {
+    // Include generated Version.java in compilation
+    source versionSource
 }
 
 tasks.register('buildJar', Jar) {
-    dependsOn compileVersion, processResources
+    dependsOn processResources
     from(processResources)
     from(compileJava.destinationDirectory) {
         exclude 'freenet/node/Version.class'
         exclude 'freenet/node/Version$1.class'
     }
-    from(compileVersion.destinationDirectory)
     preserveFileTimestamps = false
     reproducibleFileOrder = true
     duplicatesStrategy = DuplicatesStrategy.FAIL
@@ -136,7 +123,7 @@ tasks.register('buildJar', Jar) {
                        "Specification-Version": "0.7.5",
                        "Specification-Vendor": "freenetproject.org",
                        "Implementation-Title": "Freenet",
-                       "Implementation-Version": "0.7.5 ${gitrev}",
+                       "Implementation-Version": "0.7.5 ${version}",
                        "Implementation-Vendor": "freenetproject.org",
                    ], "common")
     }
@@ -146,14 +133,13 @@ jar.enabled = false
 jar.dependsOn buildJar
 
 tasks.register('sourcesJar', Jar) {
-    dependsOn generateVersionSource
     archiveClassifier = 'sources'
     preserveFileTimestamps = false
     reproducibleFileOrder = true
     from(sourceSets.main.allSource) {
         exclude 'freenet/node/Version.java'
     }
-    from(compileVersion.source)
+    from(versionSource)
 }
 
 tasks.register('copyResourcesToClasses2') {
@@ -177,7 +163,6 @@ tasks.register('copyResourcesToClasses2') {
     }
 }
 processResources.dependsOn copyResourcesToClasses2
-compileVersion.dependsOn copyResourcesToClasses2
 
 tasks.register('copyTestResourcesToClasses2') {
     inputs.files sourceSets.test.allSource
@@ -278,4 +263,20 @@ tasks.withType(AbstractArchiveTask).configureEach {
     // Register the archive for displaying digests at the end of the build
     artifacts.archives archiveFile
     finalizedBy archiveDigests
+}
+
+/**
+ * Try to obtain the version description from `git describe`.
+ */
+String getVersionFromGit() {
+    try {
+        def process = 'git describe --always --abbrev=4 --dirty'.execute([], project.rootDir)
+        if (process.waitFor() != 0) {
+            throw new IOException("exit code ${process.exitValue()}")
+        }
+        return process.text.trim()
+    } catch (IOException e) {
+        logger.warn('Cannot determine version from git: {}', e.message)
+        return '@unknown@'
+    }
 }
