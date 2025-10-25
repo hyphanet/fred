@@ -61,12 +61,29 @@ def versionJavaFile = 'freenet/node/Version.java'
 sourceSets {
     main {
         java {
-            srcDir 'src/'
+            srcDirs 'src'
+            include '**/*.java'
+            exclude versionJavaFile
+        }
+        resources {
+            srcDirs 'src'
+            include 'freenet/l10n/*properties'
+            include 'freenet/l10n/iso-*.tab'
+            include 'freenet/clients/http/staticfiles/**'
+            include 'freenet/clients/http/templates/**'
         }
     }
     test {
         java {
-            srcDir 'test/'
+            srcDirs 'test'
+            include '**/*.java'
+        }
+        resources {
+            srcDirs 'test'
+            include 'freenet/client/filter/*/**'
+            include 'freenet/crypt/ciphers/rijndael-gladman-test-data/**'
+            include 'freenet/l10n/*properties'
+            include 'freenet/clients/http/templates/**'
         }
     }
 }
@@ -74,10 +91,7 @@ sourceSets {
 java {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
-}
-
-tasks.withType(JavaCompile) {
-    options.encoding = "UTF-8"
+    withSourcesJar()
 }
 
 tasks.withType(Javadoc) {
@@ -96,90 +110,25 @@ tasks.register('versionSource', Copy) {
     into temporaryDir
 }
 
+extendSourceDirectorySet(sourceSets.main.java, 'version') {
+    // Add the generated version file
+    srcDirs versionSource
+    include versionJavaFile
+}
+
+extendSourceDirectorySet(sourceSets.main.resources, 'dependencies') {
+    // Add `dependencies.properties` from the project root
+    srcDirs projectDir
+    include 'dependencies.properties'
+}
+
 compileJava {
-    // Include generated Version.java in compilation
-    source versionSource
+    options.encoding = 'UTF-8'
 }
 
-tasks.register('buildJar', Jar) {
-    dependsOn processResources
-    from(processResources)
-    from(compileJava.destinationDirectory) {
-        exclude 'freenet/node/Version.class'
-        exclude 'freenet/node/Version$1.class'
-    }
-    preserveFileTimestamps = false
-    reproducibleFileOrder = true
-    duplicatesStrategy = DuplicatesStrategy.FAIL
-    archivesBaseName = "freenet"
-    manifest {
-        attributes("Permissions": "all-permissions")
-        attributes("Application-Name": "Freenet REference Daemon")
-        attributes("Required-Ext-Version": 29)
-        attributes("Recommended-Ext-Version": 29)
-        attributes("Compiled-With": "${System.getProperty('java.version')} (${System.getProperty('java.vendor')})")
-        attributes([
-                       "Specification-Title": "Freenet",
-                       "Specification-Version": "0.7.5",
-                       "Specification-Vendor": "freenetproject.org",
-                       "Implementation-Title": "Freenet",
-                       "Implementation-Version": "0.7.5 ${version}",
-                       "Implementation-Vendor": "freenetproject.org",
-                   ], "common")
-    }
+compileTestJava {
+    options.encoding = 'UTF-8'
 }
-
-jar.enabled = false
-jar.dependsOn buildJar
-
-tasks.register('sourcesJar', Jar) {
-    archiveClassifier = 'sources'
-    preserveFileTimestamps = false
-    reproducibleFileOrder = true
-    from(sourceSets.main.allSource) {
-        exclude 'freenet/node/Version.java'
-    }
-    from(versionSource)
-}
-
-tasks.register('copyResourcesToClasses2') {
-    inputs.files sourceSets.main.allSource
-    outputs.dir layout.buildDirectory.dir("classes/java/main/")
-    doLast {
-        copy {
-            from sourceSets.main.allSource
-            into layout.buildDirectory.dir("classes/java/main/")
-            include 'freenet/l10n/*properties'
-            include 'freenet/l10n/iso-*.tab'
-            include 'freenet/clients/http/staticfiles/**'
-            include 'freenet/clients/http/templates/**'
-            include '../dependencies.properties'
-        }
-        copy {
-            from "${projectDir}/"
-            into layout.buildDirectory.dir("classes/java/main/")
-            include 'dependencies.properties'
-        }
-    }
-}
-processResources.dependsOn copyResourcesToClasses2
-
-tasks.register('copyTestResourcesToClasses2') {
-    inputs.files sourceSets.test.allSource
-    outputs.dir layout.buildDirectory.dir("classes/java/test/")
-    doLast {
-        copy {
-            from sourceSets.test.allSource
-            into layout.buildDirectory.dir("classes/java/test/")
-            include 'freenet/client/filter/*/**'
-            include 'freenet/crypt/ciphers/rijndael-gladman-test-data/**'
-            include 'freenet/l10n/*properties'
-            include 'freenet/clients/http/templates/**'
-        }
-    }
-}
-compileTestJava.dependsOn copyResourcesToClasses2
-compileTestJava.dependsOn copyTestResourcesToClasses2
 
 test {
     if(JavaVersion.current() >= JavaVersion.VERSION_1_9) {
@@ -205,12 +154,34 @@ tasks.withType(Test) {
     enableAssertions = false
 }
 
+jar {
+    archiveFileName = 'freenet.jar'
+    manifest {
+        attributes 'Permissions': 'all-permissions'
+        attributes 'Application-Name': 'Freenet REference Daemon'
+        attributes 'Required-Ext-Version': 29
+        attributes 'Recommended-Ext-Version': 29
+        attributes 'Compiled-With': "${System.getProperty('java.version')} (${System.getProperty('java.vendor')})"
+        attributes([
+                'Specification-Title'   : 'Freenet',
+                'Specification-Version' : '0.7.5',
+                'Specification-Vendor'  : 'freenetproject.org',
+                'Implementation-Title'  : 'Freenet',
+                'Implementation-Version': "0.7.5 ${version}",
+                'Implementation-Vendor' : 'freenetproject.org',
+        ], 'common')
+    }
+}
+
+sourcesJar {
+    archiveFileName = 'freenet-sources.jar'
+}
+
 tasks.register('copyRuntimeLibs', Copy) {
     into layout.buildDirectory.dir('output')
     from configurations.runtimeClasspath
     from jar
 }
-copyRuntimeLibs.dependsOn jar
 
 tasks.register('tar', Tar) {
     description = "Build a source release, specifically excluding the build directories and gradle wrapper files"
@@ -260,6 +231,13 @@ tasks.register('archiveDigests') {
 }
 
 tasks.withType(AbstractArchiveTask).configureEach {
+    // Ensure reproducible archives
+    preserveFileTimestamps = false
+    reproducibleFileOrder = true
+
+    // Fail the build if any file would be overwritten due to duplicates
+    duplicatesStrategy = DuplicatesStrategy.FAIL
+
     // Register the archive for displaying digests at the end of the build
     artifacts.archives archiveFile
     finalizedBy archiveDigests
@@ -279,4 +257,14 @@ String getVersionFromGit() {
         logger.warn('Cannot determine version from git: {}', e.message)
         return '@unknown@'
     }
+}
+
+/**
+ * Add additional sources to a existing source directory. The additional sources can specify their own inclusion/
+ * exclusion patterns independently from the existing sources.
+ */
+void extendSourceDirectorySet(SourceDirectorySet parent, String name, @DelegatesTo(value = SourceDirectorySet) Closure cl) {
+    def child = objects.sourceDirectorySet(name, parent.name)
+    cl.rehydrate(child, cl.owner, cl.thisObject).call()
+    parent.source child
 }
