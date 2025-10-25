@@ -178,13 +178,17 @@ sourcesJar {
 }
 
 tasks.register('copyRuntimeLibs', Copy) {
+    description = 'Collect all runtime artifacts and dependencies.'
+    group = 'Build'
+
     into layout.buildDirectory.dir('output')
     from configurations.runtimeClasspath
     from jar
 }
 
 tasks.register('tar', Tar) {
-    description = "Build a source release, specifically excluding the build directories and gradle wrapper files"
+    description = 'Build a source release, specifically excluding the build directories and gradle wrapper files.'
+    group = 'Build'
 
     from(project.rootDir) {
         exclude '**/build'
