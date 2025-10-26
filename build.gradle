@@ -67,10 +67,7 @@ sourceSets {
         }
         resources {
             srcDirs 'src'
-            include 'freenet/l10n/*properties'
-            include 'freenet/l10n/iso-*.tab'
-            include 'freenet/clients/http/staticfiles/**'
-            include 'freenet/clients/http/templates/**'
+            exclude '**/*.java'
         }
     }
     test {
@@ -80,10 +77,7 @@ sourceSets {
         }
         resources {
             srcDirs 'test'
-            include 'freenet/client/filter/*/**'
-            include 'freenet/crypt/ciphers/rijndael-gladman-test-data/**'
-            include 'freenet/l10n/*properties'
-            include 'freenet/clients/http/templates/**'
+            exclude '**/*.java'
         }
     }
 }
