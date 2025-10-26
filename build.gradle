@@ -128,27 +128,19 @@ compileTestJava {
 }
 
 test {
-    if(JavaVersion.current() >= JavaVersion.VERSION_1_9) {
+    if (JavaVersion.current() >= JavaVersion.VERSION_1_9) {
         jvmArgs '--add-opens=java.base/java.lang=ALL-UNNAMED'
         jvmArgs '--add-opens=java.base/java.util=ALL-UNNAMED'
         jvmArgs '--add-opens=java.base/java.io=ALL-UNNAMED'
         jvmArgs '--add-opens=java.base/java.util.zip=ALL-UNNAMED'
     }
-    minHeapSize = "128m"
-    maxHeapSize = "512m"
-    // no inner class
+    useJUnit()
+    minHeapSize = '128m'
+    maxHeapSize = '512m'
+    // Do not run inner classes, they are registered as part of a Suite
     include 'freenet/**/*Test.class'
     exclude 'freenet/**/*$*Test.class'
     scanForTestClasses = false
-    systemProperties += [
-//	"test.extensive":
-//	"test.verbose":
-//	"test.benchmark":
-    ]
-}
-
-tasks.withType(Test) {
-    enableAssertions = false
 }
 
 javadoc {
