@@ -31,7 +31,7 @@ http://bugs.hyphanet.org
 
 If you are unsure whether your issue is a security issue, please come
 to our IRC channel (#freenet at irc.libera.chat) and talk to an op:
-https://web.libera.chat/?nick=FollowingTheRabbit|?#freenet
+https://web.libera.chat/?nick=SecRabbit|?#freenet
 
 
 Reporting Security Issues
