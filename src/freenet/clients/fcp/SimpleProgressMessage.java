@@ -39,7 +39,7 @@ public class SimpleProgressMessage extends FCPMessage {
 		 * parts of the file transfer failed due to temporary reasons such as "data not found" /
 		 * "route not found" / etc. This is due to shortcomings in the underlying event framework.
 		 * Please re-enable it once the underlying issue is fixed:
-		 * https://bugs.freenetproject.org/view.php?id=6526 */
+		 * http://bugs.hyphanet.org/view.php?id=6526 */
 		// fs.put("LastFailure", event.latestFailure != null ? event.latestFailure.getTime() : 0);
 		fs.put("Succeeded",event.succeedBlocks);
 		fs.put("LastProgress", event.latestSuccess != null ? event.latestSuccess.getTime() : 0);

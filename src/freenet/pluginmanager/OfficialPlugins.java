@@ -15,7 +15,7 @@ import freenet.node.updater.PluginJarUpdater;
  * Container for Freenet’s official plugins.
  *
  * FIXME: Connectivity essential plugins shouldn't have their minimum version increased!
- * @see https://bugs.freenetproject.org/view.php?id=6600
+ * @see http://bugs.hyphanet.org/view.php?id=6600
  *
  * @author <a href="mailto:bombe@pterodactylus.net">David ‘Bombe’ Roden</a>
  */

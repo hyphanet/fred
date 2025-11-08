@@ -6,7 +6,7 @@ start with:
 
 * Is there anything you've found annoying or lacking while using Freenet that
   you'd like to fix? (There might even be a bug filed already.)
-* The [bug tracker](https://bugs.freenetproject.org/my_view_page.php) has tasks.
+* The [bug tracker](http://bugs.hyphanet.org/my_view_page.php) has tasks.
   List only bugs filed against this repository by selecting "Freenet" in the
   "Project" drop-down in the upper right. Do any of these look interesting?
 * Check the [projects](https://wiki.freenetproject.org/Projects) page.

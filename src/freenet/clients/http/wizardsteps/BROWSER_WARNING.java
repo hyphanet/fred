@@ -36,7 +36,7 @@ public class BROWSER_WARNING implements Step {
 		boolean showTabWarning = false;
 		if(ua != null) {
 			isFirefox = ua.contains("Firefox/");
-			//Firefox 3.6 can destroy tabs, see https://bugs.freenetproject.org/view.php?id=5209
+			//Firefox 3.6 can destroy tabs, see http://bugs.hyphanet.org/view.php?id=5209
 			if(ua.contains("Firefox/3.6") && incognito) {
 				showTabWarning = true;
 			} else if (isFirefox) {

@@ -48,7 +48,7 @@ public class BaseL10n {
 	 * the best choice. It is a combination of ISO639-3 codes (for which we already have class
 	 * {@link ISO639_3}) and a standard country list. And most importantly: It is understood
 	 * by standard Java class {@link Locale}.
-	 * Bugtracker entry for this: https://bugs.freenetproject.org/view.php?id=6857
+	 * Bugtracker entry for this: http://bugs.hyphanet.org/view.php?id=6857
 	 * 
 	 * @see "http://www.omniglot.com/language/names.htm"
 	 * @see "http://loc.gov/standards/iso639-2/php/code_list.php"

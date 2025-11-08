@@ -27,7 +27,7 @@ What to report as normal bugs
 
 Best practices, hardening tips, and similar are not security issues.
 Please report them to our regular bugtracker:
-https://bugs.freenetproject.org
+http://bugs.hyphanet.org
 
 If you are unsure whether your issue is a security issue, please come
 to our IRC channel (#freenet at irc.libera.chat) and talk to an op:
@@ -38,7 +38,7 @@ Reporting Security Issues
 -------------------------
 
 Please report security issues to security@freenetproject.org
-encrypting to all PGP/gnupg keys from our [Keyring](https://freenetproject.org/assets/keyring.gpg).
+encrypting to all PGP/gnupg keys from our [Keyring](https://www.hyphanet.org/assets/keyring.gpg).
 
 Please do not file public reports of security problems that could be
 used to connect the pseudonyms of users with the nodes they run. If
