@@ -592,12 +592,14 @@ final public class FileUtil {
 				return false;
 			}
 		} else {
+			boolean success = true;
 			for(File subfile: wd.listFiles()) {
-				if(!removeAll(subfile)) return false;
+				success &= secureDeleteAll(subfile);
 			}
 			if(!wd.delete()) {
 				Logger.error(FileUtil.class, "Could not delete directory: "+wd);
 			}
+			return success;
 		}
 		return true;
 	}
@@ -613,33 +615,35 @@ final public class FileUtil {
 				return false;
 			}
 		} else {
+			boolean success = true;
 			for(File subfile: wd.listFiles()) {
-				if(!removeAll(subfile)) return false;
+				success &= removeAll(subfile);
 			}
 			if(!wd.delete()) {
 				Logger.error(FileUtil.class, "Could not delete directory: "+wd);
 			}
+			return success;
 		}
 		return true;
 	}
-	
+
+	/**
+	 * Secure deleting this file or everything in this directory.
+	 * @param file the file or directory to delete
+	 * @throws IOException deletion failed
+	 */
 	public static void secureDelete(File file) throws IOException {
 		// FIXME somebody who understands these things should have a look at this...
 		if(!file.exists()) return;
 		long size = file.length();
 		if(size > 0) {
-			RandomAccessFile raf = null;
-			try {
-				System.out.println("Securely deleting "+file+" which is of length "+size+" bytes...");
-				raf = new RandomAccessFile(file, "rw");
+			System.out.println("Securely deleting "+file+" which is of length "+size+" bytes...");
+			try (RandomAccessFile raf = new RandomAccessFile(file, "rw")) {
 				// Random data first.
 				raf.seek(0);
 				fill(new RandomAccessFileOutputStream(raf), size);
 				raf.getFD().sync();
 				raf.close();
-				raf = null;
-			} finally {
-				Closer.close(raf);
 			}
 		}
 		if((!file.delete()) && file.exists())
