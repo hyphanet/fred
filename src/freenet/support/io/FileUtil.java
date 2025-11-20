@@ -628,8 +628,8 @@ final public class FileUtil {
 	}
 
 	/**
-	 * Secure deleting this file or everything in this directory.
-	 * @param file the file or directory to delete
+	 * Secure deleting this file.
+	 * @param file the file to delete
 	 * @throws IOException deletion failed
 	 */
 	public static void secureDelete(File file) throws IOException {
@@ -643,11 +643,14 @@ final public class FileUtil {
 				raf.seek(0);
 				fill(new RandomAccessFileOutputStream(raf), size);
 				raf.getFD().sync();
-				raf.close();
+			} catch (IOException e) {
+				// We will continue deleting the file no matter what.
 			}
 		}
-		if((!file.delete()) && file.exists())
-			throw new IOException("Unable to delete file "+file);
+		if((!file.delete()) && file.exists()) {
+			Logger.error(FileUtil.class, "Could not securely delete file: "+file);
+			throw new IOException("Unable to delete file " + file);
+		}
 	}
 
 	@Deprecated
