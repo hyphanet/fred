@@ -3,8 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import java.util.Calendar;
-import java.util.TimeZone;
+//import java.util.Calendar;
+//import java.util.TimeZone;
 
 import freenet.support.Fields;
 import freenet.support.LogThresholdCallback;
@@ -53,17 +53,17 @@ public class Version {
 	private static final int buildNumber = 1503;
 
 	/** Oldest build of fred we will talk to *before* _cal */
-	private static final int oldLastGoodBuild = 1474;
+	//private static final int oldLastGoodBuild = 1474;
 	/** Oldest build of fred we will talk to *after* _cal */
 	private static final int newLastGoodBuild = 1475;
-	static final long transitionTime;
+	//static final long transitionTime;
 
-	static {
-		final Calendar _cal = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
+	//static {
+		//final Calendar _cal = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
 		// year, month - 1 (or constant), day, hour, minute, second
-		_cal.set( 2016, Calendar.JULY, 15, 0, 0, 0 );
-		transitionTime = _cal.getTimeInMillis();
-	}
+		//_cal.set( 2016, Calendar.JULY, 15, 0, 0, 0 );
+		//transitionTime = _cal.getTimeInMillis();
+	//}
 
         private static volatile boolean logMINOR;
         private static volatile boolean logDEBUG;
@@ -103,7 +103,8 @@ public class Version {
 	 * Analogous to {@link #buildNumber()} but for {@link #transitionTime}.
 	 */
 	public static long transitionTime() {
-		return transitionTime;
+		//return transitionTime;
+		return 0;
 	}
 
 
@@ -113,10 +114,10 @@ public class Version {
 	 * data normally.
 	 */
 	public static int lastGoodBuild() {
-		if(System.currentTimeMillis() >= transitionTime)
+		//if(System.currentTimeMillis() >= transitionTime)
 			return newLastGoodBuild;
-		else
-			return oldLastGoodBuild;
+		//else
+			//return oldLastGoodBuild;
 	}
 
 	/** The highest reported build of fred */
@@ -145,15 +146,11 @@ public class Version {
 	 * @return the node's version designators as an array
 	 */
 	public static String[] getVersion() {
-		String[] ret =
-			{ nodeName, nodeVersion, protocolVersion,  String.valueOf(buildNumber) };
-		return ret;
+		return new String[]{ nodeName, nodeVersion, protocolVersion,  String.valueOf(buildNumber) };
 	}
 
 	public static String[] getLastGoodVersion() {
-		String[] ret =
-			{ nodeName, nodeVersion, protocolVersion,  String.valueOf(lastGoodBuild()) };
-		return ret;
+		return new String[]{ nodeName, nodeVersion, protocolVersion,  String.valueOf(lastGoodBuild()) };
 	}
 
 	/**
