@@ -755,7 +755,6 @@ public class DefaultMIMETypes {
 		addMIMEType((short)623, "image/avif", "avif");
 		addMIMEType((short)624, "image/heic", "heic");
 		addMIMEType((short)625, "image/heif", "heif");
-		addMIMEType((short)625, "image/heif", "heif");
 		addMIMEType((short)626, "image/bpg", "bpg");
 		addMIMEType((short)627, "image/jxl", "jxl");
 		addMIMEType((short)628, "image/emf", "emf");
