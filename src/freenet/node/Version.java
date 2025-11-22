@@ -3,9 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-//import java.util.Calendar;
-//import java.util.TimeZone;
-
 import freenet.support.Fields;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -52,18 +49,8 @@ public class Version {
 	/** The build number of the current revision */
 	private static final int buildNumber = 1503;
 
-	/** Oldest build of fred we will talk to *before* _cal */
-	//private static final int oldLastGoodBuild = 1474;
-	/** Oldest build of fred we will talk to *after* _cal */
-	private static final int newLastGoodBuild = 1475;
-	//static final long transitionTime;
-
-	//static {
-		//final Calendar _cal = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
-		// year, month - 1 (or constant), day, hour, minute, second
-		//_cal.set( 2016, Calendar.JULY, 15, 0, 0, 0 );
-		//transitionTime = _cal.getTimeInMillis();
-	//}
+	/** Oldest build of fred we will talk to */
+	private static final int lastGoodBuild = 1475;
 
         private static volatile boolean logMINOR;
         private static volatile boolean logDEBUG;
@@ -102,8 +89,8 @@ public class Version {
 	/**
 	 * Analogous to {@link #buildNumber()} but for {@link #transitionTime}.
 	 */
+	@Deprecated
 	public static long transitionTime() {
-		//return transitionTime;
 		return 0;
 	}
 
@@ -114,10 +101,7 @@ public class Version {
 	 * data normally.
 	 */
 	public static int lastGoodBuild() {
-		//if(System.currentTimeMillis() >= transitionTime)
-			return newLastGoodBuild;
-		//else
-			//return oldLastGoodBuild;
+		return lastGoodBuild;
 	}
 
 	/** The highest reported build of fred */
