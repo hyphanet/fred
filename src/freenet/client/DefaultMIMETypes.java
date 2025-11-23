@@ -755,6 +755,26 @@ public class DefaultMIMETypes {
 		addMIMEType((short)623, "image/avif", "avif");
 		addMIMEType((short)624, "image/heic", "heic");
 		addMIMEType((short)625, "image/heif", "heif");
+		addMIMEType((short)626, "image/bpg", "bpg");
+		addMIMEType((short)627, "image/jxl", "jxl");
+		addMIMEType((short)628, "image/emf", "emf");
+		addMIMEType((short)629, "image/vnd-ms.dds", "dds");
+		addMIMEType((short)630, "image/x-exr", "exr");
+		addMIMEType((short)631, "video/webm", "webm");
+		addMIMEType((short)632, "video/3gpp", "3gp");
+		addMIMEType((short)633, "video/3gpp2", "3g2");
+		addMIMEType((short)634, "audio/x-ape", "ape");
+		addMIMEType((short)635, "application/gzip", "gz");
+		addMIMEType((short)636, "application/x-xz", "xz");
+		addMIMEType((short)637, "application/zstd", "zst");
+		addMIMEType((short)638, "application/vnd.ms-cab-compressed", "cab");
+		addMIMEType((short)639, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "docx");
+		addMIMEType((short)640, "application/vnd.openxmlformats-officedocument.presentationml.presentation", "pptx");
+		addMIMEType((short)641, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "xlsx");
+		addMIMEType((short)642, "application/msix", "msix");
+		addMIMEType((short)643, "application/vnd.android.package-archive", "apk");
+		addMIMEType((short)644, "application/vnd.rn-realmedia", "rm");
+		addMIMEType((short)645, "application/vnd.rn-realmedia-vbr", "rmvb");
 	}
 	
 	/** Guess a MIME type from a filename.
