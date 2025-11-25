@@ -263,7 +263,9 @@ dependencies {
     implementation "org.unbescape:unbescape:1.1.6.RELEASE"
     implementation "org.slf4j:slf4j-api:1.7.25"
 
-    testImplementation 'junit:junit:4.13.2'
+    testImplementation('junit:junit:4.13.2') {
+        exclude(group: "org.hamcrest", module: "hamcrest-core")
+    }
     testImplementation "org.mockito:mockito-inline:2.28.2"
     testImplementation "org.hamcrest:hamcrest:3.0"
 }
