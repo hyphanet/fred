@@ -268,6 +268,7 @@ dependencies {
     }
     testImplementation "org.mockito:mockito-inline:2.28.2"
     testImplementation "org.hamcrest:hamcrest:3.0"
+    testImplementation "org.jsoup:jsoup:1.21.2"
 }
 
 task tar(type: Tar) {
