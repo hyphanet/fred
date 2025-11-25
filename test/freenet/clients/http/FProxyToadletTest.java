@@ -1,24 +1,36 @@
 package freenet.clients.http;
 
+import freenet.client.ClientMetadata;
+import freenet.client.FetchContext;
 import freenet.client.FetchException;
+import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.filter.ContentFilter;
 import freenet.client.filter.KnownUnsafeContentTypeException;
+import freenet.keys.FreenetURI;
 import freenet.l10n.BaseL10nTest;
 import freenet.node.NodeClientCore;
+import freenet.node.RequestClientBuilder;
 import freenet.support.api.HTTPRequest;
+import freenet.support.io.ArrayBucket;
 import java.io.File;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.junit.Test;
 import org.mockito.internal.util.reflection.FieldSetter;
 
+import static freenet.test.LinkMatchers.hasBaseType;
 import static freenet.test.LinkMatchers.hasParameter;
 import static freenet.test.LinkMatchers.hasQuery;
 import static freenet.test.LinkMatchers.isKeyValuePairs;
 import static freenet.test.LinkMatchers.isMimeType;
 import static freenet.test.LinkMatchers.isURI;
+import static freenet.test.ToadletContextMatchers.hasBodyText;
+import static freenet.test.ToadletContextMatchers.hasHeader;
+import static freenet.test.ToadletContextMatchers.hasStatus;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.equalToIgnoringCase;
@@ -34,27 +46,63 @@ public class FProxyToadletTest {
 	@Test
 	public void whenOfferingFilterOptionsPlainTextMediaTypeHasCharsetUtf8() throws Exception {
 		BaseL10nTest.useTestTranslation("freenet/clients/http/FProxyToadletTest.properties");
-		HighLevelSimpleClient highLevelSimpleClient = mock(HighLevelSimpleClient.class, RETURNS_DEEP_STUBS);
-		NodeClientCore nodeClientCore = mock(NodeClientCore.class, RETURNS_DEEP_STUBS);
-		when(nodeClientCore.getNode().getConfig().get("fproxy").getOption("port").getValueString()).thenReturn("8888");
-		when(nodeClientCore.getNode().getConfig().get("fproxy").getOption("bindTo").getValueString()).thenReturn("127.0.0.1,0:0:0:0:0:0:0:1");
-		when(nodeClientCore.getAllowedDownloadDirs()).thenReturn(new File[] { new File("/test") });
-		FProxyFetchTracker fetchTracker = mock(FProxyFetchTracker.class, RETURNS_DEEP_STUBS);
 		FetchException fetchException = (FetchException) new FetchException(FetchException.FetchExceptionMode.UNKNOWN_METADATA, 4, true, "application/pdf")
 				.initCause(new KnownUnsafeContentTypeException(ContentFilter.getMIMEType("application/pdf")));
 		when(fetchTracker.makeFetcher(any(), anyLong(), any(), any())).thenThrow(fetchException);
-		FProxyToadlet fProxyToadlet = new FProxyToadlet(highLevelSimpleClient, nodeClientCore, fetchTracker);
-		FieldSetter.setField(fProxyToadlet, FProxyToadlet.class.getDeclaredField("random"), new byte[0]);
-		HTTPRequest httpRequest = mock(HTTPRequest.class, RETURNS_DEEP_STUBS);
 		TestToadletContext toadletContext = TestToadletContext.builder()
 				.forToadlet(fProxyToadlet)
 				.requesting("/KSK@test")
 				.withNode(nodeClientCore.getNode())
 				.build();
 		fProxyToadlet.handleMethodGET(toadletContext.getUri(), httpRequest, toadletContext);
+		assertThat(toadletContext, allOf(
+				hasStatus(equalTo(500)),
+				hasHeader("Content-Type", contains(isMimeType(hasBaseType("text/html"))))
+		));
 		Document document = Jsoup.parse(toadletContext.getBodyText());
 		String link = document.selectFirst("li a:contains(open-as-text)").attr("href");
 		assertThat(link, isURI(hasQuery(isKeyValuePairs(hasEntry(equalTo("type"), contains(isMimeType(hasParameter("charset", equalToIgnoringCase("utf-8")))))))));
+	}
+
+	@Test
+	public void downloadedFileIsDeliveredImmediately() throws Exception {
+		when(fetchTracker.makeFetcher(any(), anyLong(), any(), any())).then(invocation -> {
+			FProxyFetchInProgress fetchInProgress = new FProxyFetchInProgress(fetchTracker, invocation.getArgument(0, FreenetURI.class), invocation.getArgument(1, Long.class), 0, null, invocation.getArgument(2, FetchContext.class), new RequestClientBuilder().build(), invocation.getArgument(3, FProxyFetchInProgress.REFILTER_POLICY.class));
+			fetchInProgress.onSuccess(new FetchResult(new ClientMetadata("text/plain"), new ArrayBucket("test".getBytes(UTF_8))), null);
+			return new FProxyFetchWaiter(fetchInProgress);
+		});
+		TestToadletContext toadletContext = TestToadletContext.builder()
+				.forToadlet(fProxyToadlet)
+				.requesting("/KSK@test")
+				.withNode(nodeClientCore.getNode())
+				.build();
+		fProxyToadlet.handleMethodGET(toadletContext.getUri(), httpRequest, toadletContext);
+		assertThat(toadletContext, allOf(
+				hasStatus(equalTo(200)),
+				hasBodyText(equalTo("test")),
+				hasHeader("Content-Type", contains(isMimeType(hasBaseType("text/plain"))))
+		));
+	}
+
+	private final HighLevelSimpleClient highLevelSimpleClient = mock(HighLevelSimpleClient.class, RETURNS_DEEP_STUBS);
+	private final NodeClientCore nodeClientCore = mock(NodeClientCore.class, RETURNS_DEEP_STUBS);
+	private final FProxyFetchTracker fetchTracker = mock(FProxyFetchTracker.class, RETURNS_DEEP_STUBS);
+
+	{
+		when(nodeClientCore.getNode().getConfig().get("fproxy").getOption("port").getValueString()).thenReturn("8888");
+		when(nodeClientCore.getNode().getConfig().get("fproxy").getOption("bindTo").getValueString()).thenReturn("127.0.0.1,0:0:0:0:0:0:0:1");
+		when(nodeClientCore.getAllowedDownloadDirs()).thenReturn(new File[] { new File("/test") });
+	}
+
+	private final FProxyToadlet fProxyToadlet = new FProxyToadlet(highLevelSimpleClient, nodeClientCore, fetchTracker);
+	private final HTTPRequest httpRequest = mock(HTTPRequest.class, RETURNS_DEEP_STUBS);
+
+	{
+		try {
+			FieldSetter.setField(fProxyToadlet, FProxyToadlet.class.getDeclaredField("random"), new byte[0]);
+		} catch (NoSuchFieldException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 }
