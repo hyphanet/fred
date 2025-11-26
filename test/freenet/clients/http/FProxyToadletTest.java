@@ -20,6 +20,8 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.internal.util.reflection.FieldSetter;
 
+import static freenet.test.HtmlMatchers.hasElement;
+import static freenet.test.HtmlMatchers.hasTitle;
 import static freenet.test.LinkMatchers.hasBaseType;
 import static freenet.test.LinkMatchers.hasParameter;
 import static freenet.test.LinkMatchers.hasQuery;
@@ -30,6 +32,7 @@ import static freenet.test.ToadletContextMatchers.hasBodyText;
 import static freenet.test.ToadletContextMatchers.hasContentType;
 import static freenet.test.ToadletContextMatchers.hasHeader;
 import static freenet.test.ToadletContextMatchers.hasStatus;
+import static freenet.test.ToadletContextMatchers.isHtml;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
@@ -226,6 +229,29 @@ public class FProxyToadletTest {
 	@Test
 	public void requestConfigPageRedirectsToConfigNodePage() throws Exception {
 		verifyPermanentRedirect("/config/", "/config/node");
+	}
+
+	@Test
+	public void requestingAFailedDownloadReturnsErrorPage() throws Exception {
+		BaseL10nTest.useTestTranslation();
+		when(fetchTracker.makeFetcher(any(), anyLong(), any(), any())).then(invocation -> {
+			FProxyFetchInProgress fetchInProgress = new FProxyFetchInProgress(fetchTracker, invocation.getArgument(0, FreenetURI.class), invocation.getArgument(1, Long.class), 0, null, invocation.getArgument(2, FetchContext.class), new RequestClientBuilder().build(), invocation.getArgument(3, FProxyFetchInProgress.REFILTER_POLICY.class));
+			fetchInProgress.onFailure(new FetchException(FetchException.FetchExceptionMode.ALL_DATA_NOT_FOUND), null);
+			return new FProxyFetchWaiter(fetchInProgress);
+		});
+		TestToadletContext toadletContext = TestToadletContext.builder()
+				.forToadlet(fProxyToadlet)
+				.requesting("/KSK@failed")
+				.withNode(nodeClientCore.getNode())
+				.build();
+		toadletContext.handleRequest();
+		assertThat(toadletContext, allOf(
+				hasStatus(equalTo(500)),
+				isHtml(allOf(
+						hasTitle(equalTo("FetchException.shortError.28 - Freenet")),
+						hasElement("p:contains(FProxyToadlet.unableToRetrieve)")
+				))
+		));
 	}
 
 	private void verifyPermanentRedirect(String fromUri, String toUri) throws Exception {
