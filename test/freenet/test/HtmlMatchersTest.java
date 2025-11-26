@@ -8,6 +8,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.junit.Test;
 
+import static freenet.test.HtmlMatchers.hasAttribute;
 import static freenet.test.HtmlMatchers.hasElement;
 import static freenet.test.HtmlMatchers.hasTitle;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -111,6 +112,34 @@ public class HtmlMatchersTest {
 	public void hasElementMatcherWithElementMatcherDescribesItself() {
 		hasElement("head title", any(Element.class)).describeTo(description);
 		assertThat(description.toString(), equalTo("has element \"head title\" matching an instance of org.jsoup.nodes.Element"));
+	}
+
+	@Test
+	public void hasAttributeMatcherDoesNotMatchIfAttributeDoesNotExist() {
+		assertThat(hasAttribute("foo", any(String.class)).matches(new Element("test")), equalTo(false));
+	}
+
+	@Test
+	public void hasAttributeMatcherDescribesMismatch() {
+		hasAttribute("foo", any(String.class)).describeMismatch(new Element("test"), description);
+		assertThat(description.toString(), equalTo("no attribute \"foo\""));
+	}
+
+	@Test
+	public void hasAttributeMatcherDescribesMismatchOfValueMatcher() {
+		hasAttribute("foo", nullValue()).describeMismatch(new Element("test").attr("foo", "bar"), description);
+		assertThat(description.toString(), equalTo("attribute was \"bar\""));
+	}
+
+	@Test
+	public void hasAttributeMatcherDoesMatchIfAttributeIsPresent() {
+		assertThat(hasAttribute("foo", any(String.class)).matches(new Element("test").attr("foo", "bar")), equalTo(true));
+	}
+
+	@Test
+	public void hasAttributeMatcherDescribesItself() {
+		hasAttribute("foo", any(String.class)).describeTo(description);
+		assertThat(description.toString(), equalTo("has attribute \"foo\" matching an instance of java.lang.String"));
 	}
 
 	private final Description description = new StringDescription();

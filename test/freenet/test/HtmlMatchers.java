@@ -108,4 +108,36 @@ public class HtmlMatchers {
 		};
 	}
 
+	/**
+	 * Returns a {@link Matcher} for an {@link Element}, which verifies that
+	 * the attribute with the given name exists, and if it does, verifies it against
+	 * the given matcher.
+	 *
+	 * @param attributeName The name of the attribute to verify
+	 * @param valueMatcher The matcher for the attribute’s value, if present
+	 * @return A matcher for an {@link Element}
+	 */
+	public static Matcher<Element> hasAttribute(String attributeName, Matcher<? super String> valueMatcher) {
+		return new TypeSafeDiagnosingMatcher<Element>() {
+			@Override
+			protected boolean matchesSafely(Element element, Description mismatchDescription) {
+				if (!element.hasAttr(attributeName)) {
+					mismatchDescription.appendText("no attribute ").appendValue(attributeName);
+					return false;
+				}
+				if (!valueMatcher.matches(element.attr(attributeName))) {
+					mismatchDescription.appendText("attribute ");
+					valueMatcher.describeMismatch(element.attr(attributeName), mismatchDescription);
+					return false;
+				}
+				return true;
+			}
+
+			@Override
+			public void describeTo(Description description) {
+				description.appendText("has attribute ").appendValue(attributeName).appendText(" matching ").appendDescriptionOf(valueMatcher);
+			}
+		};
+	}
+
 }
