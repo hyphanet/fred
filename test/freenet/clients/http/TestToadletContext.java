@@ -307,8 +307,7 @@ public class TestToadletContext implements ToadletContext {
 
 	@Override
 	public UserAlertManager getAlertManager() {
-		// Not yet implemented
-		return null;
+		return userAlertManager;
 	}
 
 	@Override
@@ -400,6 +399,7 @@ public class TestToadletContext implements ToadletContext {
 	private TestToadletContext(Node node, ToadletContainer toadletContainer, Toadlet activeToadlet, URI uri, String method, MultiValueTable<String, String> requestHeaders) {
 		this.node = node;
 		this.toadletContainer = toadletContainer;
+		this.userAlertManager = node.getClientCore().getAlerts();
 		this.activeToadlet = activeToadlet;
 		this.uri = uri;
 		this.method = method;
@@ -408,6 +408,7 @@ public class TestToadletContext implements ToadletContext {
 
 	private final Node node;
 	private final ToadletContainer toadletContainer;
+	private final UserAlertManager userAlertManager;
 	private final Toadlet activeToadlet;
 	private final URI uri;
 	private final String method;

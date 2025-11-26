@@ -17,6 +17,7 @@ import java.net.URI;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.internal.util.reflection.FieldSetter;
 
 import static freenet.test.LinkMatchers.hasBaseType;
@@ -26,6 +27,7 @@ import static freenet.test.LinkMatchers.isKeyValuePairs;
 import static freenet.test.LinkMatchers.isMimeType;
 import static freenet.test.LinkMatchers.isURI;
 import static freenet.test.ToadletContextMatchers.hasBodyText;
+import static freenet.test.ToadletContextMatchers.hasContentType;
 import static freenet.test.ToadletContextMatchers.hasHeader;
 import static freenet.test.ToadletContextMatchers.hasStatus;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -40,6 +42,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class FProxyToadletTest {
@@ -134,11 +137,42 @@ public class FProxyToadletTest {
 		assertThat(redirectException.getTarget(), equalTo(URI.create("/static/favicon.ico")));
 	}
 
+	@Test
+	public void requestingFeedSendsTheAtomFeed() throws Exception {
+		when(nodeClientCore.getAlerts().getAtom(any())).thenReturn("atom-feed");
+		TestToadletContext toadletContext = TestToadletContext.builder()
+				.forToadlet(fProxyToadlet)
+				.requesting("/feed")
+				.withNode(nodeClientCore.getNode())
+				.build();
+		toadletContext.handleRequest();
+		assertThat(toadletContext, allOf(
+				hasStatus(equalTo(200)),
+				hasContentType(hasBaseType("application/atom+xml")),
+				hasBodyText(equalTo("atom-feed"))
+		));
+	}
+
+	@Test
+	public void requestingFeedGeneratesUrlPrefixCorrectly() throws Exception {
+		when(nodeClientCore.getAlerts().getAtom(any())).thenReturn("atom-feed");
+		TestToadletContext toadletContext = TestToadletContext.builder()
+				.forToadlet(fProxyToadlet)
+				.requesting("/feed/")
+				.withNode(nodeClientCore.getNode())
+				.build();
+		toadletContext.handleRequest();
+		ArgumentCaptor<String> urlPrefixCaptor = ArgumentCaptor.forClass(String.class);
+		verify(nodeClientCore.getAlerts()).getAtom(urlPrefixCaptor.capture());
+		assertThat(urlPrefixCaptor.getValue(), equalTo("http://127.0.0.1:8888"));
+	}
+
 	private final HighLevelSimpleClient highLevelSimpleClient = mock(HighLevelSimpleClient.class, RETURNS_DEEP_STUBS);
 	private final NodeClientCore nodeClientCore = mock(NodeClientCore.class, RETURNS_DEEP_STUBS);
 	private final FProxyFetchTracker fetchTracker = mock(FProxyFetchTracker.class, RETURNS_DEEP_STUBS);
 
 	{
+		when(nodeClientCore.getNode().getClientCore()).thenReturn(nodeClientCore);
 		when(nodeClientCore.getNode().getConfig().get("fproxy").getOption("port").getValueString()).thenReturn("8888");
 		when(nodeClientCore.getNode().getConfig().get("fproxy").getOption("bindTo").getValueString()).thenReturn("127.0.0.1,0:0:0:0:0:0:0:1");
 		when(nodeClientCore.getAllowedDownloadDirs()).thenReturn(new File[] { new File("/test") });
