@@ -188,6 +188,21 @@ public class FProxyToadletTest {
 		));
 	}
 
+	@Test
+	public void requestingAnInProgressKeyReturnsProgressPage() throws Exception {
+		BaseL10nTest.useTestTranslation();
+		when(fetchTracker.makeFetcher(any(), anyLong(), any(), any())).then(invocation -> {
+			FProxyFetchInProgress fetchInProgress = new FProxyFetchInProgress(fetchTracker, invocation.getArgument(0, FreenetURI.class), invocation.getArgument(1, Long.class), 0, null, invocation.getArgument(2, FetchContext.class), new RequestClientBuilder().build(), invocation.getArgument(3, FProxyFetchInProgress.REFILTER_POLICY.class));
+			fetchInProgress.setHasWaited();
+			return new FProxyFetchWaiter(fetchInProgress);
+		});
+		createToadletContextExecuteRequestAndVerifyContext(builder -> builder.requesting("/KSK@test").withHeader("User-Agent", "Mozilla/Test"), allOf(
+				isHtml(
+						hasTitle(equalTo("FProxyToadlet.fetchingPageTitle - Freenet"))
+				)
+		));
+	}
+
 	private void verifyTemporaryRedirect(String fromUri, String toUri) throws Exception {
 		createToadletContextExecuteRequestAndVerifyContext(builder -> builder.requesting(fromUri), allOf(
 				hasStatus(equalTo(302)),
