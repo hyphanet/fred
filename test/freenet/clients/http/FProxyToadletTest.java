@@ -36,7 +36,9 @@ import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.equalToIgnoringCase;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.lessThan;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -165,6 +167,35 @@ public class FProxyToadletTest {
 		ArgumentCaptor<String> urlPrefixCaptor = ArgumentCaptor.forClass(String.class);
 		verify(nodeClientCore.getAlerts()).getAtom(urlPrefixCaptor.capture());
 		assertThat(urlPrefixCaptor.getValue(), equalTo("http://127.0.0.1:8888"));
+	}
+
+	@Test
+	public void requestingRobotsFileReturnsADisallowForEverything() throws Exception {
+		TestToadletContext toadletContext = TestToadletContext.builder()
+				.forToadlet(fProxyToadlet)
+				.requesting("/robots.txt")
+				.doRobots()
+				.withNode(nodeClientCore.getNode())
+				.build();
+		toadletContext.handleRequest();
+		assertThat(toadletContext, allOf(
+				hasStatus(equalTo(200)),
+				hasContentType(hasBaseType("text/plain")),
+				hasBodyText(equalToIgnoringCase("User-Agent: *\nDisallow: /"))
+		));
+	}
+
+	@Test
+	public void requestingRobotsFileWithRobotsFileDisabledReturnsClientError() throws Exception {
+		TestToadletContext toadletContext = TestToadletContext.builder()
+				.forToadlet(fProxyToadlet)
+				.requesting("/robots.txt")
+				.withNode(nodeClientCore.getNode())
+				.build();
+		toadletContext.handleRequest();
+		assertThat(toadletContext, allOf(
+				hasStatus(allOf(greaterThanOrEqualTo(400), lessThan(500)))
+		));
 	}
 
 	private final HighLevelSimpleClient highLevelSimpleClient = mock(HighLevelSimpleClient.class, RETURNS_DEEP_STUBS);
