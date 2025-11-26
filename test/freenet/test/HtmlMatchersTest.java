@@ -5,8 +5,10 @@ import org.hamcrest.Matcher;
 import org.hamcrest.StringDescription;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 import org.junit.Test;
 
+import static freenet.test.HtmlMatchers.hasElement;
 import static freenet.test.HtmlMatchers.hasTitle;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.any;
@@ -59,6 +61,28 @@ public class HtmlMatchersTest {
 		Matcher<String> titleMatcher = mock(Matcher.class);
 		hasTitle(titleMatcher).matches(documentWithTitle);
 		verify(titleMatcher).matches(eq("Test!"));
+	}
+
+	@Test
+	public void hasElementMatcherDoesNotMatchIfElementDoesNotExist() {
+		assertThat(hasElement("some element").matches(documentWithTitle), equalTo(false));
+	}
+
+	@Test
+	public void hasElementMatcherDescribesMismatchBecauseOfMissingElement() {
+		hasElement("some element").describeMismatch(documentWithTitle, description);
+		assertThat(description.toString(), equalTo("not found: \"some element\""));
+	}
+
+	@Test
+	public void hasElementMatcherMatchesIfElementExists() {
+		assertThat(hasElement("head title").matches(documentWithTitle), equalTo(true));
+	}
+
+	@Test
+	public void hasElementMatcherDescribesItself() {
+		hasElement("head title").describeTo(description);
+		assertThat(description.toString(), equalTo("has element \"head title\""));
 	}
 
 	private final Description description = new StringDescription();

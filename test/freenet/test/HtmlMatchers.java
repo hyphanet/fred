@@ -44,4 +44,31 @@ public class HtmlMatchers {
 		};
 	}
 
+	/**
+	 * Returns a {@link Matcher} for a {@link Document} that locates an
+	 * {@link Element} using a {@link Document#select(String) selector}
+	 * and matches if at least one such {@link Element} can be found.
+	 *
+	 * @param selector The selector for the element to locate
+	 * @return A matcher for a {@link Document}
+	 */
+	public static Matcher<Document> hasElement(String selector) {
+		return new TypeSafeDiagnosingMatcher<Document>() {
+			@Override
+			protected boolean matchesSafely(Document document, Description mismatchDescription) {
+				Element element = document.select(selector).first();
+				if (element == null) {
+					mismatchDescription.appendText("not found: ").appendValue(selector);
+					return false;
+				}
+				return true;
+			}
+
+			@Override
+			public void describeTo(Description description) {
+				description.appendText("has element ").appendValue(selector);
+			}
+		};
+	}
+
 }
