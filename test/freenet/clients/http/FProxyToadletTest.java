@@ -123,6 +123,17 @@ public class FProxyToadletTest {
 		assertThat(redirectException.getTarget(), equalTo(URI.create("/welcome/")));
 	}
 
+	@Test
+	public void requestingFaviconIcoRedirectsToStaticToadlet() throws Exception {
+		TestToadletContext toadletContext = TestToadletContext.builder()
+				.forToadlet(fProxyToadlet)
+				.requesting("/favicon.ico")
+				.withNode(nodeClientCore.getNode())
+				.build();
+		RedirectException redirectException = assertThrows(RedirectException.class, toadletContext::handleRequest);
+		assertThat(redirectException.getTarget(), equalTo(URI.create("/static/favicon.ico")));
+	}
+
 	private final HighLevelSimpleClient highLevelSimpleClient = mock(HighLevelSimpleClient.class, RETURNS_DEEP_STUBS);
 	private final NodeClientCore nodeClientCore = mock(NodeClientCore.class, RETURNS_DEEP_STUBS);
 	private final FProxyFetchTracker fetchTracker = mock(FProxyFetchTracker.class, RETURNS_DEEP_STUBS);
