@@ -4,9 +4,13 @@ import freenet.clients.http.TestToadletContext;
 import freenet.clients.http.ToadletContext;
 import java.util.List;
 import java.util.Map;
+import javax.activation.MimeType;
+import javax.activation.MimeTypeParseException;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 
 /**
  * Matchers for certain properties of a {@link TestToadletContext}. As
@@ -107,6 +111,43 @@ public class ToadletContextMatchers {
 			@Override
 			public void describeTo(Description description) {
 				description.appendText("has header ").appendValue(name).appendText(" matching ").appendDescriptionOf(valueMatcher);
+			}
+		};
+	}
+
+	/**
+	 * Returns a {@link Matcher} that verifies that a
+	 * {@link TestToadletContext} has written HTML to its body, then parses
+	 * that body and verifies it using the given {@link Document} matcher.
+	 *
+	 * @param documentMatcher The matcher for the HTML document, if present
+	 * @return A matcher for a {@link TestToadletContext}
+	 */
+	public static Matcher<TestToadletContext> isHtml(Matcher<? super Document> documentMatcher) {
+		return new TypeSafeDiagnosingMatcher<TestToadletContext>() {
+			@Override
+			protected boolean matchesSafely(TestToadletContext toadletContext, Description mismatchDescription) {
+				try {
+					MimeType mimeType = new MimeType(toadletContext.getResponseHeaders().get("content-type").get(0));
+					if (!mimeType.match("text/html")) {
+						mismatchDescription.appendText("MIME type was ").appendValue(mimeType);
+						return false;
+					}
+					Document document = Jsoup.parse(toadletContext.getBodyText());
+					if (!documentMatcher.matches(document)) {
+						mismatchDescription.appendText("Document ");
+						documentMatcher.describeMismatch(document, mismatchDescription);
+						return false;
+					}
+					return true;
+				} catch (MimeTypeParseException e) {
+					throw new RuntimeException(e);
+				}
+			}
+
+			@Override
+			public void describeTo(Description description) {
+				description.appendText("is HTML matching ").appendDescriptionOf(documentMatcher);
 			}
 		};
 	}

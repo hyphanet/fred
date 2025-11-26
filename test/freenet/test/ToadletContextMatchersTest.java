@@ -9,11 +9,14 @@ import java.util.List;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.StringDescription;
+import org.jsoup.nodes.Document;
 import org.junit.Test;
+import org.mockito.ArgumentMatchers;
 
 import static freenet.test.ToadletContextMatchers.hasBodyText;
 import static freenet.test.ToadletContextMatchers.hasHeader;
 import static freenet.test.ToadletContextMatchers.hasStatus;
+import static freenet.test.ToadletContextMatchers.isHtml;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -161,6 +164,57 @@ public class ToadletContextMatchersTest {
 		toadletContext.sendReplyHeadersStatic(200, "OK", headers, null, 0, null);
 		hasHeader("foo", headerMatcher).matches(toadletContext);
 		verify(headerMatcher).matches(eq(asList("bar")));
+	}
+
+	@Test
+	public void isHtmlMatcherDoesNotMatchIfContentTypeIsNotHtml() throws Exception {
+		toadletContext.sendReplyHeadersStatic(200, "OK", null, "text/plain", 0, null);
+		assertThat(isHtml(any(Document.class)).matches(toadletContext), equalTo(false));
+	}
+
+	@Test
+	public void isHtmlMatcherDescribesMismatch() throws Exception {
+		toadletContext.sendReplyHeadersStatic(200, "OK", null, "text/plain", 0, null);
+		isHtml(any(Document.class)).describeMismatch(toadletContext, description);
+		assertThat(description.toString(), equalTo("MIME type was <text/plain>"));
+	}
+
+	@Test
+	public void isHtmlMatcherMatchesIfContentTypeIsHtml() throws Exception {
+		toadletContext.sendReplyHeadersStatic(200, "OK", null, "text/html; charset=utf-8", 0, null);
+		toadletContext.writeData("test".getBytes(UTF_8));
+		assertThat(isHtml(any(Document.class)).matches(toadletContext), equalTo(true));
+	}
+
+	@Test
+	public void isHtmlMatcherDescribesItself() {
+		isHtml(any(Document.class)).describeTo(description);
+		assertThat(description.toString(), equalTo("is HTML matching an instance of org.jsoup.nodes.Document"));
+	}
+
+	@Test
+	public void documentMatcherIsNotConsultedIfMimeTypeIsNotHtml() throws Exception {
+		Matcher<Document> documentMatcher = mock(Matcher.class);
+		toadletContext.sendReplyHeadersStatic(200, "OK", null, "text/plain", 0, null);
+		isHtml(documentMatcher).matches(toadletContext);
+		verifyZeroInteractions(documentMatcher);
+	}
+
+	@Test
+	public void isHtmlMatcherDescribesMismatchOfDocumentMatcher() throws ToadletContextClosedException, IOException {
+		toadletContext.sendReplyHeadersStatic(200, "OK", null, "text/html; charset=utf-8", 0, null);
+		toadletContext.writeData("test".getBytes(UTF_8));
+		isHtml(nullValue()).describeMismatch(toadletContext, description);
+		assertThat(description.toString(), equalTo("Document was <<html>\n <head></head>\n <body>test</body>\n</html>>"));
+	}
+
+	@Test
+	public void documentMatcherIsConsultedIfMimeTypeIsHtml() throws Exception {
+		Matcher<Document> documentMatcher = mock(Matcher.class);
+		toadletContext.sendReplyHeadersStatic(200, "OK", null, "text/html; charset=utf-8", 0, null);
+		toadletContext.writeData("test".getBytes(UTF_8));
+		isHtml(documentMatcher).matches(toadletContext);
+		verify(documentMatcher).matches(ArgumentMatchers.any(Document.class));
 	}
 
 	private final TestToadletContext toadletContext = TestToadletContext.builder().build();
