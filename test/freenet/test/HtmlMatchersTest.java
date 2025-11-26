@@ -85,6 +85,34 @@ public class HtmlMatchersTest {
 		assertThat(description.toString(), equalTo("has element \"head title\""));
 	}
 
+	@Test
+	public void hasElementMatcherWithElementMatcherDoesNotMatchIfElementDoesNotExist() {
+		assertThat(hasElement("some element", any(Element.class)).matches(documentWithTitle), equalTo(false));
+	}
+
+	@Test
+	public void hasElementMatcherWithElementMatcherDescribesMismatchBecauseOfMissingElement() {
+		hasElement("some element", any(Element.class)).describeMismatch(documentWithTitle, description);
+		assertThat(description.toString(), equalTo("not found: \"some element\""));
+	}
+
+	@Test
+	public void hasElementMatcherWithElementMatcherDescribesMismatchOfElementMatcher() {
+		hasElement("head title", nullValue()).describeMismatch(documentWithTitle, description);
+		assertThat(description.toString(), equalTo("element was <<title>Test!</title>>"));
+	}
+
+	@Test
+	public void hasElementMatcherWithElementMatcherMatchesIfElementExists() {
+		assertThat(hasElement("head title", any(Element.class)).matches(documentWithTitle), equalTo(true));
+	}
+
+	@Test
+	public void hasElementMatcherWithElementMatcherDescribesItself() {
+		hasElement("head title", any(Element.class)).describeTo(description);
+		assertThat(description.toString(), equalTo("has element \"head title\" matching an instance of org.jsoup.nodes.Element"));
+	}
+
 	private final Description description = new StringDescription();
 	private final Document documentWithoutTitle = Jsoup.parse("<html><head></head><body></body></html>");
 	private final Document documentWithTitle = Jsoup.parse("<html><head><title>Test!</title></head><body></body></html>");

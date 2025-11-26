@@ -71,4 +71,41 @@ public class HtmlMatchers {
 		};
 	}
 
+	/**
+	 * Returns a {@link Matcher} for a {@link Document} that locates an
+	 * {@link Element} using a {@link Document#select(String) selector}
+	 * and verifies the found element with the given matcher.
+	 * <p>
+	 * If {@link Document#select(String)} locates multiple elements, only
+	 * the first one is  matched!
+	 * </p>
+	 *
+	 * @param selector The selector for the element to locate
+	 * @param elementMatcher The matcher for the element, if present
+	 * @return A matcher for a {@link Document}
+	 */
+	public static Matcher<Document> hasElement(String selector, Matcher<? super Element> elementMatcher) {
+		return new TypeSafeDiagnosingMatcher<Document>() {
+			@Override
+			protected boolean matchesSafely(Document document, Description mismatchDescription) {
+				Element element = document.select(selector).first();
+				if (element == null) {
+					mismatchDescription.appendText("not found: ").appendValue(selector);
+					return false;
+				}
+				if (!elementMatcher.matches(element)) {
+					mismatchDescription.appendText("element ");
+					elementMatcher.describeMismatch(element, mismatchDescription);
+					return false;
+				}
+				return true;
+			}
+
+			@Override
+			public void describeTo(Description description) {
+				description.appendText("has element ").appendValue(selector).appendText(" matching ").appendDescriptionOf(elementMatcher);
+			}
+		};
+	}
+
 }
