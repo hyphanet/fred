@@ -34,17 +34,17 @@ import static org.mockito.Mockito.mock;
  * <h2>Usage</h2>
  *
  * <p>
- * The {@link TestToadletContext} can be handed in to the
- * {@code handleMethod*} methods of {@link Toadlet}, such as
- * {@link Toadlet#handleMethodGET(URI, HTTPRequest, ToadletContext)}.
- * The HTTP status code, response headers, and body data can afterward
- * be retrieved from the {@link TestToadletContext} instance.
+ * The {@link TestToadletContext} takes care of creating all necessary
+ * objects for a call of a {@code handleMethod*} method and even runs the
+ * method in question itself. The HTTP status code, response headers, and
+ * body data can afterward be retrieved from the {@link TestToadletContext}
+ * instance, like this:
  * </p>
  * <pre>
  *     TestToadletContext toadletContext = TestToadletContext.build()
  *     	.forToadlet(toadlet)
  *     	.build();
- *     toadlet.handleMethodGET(uri, httpRequest, toadletContext);
+ *     toadletContext.handleRequest();
  *     assertThat(toadletContext.getStatusCode(), equalTo(404));
  * </pre>
  * <p>
@@ -135,7 +135,7 @@ public class TestToadletContext implements ToadletContext {
 
 		public TestToadletContext build() {
 			activeToadlet.container = toadletContainer;
-			return new TestToadletContext(node, toadletContainer, activeToadlet, uri, fromMap(requestHeaders));
+			return new TestToadletContext(node, toadletContainer, activeToadlet, uri, method, fromMap(requestHeaders));
 		}
 
 		private static MultiValueTable<String, String> fromMap(Map<String, List<String>> headers) {
@@ -145,6 +145,7 @@ public class TestToadletContext implements ToadletContext {
 		}
 
 		private URI uri;
+		private String method = "GET";
 		private Toadlet activeToadlet = mock(Toadlet.class, RETURNS_DEEP_STUBS);
 		private final Map<String, List<String>> requestHeaders = new HashMap<>();
 		private Node node = mock(Node.class, RETURNS_DEEP_STUBS);
@@ -198,6 +199,13 @@ public class TestToadletContext implements ToadletContext {
 	 */
 	public String getBodyText() {
 		return (body != null) ? new String(body, UTF_8) : null;
+	}
+
+	public void handleRequest() throws ToadletContextClosedException, IOException, RedirectException {
+		HTTPRequest httpRequest = new HTTPRequestImpl(uri, method);
+		if (method.equals("GET")) {
+			activeToadlet.handleMethodGET(getUri(), httpRequest, this);
+		}
 	}
 
 	@Override
@@ -389,11 +397,12 @@ public class TestToadletContext implements ToadletContext {
 		return null;
 	}
 
-	private TestToadletContext(Node node, ToadletContainer toadletContainer, Toadlet activeToadlet, URI uri, MultiValueTable<String, String> requestHeaders) {
+	private TestToadletContext(Node node, ToadletContainer toadletContainer, Toadlet activeToadlet, URI uri, String method, MultiValueTable<String, String> requestHeaders) {
 		this.node = node;
 		this.toadletContainer = toadletContainer;
 		this.activeToadlet = activeToadlet;
 		this.uri = uri;
+		this.method = method;
 		this.requestHeaders = requestHeaders;
 	}
 
@@ -401,6 +410,7 @@ public class TestToadletContext implements ToadletContext {
 	private final ToadletContainer toadletContainer;
 	private final Toadlet activeToadlet;
 	private final URI uri;
+	private final String method;
 	private final MultiValueTable<String, String> requestHeaders;
 
 	private final Map<String, List<String>> responseHeaders = new HashMap<>();

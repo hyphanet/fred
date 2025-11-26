@@ -11,7 +11,6 @@ import freenet.keys.FreenetURI;
 import freenet.l10n.BaseL10nTest;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestClientBuilder;
-import freenet.support.api.HTTPRequest;
 import freenet.support.io.ArrayBucket;
 import java.io.File;
 import org.jsoup.Jsoup;
@@ -54,7 +53,7 @@ public class FProxyToadletTest {
 				.requesting("/KSK@test")
 				.withNode(nodeClientCore.getNode())
 				.build();
-		fProxyToadlet.handleMethodGET(toadletContext.getUri(), httpRequest, toadletContext);
+		toadletContext.handleRequest();
 		assertThat(toadletContext, allOf(
 				hasStatus(equalTo(500)),
 				hasHeader("Content-Type", contains(isMimeType(hasBaseType("text/html"))))
@@ -76,7 +75,7 @@ public class FProxyToadletTest {
 				.requesting("/KSK@test")
 				.withNode(nodeClientCore.getNode())
 				.build();
-		fProxyToadlet.handleMethodGET(toadletContext.getUri(), httpRequest, toadletContext);
+		toadletContext.handleRequest();
 		assertThat(toadletContext, allOf(
 				hasStatus(equalTo(200)),
 				hasBodyText(equalTo("test")),
@@ -95,7 +94,6 @@ public class FProxyToadletTest {
 	}
 
 	private final FProxyToadlet fProxyToadlet = new FProxyToadlet(highLevelSimpleClient, nodeClientCore, fetchTracker);
-	private final HTTPRequest httpRequest = mock(HTTPRequest.class, RETURNS_DEEP_STUBS);
 
 	{
 		try {
