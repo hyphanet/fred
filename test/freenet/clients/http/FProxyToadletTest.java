@@ -198,6 +198,49 @@ public class FProxyToadletTest {
 		));
 	}
 
+	@Test
+	public void requestDarknetPageWithoutSlashRedirectsToFriendsPage() throws Exception {
+		verifyPermanentRedirect("/darknet", "/friends/");
+	}
+
+	@Test
+	public void requestDarknetPageWithSlashRedirectsToFriendsPage() throws Exception {
+		verifyPermanentRedirect("/darknet/", "/friends/");
+	}
+
+	@Test
+	public void requestOpennetPageWithoutSlashRedirectsToStrangersPage() throws Exception {
+		verifyPermanentRedirect("/opennet", "/strangers/");
+	}
+
+	@Test
+	public void requestOpennetPageWithSlashRedirectsToStrangersPage() throws Exception {
+		verifyPermanentRedirect("/opennet/", "/strangers/");
+	}
+
+	@Test
+	public void requestQueuePageRedirectsToDownloadsPage() throws Exception {
+		verifyPermanentRedirect("/queue/", "/downloads/");
+	}
+
+	@Test
+	public void requestConfigPageRedirectsToConfigNodePage() throws Exception {
+		verifyPermanentRedirect("/config/", "/config/node");
+	}
+
+	private void verifyPermanentRedirect(String fromUri, String toUri) throws Exception {
+		TestToadletContext toadletContext = TestToadletContext.builder()
+				.forToadlet(fProxyToadlet)
+				.requesting(fromUri)
+				.withNode(nodeClientCore.getNode())
+				.build();
+		toadletContext.handleRequest();
+		assertThat(toadletContext, allOf(
+				hasStatus(equalTo(301)),
+				hasHeader("Location", contains(equalTo(toUri)))
+		));
+	}
+
 	private final HighLevelSimpleClient highLevelSimpleClient = mock(HighLevelSimpleClient.class, RETURNS_DEEP_STUBS);
 	private final NodeClientCore nodeClientCore = mock(NodeClientCore.class, RETURNS_DEEP_STUBS);
 	private final FProxyFetchTracker fetchTracker = mock(FProxyFetchTracker.class, RETURNS_DEEP_STUBS);
