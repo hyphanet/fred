@@ -83,6 +83,19 @@ public class FProxyToadletTest {
 		));
 	}
 
+	@Test
+	public void requestingInvalidKeyViaParameterResultsInErrorPage() throws Exception {
+		TestToadletContext toadletContext = TestToadletContext.builder()
+				.forToadlet(fProxyToadlet)
+				.requesting("/?key=INV@alid.key")
+				.withNode(nodeClientCore.getNode())
+				.build();
+		toadletContext.handleRequest();
+		assertThat(toadletContext, allOf(
+				hasStatus(equalTo(404))
+		));
+	}
+
 	private final HighLevelSimpleClient highLevelSimpleClient = mock(HighLevelSimpleClient.class, RETURNS_DEEP_STUBS);
 	private final NodeClientCore nodeClientCore = mock(NodeClientCore.class, RETURNS_DEEP_STUBS);
 	private final FProxyFetchTracker fetchTracker = mock(FProxyFetchTracker.class, RETURNS_DEEP_STUBS);
