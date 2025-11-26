@@ -13,6 +13,7 @@ import freenet.node.NodeClientCore;
 import freenet.node.RequestClientBuilder;
 import freenet.support.io.ArrayBucket;
 import java.io.File;
+import java.net.URI;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.junit.Test;
@@ -34,6 +35,7 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.equalToIgnoringCase;
 import static org.hamcrest.Matchers.hasEntry;
+import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
@@ -108,6 +110,17 @@ public class FProxyToadletTest {
 				hasStatus(equalTo(302)),
 				hasHeader("Location", contains(equalTo("/freenet:KSK@test")))
 		));
+	}
+
+	@Test
+	public void requestingTheRootUrlRedirectsToTheWelcomeToadlet() throws Exception {
+		TestToadletContext toadletContext = TestToadletContext.builder()
+				.forToadlet(fProxyToadlet)
+				.requesting("/")
+				.withNode(nodeClientCore.getNode())
+				.build();
+		RedirectException redirectException = assertThrows(RedirectException.class, toadletContext::handleRequest);
+		assertThat(redirectException.getTarget(), equalTo(URI.create("/welcome/")));
 	}
 
 	private final HighLevelSimpleClient highLevelSimpleClient = mock(HighLevelSimpleClient.class, RETURNS_DEEP_STUBS);
