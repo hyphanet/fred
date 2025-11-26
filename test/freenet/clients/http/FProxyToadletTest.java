@@ -7,6 +7,7 @@ import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.filter.ContentFilter;
 import freenet.client.filter.KnownUnsafeContentTypeException;
+import freenet.clients.http.TestToadletContext.TestToadletContextBuilder;
 import freenet.keys.FreenetURI;
 import freenet.l10n.BaseL10nTest;
 import freenet.node.NodeClientCore;
@@ -14,12 +15,13 @@ import freenet.node.RequestClientBuilder;
 import freenet.support.io.ArrayBucket;
 import java.io.File;
 import java.net.URI;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
+import java.util.function.Consumer;
+import org.hamcrest.Matcher;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.internal.util.reflection.FieldSetter;
 
+import static freenet.test.HtmlMatchers.hasAttribute;
 import static freenet.test.HtmlMatchers.hasElement;
 import static freenet.test.HtmlMatchers.hasTitle;
 import static freenet.test.LinkMatchers.hasBaseType;
@@ -58,19 +60,13 @@ public class FProxyToadletTest {
 		FetchException fetchException = (FetchException) new FetchException(FetchException.FetchExceptionMode.UNKNOWN_METADATA, 4, true, "application/pdf")
 				.initCause(new KnownUnsafeContentTypeException(ContentFilter.getMIMEType("application/pdf")));
 		when(fetchTracker.makeFetcher(any(), anyLong(), any(), any())).thenThrow(fetchException);
-		TestToadletContext toadletContext = TestToadletContext.builder()
-				.forToadlet(fProxyToadlet)
-				.requesting("/KSK@test")
-				.withNode(nodeClientCore.getNode())
-				.build();
-		toadletContext.handleRequest();
-		assertThat(toadletContext, allOf(
+		createToadletContextExecuteRequestAndVerifyContext(builder -> builder.requesting("/KSK@test"), allOf(
 				hasStatus(equalTo(500)),
-				hasHeader("Content-Type", contains(isMimeType(hasBaseType("text/html"))))
+				isHtml(
+						hasElement("li a:contains(open-as-text)",
+								hasAttribute("href",
+										isURI(hasQuery(isKeyValuePairs(hasEntry(equalTo("type"), contains(isMimeType(hasParameter("charset", equalToIgnoringCase("utf-8")))))))))))
 		));
-		Document document = Jsoup.parse(toadletContext.getBodyText());
-		String link = document.selectFirst("li a:contains(open-as-text)").attr("href");
-		assertThat(link, isURI(hasQuery(isKeyValuePairs(hasEntry(equalTo("type"), contains(isMimeType(hasParameter("charset", equalToIgnoringCase("utf-8")))))))));
 	}
 
 	@Test
@@ -80,13 +76,7 @@ public class FProxyToadletTest {
 			fetchInProgress.onSuccess(new FetchResult(new ClientMetadata("text/plain"), new ArrayBucket("test".getBytes(UTF_8))), null);
 			return new FProxyFetchWaiter(fetchInProgress);
 		});
-		TestToadletContext toadletContext = TestToadletContext.builder()
-				.forToadlet(fProxyToadlet)
-				.requesting("/KSK@test")
-				.withNode(nodeClientCore.getNode())
-				.build();
-		toadletContext.handleRequest();
-		assertThat(toadletContext, allOf(
+		createToadletContextExecuteRequestAndVerifyContext(builder -> builder.requesting("/KSK@test"), allOf(
 				hasStatus(equalTo(200)),
 				hasBodyText(equalTo("test")),
 				hasHeader("Content-Type", contains(isMimeType(hasBaseType("text/plain"))))
@@ -95,63 +85,28 @@ public class FProxyToadletTest {
 
 	@Test
 	public void requestingInvalidKeyViaParameterResultsInErrorPage() throws Exception {
-		TestToadletContext toadletContext = TestToadletContext.builder()
-				.forToadlet(fProxyToadlet)
-				.requesting("/?key=INV@alid.key")
-				.withNode(nodeClientCore.getNode())
-				.build();
-		toadletContext.handleRequest();
-		assertThat(toadletContext, allOf(
-				hasStatus(equalTo(404))
-		));
+		createToadletContextExecuteRequestAndVerifyContext(builder -> builder.requesting("/?key=INV@lid"), hasStatus(equalTo(404)));
 	}
 
 	@Test
 	public void requestingAValidKeyViaParameterResultsInRedirect() throws Exception {
-		TestToadletContext toadletContext = TestToadletContext.builder()
-				.forToadlet(fProxyToadlet)
-				.requesting("/?key=KSK@test")
-				.withNode(nodeClientCore.getNode())
-				.build();
-		toadletContext.handleRequest();
-		assertThat(toadletContext, allOf(
-				hasStatus(equalTo(302)),
-				hasHeader("Location", contains(equalTo("/freenet:KSK@test")))
-		));
+		verifyTemporaryRedirect("/?key=KSK@test", "/freenet:KSK@test");
 	}
 
 	@Test
-	public void requestingTheRootUrlRedirectsToTheWelcomeToadlet() throws Exception {
-		TestToadletContext toadletContext = TestToadletContext.builder()
-				.forToadlet(fProxyToadlet)
-				.requesting("/")
-				.withNode(nodeClientCore.getNode())
-				.build();
-		RedirectException redirectException = assertThrows(RedirectException.class, toadletContext::handleRequest);
-		assertThat(redirectException.getTarget(), equalTo(URI.create("/welcome/")));
+	public void requestingTheRootUrlRedirectsToTheWelcomeToadlet() {
+		verifyInternalRedirect("/", "/welcome/");
 	}
 
 	@Test
-	public void requestingFaviconIcoRedirectsToStaticToadlet() throws Exception {
-		TestToadletContext toadletContext = TestToadletContext.builder()
-				.forToadlet(fProxyToadlet)
-				.requesting("/favicon.ico")
-				.withNode(nodeClientCore.getNode())
-				.build();
-		RedirectException redirectException = assertThrows(RedirectException.class, toadletContext::handleRequest);
-		assertThat(redirectException.getTarget(), equalTo(URI.create("/static/favicon.ico")));
+	public void requestingFaviconIcoRedirectsToStaticToadlet() {
+		verifyInternalRedirect("/favicon.ico", "/static/favicon.ico");
 	}
 
 	@Test
 	public void requestingFeedSendsTheAtomFeed() throws Exception {
 		when(nodeClientCore.getAlerts().getAtom(any())).thenReturn("atom-feed");
-		TestToadletContext toadletContext = TestToadletContext.builder()
-				.forToadlet(fProxyToadlet)
-				.requesting("/feed")
-				.withNode(nodeClientCore.getNode())
-				.build();
-		toadletContext.handleRequest();
-		assertThat(toadletContext, allOf(
+		createToadletContextExecuteRequestAndVerifyContext(builder -> builder.requesting("/feed"), allOf(
 				hasStatus(equalTo(200)),
 				hasContentType(hasBaseType("application/atom+xml")),
 				hasBodyText(equalTo("atom-feed"))
@@ -174,14 +129,7 @@ public class FProxyToadletTest {
 
 	@Test
 	public void requestingRobotsFileReturnsADisallowForEverything() throws Exception {
-		TestToadletContext toadletContext = TestToadletContext.builder()
-				.forToadlet(fProxyToadlet)
-				.requesting("/robots.txt")
-				.doRobots()
-				.withNode(nodeClientCore.getNode())
-				.build();
-		toadletContext.handleRequest();
-		assertThat(toadletContext, allOf(
+		createToadletContextExecuteRequestAndVerifyContext(builder -> builder.requesting("/robots.txt").doRobots(), allOf(
 				hasStatus(equalTo(200)),
 				hasContentType(hasBaseType("text/plain")),
 				hasBodyText(equalToIgnoringCase("User-Agent: *\nDisallow: /"))
@@ -190,15 +138,7 @@ public class FProxyToadletTest {
 
 	@Test
 	public void requestingRobotsFileWithRobotsFileDisabledReturnsClientError() throws Exception {
-		TestToadletContext toadletContext = TestToadletContext.builder()
-				.forToadlet(fProxyToadlet)
-				.requesting("/robots.txt")
-				.withNode(nodeClientCore.getNode())
-				.build();
-		toadletContext.handleRequest();
-		assertThat(toadletContext, allOf(
-				hasStatus(allOf(greaterThanOrEqualTo(400), lessThan(500)))
-		));
+		createToadletContextExecuteRequestAndVerifyContext(builder -> builder.requesting("/robots.txt"), hasStatus(allOf(greaterThanOrEqualTo(400), lessThan(500))));
 	}
 
 	@Test
@@ -239,13 +179,7 @@ public class FProxyToadletTest {
 			fetchInProgress.onFailure(new FetchException(FetchException.FetchExceptionMode.ALL_DATA_NOT_FOUND), null);
 			return new FProxyFetchWaiter(fetchInProgress);
 		});
-		TestToadletContext toadletContext = TestToadletContext.builder()
-				.forToadlet(fProxyToadlet)
-				.requesting("/KSK@failed")
-				.withNode(nodeClientCore.getNode())
-				.build();
-		toadletContext.handleRequest();
-		assertThat(toadletContext, allOf(
+		createToadletContextExecuteRequestAndVerifyContext(builder -> builder.requesting("/KSK@failed"), allOf(
 				hasStatus(equalTo(500)),
 				isHtml(allOf(
 						hasTitle(equalTo("FetchException.shortError.28 - Freenet")),
@@ -254,17 +188,37 @@ public class FProxyToadletTest {
 		));
 	}
 
+	private void verifyTemporaryRedirect(String fromUri, String toUri) throws Exception {
+		createToadletContextExecuteRequestAndVerifyContext(builder -> builder.requesting(fromUri), allOf(
+				hasStatus(equalTo(302)),
+				hasHeader("Location", contains(equalTo(toUri)))
+		));
+	}
+
 	private void verifyPermanentRedirect(String fromUri, String toUri) throws Exception {
-		TestToadletContext toadletContext = TestToadletContext.builder()
-				.forToadlet(fProxyToadlet)
-				.requesting(fromUri)
-				.withNode(nodeClientCore.getNode())
-				.build();
-		toadletContext.handleRequest();
-		assertThat(toadletContext, allOf(
+		createToadletContextExecuteRequestAndVerifyContext(builder -> builder.requesting(fromUri), allOf(
 				hasStatus(equalTo(301)),
 				hasHeader("Location", contains(equalTo(toUri)))
 		));
+	}
+
+	private void verifyInternalRedirect(String fromUri, String toUri) {
+		TestToadletContext toadletContext = TestToadletContext.builder()
+				.forToadlet(fProxyToadlet)
+				.requesting(fromUri)
+				.withNode(nodeClientCore.getNode()).build();
+		RedirectException redirectException = assertThrows(RedirectException.class, toadletContext::handleRequest);
+		assertThat(redirectException.getTarget(), equalTo(URI.create(toUri)));
+	}
+
+	private void createToadletContextExecuteRequestAndVerifyContext(Consumer<TestToadletContextBuilder> builderCustomizer, Matcher<TestToadletContext> toadletContextMatcher) throws Exception {
+		TestToadletContextBuilder builder = TestToadletContext.builder()
+				.forToadlet(fProxyToadlet)
+				.withNode(nodeClientCore.getNode());
+		builderCustomizer.accept(builder);
+		TestToadletContext toadletContext = builder.build();
+		toadletContext.handleRequest();
+		assertThat(toadletContext, toadletContextMatcher);
 	}
 
 	private final HighLevelSimpleClient highLevelSimpleClient = mock(HighLevelSimpleClient.class, RETURNS_DEEP_STUBS);
