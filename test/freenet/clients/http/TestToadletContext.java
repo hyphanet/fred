@@ -123,6 +123,11 @@ public class TestToadletContext implements ToadletContext {
 			return this;
 		}
 
+		public TestToadletContextBuilder doRobots() {
+			doRobots = true;
+			return this;
+		}
+
 		public TestToadletContextBuilder withNode(Node node) {
 			this.node = node;
 			return this;
@@ -135,7 +140,7 @@ public class TestToadletContext implements ToadletContext {
 
 		public TestToadletContext build() {
 			activeToadlet.container = toadletContainer;
-			return new TestToadletContext(node, toadletContainer, activeToadlet, uri, method, fromMap(requestHeaders));
+			return new TestToadletContext(node, toadletContainer, activeToadlet, uri, method, fromMap(requestHeaders), doRobots);
 		}
 
 		private static MultiValueTable<String, String> fromMap(Map<String, List<String>> headers) {
@@ -150,6 +155,7 @@ public class TestToadletContext implements ToadletContext {
 		private final Map<String, List<String>> requestHeaders = new HashMap<>();
 		private Node node = mock(Node.class, RETURNS_DEEP_STUBS);
 		private ToadletContainer toadletContainer = mock(ToadletContainer.class, RETURNS_DEEP_STUBS);
+		private boolean doRobots = false;
 
 	}
 
@@ -360,8 +366,7 @@ public class TestToadletContext implements ToadletContext {
 
 	@Override
 	public boolean doRobots() {
-		// Not yet implemented
-		return false;
+		return doRobots;
 	}
 
 	@Override
@@ -396,7 +401,7 @@ public class TestToadletContext implements ToadletContext {
 		return null;
 	}
 
-	private TestToadletContext(Node node, ToadletContainer toadletContainer, Toadlet activeToadlet, URI uri, String method, MultiValueTable<String, String> requestHeaders) {
+	private TestToadletContext(Node node, ToadletContainer toadletContainer, Toadlet activeToadlet, URI uri, String method, MultiValueTable<String, String> requestHeaders, boolean doRobots) {
 		this.node = node;
 		this.toadletContainer = toadletContainer;
 		this.userAlertManager = node.getClientCore().getAlerts();
@@ -404,6 +409,7 @@ public class TestToadletContext implements ToadletContext {
 		this.uri = uri;
 		this.method = method;
 		this.requestHeaders = requestHeaders;
+		this.doRobots = doRobots;
 	}
 
 	private final Node node;
@@ -413,6 +419,7 @@ public class TestToadletContext implements ToadletContext {
 	private final URI uri;
 	private final String method;
 	private final MultiValueTable<String, String> requestHeaders;
+	private final boolean doRobots;
 
 	private final Map<String, List<String>> responseHeaders = new HashMap<>();
 	private int statusCode = -1;
