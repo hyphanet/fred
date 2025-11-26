@@ -96,6 +96,20 @@ public class FProxyToadletTest {
 		));
 	}
 
+	@Test
+	public void requestingAValidKeyViaParameterResultsInRedirect() throws Exception {
+		TestToadletContext toadletContext = TestToadletContext.builder()
+				.forToadlet(fProxyToadlet)
+				.requesting("/?key=KSK@test")
+				.withNode(nodeClientCore.getNode())
+				.build();
+		toadletContext.handleRequest();
+		assertThat(toadletContext, allOf(
+				hasStatus(equalTo(302)),
+				hasHeader("Location", contains(equalTo("/freenet:KSK@test")))
+		));
+	}
+
 	private final HighLevelSimpleClient highLevelSimpleClient = mock(HighLevelSimpleClient.class, RETURNS_DEEP_STUBS);
 	private final NodeClientCore nodeClientCore = mock(NodeClientCore.class, RETURNS_DEEP_STUBS);
 	private final FProxyFetchTracker fetchTracker = mock(FProxyFetchTracker.class, RETURNS_DEEP_STUBS);
