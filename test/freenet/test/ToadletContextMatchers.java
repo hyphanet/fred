@@ -51,6 +51,42 @@ public class ToadletContextMatchers {
 	}
 
 	/**
+	 * Returns a {@link Matcher} for a {@link TestToadletContext} which
+	 * verifies that a {@code Content-Type} header has been set, and then
+	 * verifies the header using the given {@link MimeType} matcher.
+	 *
+	 * @param mimeTypeMatcher The matcher for the MIME type, if present
+	 * @return A matcher for a {@link TestToadletContext}
+	 */
+	public static Matcher<TestToadletContext> hasContentType(Matcher<? super MimeType> mimeTypeMatcher) {
+		return new TypeSafeDiagnosingMatcher<TestToadletContext>() {
+			@Override
+			protected boolean matchesSafely(TestToadletContext toadletContext, Description mismatchDescription) {
+				if (!toadletContext.getResponseHeaders().containsKey("content-type")) {
+					mismatchDescription.appendText("no content type set");
+					return false;
+				}
+				try {
+					MimeType mimeType = new MimeType(toadletContext.getResponseHeaders().get("content-type").get(0));
+					if (!mimeTypeMatcher.matches(mimeType)) {
+						mismatchDescription.appendText("content type ");
+						mimeTypeMatcher.describeMismatch(mimeType, mismatchDescription);
+						return false;
+					}
+				} catch (MimeTypeParseException e) {
+					throw new RuntimeException(e);
+				}
+				return true;
+			}
+
+			@Override
+			public void describeTo(Description description) {
+				description.appendText("has content type matching ").appendDescriptionOf(mimeTypeMatcher);
+			}
+		};
+	}
+
+	/**
 	 * Returns a {@link Matcher} that verifies that a body has been set on the
 	 * {@link TestToadletContext}, and then verifies it using the given
 	 * {@link Matcher}.

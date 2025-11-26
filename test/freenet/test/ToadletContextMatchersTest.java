@@ -6,14 +6,17 @@ import freenet.support.MultiValueTable;
 import java.io.IOException;
 import java.util.Date;
 import java.util.List;
+import javax.activation.MimeType;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.StringDescription;
 import org.jsoup.nodes.Document;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
 
 import static freenet.test.ToadletContextMatchers.hasBodyText;
+import static freenet.test.ToadletContextMatchers.hasContentType;
 import static freenet.test.ToadletContextMatchers.hasHeader;
 import static freenet.test.ToadletContextMatchers.hasStatus;
 import static freenet.test.ToadletContextMatchers.isHtml;
@@ -72,6 +75,52 @@ public class ToadletContextMatchersTest {
 		toadletContext.sendReplyHeadersStatic(301, "OK", null, null, 0, new Date());
 		hasStatus(statusMatcher).matches(toadletContext);
 		verify(statusMatcher).matches(eq(301));
+	}
+
+	@Test
+	public void hasContentTypeMatcherDoesNotMatchIfNoContentTypeHeaderIsPresent() {
+		assertThat(hasContentType(any(MimeType.class)).matches(toadletContext), equalTo(false));
+	}
+
+	@Test
+	public void hasContentTypeMatcherDescribesMismatch() {
+		hasContentType(any(MimeType.class)).describeMismatch(toadletContext, description);
+		assertThat(description.toString(), equalTo("no content type set"));
+	}
+
+	@Test
+	public void hasContentTypeMatcherDescribesMismatchOfMimeTypeMatcher() throws Exception {
+		toadletContext.sendReplyHeadersStatic(200, "OK", null, "text/html", 0, null);
+		hasContentType(nullValue()).describeMismatch(toadletContext, description);
+		assertThat(description.toString(), equalTo("content type was <text/html>"));
+	}
+
+	@Test
+	public void hasContentTypeMatcherMatchesIfContentTypeIsPresent() throws Exception {
+		toadletContext.sendReplyHeadersStatic(200, "OK", null, "text/html", 0, null);
+		assertThat(hasContentType(any(MimeType.class)).matches(toadletContext), equalTo(true));
+	}
+
+	@Test
+	public void hasContentTypeMatcherDescribesItself() {
+		hasContentType(any(MimeType.class)).describeTo(description);
+		assertThat(description.toString(), equalTo("has content type matching an instance of javax.activation.MimeType"));
+	}
+
+	@Test
+	public void mimeTypeMatcherIsNotConsultedIfThereIsNoContentType() {
+		hasContentType(mimeTypeMatcher).matches(toadletContext);
+		verifyZeroInteractions(mimeTypeMatcher);
+	}
+
+	@Test
+	public void mimeTypeMatcherIsConsultedIfThereIsAContentType() throws Exception {
+		toadletContext.sendReplyHeadersStatic(200, "OK", null, "text/html", 0, null);
+		hasContentType(mimeTypeMatcher).matches(toadletContext);
+		ArgumentCaptor<MimeType> mimeTypeCaptor = ArgumentCaptor.forClass(MimeType.class);
+		verify(mimeTypeMatcher).matches(mimeTypeCaptor.capture());
+		assertThat(mimeTypeCaptor.getValue().getBaseType(), equalTo("text/html"));
+		assertThat(mimeTypeCaptor.getValue().getParameters().isEmpty(), equalTo(true));
 	}
 
 	@Test
@@ -220,6 +269,7 @@ public class ToadletContextMatchersTest {
 	private final TestToadletContext toadletContext = TestToadletContext.builder().build();
 	private final Description description = new StringDescription();
 	private final Matcher<Integer> statusMatcher = mock(Matcher.class);
+	private final Matcher<MimeType> mimeTypeMatcher = mock(Matcher.class);
 	private final Matcher<String> bodyTextMatcher = mock(Matcher.class);
 	private final Matcher<List<String>> headerMatcher = mock(Matcher.class);
 
