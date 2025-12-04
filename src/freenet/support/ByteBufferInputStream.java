@@ -170,12 +170,12 @@ public class ByteBufferInputStream extends InputStream implements DataInput {
 		return DataInputStream.readUTF(this);
 	}
 	/**
-	 * @deprecated {@link DataInputStream#readLine()} is deprecated, so why not?
+	 * @deprecated {@link DataInputStream#readLine()} is deprecated
 	 */
+	@SuppressWarnings("deprecation")
 	@Override
 	@Deprecated
 	public String readLine() throws IOException {
-		// hmmmm bad
 		return new DataInputStream(this).readLine();
 	}
 

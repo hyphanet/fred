@@ -203,11 +203,9 @@ public class ClientCHKBlock implements ClientKeyBlock {
 					if (hmac.getProvider() != sun_hmac.getProvider()) {
 						long time_def = benchmark(hmac);
 						long time_sun = benchmark(sun_hmac);
-						System.out.println(algo + " (" + hmac.getProvider() + "): " + time_def + "ns");
-						System.out.println(algo + " (" + sun_hmac.getProvider() + "): " + time_sun + "ns");
 						if(logMINOR) {
-							Logger.minor(clazz, algo + "/" + hmac.getProvider() + ": " + time_def + "ns");
-							Logger.minor(clazz, algo + "/" + sun_hmac.getProvider() + ": " + time_sun + "ns");
+							Logger.minor(clazz, algo + " (" + hmac.getProvider() + "): " + time_def + "ns");
+							Logger.minor(clazz, algo + " (" + sun_hmac.getProvider() + "): " + time_sun + "ns");
 						}
 						if (time_sun < time_def) {
 							hmac = sun_hmac;
@@ -223,7 +221,6 @@ public class ClientCHKBlock implements ClientKeyBlock {
 				}
 			}
 			hmacProvider = hmac.getProvider();
-			System.out.println(algo + ": using " + hmacProvider);
 			Logger.normal(clazz, algo + ": using " + hmacProvider);
 		} catch(GeneralSecurityException e) {
 			// impossible 

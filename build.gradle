@@ -262,9 +262,9 @@ dependencies {
     implementation "com.github.luben:zstd-jni:1.5.6-4"
 
     testImplementation 'junit:junit:4.13.2'
-    testImplementation "org.mockito:mockito-core:1.9.5"
+    testImplementation "org.mockito:mockito-core:4.11.0"
     testImplementation "org.hamcrest:hamcrest:3.0"
-    testImplementation "org.objenesis:objenesis:1.0"
+    testImplementation "org.objenesis:objenesis:3.3"
 }
 
 task tar(type: Tar) {
