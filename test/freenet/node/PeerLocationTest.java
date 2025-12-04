@@ -2,6 +2,7 @@ package freenet.node;
 
 import static org.junit.Assert.*;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -87,29 +88,22 @@ public class PeerLocationTest {
 
     // Trivial reference implementation that finds the distance to the closest location
     private double trivialFindClosestDistance(double[] locs, double l) {
-        double minDist = Double.POSITIVE_INFINITY;
-        for (int i = 0; i < locs.length; i++) {
-            final double d = Location.distance(locs[i], l);
-            if (d < minDist) {
-                minDist = d;
-            }
-        }
-        return minDist;
+        return Arrays.stream(locs).map(loc -> Location.distance(loc, l)).min().orElse(Double.POSITIVE_INFINITY);
     }
 
     // Trivial reference implementation that finds the distance to the closest location, with some
     // locations excluded from consideration
     private double trivialFindClosestDistance(double[] locs, double l, Set<Double> exclude) {
         double minDist = Double.POSITIVE_INFINITY;
-        for (int i = 0; i < locs.length; i++) {
-            if (exclude.contains(locs[i])) {
-                continue;
-            }
-            final double d = Location.distance(locs[i], l);
-            if (d < minDist) {
-                minDist = d;
-            }
-        }
+		for (double loc : locs) {
+			if (exclude.contains(loc)) {
+				continue;
+			}
+			final double d = Location.distance(loc, l);
+			if (d < minDist) {
+				minDist = d;
+			}
+		}
         return minDist;
     }
 }

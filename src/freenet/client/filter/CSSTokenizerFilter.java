@@ -4473,8 +4473,7 @@ class CSSTokenizerFilter {
 			// Verifiers that still remain in the list may accept an empty word array
 			// here we will let those verifiers accept an empty array if they want to.
 			boolean result = true;
-			for (int i = 0; i < propertyVerifierList.size(); i++) {
-				CSSPropertyVerifier verifier = propertyVerifierList.get(i);
+			for (CSSPropertyVerifier verifier : propertyVerifierList) {
 				result = result && verifier.checkValidity(words, cb);
 			}
 
