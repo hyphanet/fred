@@ -533,11 +533,11 @@ public class HTMLNodeTest {
 	public void testGenerate_fromHTMLNode_textareaDivA() {
 		HTMLNode methodHTMLNode;
 		String[] nodeNamesArray = {"textarea","div","a"};
-		for (String s : nodeNamesArray) {
-			boolean newlines = new HTMLNode("a").newlineOpen(s);
-			methodHTMLNode = new HTMLNode(s,
+		for (String nodeName : nodeNamesArray) {
+			boolean newlines = new HTMLNode("a").newlineOpen(nodeName);
+			methodHTMLNode = new HTMLNode(nodeName,
 					SAMPLE_OKAY_ATTRIBUTE_NAME, SAMPLE_ATTRIBUTE_VALUE);
-			assertEquals(generateFullNodeOutput(s,
+			assertEquals(generateFullNodeOutput(nodeName,
 							SAMPLE_OKAY_ATTRIBUTE_NAME, SAMPLE_ATTRIBUTE_VALUE, "", newlines),
 					methodHTMLNode.generate());
 		}	
@@ -557,13 +557,13 @@ public class HTMLNodeTest {
 		HTMLNode methodChildNode = new HTMLNode(SAMPLE_OKAY_NODE_NAME_NON_EMPTY,
 				SAMPLE_OKAY_ATTRIBUTE_NAME,SAMPLE_ATTRIBUTE_VALUE,
 				SAMPLE_NODE_CONTENT);
-		for (String s : nodeNamesArray) {
-			methodHTMLNode = new HTMLNode(s,
+		for (String nodeName : nodeNamesArray) {
+			methodHTMLNode = new HTMLNode(nodeName,
 					SAMPLE_OKAY_ATTRIBUTE_NAME, SAMPLE_ATTRIBUTE_VALUE,
 					SAMPLE_NODE_CONTENT);
 			methodHTMLNode.addChild(methodChildNode);
 
-			assertEquals(("<" + s + " ").toLowerCase() +
+			assertEquals(("<" + nodeName + " ").toLowerCase() +
 							SAMPLE_OKAY_ATTRIBUTE_NAME + "=" +
 							"\"" + SAMPLE_ATTRIBUTE_VALUE + "\">\n" +
 							// FIXME why is this using 2 tabs? I don't understand ...
@@ -574,7 +574,7 @@ public class HTMLNodeTest {
 									SAMPLE_OKAY_ATTRIBUTE_NAME, SAMPLE_ATTRIBUTE_VALUE,
 									SAMPLE_NODE_CONTENT) +
 							"\n\t" +
-							("</" + s + ">\n").toLowerCase()
+							("</" + nodeName + ">\n").toLowerCase()
 							+ "\t",
 
 					methodHTMLNode.generate());

@@ -727,9 +727,9 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			}
 			//The peer's additions results
 			Map<PeerAdditionReturnCodes,Integer> results=new HashMap<PeerAdditionReturnCodes, Integer>();
-			for (String s : nodesToAdd) {
+			for (String nodeReference : nodesToAdd) {
 				//We need to trim then concat 'End' to the node's reference, this way we have a normal reference(the split() removes the 'End'-s!)
-				PeerAdditionReturnCodes result = addNewNode(s.trim().concat("\nEnd"), privateComment, trust, visibility);
+				PeerAdditionReturnCodes result = addNewNode(nodeReference.trim().concat("\nEnd"), privateComment, trust, visibility);
 				//Store the result
 				results.put(result, results.getOrDefault(result, 0) + 1);
 			}

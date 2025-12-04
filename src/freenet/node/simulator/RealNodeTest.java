@@ -75,20 +75,20 @@ public class RealNodeTest {
 				connect(nodes[i], nodes[next]);
 			}
 		}
-		for (Node a : nodes) {
+		for (Node nodeA : nodes) {
 			// Normalise the probabilities
 			double norm = 0.0;
-			for (Node b : nodes) {
-				if (a.getLocation() == b.getLocation()) continue;
-				norm += 1.0 / distance(a, b);
+			for (Node nodeB : nodes) {
+				if (nodeA.getLocation() == nodeB.getLocation()) continue;
+				norm += 1.0 / distance(nodeA, nodeB);
 			}
 			// Create degree/2 outgoing connections
-			for (Node b : nodes) {
-				if (a.getLocation() == b.getLocation()) continue;
-				double p = 1.0 / distance(a, b) / norm;
+			for (Node nodeB : nodes) {
+				if (nodeA.getLocation() == nodeB.getLocation()) continue;
+				double p = 1.0 / distance(nodeA, nodeB) / norm;
 				for (int n = 0; n < degree / 2; n++) {
 					if (random.nextFloat() < p) {
-						connect(a, b);
+						connect(nodeA, nodeB);
 						break;
 					}
 				}

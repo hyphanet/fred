@@ -323,9 +323,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				String identifier = "";
 				try {
 					RequestStatus[] reqs = fcp.getGlobalRequests();
-					for (RequestStatus r : reqs) {
-						if (r instanceof UploadFileRequestStatus) {
-							UploadFileRequestStatus upload = (UploadFileRequestStatus) r;
+					for (RequestStatus requestStatus : reqs) {
+						if (requestStatus instanceof UploadFileRequestStatus) {
+							UploadFileRequestStatus upload = (UploadFileRequestStatus) requestStatus;
 							if (upload.hasSucceeded()) {
 								identifier = upload.getIdentifier();
 								fcp.removeGlobalRequestBlocking(identifier);
@@ -352,9 +352,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				String identifier = "";
 				try {
 					RequestStatus[] reqs = fcp.getGlobalRequests();
-					for (RequestStatus r : reqs) {
-						if (r instanceof DownloadRequestStatus) {
-							DownloadRequestStatus download = (DownloadRequestStatus) r;
+					for (RequestStatus requestStatus : reqs) {
+						if (requestStatus instanceof DownloadRequestStatus) {
+							DownloadRequestStatus download = (DownloadRequestStatus) requestStatus;
 							if (download.isPersistent() && download.hasSucceeded() && download.isTotalFinalized() && !download.toTempSpace()) {
 								identifier = download.getIdentifier();
 								fcp.removeGlobalRequestBlocking(identifier);

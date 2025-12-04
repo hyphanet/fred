@@ -451,10 +451,10 @@ public class ToadletContextImpl implements ToadletContext {
 		for (Map.Entry<String, List<String>> entry : mvt.entrySet()) {
 			String key = entry.getKey();
 			List<String> list = entry.getValue();
-			for (String s : list) {
+			for (String headerValue : list) {
 				buf.append(key);
 				buf.append(": ");
-				buf.append(s);
+				buf.append(headerValue);
 				buf.append("\r\n");
 			}
 		}

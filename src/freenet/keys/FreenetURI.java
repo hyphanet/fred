@@ -132,8 +132,8 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 			x ^= docName.hashCode();
 		}
 		if(metaStr != null){
-			for (String s : metaStr){
-				x ^= s.hashCode();
+			for (String metaString : metaStr){
+				x ^= metaString.hashCode();
 			}
 		}
 		if(routingKey != null) {
@@ -753,8 +753,8 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 			b.append(suggestedEdition);
 		}
 		if(metaStr != null)
-			for (String s : metaStr) {
-				b.append('/').append(URLEncoder.encode(s, "/", pureAscii));
+			for (String metaString : metaStr) {
+				b.append('/').append(URLEncoder.encode(metaString, "/", pureAscii));
 			}
 		return b.toString();
 	}
@@ -779,8 +779,8 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 			b.append(suggestedEdition);
 		}
 		if(metaStr != null)
-			for (String s : metaStr) {
-				b.append('/').append(URLEncoder.encode(s, "/", false, " "));
+			for (String metaString : metaStr) {
+				b.append('/').append(URLEncoder.encode(metaString, "/", false, " "));
 			}
 		return b.toString();
 	}
@@ -934,8 +934,8 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 		}
 		if(metaStr != null) {
 			dos.writeInt(metaStr.length);
-			for (String s : metaStr) {
-				dos.writeUTF(s);
+			for (String metaString : metaStr) {
+				dos.writeUTF(metaString);
 			}
 		} else {
 			dos.writeInt(0);

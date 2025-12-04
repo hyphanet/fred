@@ -72,28 +72,28 @@ public class WelcomeToadlet extends Toadlet {
         if (!items.isEmpty()) {
             // FIXME CSS noborder ...
             HTMLNode table = list.addChild("li").addChild("table", new String[]{"border", "style"}, new String[]{"0", "border: none"});
-			for (BookmarkItem item : items) {
+			for (BookmarkItem bookmarkItem : items) {
 				HTMLNode row = table.addChild("tr");
 				HTMLNode cell = row.addChild("td", "style", "border: none;");
-				if (item.hasAnActivelink() && !noActiveLinks) {
-					String initialKey = item.getKey();
+				if (bookmarkItem.hasAnActivelink() && !noActiveLinks) {
+					String initialKey = bookmarkItem.getKey();
 					String key = '/' + initialKey + (initialKey.endsWith("/") ? "" : "/") + "activelink.png";
-					cell.addChild("div", "style", "height: 36px; width: 108px;").addChild("a", "href", '/' + item.getKey()).addChild("img", new String[]{"src", "alt", "style", "title"},
-							new String[]{key, "activelink", "height: 36px; width: 108px", item.getDescription()});
+					cell.addChild("div", "style", "height: 36px; width: 108px;").addChild("a", "href", '/' + bookmarkItem.getKey()).addChild("img", new String[]{"src", "alt", "style", "title"},
+							new String[]{key, "activelink", "height: 36px; width: 108px", bookmarkItem.getDescription()});
 				} else {
 					cell.addChild("#", " ");
 				}
 				cell = row.addChild("td", "style", "border: none");
 
-				boolean updated = item.hasUpdated(); // We use it twice so copy for thread safety
+				boolean updated = bookmarkItem.hasUpdated(); // We use it twice so copy for thread safety
 				String linkClass = updated ? "bookmark-title-updated" : "bookmark-title";
 				cell.addChild(
 						"a",
 						new String[]{"href", "title", "class"},
-						new String[]{'/' + item.getKey(), item.getDescription(), linkClass},
-						item.getVisibleName());
+						new String[]{'/' + bookmarkItem.getKey(), bookmarkItem.getDescription(), linkClass},
+						bookmarkItem.getVisibleName());
 
-				String explain = item.getShortDescription();
+				String explain = bookmarkItem.getShortDescription();
 				if (explain != null && !explain.isEmpty()) {
 					cell.addChild("#", " (");
 					cell.addChild("#", explain);
@@ -103,7 +103,7 @@ public class WelcomeToadlet extends Toadlet {
 				if (updated) {
 					cell = row.addChild("td", "style", "border: none");
 					cell.addChild(node.getClientCore().getAlerts().renderDismissButton(
-							item.getUserAlert(), path() + "#" + BOOKMARKS_ANCHOR));
+							bookmarkItem.getUserAlert(), path() + "#" + BOOKMARKS_ANCHOR));
 				}
 			}
         }

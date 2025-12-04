@@ -155,29 +155,29 @@ public class ClientPutDir extends ClientPutBase {
 		if(files == null)
 			throw new IllegalArgumentException("No such directory");
 
-		for (File f : files) {
-			
-    		if(f.isHidden() && !includeHiddenFiles) continue;
+		for (File file : files) {
 
-			if (f.exists() && f.canRead()) {
-				if(f.isFile()) {
-					FileBucket bucket = new FileBucket(f, true, false, false, false);
+    		if(file.isHidden() && !includeHiddenFiles) continue;
+
+			if (file.exists() && file.canRead()) {
+				if(file.isFile()) {
+					FileBucket bucket = new FileBucket(file, true, false, false, false);
 					if(logMINOR)
-						Logger.minor(this, "Add file : " + f.getAbsolutePath());
-					
-					map.put(f.getName(), new ManifestElement(f.getName(), prefix + f.getName(), bucket, DefaultMIMETypes.guessMIMEType(f.getName(), true), f.length()));
-				} else if(f.isDirectory()) {
+						Logger.minor(this, "Add file : " + file.getAbsolutePath());
+
+					map.put(file.getName(), new ManifestElement(file.getName(), prefix + file.getName(), bucket, DefaultMIMETypes.guessMIMEType(file.getName(), true), file.length()));
+				} else if(file.isDirectory()) {
 					if(logMINOR)
-						Logger.minor(this, "Add dir : " + f.getAbsolutePath());
-					
-					map.put(f.getName(), makeDiskDirManifest(f, prefix + f.getName() + "/", allowUnreadableFiles, includeHiddenFiles));
+						Logger.minor(this, "Add dir : " + file.getAbsolutePath());
+
+					map.put(file.getName(), makeDiskDirManifest(file, prefix + file.getName() + "/", allowUnreadableFiles, includeHiddenFiles));
 				} else {
 					if(!allowUnreadableFiles)
-						throw new FileNotFoundException("Not a file and not a directory : " + f);
+						throw new FileNotFoundException("Not a file and not a directory : " + file);
 				}
 			} else if (!allowUnreadableFiles)
-				throw new FileNotFoundException("The file does not exist or is unreadable : " + f);
-			
+				throw new FileNotFoundException("The file does not exist or is unreadable : " + file);
+
 		}
 
 		return map;

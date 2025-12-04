@@ -285,8 +285,8 @@ public class IPConverter {
 		if(split.length != 4) throw new NumberFormatException();
 		long num = 0;
 		long coef = (256 << 16);
-		for (String s : split) {
-			long modulo = Integer.parseInt(s) % 256;
+		for (String octet : split) {
+			long modulo = Integer.parseInt(octet) % 256;
 			num += (modulo * coef);
 			coef >>= 8;
 		}
