@@ -7,8 +7,11 @@ import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Deque;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
+import freenet.io.comm.FreenetInetAddress;
+import freenet.io.comm.Peer;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -81,10 +84,15 @@ public class DNSRequester implements Runnable {
         }
 
         int unconnectedNodesLength = nodesToCheck.length;
+        boolean peerHasHostname = false;
         if (unconnectedNodesLength > 0) {
             // check a randomly chosen node that has not been checked
             // recently to avoid sending bursts of DNS requests
             PeerNode pn = nodesToCheck[node.getFastWeakRandom().nextInt(unconnectedNodesLength)];
+            peerHasHostname = pn.nominalPeer.stream()
+                .map(Peer::getFreenetAddress)
+                .filter(Objects::nonNull)
+                .anyMatch(FreenetInetAddress::hasHostname);
             if (unconnectedNodesLength < 5) {
                 // no need for optimizations: just clear all state
                 recentNodeIdentitySet.clear();
@@ -102,7 +110,9 @@ public class DNSRequester implements Runnable {
             pn.maybeUpdateHandshakeIPs(false);
         }
 
-        int nextMaxWaitTime = 1000 + node.getFastWeakRandom().nextInt(60000);
+        // wait longer after DNS requests
+        int multiplier = peerHasHostname ? 100 : 1;
+        int nextMaxWaitTime =  multiplier * (10 + node.getFastWeakRandom().nextInt(600));
         try {
             synchronized(this) {
                 wait(nextMaxWaitTime);  // sleep 1-61s ...
