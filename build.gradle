@@ -4,9 +4,6 @@ buildscript {
     repositories {
         mavenCentral()
     }
-    dependencies {
-        classpath 'com.android.tools.build:gradle:0.9.+'
-    }
 }
 
 configurations {
@@ -262,6 +259,7 @@ dependencies {
     // dependencies of pebble
     implementation "org.unbescape:unbescape:1.1.6.RELEASE"
     implementation "org.slf4j:slf4j-api:1.7.25"
+    implementation "com.github.luben:zstd-jni:1.5.6-4"
 
     testImplementation 'junit:junit:4.13.2'
     testImplementation "org.mockito:mockito-core:1.9.5"

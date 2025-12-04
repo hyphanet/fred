@@ -58,7 +58,12 @@ public class LocalFileInsertToadlet extends LocalFileBrowserToadlet {
 			fieldPairs.put("compress", element);
 		}
 
-		element = set.get("compatibilityMode"); 
+		element = set.get("compressAlgorithm");
+		if (element != null && !element.isEmpty()) {
+			fieldPairs.put("compressAlgorithm", element);
+		}
+
+		element = set.get("compatibilityMode");
 		if (element != null) {
 			fieldPairs.put("compatibilityMode", element);
 		}

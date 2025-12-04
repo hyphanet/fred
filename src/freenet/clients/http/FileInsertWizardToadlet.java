@@ -13,6 +13,7 @@ import freenet.node.NodeClientCore;
 import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
+import freenet.support.compress.Compressor;
 
 public class FileInsertWizardToadlet extends Toadlet implements LinkEnabledCallback {
 
@@ -140,6 +141,27 @@ public class FileInsertWizardToadlet extends Toadlet implements LinkEnabledCallb
               new String[] { "for" },
               new String[] { "checkboxCompress" },
               ' ' + NodeL10n.getBase().getString("QueueToadlet.insertFileCompressLabel"));
+			// Compression algorithm selector
+			insertForm.addChild("br");
+			insertForm.addChild("#", l10n("compressionAlgorithmLabel") + ": ");
+			HTMLNode codecSelect = insertForm.addChild("select", "name", "compressAlgorithm");
+			// Default option: auto-select best algorithm (excludes ZSTD for compatibility)
+			HTMLNode defaultOption = codecSelect.addChild("option", "value", "default",
+			        l10n("compressionAlgorithmDefault"));
+			defaultOption.addAttribute("selected", "");
+			// Add individual compressor options
+			for (Compressor.COMPRESSOR_TYPE type : Compressor.COMPRESSOR_TYPE.values()) {
+				// Skip deprecated LZMA
+				if (type == Compressor.COMPRESSOR_TYPE.LZMA) continue;
+				String label = type.name;
+				// Add note for ZSTD about compatibility
+				if (type == Compressor.COMPRESSOR_TYPE.ZSTD) {
+					label = type.name + " " + l10n("compressionZstdNote");
+				}
+				codecSelect.addChild("option", "value", type.name, label);
+			}
+			// No compression option
+			codecSelect.addChild("option", "value", "none", l10n("compressionAlgorithmNone"));
 		} else {
 			insertForm.addChild("input",
 			        new String[] { "type", "name", "value" },

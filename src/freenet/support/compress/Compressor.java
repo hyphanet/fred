@@ -28,7 +28,8 @@ public interface Compressor {
 		GZIP("GZIP", new GzipCompressor(), (short) 0),
 		BZIP2("BZIP2", new Bzip2Compressor(), (short) 1),
 		LZMA("LZMA", new OldLZMACompressor(), (short)2),
-		LZMA_NEW("LZMA_NEW", new NewLZMACompressor(), (short)3);
+		LZMA_NEW("LZMA_NEW", new NewLZMACompressor(), (short)3),
+		ZSTD("ZSTD", new ZstdCompressor(), (short)4);
 
 		public final String name;
 		public final Compressor compressor;
@@ -97,12 +98,17 @@ public interface Compressor {
 		public static COMPRESSOR_TYPE[] getCompressorsArray(String compressordescriptor) throws InvalidCompressionCodecException {
 			COMPRESSOR_TYPE[] result = getCompressorsArrayNoDefault(compressordescriptor);
 			if (result == null) {
-				COMPRESSOR_TYPE[] ret = new COMPRESSOR_TYPE[values.length-1];
+				// Exclude LZMA (deprecated) and ZSTD (opt-in only) from default list
+				COMPRESSOR_TYPE[] ret = new COMPRESSOR_TYPE[values.length-2];
 				int x = 0;
 				for(COMPRESSOR_TYPE v: values) {
 					// LZMA should no longer be used. Use LZMA_NEW instead.
 					if(v == LZMA) {
 						logLzmaOldRemovedWarning();
+						continue;
+					}
+					// ZSTD is opt-in only until network-wide adoption
+					if(v == ZSTD) {
 						continue;
 					}
 					ret[x++] = v;

@@ -219,6 +219,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					LocalFileInsertToadlet.PATH
 						+ "?key=" + insertURI.toASCIIString()
 						+ "&compress=" + (!(request.getPartAsStringFailsafe("compress", 128).isEmpty()))
+						+ "&compressAlgorithm=" + request.getPartAsStringFailsafe("compressAlgorithm", 32)
 						+ "&compatibilityMode=" + request.getPartAsStringFailsafe("compatibilityMode", 100)
 						+ "&overrideSplitfileKey=" + request.getPartAsStringFailsafe("overrideSplitfileKey", 65)
 				);
@@ -574,6 +575,27 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					return;
 				}
 				final boolean compress = !request.getPartAsStringFailsafe("compress", 128).isEmpty();
+				// Get compression algorithm selection (advanced mode)
+				final String compressAlgorithm = request.getPartAsStringFailsafe("compressAlgorithm", 32);
+				final String compressorDescriptor;
+				final boolean dontCompress;
+				if (!compress) {
+					// User unchecked the compress checkbox
+					dontCompress = true;
+					compressorDescriptor = null;
+				} else if (compressAlgorithm.isEmpty() || "default".equals(compressAlgorithm)) {
+					// Default: use standard compressor selection (excludes ZSTD)
+					dontCompress = false;
+					compressorDescriptor = null;
+				} else if ("none".equals(compressAlgorithm)) {
+					// Explicitly no compression
+					dontCompress = true;
+					compressorDescriptor = null;
+				} else {
+					// Specific algorithm selected (e.g., "ZSTD", "GZIP", etc.)
+					dontCompress = false;
+					compressorDescriptor = compressAlgorithm;
+				}
 				final String identifier = file.getFilename() + "-fred-" + System.currentTimeMillis();
 				final String compatibilityMode = request.getPartAsStringFailsafe("compatibilityMode", 100);
 				final CompatibilityMode cmode;
@@ -609,7 +631,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 							try {
 							final ClientPut clientPut;
 							try {
-								clientPut = new ClientPut(fcp.getGlobalForeverClient(), insertURI, identifier, Integer.MAX_VALUE, null, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, Persistence.FOREVER, null, false, !compress, -1, UploadFrom.DIRECT, null, file.getContentType(), copiedBucket, null, fnam, false, false, Node.FORK_ON_CACHEABLE_DEFAULT, HighLevelSimpleClientImpl.EXTRA_INSERTS_SINGLE_BLOCK, HighLevelSimpleClientImpl.EXTRA_INSERTS_SPLITFILE_HEADER, false, cmode, overrideSplitfileKey, false, fcp.getCore());
+								clientPut = new ClientPut(fcp.getGlobalForeverClient(), insertURI, identifier, Integer.MAX_VALUE, null, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, Persistence.FOREVER, null, false, dontCompress, -1, UploadFrom.DIRECT, null, file.getContentType(), copiedBucket, null, fnam, false, false, Node.FORK_ON_CACHEABLE_DEFAULT, HighLevelSimpleClientImpl.EXTRA_INSERTS_SINGLE_BLOCK, HighLevelSimpleClientImpl.EXTRA_INSERTS_SPLITFILE_HEADER, false, cmode, overrideSplitfileKey, false, compressorDescriptor, fcp.getCore());
 								if(clientPut != null)
 									try {
 										fcp.startBlocking(clientPut, context);
@@ -675,6 +697,23 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				final FreenetURI furi;
 				final String key = request.getPartAsStringFailsafe("key", MAX_KEY_LENGTH);
 				final boolean compress = request.isPartSet("compress");
+				// Get compression algorithm selection (advanced mode)
+				final String localCompressAlgorithm = request.getPartAsStringFailsafe("compressAlgorithm", 32);
+				final String localCompressorDescriptor;
+				final boolean localDontCompress;
+				if (!compress) {
+					localDontCompress = true;
+					localCompressorDescriptor = null;
+				} else if (localCompressAlgorithm.isEmpty() || "default".equals(localCompressAlgorithm)) {
+					localDontCompress = false;
+					localCompressorDescriptor = null;
+				} else if ("none".equals(localCompressAlgorithm)) {
+					localDontCompress = true;
+					localCompressorDescriptor = null;
+				} else {
+					localDontCompress = false;
+					localCompressorDescriptor = localCompressAlgorithm;
+				}
 				final String compatibilityMode = request.getPartAsStringFailsafe("compatibilityMode", 100);
 				final CompatibilityMode cmode;
 				if(compatibilityMode.isEmpty())
@@ -716,7 +755,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 							final ClientPut clientPut;
 							try {
 							try {
-								clientPut = new ClientPut(fcp.getGlobalForeverClient(), furi, identifier, Integer.MAX_VALUE, null, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, Persistence.FOREVER, null, false, !compress, -1, UploadFrom.DISK, file, contentType, new FileBucket(file, true, false, false, false), null, target, false, false, Node.FORK_ON_CACHEABLE_DEFAULT, HighLevelSimpleClientImpl.EXTRA_INSERTS_SINGLE_BLOCK, HighLevelSimpleClientImpl.EXTRA_INSERTS_SPLITFILE_HEADER, false, cmode, overrideSplitfileKey, false, fcp.getCore());
+								clientPut = new ClientPut(fcp.getGlobalForeverClient(), furi, identifier, Integer.MAX_VALUE, null, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, Persistence.FOREVER, null, false, localDontCompress, -1, UploadFrom.DISK, file, contentType, new FileBucket(file, true, false, false, false), null, target, false, false, Node.FORK_ON_CACHEABLE_DEFAULT, HighLevelSimpleClientImpl.EXTRA_INSERTS_SINGLE_BLOCK, HighLevelSimpleClientImpl.EXTRA_INSERTS_SPLITFILE_HEADER, false, cmode, overrideSplitfileKey, false, localCompressorDescriptor, fcp.getCore());
 								if(logMINOR) Logger.minor(this, "Started global request to insert "+file+" to CHK@ as "+identifier);
 								if(clientPut != null)
 									try {
