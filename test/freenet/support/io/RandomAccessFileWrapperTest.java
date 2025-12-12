@@ -10,11 +10,11 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Random;
 
-import org.junit.After;
-import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 
 import freenet.support.api.RandomAccessBuffer;
+import org.junit.rules.TemporaryFolder;
 
 public class RandomAccessFileWrapperTest extends RandomAccessBufferTestBase {
     
@@ -24,27 +24,15 @@ public class RandomAccessFileWrapperTest extends RandomAccessBufferTestBase {
         super(TEST_LIST);
     }
 
-    private File base = new File("tmp.random-access-file-wrapper-test");
-    
-    @Before
-    public void setUp() {
-        base.mkdir();
-    }
-    
-    @After
-    public void tearDown() {
-        FileUtil.removeAll(base);
-    }
-
     @Override
     protected RandomAccessBuffer construct(long size) throws IOException {
-        File f = File.createTempFile("test", ".tmp", base);
+        File f = temporaryFolder.newFile();
         return new FileRandomAccessBuffer(f, size, false);
     }
     
     @Test
     public void testStoreTo() throws IOException, StorageFormatException, ResumeFailedException {
-        File tempFile = File.createTempFile("test-storeto", ".tmp", base);
+        File tempFile = temporaryFolder.newFile();
         byte[] buf = new byte[4096];
         Random r = new Random(1267612);
         r.nextBytes(buf);
@@ -68,5 +56,8 @@ public class RandomAccessFileWrapperTest extends RandomAccessBufferTestBase {
         restored.close();
         restored.free();
     }
+
+    @Rule
+    public final TemporaryFolder temporaryFolder = new TemporaryFolder();
 
 }

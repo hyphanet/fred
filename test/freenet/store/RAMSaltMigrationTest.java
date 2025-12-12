@@ -11,9 +11,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
 
 import freenet.crypt.DummyRandomSource;
@@ -36,26 +35,15 @@ import freenet.support.api.Bucket;
 import freenet.support.compress.Compressor;
 import freenet.support.io.ArrayBucketFactory;
 import freenet.support.io.BucketTools;
-import freenet.support.io.FileUtil;
+import org.junit.rules.TemporaryFolder;
 
 /** Test migration from a RAMFreenetStore to a SaltedHashFreenetStore */
 public class RAMSaltMigrationTest {
 	
-	private static final File TEMP_DIR = new File("tmp-RAMSaltMigrationTest");
-
 	private RandomSource strongPRNG = new DummyRandomSource(43210);
 	private Random weakPRNG = new Random(12340);
 	private PooledExecutor exec = new PooledExecutor();
 	private Ticker ticker = new TrivialTicker(exec);
-
-	@BeforeClass
-	public static void setupClass() {
-		FileUtil.removeAll(TEMP_DIR);
-
-		if(! TEMP_DIR.mkdir()) {
-			throw new IllegalStateException("Could not create temporary directory for store tests");
-		}
-	}
 
 	@Before
 	public void setUpTest() {
@@ -63,18 +51,8 @@ public class RAMSaltMigrationTest {
 		exec.start();
 	}
 
-	@AfterClass
-	public static void cleanup() {
-		FileUtil.removeAll(TEMP_DIR);
-	}
-
-	private File getStorePath(String testname) {
-		File storePath = new File(TEMP_DIR, "CachingFreenetStoreTest_" + testname);
-		FileUtil.removeAll(storePath);
-		if( ! storePath.mkdirs() ) {
-			throw new IllegalStateException("Could not create temporary test store path: " + storePath);
-		}
-		return storePath;
+	private File getStorePath(String testname) throws IOException {
+		return temporaryFolder.newFolder("CachingFreenetStoreTest_" + testname);
 	}
 
 
@@ -639,5 +617,8 @@ public class RAMSaltMigrationTest {
 				Compressor.DEFAULT_COMPRESSORDESCRIPTOR, null,
 				newFormat ? Key.ALGO_AES_CTR_256_SHA256 : Key.ALGO_AES_PCFB_256_SHA256);
 	}
+
+	@Rule
+	public final TemporaryFolder temporaryFolder = new TemporaryFolder();
 
 }

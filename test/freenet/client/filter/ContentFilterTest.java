@@ -22,7 +22,9 @@ import java.util.List;
 
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import freenet.client.filter.ContentFilter.FilterStatus;
 import freenet.clients.http.ExternalLinkToadlet;
@@ -355,7 +357,7 @@ public class ContentFilterTest {
         boolean failed = false;
         List<RuntimeException> failures = new ArrayList<>();
         try (
-            FileOutputStream fos = new FileOutputStream("output.utf16")
+            FileOutputStream fos = new FileOutputStream(temporaryFolder.newFile("output.utf16"))
         ){
             ArrayBucket out = new ArrayBucket();
             filter.readFilter(new ArrayBucket(total).getInputStream(), out.getOutputStream(), "UTF-16", null, null, null);
@@ -371,7 +373,7 @@ public class ContentFilterTest {
             // Ok.
         }
         try (
-            FileOutputStream fos = new FileOutputStream("output.filtered")
+            FileOutputStream fos = new FileOutputStream(temporaryFolder.newFile("output.filtered"))
         ){
             ArrayBucket out = new ArrayBucket();
             FilterStatus fo = ContentFilter.filter(new ArrayBucket(total).getInputStream(), out.getOutputStream(), "text/html", null, null, null);
@@ -388,7 +390,7 @@ public class ContentFilterTest {
         }
 
         if (failed) {
-            try (FileOutputStream fos = new FileOutputStream("unfiltered")) {
+            try (FileOutputStream fos = new FileOutputStream(temporaryFolder.newFile("unfiltered"))) {
                 fos.write(total);
             }
             throw failures.get(0);
@@ -447,4 +449,8 @@ public class ContentFilterTest {
     public void testARIAProperties() throws Exception {
         assertEquals(ARIA_ROLE_TEST, htmlFilter(ARIA_ROLE_TEST));
     }
+
+    @Rule
+    public final TemporaryFolder temporaryFolder = new TemporaryFolder();
+
 }
