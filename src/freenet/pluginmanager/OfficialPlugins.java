@@ -49,7 +49,7 @@ public class OfficialPlugins {
 					.advanced()
 					.essential()
 					.minimumVersion(2)
-					.loadedFrom("CHK@Zgib8xrGxcEuix7AVB4eajton1FpNHbIJeQZgEbHMNU,BQekU261VLSDUBQPOHSMKUF5qxY1v0zjXa33RyoEbYk,AAMC--8/JSTUN.jar");
+					.loadedFrom("CHK@0RcKSZZ~sycAShXZjXANI9cQrPcsNnz6BFgbXzOlsfU,bbKD6TR~oWcodNCr2L8Lw0pQIesX7ZWlPRpw-A5h~DA,AAMC--8/JSTUN.jar");
 			addPlugin("KeyUtils")
 					.inGroup("technical")
 					.minimumVersion(5028)
