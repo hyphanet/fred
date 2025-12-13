@@ -121,7 +121,7 @@ public class OfficialPlugins {
 					.minimumVersion(18)
 					.recommendedVersion(20)
 					.usesXml()
-					.loadedFrom("CHK@5c0yqhe9lcM~dXWeM5jZkZAeTpsAIxozHU5j1-BvhQY,7dwiZkEwyceOfDotFe4fDeySyXFQH990~AKySmDGGrI,AAMC--8/WebOfTrust-build0020.jar");
+					.loadedFrom("CHK@ic-xihD6BzLwqxuI27CVvDCa71jF39Vs8bWPP00c8II,vgL-dISouZD7NyfpHSE8sVccQP5242dvpvV2XfCilqs,AAMC--8/WebOfTrust.jar");
 			addPlugin("WebOfTrustTesting")
 					.inGroup("communication")
 					.advanced()
