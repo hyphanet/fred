@@ -1,5 +1,7 @@
 next:
 
+- Update the plugin WebOfTrust to 0.4.5 build 21 with dead seed IDs replaced by active ones. Thanks to xor!
+- Update the plugin JSTUN to version 1.5 (6) with dead JSTUN servers replaced. Thanks to Bombe!
 - 
 
 1503:
