@@ -189,29 +189,9 @@ tasks.register('copyRuntimeLibs', Copy) {
 }
 
 assemble {
-    // Add copyRuntimeLibs so `gradlew assemble` collects all build artifacts (except tar).
+    // Add copyRuntimeLibs so `gradlew assemble` collects all build artifacts.
     // Note: jar, sourcesJar, javadocJar are added as dependency by default.
     dependsOn copyRuntimeLibs
-}
-
-tasks.register('tar', Tar) {
-    description = 'Build a source release, specifically excluding the build directories and gradle wrapper files.'
-    group = 'Build'
-
-    from(project.rootDir) {
-        exclude '**/build'
-        exclude 'build'
-        exclude '.gradle'
-    }
-    into 'freenet-sources'
-
-    compression = Compression.BZIP2
-    destinationDirectory = layout.buildDirectory
-    archiveFileName = 'freenet-sources.tgz'
-
-    doLast { // generate md5 checksum
-        ant.checksum file: file(archiveFile)
-    }
 }
 
 tasks.register('archiveDigests') {
