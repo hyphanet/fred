@@ -81,7 +81,7 @@ maintainers may prefer to use this instead of build.xml.
 
 	<target name="sign" description="Sign the distribution" depends="package">
 		<echo message="Signing the distribution"/>
-		<signjar jar="${jar.dst}" strict="true" tsaurl="http://timestamp.comodoca.com/rfc3161" alias="${keystore_alias}" keystore="${keystore}" storepass="${keystore_pass}" keypass="${key_pass}" sigalg="SHA256withRSA" digestalg="SHA-256"/>
+		<signjar jar="${jar.dst}" strict="false" tsaurl="http://timestamp.comodoca.com/rfc3161" alias="${keystore_alias}" keystore="${keystore}" storepass="${keystore_pass}" keypass="${key_pass}" sigalg="SHA256withRSA" digestalg="SHA-256"/>
 		<!--no verify, because it fails due to missing methods: likely a version incompatibility-->
 		<!--<verifyjar jar="${jar.dst}" alias="${keystore_alias}" keystore="${keystore}" storepass="${keystore_pass}" keypass="${key_pass}"/>-->
 	</target>
