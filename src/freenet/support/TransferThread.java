@@ -31,7 +31,7 @@ import freenet.support.io.TempBucketFactory;
  * 
  * @deprecated
  *     This class uses {@link TrivialTicker} in a bogus way.
- *     See <a href="https://bugs.freenetproject.org/view.php?id=6423">issue 6423</a>.<br>
+ *     See <a href="http://bugs.hyphanet.org/view.php?id=6423">issue 6423</a>.<br>
  *     Also, it was not used by fred itself but only by Web Of Trust and Freetalk, while not being
  *     part of the fred official plugin API. Thus it should not be contained in fred.<br>
  *     If you do continue to need this class for a plugin, please move it to a shared library for

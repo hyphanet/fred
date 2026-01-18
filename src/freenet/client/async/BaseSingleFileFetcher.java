@@ -324,7 +324,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	 * after it changes. FIXME: Ideally this should be a generic mechanism, but
 	 * that looks too complex without significant changes to data structures.
 	 * For now it's just a hack to make changing the polling interval in USKs work.
-	 * @see <a href="https://bugs.freenetproject.org/view.php?id=4984">Bug</a>
+	 * @see <a href="http://bugs.hyphanet.org/view.php?id=4984">Bug</a>
 	 * @param context The context object.
 	 */
 	public void onChangedFetchContext(ClientContext context) {

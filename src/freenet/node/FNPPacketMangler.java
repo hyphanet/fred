@@ -1110,7 +1110,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		inputOffset += HASH_LENGTH;
 
 		// We *WANT* to check the hmac before we do the lookup on the hashmap
-		// @see https://bugs.freenetproject.org/view.php?id=1604
+		// @see http://bugs.hyphanet.org/view.php?id=1604
 		if(!HMAC.verifyWithSHA256(getTransientKey(), assembleJFKAuthenticator(responderExponential, initiatorExponential, nonceResponder, nonceInitiatorHashed, replyTo.getAddress().getAddress()) , authenticator)) {
 			if(shouldLogErrorInHandshake(t1)) {
 			    if(logDEBUG) Logger.debug(this, "We received the following HMAC : " + HexUtil.bytesToHex(authenticator));

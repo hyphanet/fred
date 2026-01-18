@@ -7,12 +7,12 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Random;
 
-import org.junit.After;
-import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 
 import freenet.support.api.LockableRandomAccessBuffer.RAFLock;
 import freenet.support.io.PooledFileRandomAccessBuffer.FDTracker;
+import org.junit.rules.TemporaryFolder;
 
 public class PooledFileRandomAccessBufferTest extends RandomAccessBufferTestBase {
 
@@ -22,24 +22,12 @@ public class PooledFileRandomAccessBufferTest extends RandomAccessBufferTestBase
         super(TEST_LIST);
     }
 
-    private File base = new File("tmp.pooled-random-access-file-wrapper-test");
-    
-    @Before
-    public void setUp() {
-        base.mkdir();
-    }
-    
-    @After
-    public void tearDown() {
-        FileUtil.removeAll(base);
-    }
-    
     private Random r = new Random(222831072);
     private FDTracker fds = new FDTracker(100);
     
     @Override
     protected PooledFileRandomAccessBuffer construct(long size) throws IOException {
-        File f = File.createTempFile("test", ".tmp", base);
+        File f = File.createTempFile("test", ".tmp", temporaryFolder.newFolder());
         return new PooledFileRandomAccessBuffer(f, false, size, r.nextBoolean() ? r : null, -1, true, fds);
     }
 
@@ -298,5 +286,8 @@ public class PooledFileRandomAccessBufferTest extends RandomAccessBufferTestBase
     }
     
     // FIXME more tests???
-    
+
+    @Rule
+    public final TemporaryFolder temporaryFolder = new TemporaryFolder();
+
 }

@@ -8,9 +8,8 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Random;
 
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
 
 import freenet.keys.CHKBlock;
@@ -30,7 +29,7 @@ import freenet.support.api.Bucket;
 import freenet.support.compress.Compressor;
 import freenet.support.io.ArrayBucketFactory;
 import freenet.support.io.BucketTools;
-import freenet.support.io.FileUtil;
+import org.junit.rules.TemporaryFolder;
 
 /** Test the slot filter mechanism */
 public class SaltedHashSlotFilterTest {
@@ -38,20 +37,10 @@ public class SaltedHashSlotFilterTest {
 	private static final int TEST_COUNT = TestProperty.EXTENSIVE ? 100 : 20;
 	private static final int ACCEPTABLE_FALSE_POSITIVES = TestProperty.EXTENSIVE ? 5 : 2;
 	private static final int STORE_SIZE = TEST_COUNT * 5;
-	private static final File TEMP_DIR = new File("tmp-SaltedHashSlotFilterTest");
 
 	private Random weakPRNG = new Random(12340);
 	private PooledExecutor exec = new PooledExecutor();
 	private Ticker ticker = new TrivialTicker(exec);
-
-	@BeforeClass
-	public static void setupClass() {
-		FileUtil.removeAll(TEMP_DIR);
-
-		if(! TEMP_DIR.mkdir()) {
-			throw new IllegalStateException("Could not create temporary directory for store tests");
-		}
-	}
 
 	@Before
 	public void setUpTest() {
@@ -59,18 +48,8 @@ public class SaltedHashSlotFilterTest {
 		exec.start();
 	}
 
-	@AfterClass
-	public static void cleanup() {
-		FileUtil.removeAll(TEMP_DIR);
-	}
-
-	private File getStorePath(String testname) {
-		File storePath = new File(TEMP_DIR, "CachingFreenetStoreTest_" + testname);
-		FileUtil.removeAll(storePath);
-		if( ! storePath.mkdirs() ) {
-			throw new IllegalStateException("Could not create temporary test store path: " + storePath);
-		}
-		return storePath;
+	private File getStorePath(String testname) throws IOException {
+		return temporaryFolder.newFolder(testname);
 	}
 
 	private int populateStore(CHKStore store, SaltedHashFreenetStore<CHKBlock> saltStore, int numKeys)
@@ -295,5 +274,8 @@ public class SaltedHashSlotFilterTest {
 		return ClientCHKBlock.encode(bucket, false, false, (short) -1, bucket.size(),
 				Compressor.DEFAULT_COMPRESSORDESCRIPTOR, null, (byte) 0);
 	}
+
+	@Rule
+	public final TemporaryFolder temporaryFolder = new TemporaryFolder();
 
 }

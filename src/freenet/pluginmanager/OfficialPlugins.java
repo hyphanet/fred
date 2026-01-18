@@ -15,7 +15,7 @@ import freenet.node.updater.PluginJarUpdater;
  * Container for Freenet’s official plugins.
  *
  * FIXME: Connectivity essential plugins shouldn't have their minimum version increased!
- * @see https://bugs.freenetproject.org/view.php?id=6600
+ * @see http://bugs.hyphanet.org/view.php?id=6600
  *
  * @author <a href="mailto:bombe@pterodactylus.net">David ‘Bombe’ Roden</a>
  */
@@ -49,7 +49,7 @@ public class OfficialPlugins {
 					.advanced()
 					.essential()
 					.minimumVersion(2)
-					.loadedFrom("CHK@Zgib8xrGxcEuix7AVB4eajton1FpNHbIJeQZgEbHMNU,BQekU261VLSDUBQPOHSMKUF5qxY1v0zjXa33RyoEbYk,AAMC--8/JSTUN.jar");
+					.loadedFrom("CHK@0RcKSZZ~sycAShXZjXANI9cQrPcsNnz6BFgbXzOlsfU,bbKD6TR~oWcodNCr2L8Lw0pQIesX7ZWlPRpw-A5h~DA,AAMC--8/JSTUN.jar");
 			addPlugin("KeyUtils")
 					.inGroup("technical")
 					.minimumVersion(5028)
@@ -121,7 +121,7 @@ public class OfficialPlugins {
 					.minimumVersion(18)
 					.recommendedVersion(20)
 					.usesXml()
-					.loadedFrom("CHK@5c0yqhe9lcM~dXWeM5jZkZAeTpsAIxozHU5j1-BvhQY,7dwiZkEwyceOfDotFe4fDeySyXFQH990~AKySmDGGrI,AAMC--8/WebOfTrust-build0020.jar");
+					.loadedFrom("CHK@ic-xihD6BzLwqxuI27CVvDCa71jF39Vs8bWPP00c8II,vgL-dISouZD7NyfpHSE8sVccQP5242dvpvV2XfCilqs,AAMC--8/WebOfTrust.jar");
 			addPlugin("WebOfTrustTesting")
 					.inGroup("communication")
 					.advanced()

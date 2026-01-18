@@ -1,6 +1,187 @@
 next:
 
-- 
+- Update the plugin WebOfTrust to 0.4.5 build 21 with dead seed IDs replaced by active ones. Thanks to xor!
+- Update the plugin JSTUN to version 1.5 (6) with dead JSTUN servers replaced. Thanks to Bombe!
+- Update MIME types, thanks to torusrxxx
+- Cleanup PeerManager and version transition, thanks to torusrxxx
+- Continue securely deleting the file if IOException occurred and add logging, thanks to torusrxxx
+- Link bugs via bugs.hyphanet.org, replace dead URIs, Suggest IRC username SecRabbit in SECURITY.md, replace mailing lists reference by FMS
+- remove files used in tests, thanks to Bombe
+- CONTRIBUTING: Add "no spurious changes" note
+- Preserve the order of peers when updating handshake IPs
+- 🚸 Build source JAR in a more reproducible way, thanks to Bombe
+- show radiobuttons on sky dark static theme for WoT
+  update translations from transifex, fix transifex config, remove l10n for removed feature. Thanks to Bombe!
+- update github actions/checkout to v5, thanks to qupo1
+- improve PNG filter: support HDR chunks, thanks to Bombe and torusrxxx
+- Simplify MultiHash{Input,Output}Stream, thanks to bertm
+- BlockTransmitter: delay BlockSenderJob asynchronously on the Ticker, thanks to bertm
+- reduce synchronization in MersenneTwister for efficiency, thanks to bertm
+- bump Gradle to 8.14.3, thanks to qupo1
+- Update debian package to 1503, thanks to qupo1
+- speed up and fix RunningAverage, thanks to bertm
+
+1503:
+
+
+This is a hotfix release that fixes regressions in 1502:
+
+Fix a thread leak from the vulnerability mitigation that caused very fast nodes to restart within a few days, because the number of waiting threads exceeded the thread limit. Thanks to bertm for finding a minimally invasive solution and max_iops for reporting the problem and testing fixes!
+
+Fix a problem displaying Freesites that include an input tag without type. Sites with such an incomplete input tag can now be visited again. Thanks to torusrxxx!
+
+Fix the test for UserAlertManager where localization didn’t work correctly. Thanks to Bombe!
+
+Add two new seednodes to speed up inital connection in Opennet. Thank you!
+
+
+
+1502:
+
+The most important change is a fix to a vulnerability that enabled
+attackers to differentiate between an uploading and a forwarding node
+by analyzing the structure of packets in blocks. It was reported
+responsibly by Yonghuan Xu and depended on block-level timing of
+packet handling.
+
+Thank you very much for reporting the vulnerability and creating and
+testing a mitigation!
+
+There were some additional privacy and safety improvements: do not
+check reachability of global addresses to avoid a fallback to Echo
+packets when a node does not support Ping, don’t show download to disk
+for large file page on public gateway nodes, and make fproxy cross
+origin isolated -- the latter by torusrxxx.
+
+Torusrxxx also increased again the fraction of HTML and CSS elements
+that can be used on Freesites. More and more pages should just work.
+Freesites can now set robots, googlebot and referrer=no-referrer, for
+example for the Spiders that update indizes, as well as use more CSS
+properties. Thank you!
+
+Below the shutdown-button, there’s now an info how to disable
+autostart in GNU Linux.
+
+On the alerts page there are buttons to dismiss all alerts that do not
+come from other nodes, or to delete all messages from other nodes.
+This should unclutter alerts and make node-to-node messages much more
+usable.
+
+In the plugins visibility was adjusted to show in simple mode the
+plugins that actually are easy to understand for newcomers.
+
+Additionally there are visible Fixes:
+
+- Update dependencies.properties wrapper files to files in
+  java_installer to avoid downgrading the wrapper after the first
+  start -- #1081 by ArneBab
+- Fix regression: compress parameter was inverted on upload. Thanks to
+  NewOne@umLZL for investigating! -- #1051 by ArneBab
+- Build the Atom XML correctly -- #1080 by Bombe
+- Do not fix case (upper/lower) of header key -- #1063 by torusrxxx
+- Fix request distribution stats -- #1071 by bertm
+
+And internal code fixes:
+
+- Return valid length from RandomShortReadInputStream.read -- #1060 by
+  bertm
+- Fix single-byte read() in various InputStream implementations --
+  #1058 by bertm
+
+And improvements to  the code to ease maintenance:
+
+- 🐛 Allow Class Loader to Enumerate Directory Entries. Fixes Flyway
+  usage -- #1049 by Bombe
+- ♻️ Use accessor for NodeClientCore.mainExecutor -- #1079 by Bombe
+- Add Accessors for PageNode’s Member Fields -- #1076 by Bombe
+- Add Accessors for Two Member Fields Used in PeerNodeStatus -- #1075 by Bombe
+- Fix Translation Handling in Tests -- #1074 by Bombe
+- Remove main(...) methods and related test/debug routines -- #1070 by
+  bertm
+- Remove unused code and parameters from NodeStats -- #1069 by bertm
+- Remove remaining code paths for disabled slow-down sending -- #1068
+  by bertm
+- Get rid of Hashtable in NodeStats -- #1067 by bertm
+
+Finally there are optimizations to the code -- a lot of them
+improvements to synchronization -- which should reduce CPU load of
+nodes with many peers and make it easier to run simple routing nodes
+(without messaging) on weak, cheap, energy conserving hardware:
+
+- Fix synchronization of receive buffer -- #1044 by ArneBab. Thanks to
+  Yonguan Xu for the catch!
+- Do not synchronize on global variable in CryptoKey.fingerprint --
+  #1066 by bertm
+- Do not synchronize on access to AEADCryptBucket.readOnly -- #1065 by
+  bertm
+- Do not synchronize on global variable in crypt Util.makeKey -- #1064
+  by bertm
+- Do not synchronize on Rijndael cipher initialization or use -- #1061
+  by bertm
+- Use length hint for bucket creation in ChecksumChecker -- #1059 by
+  bertm
+- Optimize OCBBlockCipher_v149 by replacing Vector with List -- #1057
+  by bertm
+- Use JCE AES implementation for AEAD when available -- #1056 by bertm
+
+
+
+1501:
+
+The main purpose of this release is to address a regression in backoff.
+
+The regression came from handling a bulk request with 10% probability if there is a realtime request.
+This was a fix for very fast nodes. Previously high rates of realtime requests could starve the bulk requests.
+But the change caused higher backoff, because the fraction of bulk requests and average delays for realtime requests increased.
+
+In addition, a bugfix to slow request handling had caused nodes to actually back off (pause their requests) when bulk requests became too slow.
+This was erroneously ignored before.
+
+Both changes together caused fluctuating backoff that also showed up in the fetchpull stats as doubled latency:
+USK@lwR9sLnZD3QHveZa1FB0dAHgeck~dFNBg368mY09wSU,0Vq~4FXSUj1-op3QdzqjZsIvrNMYWlnSdUwCl-Z1fYA,AQACAAE/fetchpullstats/1210/
+USK@lwR9sLnZD3QHveZa1FB0dAHgeck~dFNBg368mY09wSU,0Vq~4FXSUj1-op3QdzqjZsIvrNMYWlnSdUwCl-Z1fYA,AQACAAE/fetchpullstats/1210/fetchpull-get-bulk.png
+
+The fix is to reduce the probability to choose bulk instead of realtime to 2%
+and to remove an artificial minimum for the retransmission timeout.
+This should speed up request handling and reduce backoff.
+And reduced backoff increases the efficiency of routing.
+
+We could track down the issue and test improvements mainly thanks to testing by max_iops. Thank you!
+
+
+In addition to addressing the regression we merged safe improvements
+people had submitted in the meantime:
+
+Code and performance improvements:
+
+- avoid reflection and global synchronized in fileutils and use NIO for improved performance. Thanks to bertm!
+- use the java 8 datetime utils and remove the deprecated Calendar. Thanks to bertm!
+- only log errors for invalid recently failed values if those values are invalid in all supported versions.
+- split up parsing peers to be easier to understand
+- improve crypt tests that fail in Gradle on some Java versions but not in IntelliJ
+
+Freesite UI:
+
+- enable using CSS properties border-block/inline-start/end-color/style/width, border-end/start-end/start-radius. Thanks to torusrxxx!
+
+Bugfixes:
+
+- fix usk date hints: failed for a week spanning over two years. Thanks to bertm!
+
+
+1500:
+
+## fixed regressions
+
+- an endless loop on hostname resolution on friend-to-friend nodes with all peers connected leading to very high CPU usage — thanks to bertm for the review!
+- typo in text-decoration filter — thanks to Torusrxxx for the fix!
+- NullPointerException when disabling and reenabling SSL — thanks to Torusrxxx for the Fix!
+
+## improvements
+
+- In the first time wizard the save button is now named "Finish" to make it clear that the node starts after clicking it
+- update Japanese translation — thanks to qupo1
+
 
 1499:
 

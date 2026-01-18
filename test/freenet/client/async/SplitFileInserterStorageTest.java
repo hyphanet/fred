@@ -7,12 +7,15 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Random;
 
 import freenet.support.io.*;
+
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -85,8 +88,7 @@ public class SplitFileInserterStorageTest {
     private InsertContext context;
 
     public SplitFileInserterStorageTest() throws IOException {
-        dir = new File("split-file-inserter-storage-test");
-        dir.mkdir();
+        dir = Files.createTempDirectory("split-file-inserter-storage-test").toFile();
         executor = new WaitableExecutor(new PooledExecutor());
         ticker = new CheatingTicker(executor);
         RandomSource r = new DummyRandomSource(12345);
@@ -209,6 +211,11 @@ public class SplitFileInserterStorageTest {
             return 0;
         }
 
+    }
+
+    @After
+    public void removeDirectory() {
+        FileUtil.removeAll(dir);
     }
 
     @Test
