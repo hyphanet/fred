@@ -1,25 +1,26 @@
 next:
 
+- Update Actions version. Thanks to qupo1!
 - Update the plugin WebOfTrust to 0.4.5 build 21 with dead seed IDs replaced by active ones. Thanks to xor!
 - Update the plugin JSTUN to version 1.5 (6) with dead JSTUN servers replaced. Thanks to Bombe!
 - Update MIME types, thanks to torusrxxx
 - Cleanup PeerManager and version transition, thanks to torusrxxx
 - Continue securely deleting the file if IOException occurred and add logging, thanks to torusrxxx
 - Link bugs via bugs.hyphanet.org, replace dead URIs, Suggest IRC username SecRabbit in SECURITY.md, replace mailing lists reference by FMS
-- remove files used in tests, thanks to Bombe
+- Remove files used in tests, thanks to Bombe
 - CONTRIBUTING: Add "no spurious changes" note
 - Preserve the order of peers when updating handshake IPs
 - 🚸 Build source JAR in a more reproducible way, thanks to Bombe
-- show radiobuttons on sky dark static theme for WoT
-  update translations from transifex, fix transifex config, remove l10n for removed feature. Thanks to Bombe!
-- update github actions/checkout to v5, thanks to qupo1
-- improve PNG filter: support HDR chunks, thanks to Bombe and torusrxxx
+- Show radiobuttons on sky dark static theme for WoT
+- update translations from transifex, fix transifex config, remove l10n for removed feature. Thanks to Bombe!
+- Update github actions/checkout to v5, thanks to qupo1
+- Improve PNG filter: support HDR chunks, thanks to Bombe and torusrxxx
 - Simplify MultiHash{Input,Output}Stream, thanks to bertm
 - BlockTransmitter: delay BlockSenderJob asynchronously on the Ticker, thanks to bertm
-- reduce synchronization in MersenneTwister for efficiency, thanks to bertm
-- bump Gradle to 8.14.3, thanks to qupo1
+- Reduce synchronization in MersenneTwister for efficiency, thanks to bertm
+- Bump Gradle to 8.14.3, thanks to qupo1
 - Update debian package to 1503, thanks to qupo1
-- speed up and fix RunningAverage, thanks to bertm
+- Speed up and fix RunningAverage, thanks to bertm
 
 1503:
 
