@@ -16,10 +16,12 @@ import static freenet.test.HttpResponse.parse;
 import static freenet.test.HttpResponseMatchers.hasBody;
 import static freenet.test.HttpResponseMatchers.hasHeader;
 import static freenet.test.HttpResponseMatchers.hasStatus;
+import static freenet.test.HttpResponseMatchers.hasStringBody;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
@@ -324,6 +326,28 @@ public class ToadletContextImplTest {
 		));
 	}
 
+	@Test
+	public void ioExceptionInGetMethodOfToadletWillCauseHttpStatus500() throws Exception {
+		setupInputStream("GET /error-in-get HTTP/1.1\r\n\r\n");
+		when(toadletContainer.findToadlet(new URI("/error-in-get"))).thenReturn(errorToadlet);
+		ToadletContextImpl.handle(socket, toadletContainer, pageMaker, null, null);
+		assertThat(parse(outputStream.toByteArray()), contains(
+				allOf(hasStatus(500), hasStringBody(containsString("java.io.IOException: Test GET")))
+		));
+	}
+
+	@Test
+	public void ioExceptionInPostMethodOfToadletWillCauseHttpStatus500() throws Exception {
+		setupInputStream("POST /error-in-post HTTP/1.1\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: 26\r\n\r\nformPassword=form-password\r\n");
+		when(toadletContainer.allowPosts()).thenReturn(true);
+		when(toadletContainer.getFormPassword()).thenReturn("form-password");
+		when(toadletContainer.findToadlet(new URI("/error-in-post"))).thenReturn(errorToadlet);
+		ToadletContextImpl.handle(socket, toadletContainer, pageMaker, null, null);
+		assertThat(parse(outputStream.toByteArray()), contains(
+				allOf(hasStatus(500), hasStringBody(containsString("java.io.IOException: Test POST")))
+		));
+	}
+
 	private void setupInputStream(String request) throws IOException {
 		when(socket.getInputStream()).thenReturn(new ByteArrayInputStream(request.getBytes(UTF_8)));
 	}
@@ -335,6 +359,7 @@ public class ToadletContextImplTest {
 
 	private final Toadlet homepageToadlet = mock(Toadlet.class, RETURNS_DEEP_STUBS);
 	private final Toadlet noOutputToadlet = mock(Toadlet.class, RETURNS_DEEP_STUBS);
+	private final PostToadlet errorToadlet = mock(PostToadlet.class, RETURNS_DEEP_STUBS);
 	private final PostToadlet postToadlet = new PostToadlet();
 
 	{
@@ -350,6 +375,9 @@ public class ToadletContextImplTest {
 			}).when(homepageToadlet).handleMethodGET(any(), any(), any());
 			when(homepageToadlet.findSupportedMethods()).thenReturn("GET");
 			when(noOutputToadlet.findSupportedMethods()).thenReturn("GET");
+			when(errorToadlet.findSupportedMethods()).thenReturn("GET, POST");
+			doThrow(new IOException("Test GET")).when(errorToadlet).handleMethodGET(any(), any(), any());
+			doThrow(new IOException("Test POST")).when(errorToadlet).handleMethodPOST(any(), any(), any());
 		} catch (IOException | ToadletContextClosedException | RedirectException e) {
 			throw new RuntimeException(e);
 		}
@@ -364,7 +392,7 @@ public class ToadletContextImplTest {
 		}
 
 		@Override
-		public void handleMethodGET(URI uri, HTTPRequest request, ToadletContext ctx) {
+		public void handleMethodGET(URI uri, HTTPRequest request, ToadletContext ctx) throws IOException {
 		}
 
 		@Override

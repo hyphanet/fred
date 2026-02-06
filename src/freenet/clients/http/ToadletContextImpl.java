@@ -717,8 +717,6 @@ public class ToadletContextImpl implements ToadletContext {
 			} catch (IOException e1) {
 				// Ignore
 			}
-		} catch (IOException e) {
-			// ignore and return
 		} catch (ToadletContextClosedException e) {
 			Logger.error(ToadletContextImpl.class, "ToadletContextClosedException while handling connection!");
 		} catch (Throwable t) {

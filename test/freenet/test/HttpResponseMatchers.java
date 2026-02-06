@@ -1,9 +1,11 @@
 package freenet.test;
 
+import java.nio.charset.StandardCharsets;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.Matchers.anything;
 import static org.hamcrest.Matchers.equalTo;
 
@@ -154,6 +156,38 @@ public class HttpResponseMatchers {
 			@Override
 			public void describeTo(Description description) {
 				description.appendText("body is ").appendDescriptionOf(bodyMatcher);
+			}
+		};
+	}
+
+	/**
+	 * Returns a matcher that matches {@link HttpResponse}s whose body when
+	 * converted to a {@link String} using the {@link StandardCharsets#UTF_8
+	 * UTF-8 charset} is matched by the given matcher.
+	 *
+	 * @param bodyMatcher The matcher for the body
+	 * @return A matcher for {@link HttpResponse}s
+	 */
+	public static Matcher<HttpResponse> hasStringBody(Matcher<? super String> bodyMatcher) {
+		return new TypeSafeDiagnosingMatcher<HttpResponse>() {
+			@Override
+			protected boolean matchesSafely(HttpResponse httpResponse, Description mismatchDescription) {
+				if (!httpResponse.getBody().isPresent()) {
+					mismatchDescription.appendText("body was missing");
+					return false;
+				}
+				String bodyAsString = new String(httpResponse.getBody().get(), UTF_8);
+				if (!bodyMatcher.matches(bodyAsString)) {
+					mismatchDescription.appendText("body ");
+					bodyMatcher.describeMismatch(bodyAsString, mismatchDescription);
+					return false;
+				}
+				return true;
+			}
+
+			@Override
+			public void describeTo(Description description) {
+				description.appendText("body matches ").appendDescriptionOf(bodyMatcher);
 			}
 		};
 	}

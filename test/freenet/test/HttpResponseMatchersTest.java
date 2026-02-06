@@ -10,6 +10,8 @@ import static freenet.test.HttpResponseMatchers.hasHeader;
 import static freenet.test.HttpResponseMatchers.hasHeaders;
 import static freenet.test.HttpResponseMatchers.hasNoBody;
 import static freenet.test.HttpResponseMatchers.hasStatus;
+import static freenet.test.HttpResponseMatchers.hasStringBody;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.anything;
@@ -223,6 +225,49 @@ public class HttpResponseMatchersTest {
 		httpResponse.setBody(new byte[] { 4, 5, 6 });
 		hasBody(equalTo(new byte[] { 1, 2, 3 })).describeMismatch(httpResponse, description);
 		assertThat(description.toString(), equalTo("body was [<4b>, <5b>, <6b>]"));
+	}
+
+	@Test
+	public void hasStringBodyMatcherIsDescribedCorrectly() {
+		HttpResponse httpResponse = new HttpResponse(200, "");
+		httpResponse.setBody("This is a test body.".getBytes(UTF_8));
+		hasStringBody(containsString("test")).describeTo(description);
+		assertThat(description.toString(), equalTo("body matches a string containing \"test\""));
+	}
+
+	@Test
+	public void hasStringBodyMatchesWhenBodyIsCorrect() {
+		HttpResponse httpResponse = new HttpResponse(200, "");
+		httpResponse.setBody("This is a test body.".getBytes(UTF_8));
+		assertThat(hasStringBody(containsString("test")).matches(httpResponse), equalTo(true));
+	}
+
+	@Test
+	public void hasStringBodyDoesNotMatchIfThereIsNoBody() {
+		HttpResponse httpResponse = new HttpResponse(200, "");
+		assertThat(hasStringBody(containsString("test")).matches(httpResponse), equalTo(false));
+	}
+
+	@Test
+	public void hasStringBodyDescribesMismatchCorrectlyIfThereIsNoBody() {
+		HttpResponse httpResponse = new HttpResponse(200, "");
+		hasStringBody(containsString("test")).describeMismatch(httpResponse, description);
+		assertThat(description.toString(), equalTo("body was missing"));
+	}
+
+	@Test
+	public void hasStringBodyDoesNotMatchIfBodyIsDifferent() {
+		HttpResponse httpResponse = new HttpResponse(200, "");
+		httpResponse.setBody("This is a test body.".getBytes(UTF_8));
+		assertThat(hasStringBody(containsString("no match")).matches(httpResponse), equalTo(false));
+	}
+
+	@Test
+	public void hasStringBodyDescribesMismatchCorrectly() {
+		HttpResponse httpResponse = new HttpResponse(200, "");
+		httpResponse.setBody("This is a test body.".getBytes(UTF_8));
+		hasStringBody(containsString("no match")).describeMismatch(httpResponse, description);
+		assertThat(description.toString(), equalTo("body was \"This is a test body.\""));
 	}
 
 	@Test
