@@ -67,7 +67,7 @@ public class InsertCompressor implements CompressJob {
 		this.minSize = minSize;
 		this.bucketFactory = bf;
 		this.persistent = persistent;
-		this.compressorDescriptor = inserter.ctx.compressorDescriptor;
+		this.compressorDescriptor = inserter.getInsertContext().compressorDescriptor;
 		this.generateHashes = generateHashes;
 		this.pre1254 = pre1254;
 		this.config = config;

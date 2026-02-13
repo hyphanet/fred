@@ -67,7 +67,7 @@ class SingleFileInserter implements ClientPutState, Serializable {
 	
 	final BaseClientPutter parent;
 	InsertBlock block;
-	final InsertContext ctx;
+	private final InsertContext ctx;
 	final boolean metadata;
 	final PutCompletionCallback cb;
 	final ARCHIVE_TYPE archiveType;
@@ -1006,6 +1006,10 @@ class SingleFileInserter implements ClientPutState, Serializable {
 	@Override
 	public BaseClientPutter getParent() {
 		return parent;
+	}
+
+	InsertContext getInsertContext() {
+		return ctx;
 	}
 
 	@Override
