@@ -148,7 +148,11 @@ public class InsertCompressor implements CompressJob {
 									amountOfDataToCheckCompressionRatio, minimumCompressionPercentage);
 						} catch (CompressionOutputSizeException | CompressionRatioException e) {
 							if(hasher != null) {
-								is.skip(Long.MAX_VALUE);
+								int eof;
+								do {
+									is.skip(Long.MAX_VALUE);
+									eof = is.read();
+								} while (eof != -1);
 								hashes = hasher.getResults();
 								first = false;
 							}
