@@ -8,6 +8,7 @@ import static org.junit.Assert.assertThrows;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Random;
 
 import org.junit.Test;
 
@@ -31,6 +32,44 @@ public class MultiHashInputStreamTest {
         assertEquals(1, results.length);
         assertEquals(HashType.MD5, results[0].type);
         assertEquals(MESSAGE_MD5, results[0].hashAsHex());
+    }
+
+    @Test
+    public void skip() throws IOException {
+        assertEquals(1, hash.skip(1));
+        assertEquals(MESSAGE.length - 1, hash.skip(Long.MAX_VALUE));
+        assertEquals(-1, hash.read());
+        assertEquals(MESSAGE.length, hash.getReadBytes());
+
+        HashResult[] results = hash.getResults();
+        assertEquals(1, results.length);
+        assertEquals(HashType.MD5, results[0].type);
+        assertEquals(MESSAGE_MD5, results[0].hashAsHex());
+    }
+
+    @Test
+    public void skipZero() throws IOException {
+        assertEquals(0, hash.skip(0));
+        assertEquals(0, hash.getReadBytes());
+    }
+
+    @Test
+    public void skipLong() throws IOException {
+        byte[] data = new byte[18 * 1024];
+        new Random().nextBytes(data);
+        byte[] expectedHash = SHA256.digest(data);
+        MultiHashInputStream stream = new MultiHashInputStream(new ByteArrayInputStream(data), HashType.SHA256.bitmask);
+
+        assertEquals(17 * 1024, stream.skip(17 * 1024));
+        assertEquals(1024, stream.skip(2048));
+        assertEquals(data.length, stream.getReadBytes());
+        assertArrayEquals(expectedHash, HashResult.get(stream.getResults(), HashType.SHA256));
+    }
+
+    @Test
+    public void skipAtEnd() throws IOException {
+        assertEquals(MESSAGE.length, hash.skip(MESSAGE.length));
+        assertEquals(0, hash.skip(1));
     }
 
     @Test
