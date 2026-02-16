@@ -4,6 +4,7 @@
 package freenet.node.useralerts;
 
 import freenet.clients.fcp.FCPMessage;
+import freenet.node.PeerNode;
 import freenet.support.HTMLNode;
 
 public interface UserAlert {
@@ -23,6 +24,13 @@ public interface UserAlert {
 	 * Content of alert (plain text).
 	 */
 	public String getText();
+
+	/**
+	 * Content of the body of the alert (no metadata).
+	 */
+	default public String getMessageText() {
+		return getText();
+	}
 
 	/**
 	 * Content of alert (HTML).
@@ -49,7 +57,7 @@ public interface UserAlert {
 	public void isValid(boolean validity);
 	
 	public String dismissButtonText();
-	
+
 	public boolean shouldUnregisterOnDismiss();
 	
 	/**
