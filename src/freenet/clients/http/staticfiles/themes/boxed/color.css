@@ -260,3 +260,9 @@ div#statusbar div.separator {
 	background-color: black;
 }
 
+
+.copy-to-clipboard-element:active {
+  color: red;
+  font-weight: bold;
+}
+

@@ -431,3 +431,9 @@ div#statusbar div.separator {
 }
 
 
+
+.copy-to-clipboard-element:active {
+  color: red;
+  font-weight: bold;
+}
+

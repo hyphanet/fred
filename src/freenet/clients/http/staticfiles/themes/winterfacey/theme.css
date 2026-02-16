@@ -1482,6 +1482,12 @@ body[id*="Sone"] {
 }
 
 
+.copy-to-clipboard-element:active {
+  color: red;
+  font-weight: bold;
+}
+
+
 
 /** Media query **/
 @media (max-width: 1500px) {
