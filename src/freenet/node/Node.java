@@ -268,10 +268,21 @@ public class Node implements TimeSkewDetectorCallback {
 
 	public <T extends StorableBlock> void closeOldStore(StoreCallback<T> old) {
 		FreenetStore<T> store = old.getStore();
+		_closeOldStore(store);
+	}
+
+	private static <T extends StorableBlock> void _closeOldStore(FreenetStore<T> store) {
 		if(store instanceof SaltedHashFreenetStore) {
 			SaltedHashFreenetStore<T> saltstore = (SaltedHashFreenetStore<T>) store;
 			saltstore.close();
 			saltstore.destruct();
+		} else if (store instanceof CachingFreenetStore) {
+			store.close();
+			FreenetStore<T> underlyingStore = store.getUnderlyingStore();
+			if (underlyingStore instanceof SaltedHashFreenetStore) {
+				SaltedHashFreenetStore<T> saltStore = (SaltedHashFreenetStore<T>) underlyingStore;
+				saltStore.destruct();
+			}
 		}
 	}
 
@@ -359,10 +370,21 @@ public class Node implements TimeSkewDetectorCallback {
 				}
 			} else {
 				synchronized(Node.this) {
+					closeAllStores();
 					storeType = val;
 				}
 				throw new NodeNeedRestartException("Store type cannot be changed on the fly");
 			}
+		}
+
+		private void closeAllStores() {
+			// close the old stores so switching back to salt-hash doesn't run into locking trouble
+			closeOldStore(sskDatastore);
+			closeOldStore(pubKeyDatastore);
+			closeOldStore(chkDatastore);
+			closeOldStore(sskDatacache);
+			closeOldStore(pubKeyDatacache);
+			closeOldStore(chkDatacache);
 		}
 
 		@Override
@@ -416,8 +438,10 @@ public class Node implements TimeSkewDetectorCallback {
 						throw new InvalidConfigValueException("Unable to create new store: "+e);
 					}
 				} else if(val.equals("ram")) {
+					closeAllClientCaches();
 					initRAMClientCacheFS();
 				} else /*if(val.equals("none")) */{
+					closeAllClientCaches();
 					initNoClientCacheFS();
 				}
 				
@@ -425,6 +449,13 @@ public class Node implements TimeSkewDetectorCallback {
 					clientCacheType = val;
 				}
 			}
+		}
+
+		private void closeAllClientCaches() {
+			// close the old client caches so switching back to salt-hash doesn't run into locking trouble
+			closeOldStore(sskClientcache);
+			closeOldStore(pubKeyClientcache);
+			closeOldStore(chkClientcache);
 		}
 
 		@Override

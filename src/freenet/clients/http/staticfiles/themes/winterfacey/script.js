@@ -68,9 +68,11 @@ var mobileMenu = function() {
   }
 
   function attach() {
-    navbarDomElement.appendChild(hamburgerContent);
-    hamburgerDomElement = document.getElementById(hamburgerId);
-    customAddEventListener(hamburgerDomElement, 'click', toggleCssClasses);
+    if (navbarDomElement) {
+      navbarDomElement.appendChild(hamburgerContent);
+      hamburgerDomElement = document.getElementById(hamburgerId);
+      customAddEventListener(hamburgerDomElement, 'click', toggleCssClasses);
+    }
   }
 
   function detach() {
@@ -99,7 +101,9 @@ var toggleInnerMenu = function() {
   var notSelectedLinkList = document.querySelectorAll('#navlist > .navlist-not-selected > a');
 
   // add active class for selected element after load page
-  selectedList[0].className += " active";
+  if (selectedList.length > 0) {
+    selectedList[0].className += " active";
+  }
 
   // function toggle (add and remove active class)
   function toggle(selectedItem) {
