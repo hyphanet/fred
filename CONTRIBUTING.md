@@ -6,6 +6,7 @@ start with:
 
 * Is there anything you've found annoying or lacking while using Freenet that
   you'd like to fix? (There might even be a bug filed already.)
+* Check the [High impact tasks](https://wiki.freenetproject.org/High-impact-tasks) page.
 * The [bug tracker](http://bugs.hyphanet.org/my_view_page.php) has tasks.
   List only bugs filed against this repository by selecting "Freenet" in the
   "Project" drop-down in the upper right. Do any of these look interesting?
