@@ -56,6 +56,7 @@ Before submitting a pull request, please:
 
 * add an entry to the [NEWS](/NEWS.md) file if appropriate.
 * ensure modified lines meet the project [coding standards](https://google.github.io/styleguide/javaguide.html).
+* ensure that you understand the change you suggest. You must not suggest code that you know you don’t understand.
 * ensure that your pull request is easy to work with. File additional pull-requests for infrastructure if those are required to release your change.
 * ensure the commit messages meet the standards:
 
