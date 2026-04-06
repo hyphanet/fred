@@ -101,11 +101,14 @@ public class DNSRequester implements Runnable {
             // Try new DNS lookup
             pn.maybeUpdateHandshakeIPs(false);
         }
-
-        int nextMaxWaitTime = 1000 + node.getFastWeakRandom().nextInt(60000);
+        // fast checks during startup (for seednodes), throttled after first connection
+        boolean noConnectedPeers = node.noConnectedPeers();
+        int nextMaxWaitTime = noConnectedPeers
+            ? 100 + node.getFastWeakRandom().nextInt(400)
+            : 1000 + node.getFastWeakRandom().nextInt(60000);
         try {
             synchronized(this) {
-                wait(nextMaxWaitTime);  // sleep 1-61s ...
+                wait(nextMaxWaitTime);  // sleep 1-61s if connected, else 0.1-0.5s (3s for 10 seeds)
             }
         } catch (InterruptedException e) {
             // Ignore, just wake up. Just sleeping to not busy wait anyway
