@@ -1,7 +1,7 @@
 // @license magnet:?xt=urn:btih:1f739d935676111cfff4b4693e3816e664797050&dn=gpl-3.0.txt GPL-v3-or-Later
 if (typeof(document.addCopyKeyFieldToFinishedTransfers) === 'undefined') {
   function addCopyKeyFieldToFinishedTransfers () {
-    if (navigator && navigator.clipboard) {
+    if (navigator.clipboard) {
       var matching = document.getElementsByClassName('copy-to-clipboard');
       for (var matchingElement of matching) {
         // must use const to avoid the weird scoping of var replacing all text with the last element
