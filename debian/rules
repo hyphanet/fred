@@ -32,7 +32,6 @@ clean:
 	rm -rf .gradle gradle/wrapper/dists debian/freenet
 
 override_dh_auto_build: build_seed_file
-	./gradlew jar; \
 	./gradlew copyRuntimeLibs
 
 	sed -e 's/@version@/$(FREENET_VERSION)/' -e 's/@build@/$(FREENET_BUILD)/' $(CURDIR)/debian/freenet.service.params | \
