@@ -10,7 +10,7 @@ if (typeof(document.addCopyKeyFieldToFinishedTransfers) === 'undefined') {
           // SVG image thanks to bertm!
           toClipboard.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" style="height: 1em; width: 1em; margin-inline-start: .5ex; vertical-align: middle;"><path stroke="currentColor" stroke-width="2" d="M 2 16 v -12 a 2 2 0 0 1 2 -2 h 12 M 9 7 h 10 a 2 2 0 0 1 2 2 v 10 a 2 2 0 0 1 -2 2 h -10 a 2 2 0 0 1 -2 -2 v -10 a 2 2 0 0 1 2 -2" fill="none"></path></svg>';
           toClipboard.classList.add('copy-to-clipboard-element');
-          toClipboard.setAttribute('title', 'Copy to Clipboard');
+          toClipboard.setAttribute('title', matchingElement.dataset.title);
           toClipboard.onclick = () => navigator.clipboard.writeText(key);
           matchingElement.after(toClipboard);
         }
