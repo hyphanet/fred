@@ -290,6 +290,10 @@ tr.priority6, td.priority6 {
 }
 
 
+.copy-to-clipboard-element {
+  user-select: none; /* do not copy this text */
+  cursor: pointer; /* this is an action */
+}
 .copy-to-clipboard-element:active {
   color: red;
   font-weight: bold;
