@@ -1982,7 +1982,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			keyCell.addChild("span", "class", "key_is")
 					.addChild("a",
 							new String[]{"class", "data-key", "data-title", "href"},
-							new String[]{"finished_key_link", uri.toString(), "Copy to Clipboard", '/' + uri.toString() + (addSlash ? "/" : "")}, 
+							new String[]{"finished_key_link", uri.toString(), l10n("copyToClipboardTitle"), '/' + uri.toString() + (addSlash ? "/" : "")}, 
 							uri.toShortString() + (addSlash ? "/" : ""));
 		} else {
 			keyCell.addChild("span", "class", "key_unknown", l10n("unknown"));
