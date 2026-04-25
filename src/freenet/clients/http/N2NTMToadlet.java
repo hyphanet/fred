@@ -16,7 +16,9 @@ import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.NodeStarter;
 import freenet.node.PeerManager;
+import freenet.support.Base64;
 import freenet.support.HTMLNode;
+import freenet.support.IllegalBase64Exception;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.SizeUtil;
@@ -45,42 +47,48 @@ public class N2NTMToadlet extends Toadlet {
 	    return;
 
 		if (request.isParameterSet("peernode_hashcode")) {
-			PageNode page = ctx.getPageMaker().getPageNode(l10n("sendMessage"), ctx);
-			HTMLNode contentNode = page.getContentNode();
-
-			String peernode_name = null;
 			String input_hashcode_string = request.getParam("peernode_hashcode");
-			int input_hashcode = -1;
-			try {
-				input_hashcode = Integer.parseInt(input_hashcode_string);
-			} catch (NumberFormatException e) {
-				// ignore here, handle below
-			}
-			if (input_hashcode != -1) {
-				DarknetPeerNode[] peerNodes = node.getDarknetConnections();
-				for (DarknetPeerNode pn: peerNodes) {
-					int peer_hashcode = pn.hashCode();
-					if (peer_hashcode == input_hashcode) {
-						peernode_name = pn.getName();
-						break;
-					}
-				}
-			}
-			if (peernode_name == null) {
-				contentNode.addChild(createPeerInfobox("infobox-error",
-						l10n("peerNotFoundTitle"), l10n("peerNotFoundWithHash",
-								"hash", input_hashcode_string)));
-				this.writeHTMLReply(ctx, 200, "OK", page.generate());
-				return;
-			}
-			HashMap<String, String> peers = new HashMap<String, String>();
-			peers.put(input_hashcode_string, peernode_name);
-			createN2NTMSendForm(ctx.isAdvancedModeEnabled(), contentNode, ctx, peers);
-			this.writeHTMLReply(ctx, 200, "OK", page.generate());
+			createWriteN2NTMForm(ctx, input_hashcode_string, "");
 			return;
 		}
 		MultiValueTable<String, String> headers = MultiValueTable.from("Location", "/friends/");
 		ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+	}
+
+	private void createWriteN2NTMForm(ToadletContext ctx, String input_hashcode_string, String initialContent)
+			throws ToadletContextClosedException, IOException {
+		PageNode page = ctx.getPageMaker().getPageNode(l10n("sendMessage"), ctx);
+		HTMLNode pageNode = page.outer;
+		HTMLNode contentNode = page.getContentNode();
+
+		String peernode_name = null;
+		int input_hashcode = -1;
+		try {
+			input_hashcode = Integer.parseInt(input_hashcode_string);
+		} catch (NumberFormatException e) {
+			// ignore here, handle below
+		}
+		if (input_hashcode != -1) {
+			DarknetPeerNode[] peerNodes = node.getDarknetConnections();
+			for (DarknetPeerNode pn: peerNodes) {
+				int peer_hashcode = pn.hashCode();
+				if (peer_hashcode == input_hashcode) {
+					peernode_name = pn.getName();
+					break;
+				}
+			}
+		}
+		if (peernode_name == null) {
+			contentNode.addChild(createPeerInfobox("infobox-error",
+					l10n("peerNotFoundTitle"), l10n("peerNotFoundWithHash",
+							"hash", input_hashcode_string)));
+			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+			return;
+		}
+		HashMap<String, String> peers = new HashMap<String, String>();
+		peers.put(input_hashcode_string, peernode_name);
+		createN2NTMSendForm(pageNode, ctx.isAdvancedModeEnabled(), contentNode, ctx, peers, initialContent);
+		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
 
 	private String l10n(String key, String pattern[], String value[]) {
@@ -135,6 +143,25 @@ public class N2NTMToadlet extends Toadlet {
 			} catch (URISyntaxException e) {
 				//Should be impossible because the browser is registered with .PATH.
 			}
+			return;
+		}
+
+		if (request.isPartSet("replyTo")) {
+			String message = request.getPartAsStringFailsafe("replyTo", 1024 * 1024);
+			message = message.trim();
+			try {
+				message = Base64.decodeUTF8(message);
+			} catch (IllegalBase64Exception e) {
+				Logger.error(this, "could not decode replyTo text", e);
+				message = "";
+			}
+			if (!message.isEmpty()) {
+				message = "\n> " + String.join("\n> ", message.split("\n")) + "\n\n";
+				message = message.replaceAll("\n> >", "\n>>")
+						.substring(1); // strip the initial linebreak again
+			}
+			String input_hashcode_string = request.getPartAsStringFailsafe("peernode_hashcode", 1024);
+			createWriteN2NTMForm(ctx, input_hashcode_string, message);
 			return;
 		}
 
@@ -269,6 +296,11 @@ public class N2NTMToadlet extends Toadlet {
 	public static void createN2NTMSendForm(boolean advancedMode,
 			HTMLNode contentNode, ToadletContext ctx, HashMap<String, String> peers)
 			throws ToadletContextClosedException, IOException {
+		createN2NTMSendForm(null, advancedMode, contentNode, ctx, peers, "");
+	}
+	public static void createN2NTMSendForm(HTMLNode pageNode, boolean advancedMode,
+			HTMLNode contentNode, ToadletContext ctx, HashMap<String, String> peers, String initalContent)
+			throws ToadletContextClosedException, IOException {
 		HTMLNode infobox = contentNode.addChild("div", new String[] { "class",
 				"id" }, new String[] { "infobox", "n2nbox" });
 		infobox.addChild("div", "class", "infobox-header", l10n("sendMessage"));
@@ -288,8 +320,10 @@ public class N2NTMToadlet extends Toadlet {
 					"value" }, new String[] { "hidden", "node_" + peerNodeHash,
 					"1" });
 		}
-		messageForm.addChild("textarea", new String[] { "id", "name", "rows",
-				"cols" }, new String[] { "n2ntmtext", "message", "8", "74" });
+		messageForm.addChild("textarea",
+				new String[] { "id", "name", "rows", "cols" },
+				new String[] { "n2ntmtext", "message", "8", "74" },
+				initalContent);
 		if(advancedMode){
 			messageForm.addChild("br");
 			messageForm.addChild("#", NodeL10n.getBase().getString("N2NTMToadlet.mayAttachFile"));

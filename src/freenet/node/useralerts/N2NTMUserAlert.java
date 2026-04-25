@@ -14,8 +14,8 @@ import freenet.node.DarknetPeerNode;
 import freenet.node.PeerNode;
 import freenet.support.HTMLNode;
 
-// Node To Node Text Message User Alert
-public class N2NTMUserAlert extends AbstractUserAlert implements NodeToNodeMessageUserAlert {
+// Node To Node Text Message User Alert: messaging between users
+public class N2NTMUserAlert extends AbstractUserAlert implements UserAlertFromPeer {
 	private final WeakReference<PeerNode> peerRef;
 	private final String messageText;
 	private final int fileNumber;
@@ -79,12 +79,15 @@ public class N2NTMUserAlert extends AbstractUserAlert implements NodeToNodeMessa
 			if (i != lines.length - 1)
 				alertNode.addChild("br");
 		}
-
-		DarknetPeerNode pn = (DarknetPeerNode) peerRef.get();
-		if (pn != null)
-			alertNode.addChild("p").addChild("a", "href", "/send_n2ntm/?peernode_hashcode=" + pn.hashCode(),
-					l10n("reply"));
 		return alertNode;
+	}
+
+    @Override
+	public PeerNode getSourceNode() {
+		if (peerRef == null) {
+			return null;
+		}
+		return peerRef.get();
 	}
 
 	@Override
@@ -122,6 +125,7 @@ public class N2NTMUserAlert extends AbstractUserAlert implements NodeToNodeMessa
 		return receivedTime;
 	}
 
+	@Override
 	public String getMessageText() {
 		return messageText;
 	}

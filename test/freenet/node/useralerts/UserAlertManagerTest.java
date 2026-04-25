@@ -1,5 +1,7 @@
 package freenet.node.useralerts;
 
+import static freenet.test.Matchers.isHtml;
+import static freenet.test.Matchers.withElement;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -10,7 +12,11 @@ import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import freenet.node.DarknetPeerNode;
+import freenet.node.PeerNode;
+import freenet.support.HTMLNode;
 import java.io.StringReader;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -191,6 +197,16 @@ public class UserAlertManagerTest {
 	private Document createAtomXml() throws Exception {
 		String atom = userAlertManager.getAtom("http://test");
 		return DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new InputSource(new StringReader(atom)));
+	}
+
+	@Test
+	public void renderingAnAlertWithAN2NTMRendersAReplyButton() {
+		DarknetPeerNode darknetPeerNode = mock(DarknetPeerNode.class, RETURNS_DEEP_STUBS);
+		when(darknetPeerNode.getWeakRef()).thenReturn(new WeakReference<>(mock(PeerNode.class)));
+		UserAlert userAlert = new N2NTMUserAlert(darknetPeerNode, "", 0, 0, 0, 0);
+		when(nodeClientCore.getFormPassword()).thenReturn("form-password");
+		HTMLNode htmlNode = userAlertManager.renderAlert(userAlert);
+		assertThat(htmlNode.generate(), isHtml(withElement("form[method='post'][action='/send_n2ntm/'] button[type='submit']")));
 	}
 
 	private final NodeClientCore nodeClientCore = mock(NodeClientCore.class, RETURNS_DEEP_STUBS);
