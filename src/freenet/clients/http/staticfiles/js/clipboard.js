@@ -2,7 +2,7 @@
 if (typeof(document.addCopyKeyFieldToFinishedTransfers) === 'undefined') {
   function addCopyKeyFieldToFinishedTransfers () {
     if (navigator && navigator.clipboard) {
-      var matching = document.getElementsByClassName('finished_key_link');
+      var matching = document.getElementsByClassName('copy-to-clipboard');
       for (var matchingElement of matching) {
         // must use const to avoid the weird scoping of var replacing all text with the last element
         // const for declaration is usable in IE11+.
