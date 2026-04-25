@@ -5,12 +5,12 @@ function addCopyKeyFieldToFinishedTransfers () {
     for (var matchingElement of matching) {
       var key = matchingElement.dataset.key;
       if (key) {
-        matchingElement.parentElement.appendChild(toClipboard);
         var toClipboard = document.createElement('span');
         toClipboard.textContent = ' ⎘';
         toClipboard.classList.add('copy-to-clipboard-element');
         toClipboard.setAttribute('title', 'Copy to Clipboard');
         toClipboard.onclick = () => navigator.clipboard.writeText(key);
+        matchingElement.after(toClipboard);
       }
     }
   }
