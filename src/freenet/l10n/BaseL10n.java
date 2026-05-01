@@ -312,6 +312,13 @@ public class BaseL10n {
 	 * @throws IOException
 	 */
 	private void loadOverrideFileOrBackup() throws IOException {
+		try (InputStream overrideInputStream = cl.getResourceAsStream(getL10nOverrideFileName(lang))) {
+			if (overrideInputStream != null) {
+				Logger.normal(this, "Override file found in classpath.");
+				this.translationOverride = SimpleFieldSet.readFrom(overrideInputStream, false, false);
+				return;
+			}
+		}
 		final File tmpFile = new File(this.getL10nOverrideFileName(this.lang));
 		if (tmpFile.exists() && tmpFile.canRead() && tmpFile.length() > 0) {
 			Logger.normal(this, "Override file detected : let's try to load it");
