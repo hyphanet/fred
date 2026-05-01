@@ -2,10 +2,10 @@ package freenet.test;
 
 import freenet.clients.http.TestToadletContext;
 import freenet.clients.http.ToadletContext;
+import jakarta.activation.MimeType;
+import jakarta.activation.MimeTypeParseException;
 import java.util.List;
 import java.util.Map;
-import javax.activation.MimeType;
-import javax.activation.MimeTypeParseException;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
