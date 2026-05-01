@@ -103,10 +103,10 @@ public class FProxyToadletTest {
 		});
 		when(fetchTracker.makeFetcher(eq(new FreenetURI("KSK@test2")), anyLong(), any(), any())).then(invocation -> {
 			FProxyFetchInProgress fetchInProgress = new FProxyFetchInProgress(fetchTracker, invocation.getArgument(0, FreenetURI.class), invocation.getArgument(1, Long.class), 0, null, invocation.getArgument(2, FetchContext.class), new RequestClientBuilder().build(), invocation.getArgument(3, FProxyFetchInProgress.REFILTER_POLICY.class));
-			fetchInProgress.onSuccess(new FetchResult(new ClientMetadata("text/plain"), new ArrayBucket("test".getBytes(UTF_8))), null);
+			fetchInProgress.onSuccess(new FetchResult(new ClientMetadata("text/css"), new ArrayBucket("test".getBytes(UTF_8))), null);
 			return new FProxyFetchWaiter(fetchInProgress);
 		});
-		createToadletContextExecuteRequestAndVerifyContext(builder -> builder.requesting("/KSK@test").withHeader("Accept", "image/*"), allOf(
+		createToadletContextExecuteRequestAndVerifyContext(builder -> builder.requesting("/KSK@test").withHeader("Accept", "text/css"), allOf(
 				hasStatus(equalTo(200)),
 				hasBodyText(equalTo("test"))
 		));
