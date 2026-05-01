@@ -3,10 +3,10 @@ package freenet.test;
 import freenet.clients.http.TestToadletContext;
 import freenet.clients.http.ToadletContextClosedException;
 import freenet.support.MultiValueTable;
+import jakarta.activation.MimeType;
 import java.io.IOException;
 import java.util.Date;
 import java.util.List;
-import javax.activation.MimeType;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.StringDescription;
@@ -104,7 +104,7 @@ public class ToadletContextMatchersTest {
 	@Test
 	public void hasContentTypeMatcherDescribesItself() {
 		hasContentType(any(MimeType.class)).describeTo(description);
-		assertThat(description.toString(), equalTo("has content type matching an instance of javax.activation.MimeType"));
+		assertThat(description.toString(), equalTo("has content type matching an instance of jakarta.activation.MimeType"));
 	}
 
 	@Test

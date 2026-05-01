@@ -1,12 +1,12 @@
 package freenet.test;
 
 import freenet.clients.http.HTTPRequestImpl;
+import jakarta.activation.MimeType;
+import jakarta.activation.MimeTypeParseException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
-import javax.activation.MimeType;
-import javax.activation.MimeTypeParseException;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeDiagnosingMatcher;

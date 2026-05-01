@@ -1,9 +1,9 @@
 package freenet.test;
 
+import jakarta.activation.MimeType;
+import jakarta.activation.MimeTypeParseException;
 import java.net.URI;
 import java.util.Map;
-import javax.activation.MimeType;
-import javax.activation.MimeTypeParseException;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.StringDescription;
@@ -226,7 +226,7 @@ public class LinkMatchersTest {
 	@Test
 	public void mimeTypeMatcherDescribesItself() {
 		isMimeType(any(MimeType.class)).describeTo(description);
-		assertThat(description.toString(), equalTo("is a MIME type matching an instance of javax.activation.MimeType"));
+		assertThat(description.toString(), equalTo("is a MIME type matching an instance of jakarta.activation.MimeType"));
 	}
 
 	@Test
