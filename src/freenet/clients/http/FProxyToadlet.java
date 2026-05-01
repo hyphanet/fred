@@ -717,24 +717,11 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			} else if(canSendProgress) {
 				if(logMINOR) Logger.minor(this, "Still in progress");
 				// Still in progress
-				boolean isJsEnabled=ctx.getContainer().isFProxyJavascriptEnabled() && ua != null && !ua.contains("AppleWebKit/");
 				boolean isWebPushingEnabled = false;
 				PageNode page = ctx.getPageMaker().getPageNode(l10n("fetchingPageTitle"), ctx);
 				String location = getLink(key, requestedMimeType, maxSize, httprequest.getParam("force", null), httprequest.isParameterSet("forcedownload"), maxRetries, overrideSize);
 				HTMLNode headNode=page.getHeadNode();
-				if(isJsEnabled){
-					//If the user has enabled javascript, we add a <noscript> http refresh(if he has disabled it in the browser)
-					headNode.addChild("noscript").addChild("meta", "http-equiv", "Refresh").addAttribute("content", "2;URL=" + location);
-						// If pushing is disabled, but js is enabled, then we add the original progresspage.js
-						if ((isWebPushingEnabled = ctx.getContainer().isFProxyWebPushingEnabled()) == false) {
-							HTMLNode scriptNode = headNode.addChild("script", "//abc");
-							scriptNode.addAttribute("type", "text/javascript");
-							scriptNode.addAttribute("src", "/static/js/progresspage.js");
-						}
-				}else{
-					//If he disabled it, we just put the http refresh meta, without the noscript
-					headNode.addChild("meta", "http-equiv", "Refresh").addAttribute("content", "2;URL=" + location);
-				}
+                headNode.addChild("meta", "http-equiv", "Refresh").addAttribute("content", "2;URL=" + location);
 				HTMLNode contentNode = page.getContentNode();
 				HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-information");
 				infobox.addChild("div", "class", "infobox-header", l10n("fetchingPageBox"));

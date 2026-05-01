@@ -5,8 +5,10 @@ import static org.junit.Assert.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.util.Random;
 
+import org.junit.After;
 import org.junit.Test;
 
 import freenet.client.ClientMetadata;
@@ -68,8 +70,7 @@ public class ClientRequestSelectorTest {
     final PersistentJobRunner jobRunner;
 
     public ClientRequestSelectorTest() throws IOException {
-        dir = new File("split-file-inserter-storage-test");
-        dir.mkdir();
+        dir = Files.createTempDirectory("split-file-inserter-storage-test").toFile();
         executor = new WaitableExecutor(new PooledExecutor());
         ticker = new CheatingTicker(executor);
         RandomSource r = new DummyRandomSource(12345);
@@ -84,6 +85,11 @@ public class ClientRequestSelectorTest {
         checker = new CRCChecksumChecker();
         memoryLimitedJobRunner = new MemoryLimitedJobRunner(9 * 1024 * 1024L, 20, executor, NativeThread.JAVA_PRIORITY_RANGE);
         jobRunner = new DummyJobRunner(executor, null);
+    }
+
+    @After
+    public void removeDirectory() {
+        FileUtil.removeAll(dir);
     }
 
     private static class MyCallback implements SplitFileInserterStorageCallback {

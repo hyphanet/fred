@@ -5,7 +5,7 @@ import static org.junit.Assert.*;
 import java.io.File;
 import java.io.IOException;
 
-import org.junit.After;
+import org.junit.Rule;
 import org.junit.Test;
 
 import freenet.client.FetchContext;
@@ -25,7 +25,7 @@ import freenet.support.TestProperty;
 import freenet.support.LoggerHook.InvalidThresholdException;
 import freenet.support.PooledExecutor;
 import freenet.support.io.BucketTools;
-import freenet.support.io.FileUtil;
+import org.junit.rules.TemporaryFolder;
 
 /** Creates a node, inserts data to it, and fetches the data back.
  * Note that we need one JUnit class per node because we need to actually exit the JVM
@@ -34,8 +34,6 @@ import freenet.support.io.FileUtil;
  */
 public class NodeAndClientLayerTest extends NodeAndClientLayerTestBase {
 
-    private static final File dir = new File("test-fetch-pull-single-node");
-    
     @Test
     public void testFetchPullSingleNodeSsk() throws InvalidThresholdException, NodeInitException, InsertException, FetchException, IOException {
         if(!TestProperty.EXTENSIVE) return;
@@ -54,12 +52,11 @@ public class NodeAndClientLayerTest extends NodeAndClientLayerTestBase {
         assertTrue(BucketTools.equalBuckets(result.asBucket(), block.getData()));
     }
 
-    private static FetchResult insertAndRetrieveBlock(DummyRandomSource random, InsertBlock block)
-        throws InvalidThresholdException, NodeInitException, InsertException, FetchException {
+    private FetchResult insertAndRetrieveBlock(DummyRandomSource random, InsertBlock block)
+        throws InvalidThresholdException, NodeInitException, InsertException, FetchException, IOException {
         final Executor executor = new PooledExecutor();
-        FileUtil.removeAll(dir);
-        dir.mkdir();
-        NodeStarter.globalTestInit(dir, false, 
+        File dir = temporaryFolder.newFolder();
+        NodeStarter.globalTestInit(dir, false,
                 Logger.LogLevel.ERROR, "", true, random);
         TestNodeParameters params = new TestNodeParameters();
         params.random = new DummyRandomSource(253121);
@@ -84,9 +81,7 @@ public class NodeAndClientLayerTest extends NodeAndClientLayerTestBase {
         return result;
     }
 
-    @After
-    public void cleanUp() {
-        FileUtil.removeAll(dir);
-    }
-    
+    @Rule
+    public final TemporaryFolder temporaryFolder = new TemporaryFolder();
+
 }

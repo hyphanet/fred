@@ -2,13 +2,12 @@ package freenet.store;
 
 import static org.junit.Assert.*;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Random;
 
-import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 
 import freenet.crypt.DummyRandomSource;
@@ -27,9 +26,9 @@ import freenet.support.api.Bucket;
 import freenet.support.compress.Compressor;
 import freenet.support.io.ArrayBucketFactory;
 import freenet.support.io.BucketTools;
-import freenet.support.io.FileUtil;
 import freenet.support.io.FilenameGenerator;
 import freenet.support.io.TempBucketFactory;
+import org.junit.rules.TemporaryFolder;
 
 public class SlashdotStoreTest {
 	
@@ -38,20 +37,12 @@ public class SlashdotStoreTest {
 	private PooledExecutor exec = new PooledExecutor();
 	private FilenameGenerator fg;
 	private TempBucketFactory tbf;
-	private File tempDir;
 
 	@Before
 	public void setUp() throws java.lang.Exception {
-		tempDir = new File("tmp-slashdotstoretest");
-		tempDir.mkdir();
-		fg = new FilenameGenerator(weakPRNG, true, tempDir, "temp-");
+		fg = new FilenameGenerator(weakPRNG, true, temporaryFolder.newFolder(), "temp-");
 		tbf = new TempBucketFactory(exec, fg, 4096, 65536, weakPRNG, false, 2*1024*1024, null);
 		exec.start();
-	}
-	
-	@After
-	public void tearDown() {
-		FileUtil.removeAll(tempDir);
 	}
 	
 	@Test
@@ -107,5 +98,8 @@ public class SlashdotStoreTest {
 		return ClientCHKBlock.encode(bucket, false, false, (short)-1, bucket.size(), Compressor.DEFAULT_COMPRESSORDESCRIPTOR,
         null, (byte)0);
 	}
+
+	@Rule
+	public final TemporaryFolder temporaryFolder = new TemporaryFolder();
 
 }

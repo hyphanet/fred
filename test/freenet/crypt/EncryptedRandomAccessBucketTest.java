@@ -18,8 +18,7 @@ import java.util.Arrays;
 import java.util.Random;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.junit.After;
-import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 
 import freenet.client.async.ClientContext;
@@ -30,11 +29,11 @@ import freenet.support.io.ArrayBucket;
 import freenet.support.io.BucketTestBase;
 import freenet.support.io.BucketTools;
 import freenet.support.io.FileBucket;
-import freenet.support.io.FileUtil;
 import freenet.support.io.RAFBucket;
 import freenet.support.io.RandomAccessBufferTestBase;
 import freenet.support.io.ResumeFailedException;
 import freenet.support.io.StorageFormatException;
+import org.junit.rules.TemporaryFolder;
 
 public class EncryptedRandomAccessBucketTest extends BucketTestBase {
     
@@ -145,21 +144,9 @@ public class EncryptedRandomAccessBucketTest extends BucketTestBase {
         }
     }
     
-    private File base = new File("tmp.encrypted-random-access-thing-test");
-    
-    @Before
-    public void setUp() {
-        base.mkdir();
-    }
-    
-    @After
-    public void tearDown() {
-        FileUtil.removeAll(base);
-    }
-
     @Test
     public void testStoreTo() throws IOException, StorageFormatException, ResumeFailedException, GeneralSecurityException {
-        File tempFile = File.createTempFile("test-storeto", ".tmp", base);
+        File tempFile = temporaryFolder.newFile();
         byte[] buf = new byte[4096];
         Random r = new Random(1267612);
         r.nextBytes(buf);
@@ -195,7 +182,7 @@ public class EncryptedRandomAccessBucketTest extends BucketTestBase {
     
     @Test
     public void testSerialize() throws IOException, StorageFormatException, ResumeFailedException, GeneralSecurityException, ClassNotFoundException {
-        File tempFile = File.createTempFile("test-storeto", ".tmp", base);
+        File tempFile = temporaryFolder.newFile();
         byte[] buf = new byte[4096];
         Random r = new Random(1267612);
         r.nextBytes(buf);
@@ -230,5 +217,8 @@ public class EncryptedRandomAccessBucketTest extends BucketTestBase {
         is.close();
         restored.free();
     }
-    
+
+    @Rule
+    public final TemporaryFolder temporaryFolder = new TemporaryFolder();
+
 }

@@ -127,6 +127,12 @@ public class DefaultMIMETypes {
 	 */
 
 	// FIXME should we support aliases?
+
+	/**
+	 * Highest MIME short ID that can be considered to exist "forever", such that all IDs
+	 * up to this value can be reliably used as compressed MIME type in manifests.
+	 */
+	static short COMPAT_MAX_MIME_SHORT_ID;
 	
 	static {
 		addMIMEType((short)0, "application/activemessage");
@@ -751,10 +757,20 @@ public class DefaultMIMETypes {
 		addMIMEType((short)619, "audio/speex", "spx");
 		addMIMEType((short)620, "audio/ogg", "oga");
 		addMIMEType((short)621, "audio/flac", "flac");
+
+		// If this is increased, the keys of files of the below MIME types change
+		// and re-inserts to the same key are no longer reliably possible.
+		COMPAT_MAX_MIME_SHORT_ID = 621;
+
+		// Added after 1498
 		addMIMEType((short)622, "image/webp", "webp");
+
+		// Added after 1501
 		addMIMEType((short)623, "image/avif", "avif");
 		addMIMEType((short)624, "image/heic", "heic");
 		addMIMEType((short)625, "image/heif", "heif");
+
+		// Added after 1503
 		addMIMEType((short)626, "image/bpg", "bpg");
 		addMIMEType((short)627, "image/jxl", "jxl");
 		addMIMEType((short)628, "image/emf", "emf");

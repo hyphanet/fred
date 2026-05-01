@@ -269,7 +269,7 @@ final class FCPPluginConnectionImpl implements FCPPluginConnection {
      * they only grow. As we cannot predict how much parallel synchronous sends server/client
      * implementations will run, we do need a shrinking map. So we use TreeMap. We should use
      * an automatically shrinking HashMap instead once we have one. This is also documented
-     * <a href="https://bugs.freenetproject.org/view.php?id=6320">in the bugtracker</a>.
+     * <a href="http://bugs.hyphanet.org/view.php?id=6320">in the bugtracker</a>.
      */
     private final TreeMap<String, SynchronousSend> synchronousSends
         = new TreeMap<String, SynchronousSend>();

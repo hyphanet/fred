@@ -1830,7 +1830,7 @@ public class PeerManager {
 
 	/**
 	 * Remove a PeerNode status from the map. Used internally when a peer is removed.
-	 * @param isInPeers If true, complain if the node is not in the peers list; if false, complain if it is.
+	 * @param noLog If true, don't produce an error log.
 	 */
 	private void removePeerNodeStatus(int pnStatus, PeerNode peerNode, boolean noLog) {
 		this.allPeersStatuses.removeStatus(pnStatus, peerNode, noLog);

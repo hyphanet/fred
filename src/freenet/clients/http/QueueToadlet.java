@@ -1703,7 +1703,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			     * reasons such as "data not found" / "route not found" / etc. This is
 			     * due to shortcomings in the underlying event framework. Please
 			     * re-enable it once the underlying issue is fixed:
-			     * https://bugs.freenetproject.org/view.php?id=6526 */
+			     * http://bugs.hyphanet.org/view.php?id=6526 */
 			    // QueueColumn.LAST_FAILURE,
 			    QueueColumn.PERSISTENCE, QueueColumn.FILENAME,
 			    QueueColumn.KEY, QueueColumn.COMPAT_MODE },
@@ -1730,7 +1730,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			     * reasons such as "data not found" / "route not found" / etc. This is
 			     * due to shortcomings in the underlying event framework. Please
 			     * re-enable it once the underlying issue is fixed:
-			     * https://bugs.freenetproject.org/view.php?id=6526 */
+			     * http://bugs.hyphanet.org/view.php?id=6526 */
 			    // QueueColumn.LAST_FAILURE,
 			    QueueColumn.PERSISTENCE, QueueColumn.FILENAME,
 			    QueueColumn.KEY },
@@ -1757,7 +1757,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			     * reasons such as "data not found" / "route not found" / etc. This is
 			     * due to shortcomings in the underlying event framework. Please
 			     * re-enable it once the underlying issue is fixed:
-			     * https://bugs.freenetproject.org/view.php?id=6526 */
+			     * http://bugs.hyphanet.org/view.php?id=6526 */
 			    // QueueColumn.LAST_FAILURE,
 			    QueueColumn.PERSISTENCE, QueueColumn.KEY },
 			priorityClasses, advancedModeEnabled, "uncompleted-upload-dir",

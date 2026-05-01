@@ -17,9 +17,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
 
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
 
 import freenet.crypt.DSAGroup;
@@ -65,7 +64,7 @@ import freenet.support.compress.Compressor;
 import freenet.support.compress.InvalidCompressionCodecException;
 import freenet.support.io.ArrayBucketFactory;
 import freenet.support.io.BucketTools;
-import freenet.support.io.FileUtil;
+import org.junit.rules.TemporaryFolder;
 
 /**
  * CachingFreenetStoreTest Test for CachingFreenetStore
@@ -75,8 +74,6 @@ import freenet.support.io.FileUtil;
  *         FIXME lots of repeated code, factor out.
  */
 public class CachingFreenetStoreTest {
-	
-	private static final File TEMP_DIR = new File("tmp-CachingFreenetStoreTest");
 
 	private Random weakPRNG = new Random(12340);
 	private PooledExecutor exec = new PooledExecutor();
@@ -84,33 +81,14 @@ public class CachingFreenetStoreTest {
 	private long cachingFreenetStoreMaxSize = Fields.parseLong("1M");
 	private long cachingFreenetStorePeriod = Fields.parseLong("300k");
 
-	@BeforeClass
-	public static void setupClass() {
-		FileUtil.removeAll(TEMP_DIR);
-
-		if(! TEMP_DIR.mkdir()) {
-			throw new IllegalStateException("Could not create temporary directory for store tests");
-		}
-	}
-
 	@Before
 	public void setUpTest() {
 		ResizablePersistentIntBuffer.setPersistenceTime(-1);
 		exec.start();
 	}
 
-	@AfterClass
-	public static void cleanup() {
-		FileUtil.removeAll(TEMP_DIR);
-	}
-
-	private File getStorePath(String testname) {
-		File storePath = new File(TEMP_DIR, "CachingFreenetStoreTest_" + testname);
-		FileUtil.removeAll(storePath);
-		if( ! storePath.mkdirs() ) {
-			throw new IllegalStateException("Could not create temporary test store path: " + storePath);
-		}
-		return storePath;
+	private File getStorePath(String testname) throws IOException {
+		return new File(temporaryFolder.newFolder(), "CachingFreenetStoreTest_" + testname);
 	}
 
 	/* Simple test with CHK for CachingFreenetStore */
@@ -859,8 +837,6 @@ public class CachingFreenetStoreTest {
 	private void checkOnCollisionsSSK(boolean useSlotFilter) throws IOException, SSKEncodeException,
 			InvalidCompressionCodecException, SSKVerifyException, KeyDecodeException, KeyCollisionException {
 
-		FileUtil.removeAll(TEMP_DIR);
-
 		final int keys = 5;
 		PubkeyStore pk = new PubkeyStore();
 		RAMFreenetStore<DSAPublicKey> ramFreenetStore = new RAMFreenetStore<DSAPublicKey>(pk, keys);
@@ -963,4 +939,8 @@ public class CachingFreenetStoreTest {
 		InsertableClientSSK ik = InsertableClientSSK.createRandom(random, test);
 		return ik.encode(bucket, false, false, (short) -1, bucket.size(), random, Compressor.DEFAULT_COMPRESSORDESCRIPTOR);
 	}
+
+	@Rule
+	public final TemporaryFolder temporaryFolder = new TemporaryFolder();
+
 }

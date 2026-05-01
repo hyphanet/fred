@@ -177,15 +177,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	private long timeAddedOrRestarted;
 	
 	private long countSelectionsSinceConnected = 0;
-	// 5mins; yes it's alchemy!
-	public static final long SELECTION_SAMPLING_PERIOD = MINUTES.toMillis(5);
 	// 30%; yes it's alchemy too! and probably *way* too high to serve any purpose
 	public static final int SELECTION_PERCENTAGE_WARNING = 30;
 	// Minimum number of routable peers to have for the selection code to have any effect
 	public static final int SELECTION_MIN_PEERS = 5;
-	// Should be good enough provided we don't get selected more than 10 times per/sec
-	// Lower the following value if you want to spare memory... or better switch from a TreeSet to a bit field.
-	public static final int SELECTION_MAX_SAMPLES = (int) (10 * SECONDS.convert(SELECTION_SAMPLING_PERIOD, MILLISECONDS));
 
 	/** Is the peer connected? If currentTracker == null then we have no way to send packets 
 	 * (though we may be able to receive them on the other trackers), and are disconnected. So we
@@ -307,10 +302,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	/** The status of this peer node in terms of Node.PEER_NODE_STATUS_* */
 	public int peerNodeStatus = PeerManager.PEER_NODE_STATUS_DISCONNECTED;
 
-	static final long CHECK_FOR_SWAPPED_TRACKERS_INTERVAL = FNPPacketMangler.SESSION_KEY_REKEYING_INTERVAL / 30;
-
-	static final byte[] TEST_AS_BYTES = "test".getBytes(StandardCharsets.UTF_8);
-
 	/** Holds a String-Long pair that shows which message types (as name) have been send to this peer. */
 	private final Hashtable<String, Long> localNodeSentMessageTypes = new Hashtable<String, Long>();
 	/** Holds a String-Long pair that shows which message types (as name) have been received by this peer. */
@@ -329,7 +320,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	 */
 	protected long peerAddedTime = 1;
 	/** Average proportion of requests which are rejected or timed out */
-	private TimeDecayingRunningAverage pRejected;
+	private final TimeDecayingRunningAverage pRejected;
 
 	/** Bytes received at/before startup */
 	private final long bytesInAtStartup;
@@ -370,7 +361,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	private int listeningHandshakeBurstSize;
 
 	/** The set of the listeners that needs to be notified when status changes. It uses WeakReference, so there is no need to deregister*/
-	private Set<PeerManager.PeerStatusChangeListener> listeners=Collections.synchronizedSet(new WeakHashSet<PeerStatusChangeListener>());
+	private final Set<PeerManager.PeerStatusChangeListener> listeners=Collections.synchronizedSet(new WeakHashSet<PeerStatusChangeListener>());
 
 	// NodeCrypto for the relevant node reference for this peer's type (Darknet or Opennet at this time))
 	protected final NodeCrypto crypto;
@@ -515,9 +506,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 					sfs = fs.subset("dsaPubKey");
 					identity = SHA256.digest(DSAPublicKey.create(sfs, Global.DSAgroupBigA).asBytes());
 				}
-			} catch(NumberFormatException e) {
-				throw new FSParseException(e);
-			} catch(IllegalBase64Exception e) {
+			} catch(NumberFormatException | IllegalBase64Exception e) {
 				throw new FSParseException(e);
 			}
 
@@ -562,7 +551,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 
 		nominalPeer = new ArrayList<Peer>();
 		try {
-			String physical[] = fs.getAll("physical.udp");
+			String[] physical = fs.getAll("physical.udp");
 			if(physical == null) {
 				// Leave it empty
 			} else {
@@ -2210,14 +2199,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			arkFetcher = null;
 		}
 		final USKRetriever unsub = ret;
-		node.getExecutor().execute(new Runnable() {
-
-			@Override
-			public void run() {
-				node.getClientCore().getUskManager().unsubscribeContent(myARK, unsub, true);
-			}
-			
-		});
+		node.getExecutor().execute(() -> node.getClientCore().getUskManager().unsubscribeContent(myARK, unsub, true));
 	}
 
 
@@ -2402,8 +2384,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		InputStreamReader isr = new InputStreamReader(bais, StandardCharsets.UTF_8);
 		BufferedReader br = new BufferedReader(isr);
 		try {
-			SimpleFieldSet fs = new SimpleFieldSet(br, false, true);
-			return fs;
+			return new SimpleFieldSet(br, false, true);
 		} catch(IOException e) {
 			throw (FSParseException)new FSParseException("Impossible: " + e).initCause(e);
 		}
@@ -2441,7 +2422,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		
 		// Anything may be omitted for a differential node reference
 		boolean changedAnything = false;
-		if(!forDiffNodeRef && (false != fs.getBoolean("testnet", false))) {
+		if(!forDiffNodeRef && fs.getBoolean("testnet", false)) {
 			String err = "Preventing connection to node " + getPeer() +" - testnet is enabled!";
 			Logger.error(this, err);
 			throw new FSParseException(err);
@@ -2470,9 +2451,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 					byte[] id = Base64.decode(identityString);
 					if (!Arrays.equals(id, identity))
 						throw new FSParseException("Changing the identity");
-				} catch (NumberFormatException e) {
-					throw new FSParseException(e);
-				} catch (IllegalBase64Exception e) {
+				} catch (NumberFormatException | IllegalBase64Exception e) {
 					throw new FSParseException(e);
 				}
 			}
@@ -2532,14 +2511,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 					Peer p;
 					try {
 						p = new Peer(phys, true, true);
-					} catch(HostnameSyntaxException e) {
-						Logger.error(this, "Invalid hostname or IP Address syntax error while parsing new peer reference: " + phys);
-						continue;
-					} catch (PeerParseException e) {
-						Logger.error(this, "Invalid hostname or IP Address syntax error while parsing new peer reference: " + phys);
-						continue;
-					} catch (UnknownHostException e) {
-						// Should be impossible???
+					} catch(HostnameSyntaxException | PeerParseException | UnknownHostException e) {
 						Logger.error(this, "Invalid hostname or IP Address syntax error while parsing new peer reference: " + phys);
 						continue;
 					}
@@ -2756,8 +2728,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		if(getLastGoodVersion() != null)
 			fs.putSingle("lastGoodVersion", lastGoodVersion);
-		for(int i = 0; i < nominalPeer.size(); i++)
-			fs.putAppend("physical.udp", nominalPeer.get(i).toString());
+		for(Peer peer : nominalPeer) {
+			fs.putAppend("physical.udp", peer.toString());
+		}
 		fs.put("auth.negTypes", negTypes);
 		fs.putSingle("identity", getIdentityString());
 		fs.put("location", getLocation());
@@ -2902,7 +2875,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	
 	// Separate, mandatory backoff mechanism for when nodes are consistently sending unexpected soft rejects.
 	// E.g. when load management predicts GUARANTEED and yet we are rejected.
-	// This can happens when the peer's view of how many of our requests are running is different to our view.
+	// This can happen when the peer's view of how many of our requests are running is different to our view.
 	// But there has not been a timeout, so we haven't called fatalTimeout() and reconnected.
 	
 	// FIXME 3 different kinds of backoff? Can we get rid of some???
@@ -3158,7 +3131,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	}
 
 
-	Object pingSync = new Object();
 	// Relatively few as we only get one every 200ms*#nodes
 	// We want to get reasonably early feedback if it's dropping all of them...
 
@@ -3325,37 +3297,40 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	}
 
 	public static String getPeerNodeStatusString(int status) {
-		if(status == PeerManager.PEER_NODE_STATUS_CONNECTED)
-			return "CONNECTED";
-		if(status == PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF)
-			return "BACKED OFF";
-		if(status == PeerManager.PEER_NODE_STATUS_TOO_NEW)
-			return "TOO NEW";
-		if(status == PeerManager.PEER_NODE_STATUS_TOO_OLD)
-			return "TOO OLD";
-		if(status == PeerManager.PEER_NODE_STATUS_DISCONNECTED)
-			return "DISCONNECTED";
-		if(status == PeerManager.PEER_NODE_STATUS_NEVER_CONNECTED)
-			return "NEVER CONNECTED";
-		if(status == PeerManager.PEER_NODE_STATUS_DISABLED)
-			return "DISABLED";
-		if(status == PeerManager.PEER_NODE_STATUS_CLOCK_PROBLEM)
-			return "CLOCK PROBLEM";
-		if(status == PeerManager.PEER_NODE_STATUS_CONN_ERROR)
-			return "CONNECTION ERROR";
-		if(status == PeerManager.PEER_NODE_STATUS_ROUTING_DISABLED)
-			return "ROUTING DISABLED";
-		if(status == PeerManager.PEER_NODE_STATUS_LISTEN_ONLY)
-			return "LISTEN ONLY";
-		if(status == PeerManager.PEER_NODE_STATUS_LISTENING)
-			return "LISTENING";
-		if(status == PeerManager.PEER_NODE_STATUS_BURSTING)
-			return "BURSTING";
-		if(status == PeerManager.PEER_NODE_STATUS_DISCONNECTING)
-			return "DISCONNECTING";
-		if(status == PeerManager.PEER_NODE_STATUS_NO_LOAD_STATS)
-			return "NO LOAD STATS";
-		return "UNKNOWN STATUS";
+		switch(status) {
+			case PeerManager.PEER_NODE_STATUS_CONNECTED:
+				return "CONNECTED";
+			case PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF:
+				return "BACKED OFF";
+			case PeerManager.PEER_NODE_STATUS_TOO_NEW:
+				return "TOO NEW";
+			case PeerManager.PEER_NODE_STATUS_TOO_OLD:
+				return "TOO OLD";
+			case PeerManager.PEER_NODE_STATUS_DISCONNECTED:
+				return "DISCONNECTED";
+			case PeerManager.PEER_NODE_STATUS_NEVER_CONNECTED:
+				return "NEVER CONNECTED";
+			case PeerManager.PEER_NODE_STATUS_DISABLED:
+				return "DISABLED";
+			case PeerManager.PEER_NODE_STATUS_CLOCK_PROBLEM:
+				return "CLOCK PROBLEM";
+			case PeerManager.PEER_NODE_STATUS_CONN_ERROR:
+				return "CONNECTION ERROR";
+			case PeerManager.PEER_NODE_STATUS_ROUTING_DISABLED:
+				return "ROUTING DISABLED";
+			case PeerManager.PEER_NODE_STATUS_LISTEN_ONLY:
+				return "LISTEN ONLY";
+			case PeerManager.PEER_NODE_STATUS_LISTENING:
+				return "LISTENING";
+			case PeerManager.PEER_NODE_STATUS_BURSTING:
+				return "BURSTING";
+			case PeerManager.PEER_NODE_STATUS_DISCONNECTING:
+				return "DISCONNECTING";
+			case PeerManager.PEER_NODE_STATUS_NO_LOAD_STATS:
+				return "NO LOAD STATS";
+			default:
+				return "UNKNOWN STATUS";
+		}
 	}
 
 	public String getPeerNodeStatusCSSClassName() {
@@ -3364,36 +3339,38 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	}
 
 	public static String getPeerNodeStatusCSSClassName(int status) {
-		if(status == PeerManager.PEER_NODE_STATUS_CONNECTED)
-			return "peer_connected";
-		else if(status == PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF)
-			return "peer_backed_off";
-		else if(status == PeerManager.PEER_NODE_STATUS_TOO_NEW)
-			return "peer_too_new";
-		else if(status == PeerManager.PEER_NODE_STATUS_TOO_OLD)
-			return "peer_too_old";
-		else if(status == PeerManager.PEER_NODE_STATUS_DISCONNECTED)
-			return "peer_disconnected";
-		else if(status == PeerManager.PEER_NODE_STATUS_NEVER_CONNECTED)
-			return "peer_never_connected";
-		else if(status == PeerManager.PEER_NODE_STATUS_DISABLED)
-			return "peer_disabled";
-		else if(status == PeerManager.PEER_NODE_STATUS_ROUTING_DISABLED)
-			return "peer_routing_disabled";
-		else if(status == PeerManager.PEER_NODE_STATUS_BURSTING)
-			return "peer_bursting";
-		else if(status == PeerManager.PEER_NODE_STATUS_CLOCK_PROBLEM)
-			return "peer_clock_problem";
-		else if(status == PeerManager.PEER_NODE_STATUS_LISTENING)
-			return "peer_listening";
-		else if(status == PeerManager.PEER_NODE_STATUS_LISTEN_ONLY)
-			return "peer_listen_only";
-		else if(status == PeerManager.PEER_NODE_STATUS_DISCONNECTING)
-			return "peer_disconnecting";
-		else if(status == PeerManager.PEER_NODE_STATUS_NO_LOAD_STATS)
-			return "peer_no_load_stats";
-		else
-			return "peer_unknown_status";
+		switch(status) {
+			case PeerManager.PEER_NODE_STATUS_CONNECTED:
+				return "peer_connected";
+			case PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF:
+				return "peer_backed_off";
+			case PeerManager.PEER_NODE_STATUS_TOO_NEW:
+				return "peer_too_new";
+			case PeerManager.PEER_NODE_STATUS_TOO_OLD:
+				return "peer_too_old";
+			case PeerManager.PEER_NODE_STATUS_DISCONNECTED:
+				return "peer_disconnected";
+			case PeerManager.PEER_NODE_STATUS_NEVER_CONNECTED:
+				return "peer_never_connected";
+			case PeerManager.PEER_NODE_STATUS_DISABLED:
+				return "peer_disabled";
+			case PeerManager.PEER_NODE_STATUS_ROUTING_DISABLED:
+				return "peer_routing_disabled";
+			case PeerManager.PEER_NODE_STATUS_BURSTING:
+				return "peer_bursting";
+			case PeerManager.PEER_NODE_STATUS_CLOCK_PROBLEM:
+				return "peer_clock_problem";
+			case PeerManager.PEER_NODE_STATUS_LISTENING:
+				return "peer_listening";
+			case PeerManager.PEER_NODE_STATUS_LISTEN_ONLY:
+				return "peer_listen_only";
+			case PeerManager.PEER_NODE_STATUS_DISCONNECTING:
+				return "peer_disconnecting";
+			case PeerManager.PEER_NODE_STATUS_NO_LOAD_STATS:
+				return "peer_no_load_stats";
+			default:
+				return "peer_unknown_status";
+		}
 	}
 
 	protected synchronized int getPeerNodeStatus(long now, long routingBackedOffUntilRT, long routingBackedOffUntilBulk, boolean overPingTime, boolean noLoadStats) {
@@ -3555,9 +3532,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	 * Logically: "not(isRoutable())", but will return false even if disconnected (meaning routing is not disabled).
 	 */
 	public synchronized boolean noLongerRoutable() {
-		if(unroutableNewerVersion || unroutableOlderVersion || disableRouting)
-			return true;
-		return false;
+		return unroutableNewerVersion || unroutableOlderVersion || disableRouting;
 	}
 
 	final void invalidate(long now) {
@@ -3914,12 +3889,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		if(x < newList.length) {
 			Logger.error(this, "Duplicated UID, should not happen", new Exception("debug"));
 			newList = Arrays.copyOf(newList, x);
-			runningAnnounceUIDs = newList;
-			return true;
-		} else {
-			runningAnnounceUIDs = newList;
-			return true;
 		}
+		runningAnnounceUIDs = newList;
+		return true;
 	}
 
 	public synchronized long timeLastDisconnect() {
@@ -5076,11 +5048,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			}
 		}
 		
-		/** LOCKING: Call inside routedToLock 
-		 * @param otherRunningRequests 
-		 * @param runningRequests 
-		 * @param byteCountersInput 
-		 * @param byteCountersOutput */
+		/** LOCKING: Call inside routedToLock */
 		private RequestLikelyAcceptedState getRequestLikelyAcceptedState(RunningRequestsSnapshot runningRequests, RunningRequestsSnapshot otherRunningRequests, boolean ignoreLocalVsRemote, PeerLoadStats stats) {
 			RequestLikelyAcceptedState outputState = getRequestLikelyAcceptedStateBandwidth(false, runningRequests, otherRunningRequests, ignoreLocalVsRemote, stats);
 			RequestLikelyAcceptedState inputState = getRequestLikelyAcceptedStateBandwidth(true, runningRequests, otherRunningRequests, ignoreLocalVsRemote, stats);

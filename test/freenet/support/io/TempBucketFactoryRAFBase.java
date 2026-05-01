@@ -14,6 +14,7 @@ import java.util.Random;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 
 import freenet.crypt.EncryptedRandomAccessBucket;
@@ -24,6 +25,7 @@ import freenet.support.api.RandomAccessBucket;
 import freenet.support.api.RandomAccessBuffer;
 import freenet.support.io.TempBucketFactory.TempBucket;
 import freenet.support.io.TempBucketFactory.TempRandomAccessBuffer;
+import org.junit.rules.TemporaryFolder;
 
 public abstract class TempBucketFactoryRAFBase extends RandomAccessBufferTestBase {
     
@@ -38,7 +40,6 @@ public abstract class TempBucketFactoryRAFBase extends RandomAccessBufferTestBas
     
     private Random weakPRNG = new Random(12340);
     private Executor exec = new SerialExecutor(NativeThread.NORM_PRIORITY);
-    private File f = new File("temp-bucket-raf-test");
     private FilenameGenerator fg;
     private TempBucketFactory factory;
     
@@ -50,21 +51,17 @@ public abstract class TempBucketFactoryRAFBase extends RandomAccessBufferTestBas
     
     @Before
     public void setUp() throws IOException {
-        fg = new FilenameGenerator(weakPRNG, true, f, "temp-raf-test-");
+        fg = new FilenameGenerator(weakPRNG, true, temporaryFolder.newFolder(), "temp-raf-test-");
         factory = new TempBucketFactory(exec, fg, 4096, 65536, weakPRNG, false, 1024*1024*2, secret);
         factory.setEncryption(enableCrypto());
         assertEquals(factory.getRamUsed(), 0);
-        FileUtil.removeAll(f);
-        f.mkdir();
-        assertTrue(f.exists() && f.isDirectory());
     }
     
     @After
     public void tearDown() {
         assertEquals(factory.getRamUsed(), 0);
         // Everything should have been free()'ed.
-        assertEquals(f.listFiles().length, 0);
-        FileUtil.removeAll(f);
+        assertEquals(fg.getDir().listFiles().length, 0);
     }
     
     @Override
@@ -434,5 +431,8 @@ public abstract class TempBucketFactoryRAFBase extends RandomAccessBufferTestBas
         if(len > 1)
             checkArraySectionEqualsReadData(buf, raf, 1, len-1, true);
     }
+
+    @Rule
+    public final TemporaryFolder temporaryFolder = new TemporaryFolder();
 
 }

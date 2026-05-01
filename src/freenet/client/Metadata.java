@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client;
 
+import static freenet.client.DefaultMIMETypes.COMPAT_MAX_MIME_SHORT_ID;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -1184,7 +1186,7 @@ public class Metadata implements Cloneable, Serializable {
 	 */
 	private void setMIMEType(String type) {
 		noMIME = false;
-		short s = DefaultMIMETypes.byName(type);
+		short s = getCompressedMIMEType(type);
 		if(s >= 0) {
 			compressedMIME = true;
 			compressedMIMEValue = s;
@@ -1192,6 +1194,25 @@ public class Metadata implements Cloneable, Serializable {
 			compressedMIME = false;
 		}
 		mimeType = type;
+	}
+
+	/**
+	 * Get a compressed MIME type code for the given MIME.
+	 * Note that whether a MIME type is compressed in the Metadata influences the CHK of the splitfile.
+	 * This method should take care not to return a compressed MIME for MIME types that are introduced in the
+	 * {@link DefaultMIMETypes} without a corresponding {@link CompatibilityMode} change (and further logic
+	 * to apply different MIME type compression per compatiblity mode).
+	 *
+	 * @return the compressed MIME type or {@code -1} if there is no compressed code for this MIME type
+	 * @see DefaultMIMETypes#COMPAT_MAX_MIME_SHORT_ID
+	 */
+	private static short getCompressedMIMEType(String type) {
+		short s = DefaultMIMETypes.byName(type);
+		if (s <= COMPAT_MAX_MIME_SHORT_ID) {
+			return s;
+		} else {
+			return -1;
+		}
 	}
 
 	/**
