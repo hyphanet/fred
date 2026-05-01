@@ -37,6 +37,7 @@
          <trusted-key id="cacfbd4755a2fc78709bdd92be096e29edb8d141" group="net.sf.proguard"/>
          <trusted-key id="ff6e2c001948c5f2f38b0cc385911f425ec61b51" group="junit" name="junit" version="4.13.2"/>
          <trusted-key id="d9e6e4cc8f66b2034995c7192189ca6247f3dee5" group="^com[.]android[.]tools($|([.].*))" regex="true"/>
+         <trusted-key id="F3184BCD55F4D016E30D4C9BF42E87F9665015C9" group="org.jsoup"/>
          <trusted-key id="e85aed155021af8a6c6b7a4a7c7d8456294423ba">
             <trusting group="org.objenesis"/>
             <trusting group="org.objenesis" name="objenesis" version="1.0"/>
