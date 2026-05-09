@@ -361,6 +361,10 @@ public class PluginManager {
 		return realStartPlugin(new PluginDownLoaderFile(), filename, store, false);
 	}
 
+	/**
+	 * @deprecated this is unused -- keeping it to avoid removing public API that may be in use by plugins
+	 */
+	@Deprecated
 	public PluginInfoWrapper startPluginURL(final String filename, boolean store) {
 		Logger.warning(this, "Tried to download plugin from clearnet URL, but that is removed. Interpreting as FreenetURI instead.");
 		return startPluginFreenet(filename, store);
