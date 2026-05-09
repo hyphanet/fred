@@ -939,7 +939,8 @@ public class TextModeClientInterface implements Runnable {
         		n.getPluginManager().startPluginFile(name, true);
         	} else if(uline.startsWith("PLUGLOAD:U:")) {
         		String name = line.substring("PLUGLOAD:U:".length()).trim();
-        		n.getPluginManager().startPluginURL(name, true);
+        		// only support Hyphanet URLs, because others are a privacy risk
+        		n.getPluginManager().startPluginFreenet(name, true);
         	} else if(uline.startsWith("PLUGLOAD:K:")) {
         		String name = line.substring("PLUGLOAD:K:".length()).trim();
         		n.getPluginManager().startPluginFreenet(name, true);
