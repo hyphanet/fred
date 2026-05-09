@@ -14,6 +14,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -163,7 +164,8 @@ public class PproxyToadlet extends Toadlet {
 						} else {
 							// first check whether it is a file
 							for(File f : File.listRoots()) {
-								if(pluginName.startsWith(f.getName())) {
+								if(!Objects.equals(f.getName(), "") && pluginName.startsWith(f.getName())
+										|| pluginName.startsWith(f.getPath())) {
 									pm.startPluginFile(pluginName, true);
 									return;
 								}
