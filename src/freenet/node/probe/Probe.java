@@ -143,6 +143,20 @@ public class Probe implements ByteCounter {
 		return node.getNodeStats().randomNoise(input, sigma);
 	}
 
+	private double randomLocationNoise(final double input, final double sigma) {
+		// additive shift, because node locations are all equal
+		double randomShift = node.getRandom().nextGaussian() * sigma;
+		double location = input + randomShift;
+		// address edge cases
+		if (location < 0.) {
+			return location + 1.0;
+		}
+		if (location >= 1.0) {
+			return location - 1.0;
+		}
+		return location;
+	}
+
 	/**
 	 * Counts as probe request transfer.
 	 * @param bytes Bytes received.
@@ -651,7 +665,11 @@ public class Probe implements ByteCounter {
 			listener.onLinkLengths(linkLengths);
 			break;
 		case LOCATION:
-			listener.onLocation((float)node.getLocation());
+			/*
+			 * Noise that stays within 50% of the peers short distance connections: shift the location
+			 * by a value drawn from a gaussian distribution with mean 0 and std 0.005 (long_distance/2).
+			 */
+			listener.onLocation((float)randomLocationNoise(node.getLocation(), OpennetManager.LONG_DISTANCE / 2));
 			break;
 		case STORE_SIZE:
 			/*
