@@ -109,25 +109,39 @@ public class DNSRequester implements Runnable {
             // Try new DNS lookup
             pn.maybeUpdateHandshakeIPs(false);
         }
-        // wait longer after DNS requests
-        int multiplier = peerHasHostname ? 100 : 1;
-        // fast checks during startup (for seednodes), throttled after first connection
-        boolean noConnectedPeers = node.noConnectedPeers();
-        int nextMaxWaitTime = noConnectedPeers
-            ? multiplier * (1 + node.getFastWeakRandom().nextInt(4))
-            : multiplier * (10 + node.getFastWeakRandom().nextInt(600));
+        int textWaitTime = getNextWaitTime(peerHasHostname, node.noConnectedPeers());
         try {
             synchronized(this) {
-                wait(nextMaxWaitTime);  // sleep 1-61s if connected, else 0.1-0.5s (3s for 10 seeds)
+                wait(textWaitTime);  // sleep 1-61s if connected, else 0.1-0.5s (3s for 10 seeds)
             }
         } catch (InterruptedException e) {
             // Ignore, just wake up. Just sleeping to not busy wait anyway
         }
     }
 
-	public void forceRun() {
-		synchronized(this) {
-			notifyAll();
-		}
-	}
+    /**
+     *
+     * @param peerHasHostname - whether the peer's addresses include a hostname (a DNS name)
+     * @return seconds to wait
+     *
+     * protected for testing
+     */
+    protected int getNextWaitTime(boolean peerHasHostname, boolean noConnectedPeers) {
+        // wait longer after DNS requests
+        int multiplier = peerHasHostname ? 100 : 1;
+        // fast checks during startup (for seednodes), throttled after first connection
+        int lowerBound = noConnectedPeers ? 1 : 10;
+        int maxOfRandomInt = noConnectedPeers ? 4 : 600;
+        return getRandomWaitTimeValue(multiplier, lowerBound, maxOfRandomInt);
+    }
+
+    private int getRandomWaitTimeValue(int multiplier, int lowerBound, int maxOfRandomInt) {
+        return multiplier * (lowerBound + node.getFastWeakRandom().nextInt(maxOfRandomInt));
+    }
+
+    public void forceRun() {
+        synchronized(this) {
+            notifyAll();
+        }
+    }
 }
