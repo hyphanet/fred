@@ -31,10 +31,10 @@ public class DNSRequesterWaitTimeTest extends TestCase {
 	@Parameters(name = "{index}: hostname: {0}, noConnected: {1} -> {2}")
 	public static Collection<Object[]> data() {
 		return Arrays.asList(new Object[][] {
-				{false, false, 11},
-				{false, true, 2},
-				{true, false, 1100},
-				{true, true, 200},
+				{false, true, 2}, // shortest: has no hostname and has no connections
+				{false, false, 11}, // has no hostname and has connections
+				{true, true, 200}, // has hostname and has no connections
+				{true, false, 1100}, // longest: has hostname and has connections
 		});
 	}
 
