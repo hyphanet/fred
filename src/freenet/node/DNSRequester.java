@@ -109,10 +109,10 @@ public class DNSRequester implements Runnable {
             // Try new DNS lookup
             pn.maybeUpdateHandshakeIPs(false);
         }
-        int textWaitTime = getNextWaitTime(peerHasHostname, node.noConnectedPeers());
+        int nextWaitTime = getNextWaitTime(peerHasHostname, node.noConnectedPeers());
         try {
             synchronized(this) {
-                wait(textWaitTime);  // sleep 1-61s if connected, else 0.1-0.5s (3s for 10 seeds)
+                wait(nextWaitTime);  // sleep 1-61s if connected, else 0.1-0.5s (3s for 10 seeds)
             }
         } catch (InterruptedException e) {
             // Ignore, just wake up. Just sleeping to not busy wait anyway
