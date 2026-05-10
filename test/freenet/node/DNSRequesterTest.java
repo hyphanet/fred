@@ -19,7 +19,7 @@ import org.junit.runners.Parameterized.Parameters;
 import junit.framework.TestCase;
 
 @RunWith(Parameterized.class)
-public class DNSRequesterWaitTimeTest extends TestCase {
+public class DNSRequesterTest extends TestCase {
 
 	private final boolean peerHasHostname;
 	private final boolean noConnectedPeers;
@@ -38,7 +38,7 @@ public class DNSRequesterWaitTimeTest extends TestCase {
 		});
 	}
 
-	public DNSRequesterWaitTimeTest(boolean peerHasHostname, boolean noConnectedPeers, int expectedTime) {
+	public DNSRequesterTest(boolean peerHasHostname, boolean noConnectedPeers, int expectedTime) {
 		this.peerHasHostname = peerHasHostname;
 		this.noConnectedPeers = noConnectedPeers;
 		this.expectedTime = expectedTime;
