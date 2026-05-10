@@ -22,10 +22,9 @@ import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -61,9 +60,7 @@ public class ToadletContextImplTest {
 	@Test
 	public void redirectExceptionFromToadletResultsInRedirect() throws Exception {
 		setupInputStream("GET /redirect-toadlet HTTP/1.0\r\n\r\n");
-		Toadlet redirectingToadlet = mock(Toadlet.class, RETURNS_DEEP_STUBS);
-		when(redirectingToadlet.findSupportedMethods()).thenReturn("GET");
-		doThrow(new RedirectException("/new-location")).when(redirectingToadlet).handleMethodGET(any(), any(), any());
+		Toadlet redirectingToadlet = new RedirectToadlet("/new-location");
 		when(toadletContainer.findToadlet(new URI("/redirect-toadlet"))).thenReturn(redirectingToadlet);
 		when(toadletContainer.findToadlet(new URI("/new-location"))).thenReturn(homepageToadlet);
 		ToadletContextImpl.handle(socket, toadletContainer, null, null, null);
@@ -333,26 +330,76 @@ public class ToadletContextImplTest {
 	private final ToadletContainer toadletContainer = mock(ToadletContainer.class, RETURNS_DEEP_STUBS);
 	private final PageMaker pageMaker = mock(PageMaker.class, RETURNS_DEEP_STUBS);
 
-	private final Toadlet homepageToadlet = mock(Toadlet.class, RETURNS_DEEP_STUBS);
-	private final Toadlet noOutputToadlet = mock(Toadlet.class, RETURNS_DEEP_STUBS);
+	private final Toadlet homepageToadlet = new HomepageToadlet();
+	private final Toadlet noOutputToadlet = new NoOutputToadlet();
 	private final PostToadlet postToadlet = new PostToadlet();
 
 	{
 		try {
 			when(socket.getOutputStream()).thenReturn(outputStream);
+			doReturn(null).when(socket).getInetAddress();
 			when(toadletContainer.getBucketFactory()).thenReturn(new ArrayBucketFactory());
-
-			doAnswer(invocation -> {
-				ToadletContext toadletContext = (ToadletContext) invocation.getArguments()[2];
-				toadletContext.sendReplyHeaders(200, "OK", null, "text/plain", 7);
-				toadletContext.writeData(new byte[] { 'G', 'E', 'T', ' ', 'O', 'K', '\n' });
-				return null;
-			}).when(homepageToadlet).handleMethodGET(any(), any(), any());
-			when(homepageToadlet.findSupportedMethods()).thenReturn("GET");
-			when(noOutputToadlet.findSupportedMethods()).thenReturn("GET");
-		} catch (IOException | ToadletContextClosedException | RedirectException e) {
+		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	private static class RedirectToadlet extends Toadlet {
+
+		private final String redirectTarget;
+
+		@Override
+		public void handleMethodGET(URI uri, HTTPRequest httpRequest, ToadletContext toadletContext) throws RedirectException {
+			throw new RedirectException(URI.create(redirectTarget));
+		}
+
+		@Override
+		public String path() {
+			return "/redirect-toadlet";
+		}
+
+		RedirectToadlet(String redirectTarget) {
+			super(mock(HighLevelSimpleClient.class));
+			this.redirectTarget = redirectTarget;
+		}
+
+	}
+
+	private static class HomepageToadlet extends Toadlet {
+
+		@Override
+		public void handleMethodGET(URI uri, HTTPRequest httpRequest, ToadletContext toadletContext) throws ToadletContextClosedException, IOException {
+			toadletContext.sendReplyHeaders(200, "OK", null, "text/plain", 7);
+			toadletContext.writeData(new byte[]{'G', 'E', 'T', ' ', 'O', 'K', '\n'});
+		}
+
+		@Override
+		public String path() {
+			return "/homepage-toadlet";
+		}
+
+		HomepageToadlet() {
+			super(mock(HighLevelSimpleClient.class));
+		}
+
+	}
+
+	private static class NoOutputToadlet extends Toadlet {
+
+		@Override
+		public void handleMethodGET(URI uri, HTTPRequest httpRequest, ToadletContext toadletContext) {
+			// no output
+		}
+
+		@Override
+		public String path() {
+			return "/no-output";
+		}
+
+		NoOutputToadlet() {
+			super(mock(HighLevelSimpleClient.class));
+		}
+
 	}
 
 	private static class PostToadlet extends Toadlet {
