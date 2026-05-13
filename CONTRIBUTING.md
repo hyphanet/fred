@@ -6,6 +6,7 @@ start with:
 
 * Is there anything you've found annoying or lacking while using Freenet that
   you'd like to fix? (There might even be a bug filed already.)
+* Check the [High impact tasks](https://github.com/hyphanet/wiki/wiki/High-Impact-tasks) page.
 * The [bug tracker](http://bugs.hyphanet.org/my_view_page.php) has tasks.
   List only bugs filed against this repository by selecting "Freenet" in the
   "Project" drop-down in the upper right. Do any of these look interesting?
@@ -29,7 +30,7 @@ we may have missed it.
 
 All commits with functional changes must be reviewed, including those from
 maintainers. An exception are plugins: updates to official plugins
-must include the commit id from the the plugin-repo in the commit
+must include the commit id from the plugin-repo in the commit
 description; the review in the plugin repository then serves as review in fred.
 
 Code review helps improve code quality, ensures that multiple people know the
@@ -56,6 +57,7 @@ Before submitting a pull request, please:
 
 * add an entry to the [NEWS](/NEWS.md) file if appropriate.
 * ensure modified lines meet the project [coding standards](https://google.github.io/styleguide/javaguide.html).
+* ensure that you understand the change you suggest. You must not suggest code that you know you don’t understand.
 * ensure that your pull request is easy to work with. File additional pull-requests for infrastructure if those are required to release your change.
 * ensure the commit messages meet the standards:
 

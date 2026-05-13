@@ -193,7 +193,7 @@ task copyTestResourcesToClasses2 {
 	    into layout.buildDirectory.dir("classes/java/test/")
             include 'freenet/client/filter/*/**'
             include 'freenet/crypt/ciphers/rijndael-gladman-test-data/**'
-            include 'freenet/l10n/*properties'
+            include 'freenet/**/*.properties'
             include 'freenet/clients/http/templates/**'
         }
     }
@@ -263,9 +263,13 @@ dependencies {
     implementation "org.unbescape:unbescape:1.1.6.RELEASE"
     implementation "org.slf4j:slf4j-api:1.7.25"
 
-    testImplementation 'junit:junit:4.13.2'
+    testImplementation('junit:junit:4.13.2') {
+        exclude(group: "org.hamcrest", module: "hamcrest-core")
+    }
     testImplementation "org.mockito:mockito-core:2.28.2"
     testImplementation "org.hamcrest:hamcrest:3.0"
+    testImplementation "org.jsoup:jsoup:1.21.2"
+    testImplementation "jakarta.activation:jakarta.activation-api:2.1.4"
 }
 
 task tar(type: Tar) {

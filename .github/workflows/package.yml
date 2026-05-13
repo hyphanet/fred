@@ -20,7 +20,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Wrapper validation
-        uses: gradle/actions/wrapper-validation@v5
+        uses: gradle/actions/wrapper-validation@v6
 
       - name: Speedup dpkg
         run: sudo sh -c "echo 'force-unsafe-io' > /etc/dpkg/dpkg.cfg.d/force-unsafe-io"
@@ -59,7 +59,7 @@ jobs:
           cp ../freenet*.deb ./
 
       - name: Provide Debian Package
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: debian-package
           path: freenet_*.deb

@@ -1,5 +1,7 @@
 package freenet.l10n;
 
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.*;
 
 import java.io.File;
@@ -249,6 +251,12 @@ public class BaseL10nTest {
         }
     }
 
+    @Test
+    public void overrideFileCanBeReadFromClasspath() {
+        BaseL10n l10n = new BaseL10n("freenet/l10n", "freenet.l10n.${lang}.properties", "freenet/l10n/BaseL10nTest.properties");
+        assertThat(l10n.getString("override-from-classpath"), equalTo("overridden in classpath"));
+    }
+
     public static final BaseL10n createL10n(LANGUAGE lang) {
         File overrideFile = new File(TestProperty.L10nPath_main, "freenet.l10n.${lang}.override.properties");
         return new BaseL10n("freenet/l10n/", "freenet.l10n.${lang}.properties",
@@ -262,12 +270,44 @@ public class BaseL10nTest {
     }
 
     /**
+     * Creates a new {@link BaseL10n} for the given language, using the
+     * given override file. The override file can be used to use a different
+     * translation for every test, by supplying resource names from the
+     * classpath for files named differently for each test.
+     *
+     * @param lang The language to use
+     * @param overrideFile The override file
+     * @return A {@link BaseL10n} object
+     */
+    private static BaseL10n createTestL10n(LANGUAGE lang, String overrideFile) {
+        return new BaseL10n("freenet/l10n/", "freenet.l10n.${lang}.test.properties", overrideFile, lang);
+    }
+
+    /**
      * Installs a {@link #createTestL10n(LANGUAGE) BaseL10n} with
      * translations read from the test classpath into the global
      * {@link NodeL10n}, allowing tests for translation keys.
      */
     public static void useTestTranslation() {
         NodeL10n.setBase(createTestL10n(LANGUAGE.ENGLISH));
+    }
+
+    /**
+     * Installs a {@link #createTestL10n(LANGUAGE) BaseL10n} with
+     * translations read from the test classpath into the global
+     * {@link NodeL10n}, allowing tests for translation keys. By using
+     * a different file for each test, test-specific translations can be used
+     * to verify translations with substitutions (such as the ones we use
+     * for HTML). By not including the magic string {@code "${lang}"}
+     * in the override file, the language used will be ignored for building
+     * the actual override filename.
+     *
+     * @param overrideFile The name of a resource from the classpath,
+     * 		or a file in the local filesystem, containing translation
+     * 		properties
+     */
+    public static void useTestTranslation(String overrideFile) {
+        NodeL10n.setBase(createTestL10n(LANGUAGE.ENGLISH, overrideFile));
     }
 
 }
