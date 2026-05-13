@@ -538,7 +538,6 @@ public class ToadletContextImpl implements ToadletContext {
 			while(true) {
 				String firstLine = lis.readLine(32768, 128, false); // ISO-8859-1 or US-ASCII, _not_ UTF-8
 				if (firstLine == null) {
-					sock.close();
 					return;
 				} else if (firstLine.isEmpty()) {
 					continue;
@@ -570,7 +569,6 @@ public class ToadletContextImpl implements ToadletContext {
 				while(true) {
 					String line = lis.readLine(32768, 128, false); // ISO-8859 or US-ASCII, not UTF-8
 					if (line == null) {
-						sock.close();
 						return;
 					}
 					//System.out.println("Length="+line.length()+": "+line);
@@ -627,7 +625,6 @@ public class ToadletContextImpl implements ToadletContext {
 					} catch (NumberFormatException e) {
 						ctx.shouldDisconnect = true;
 						ctx.sendReplyHeaders(400, "Bad Request", null, null, -1);
-						sock.close();
 						return;
 					}
 					if(allowPost && ((!container.publicGatewayMode()) || ctx.isAllowedFullAccess())) {
@@ -710,7 +707,6 @@ public class ToadletContextImpl implements ToadletContext {
 						}
 					}
 					if(ctx.shouldDisconnect) {
-						sock.close();
 						return;
 					}
 				} finally {
