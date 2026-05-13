@@ -522,6 +522,15 @@ public class ToadletContextImpl implements ToadletContext {
 			InputStream is = new BufferedInputStream(sock.getInputStream(), 4096);
 			LineReadingInputStream lis = new LineReadingInputStream(is)
 		) {
+			handleInner(sock, is, lis, container, pageMaker, userAlertManager, bookmarkManager);
+		} catch (IOException e) {
+			// can only be triggered by the try-block, in which case
+			// we can’t even start reading the request.
+		}
+	}
+
+	private static void handleInner(Socket sock, InputStream is, LineReadingInputStream lis, ToadletContainer container, PageMaker pageMaker, UserAlertManager userAlertManager, BookmarkManager bookmarkManager) {
+		try {
 			while(true) {
 				String firstLine = lis.readLine(32768, 128, false); // ISO-8859-1 or US-ASCII, _not_ UTF-8
 				if (firstLine == null) {
