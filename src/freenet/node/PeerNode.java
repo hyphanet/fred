@@ -143,7 +143,12 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	private Peer detectedPeer = null;
 	/** My OutgoingPacketMangler i.e. the object which encrypts packets sent to this node */
 	private final OutgoingPacketMangler outgoingMangler;
-	/** Advertised addresses */
+	/**
+	 * Advertised addresses
+	 *
+	 * @deprecated Use {@link #getNominalPeer()} instead
+	 */
+	@Deprecated
 	protected List<Peer> nominalPeer;
 	/** The PeerNode's report of our IP address */
 	private Peer remoteDetectedPeer;
@@ -778,6 +783,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 
 	private void sortNominalPeer() {
 		nominalPeer.sort(Peer.PEER_COMPARATOR);
+	}
+
+	public List<Peer> getNominalPeer() {
+		return nominalPeer;
 	}
 
 	/**
