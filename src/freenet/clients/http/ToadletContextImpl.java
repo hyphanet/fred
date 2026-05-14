@@ -522,10 +522,22 @@ public class ToadletContextImpl implements ToadletContext {
 			InputStream is = new BufferedInputStream(sock.getInputStream(), 4096);
 			LineReadingInputStream lis = new LineReadingInputStream(is)
 		) {
+			try {
+				handleInner(sock, is, lis, container, pageMaker, userAlertManager, bookmarkManager);
+			} finally {
+				sock.shutdownOutput();
+			}
+		} catch (IOException e) {
+			// can only be triggered by the try-block, in which case
+			// we can’t even start reading the request.
+		}
+	}
+
+	private static void handleInner(Socket sock, InputStream is, LineReadingInputStream lis, ToadletContainer container, PageMaker pageMaker, UserAlertManager userAlertManager, BookmarkManager bookmarkManager) {
+		try {
 			while(true) {
 				String firstLine = lis.readLine(32768, 128, false); // ISO-8859-1 or US-ASCII, _not_ UTF-8
 				if (firstLine == null) {
-					sock.close();
 					return;
 				} else if (firstLine.isEmpty()) {
 					continue;
@@ -557,7 +569,6 @@ public class ToadletContextImpl implements ToadletContext {
 				while(true) {
 					String line = lis.readLine(32768, 128, false); // ISO-8859 or US-ASCII, not UTF-8
 					if (line == null) {
-						sock.close();
 						return;
 					}
 					//System.out.println("Length="+line.length()+": "+line);
@@ -614,7 +625,6 @@ public class ToadletContextImpl implements ToadletContext {
 					} catch (NumberFormatException e) {
 						ctx.shouldDisconnect = true;
 						ctx.sendReplyHeaders(400, "Bad Request", null, null, -1);
-						sock.close();
 						return;
 					}
 					if(allowPost && ((!container.publicGatewayMode()) || ctx.isAllowedFullAccess())) {
@@ -697,7 +707,6 @@ public class ToadletContextImpl implements ToadletContext {
 						}
 					}
 					if(ctx.shouldDisconnect) {
-						sock.close();
 						return;
 					}
 				} finally {

@@ -18,7 +18,7 @@ import freenet.support.api.HTTPRequest;
 
 /** Simple class to output standard heads and tail for web interface pages. 
 */
-public final class PageMaker {
+public class PageMaker {
 	
 	public enum THEME {
 		BOXED("boxed", "Boxed (Top menu)", "", false, false),

@@ -1,0 +1,149 @@
+package freenet.test;
+
+import org.hamcrest.Description;
+import org.hamcrest.Matcher;
+import org.hamcrest.StringDescription;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.junit.Test;
+
+import static freenet.test.HtmlMatchers.hasAttribute;
+import static freenet.test.HtmlMatchers.hasElement;
+import static freenet.test.HtmlMatchers.hasTitle;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.any;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.nullValue;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
+
+public class HtmlMatchersTest {
+
+	@Test
+	public void hasTitleMatcherRecognizesIfNoTitleHasBeenSet() {
+		assertThat(hasTitle(any(String.class)).matches(documentWithoutTitle), equalTo(false));
+	}
+
+	@Test
+	public void hasTitleMatcherDescribesMismatch() {
+		hasTitle(any(String.class)).describeMismatch(documentWithoutTitle, description);
+		assertThat(description.toString(), equalTo("no title present"));
+	}
+
+	@Test
+	public void hasTitleMatcherDescribesMismatchOfTitleMatcher() {
+		hasTitle(nullValue()).describeMismatch(documentWithTitle, description);
+		assertThat(description.toString(), equalTo("title was \"Test!\""));
+	}
+
+	@Test
+	public void hasTitleMatcherRecognizesIfTitleHasBeenSet() {
+		assertThat(hasTitle(any(String.class)).matches(documentWithTitle), equalTo(true));
+	}
+
+	@Test
+	public void hasTitleMatcherDescribesItself() {
+		hasTitle(any(String.class)).describeTo(description);
+		assertThat(description.toString(), equalTo("has title matching an instance of java.lang.String"));
+	}
+
+	@Test
+	public void titleMatcherIsNotConsultedIfNoTitleIsPresent() {
+		Matcher<String> titleMatcher = mock(Matcher.class);
+		hasTitle(titleMatcher).matches(documentWithoutTitle);
+		verifyZeroInteractions(titleMatcher);
+	}
+
+	@Test
+	public void titleMatcherIsConsultedIfTitleIsPresent() {
+		Matcher<String> titleMatcher = mock(Matcher.class);
+		hasTitle(titleMatcher).matches(documentWithTitle);
+		verify(titleMatcher).matches(eq("Test!"));
+	}
+
+	@Test
+	public void hasElementMatcherDoesNotMatchIfElementDoesNotExist() {
+		assertThat(hasElement("some element").matches(documentWithTitle), equalTo(false));
+	}
+
+	@Test
+	public void hasElementMatcherDescribesMismatchBecauseOfMissingElement() {
+		hasElement("some element").describeMismatch(documentWithTitle, description);
+		assertThat(description.toString(), equalTo("not found: \"some element\""));
+	}
+
+	@Test
+	public void hasElementMatcherMatchesIfElementExists() {
+		assertThat(hasElement("head title").matches(documentWithTitle), equalTo(true));
+	}
+
+	@Test
+	public void hasElementMatcherDescribesItself() {
+		hasElement("head title").describeTo(description);
+		assertThat(description.toString(), equalTo("has element \"head title\""));
+	}
+
+	@Test
+	public void hasElementMatcherWithElementMatcherDoesNotMatchIfElementDoesNotExist() {
+		assertThat(hasElement("some element", any(Element.class)).matches(documentWithTitle), equalTo(false));
+	}
+
+	@Test
+	public void hasElementMatcherWithElementMatcherDescribesMismatchBecauseOfMissingElement() {
+		hasElement("some element", any(Element.class)).describeMismatch(documentWithTitle, description);
+		assertThat(description.toString(), equalTo("not found: \"some element\""));
+	}
+
+	@Test
+	public void hasElementMatcherWithElementMatcherDescribesMismatchOfElementMatcher() {
+		hasElement("head title", nullValue()).describeMismatch(documentWithTitle, description);
+		assertThat(description.toString(), equalTo("element was <<title>Test!</title>>"));
+	}
+
+	@Test
+	public void hasElementMatcherWithElementMatcherMatchesIfElementExists() {
+		assertThat(hasElement("head title", any(Element.class)).matches(documentWithTitle), equalTo(true));
+	}
+
+	@Test
+	public void hasElementMatcherWithElementMatcherDescribesItself() {
+		hasElement("head title", any(Element.class)).describeTo(description);
+		assertThat(description.toString(), equalTo("has element \"head title\" matching an instance of org.jsoup.nodes.Element"));
+	}
+
+	@Test
+	public void hasAttributeMatcherDoesNotMatchIfAttributeDoesNotExist() {
+		assertThat(hasAttribute("foo", any(String.class)).matches(new Element("test")), equalTo(false));
+	}
+
+	@Test
+	public void hasAttributeMatcherDescribesMismatch() {
+		hasAttribute("foo", any(String.class)).describeMismatch(new Element("test"), description);
+		assertThat(description.toString(), equalTo("no attribute \"foo\""));
+	}
+
+	@Test
+	public void hasAttributeMatcherDescribesMismatchOfValueMatcher() {
+		hasAttribute("foo", nullValue()).describeMismatch(new Element("test").attr("foo", "bar"), description);
+		assertThat(description.toString(), equalTo("attribute was \"bar\""));
+	}
+
+	@Test
+	public void hasAttributeMatcherDoesMatchIfAttributeIsPresent() {
+		assertThat(hasAttribute("foo", any(String.class)).matches(new Element("test").attr("foo", "bar")), equalTo(true));
+	}
+
+	@Test
+	public void hasAttributeMatcherDescribesItself() {
+		hasAttribute("foo", any(String.class)).describeTo(description);
+		assertThat(description.toString(), equalTo("has attribute \"foo\" matching an instance of java.lang.String"));
+	}
+
+	private final Description description = new StringDescription();
+	private final Document documentWithoutTitle = Jsoup.parse("<html><head></head><body></body></html>");
+	private final Document documentWithTitle = Jsoup.parse("<html><head><title>Test!</title></head><body></body></html>");
+
+}
