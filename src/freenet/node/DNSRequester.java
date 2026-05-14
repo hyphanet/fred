@@ -54,7 +54,7 @@ public class DNSRequester implements Runnable {
 
     @Override
     public void run() {
-        while(true) {
+        while (shouldContinue()) {
             try {
                 realRun();
             } catch (Throwable t) {
@@ -66,7 +66,7 @@ public class DNSRequester implements Runnable {
     private void realRun() {
         // run DNS requests for not recently checked, unconnected
         // nodes to avoid the coupon collector's problem
-        PeerNode[] nodesToCheck = Arrays.stream(node.getPeers().myPeers())
+        PeerNode[] nodesToCheck = Arrays.stream(getPeers())
             .filter(peerNode -> !peerNode.isConnected())
             // identify recent nodes by location, because the exact location cannot be used twice
             // (that already triggers the simplest pitch black attack defenses)
@@ -89,7 +89,7 @@ public class DNSRequester implements Runnable {
             // check a randomly chosen node that has not been checked
             // recently to avoid sending bursts of DNS requests
             PeerNode pn = nodesToCheck[node.getFastWeakRandom().nextInt(unconnectedNodesLength)];
-            peerHasHostname = pn.nominalPeer.stream()
+            peerHasHostname = pn.getNominalPeer().stream()
                 .map(Peer::getFreenetAddress)
                 .filter(Objects::nonNull)
                 .anyMatch(FreenetInetAddress::hasHostname);
@@ -107,26 +107,46 @@ public class DNSRequester implements Runnable {
                 }
             }
             // Try new DNS lookup
-            pn.maybeUpdateHandshakeIPs(false);
+            updatePeer(pn);
         }
         int nextWaitTime = getNextWaitTime(peerHasHostname, node.noConnectedPeers());
         try {
-            synchronized(this) {
-                wait(nextWaitTime);  // sleep 1-61s if connected, else 0.1-0.5s (3s for 10 seeds)
-            }
+            sleepUntilNextRun(nextWaitTime);  // sleep 1-61s ...
         } catch (InterruptedException e) {
             // Ignore, just wake up. Just sleeping to not busy wait anyway
         }
     }
 
+    // made available for testing
+    protected void sleepUntilNextRun(long waitTime) throws InterruptedException {
+        synchronized (this) {
+            wait(waitTime);
+        }
+    }
+
+    // made available for testing
+    protected boolean shouldContinue() {
+        return true;
+    }
+
+    // made available for testing
+    protected void updatePeer(PeerNode pn) {
+        pn.maybeUpdateHandshakeIPs(false);
+    }
+
+    // made available for testing
+    protected PeerNode[] getPeers() {
+        return node.getPeers().myPeers();
+    }
+
     /**
+     * Determines the time to wait for the next {@link PeerNode} update.
      *
      * @param peerHasHostname - whether the peer's addresses include a hostname (a DNS name)
+     * @param noConnectedPeers {@code true} if the node has no connections, {@code false} otherwise
      * @return seconds to wait
-     *
-     * protected for testing
      */
-    protected int getNextWaitTime(boolean peerHasHostname, boolean noConnectedPeers) {
+    private int getNextWaitTime(boolean peerHasHostname, boolean noConnectedPeers) {
         // wait longer after DNS requests
         int multiplier = peerHasHostname ? 100 : 1;
         // fast checks during startup (for seednodes), throttled after first connection
