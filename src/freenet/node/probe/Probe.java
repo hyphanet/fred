@@ -448,7 +448,9 @@ public class Probe implements ByteCounter {
 		htl = probabilisticDecrement(htl);
 		if (htl == 0 || !route(type, uid, htl, listener)) {
 			long wait = WAIT_MAX;
-			while (wait >= WAIT_MAX) wait = (long)(-Math.log(node.getRandom().nextDouble()) * WAIT_BASE / Math.E);
+			while (wait >= WAIT_MAX) {
+				wait = (long)(-Math.log(node.getRandom().nextDouble() + 0.0000001) * WAIT_BASE / Math.E);
+			}
 			timer.schedule(new TimerTask() {
 				@Override
 				public void run() {
