@@ -118,7 +118,7 @@ public class Probe implements ByteCounter {
 
 	private final Node node;
 
-	private final Timer timer;
+	private Timer timer;
 
 	//Whether to respond to different types of probe requests.
 	private volatile boolean respondBandwidth;
@@ -557,6 +557,15 @@ public class Probe implements ByteCounter {
 
 		listener.onError(Error.CANNOT_FORWARD, null, true);
 		return true;
+	}
+
+	/**
+	 * Set the timer used to relay. Protected for testing.
+     *
+	 * @param timer - the replacement timer to use for scheduling responses and routing
+	 */
+	protected void setTimer(Timer timer) {
+		this.timer = timer;
 	}
 
 	/**
