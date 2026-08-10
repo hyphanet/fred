@@ -56,7 +56,6 @@ public class ToadletContextImplTest {
 			assertThat(httpResponses, contains(allOf(
 					hasStatus(200), hasBody(equalTo("GET OK\n".getBytes(UTF_8)))
 			)));
-
 		});
 	}
 
