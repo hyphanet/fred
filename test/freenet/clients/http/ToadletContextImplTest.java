@@ -188,6 +188,13 @@ public class ToadletContextImplTest {
 	}
 
 	@Test
+	public void sendingPostRequestWithNegativeContentLengthHeaderResultsInHttpStatus400() throws Exception {
+		sendRequest("POST /negative-content-length HTTP/1.0\r\nContent-Length: -123\r\n\r\n", httpResponses -> {
+			assertThat(httpResponses, contains(hasStatus(equalTo(400), equalTo("Bad Request"))));
+		});
+	}
+
+	@Test
 	public void sendingPostRequestWithInvalidContentLengthHeaderResultsInHttpStatus400() throws Exception {
 		sendRequest("POST /invalid-content-length HTTP/1.1\r\nContent-Length: invalid\r\n\r\n", httpResponses -> {
 			assertThat(httpResponses, contains(hasStatus(equalTo(400), equalTo("Bad Request"))));
