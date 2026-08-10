@@ -28,9 +28,10 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.equalToIgnoringCase;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.any;
@@ -189,14 +190,14 @@ public class ToadletContextImplTest {
 
 	@Test
 	public void sendingPostRequestWithInvalidContentLengthHeaderResultsInHttpStatus400() throws Exception {
-		sendRequest("POST /invalid-content-length HTTP/1.1\r\nConnection: Keep-Alive\r\nContent-Length: invalid\r\n\r\n", httpResponses -> {
+		sendRequest("POST /invalid-content-length HTTP/1.1\r\nContent-Length: invalid\r\n\r\n", httpResponses -> {
 			assertThat(httpResponses, contains(hasStatus(equalTo(400), equalTo("Bad Request"))));
 		});
 	}
 
 	@Test
 	public void sendingRequestAfterPostRequestWithInvalidContentLengthHeaderResultsInASingleResponseBeingSent() throws Exception {
-		sendRequest("POST /invalid-content-length HTTP/1.1\r\nConnection: Keep-Alive\r\nContent-Length: invalid\r\n\r\nGET / HTTP/1.0\r\n\r\n", httpResponses -> {
+		sendRequest("POST /invalid-content-length HTTP/1.1\r\nContent-Length: invalid\r\n\r\nGET / HTTP/1.0\r\n\r\n", httpResponses -> {
 			assertThat(httpResponses, contains(hasStatus(equalTo(400), equalTo("Bad Request"))));
 		});
 	}
@@ -317,10 +318,52 @@ public class ToadletContextImplTest {
 		postToadlet.allowPostWithoutPassword();
 		when(toadletContainer.findToadlet(new URI("/post-request"))).thenReturn(postToadlet);
 		when(toadletContainer.findToadlet(new URI("/get-request"))).thenReturn(homepageToadlet);
-		sendRequest("POST /post-request HTTP/1.1\r\nContent-Length: 0\r\n\r\nGET /get-request HTTP/1.1\r\nConnection: close\r\n\r\n", httpResponses -> {
+		sendRequest("POST /post-request HTTP/1.1\r\nContent-Length: 0\r\n\r\nGET /get-request HTTP/1.1\r\n\r\n", httpResponses -> {
 			assertThat(httpResponses, contains(
 					allOf(hasStatus(200), hasBody(equalTo("POST OK\n".getBytes(UTF_8)))),
 					allOf(hasStatus(200), hasBody(equalTo("GET OK\n".getBytes(UTF_8))))
+			));
+		});
+	}
+
+	@Test
+	public void requestingConnectionCloseWillReplyWithConnectionCloseWhenPipeliningIsNotAllowed() throws Exception {
+		when(toadletContainer.findToadlet(URI.create("/requesting-connection-close"))).thenReturn(homepageToadlet);
+		sendRequest("GET /requesting-connection-close HTTP/1.1\r\nConnection: close\r\n\r\n", httpResponses -> {
+			assertThat(httpResponses, contains(
+					hasHeader("Connection", contains(equalToIgnoringCase("close")))
+			));
+		});
+	}
+
+	@Test
+	public void requestingConnectionKeepAliveWillReplyWithConnectionCloseWhenPipeliningIsNotAllowed() throws Exception {
+		when(toadletContainer.findToadlet(URI.create("/requesting-connection-keep-alive"))).thenReturn(homepageToadlet);
+		sendRequest("GET /requesting-connection-keep-alive HTTP/1.1\r\nConnection: keep-alive\r\n\r\n", httpResponses -> {
+			assertThat(httpResponses, contains(
+					hasHeader("Connection", contains(equalToIgnoringCase("close")))
+			));
+		});
+	}
+
+	@Test
+	public void requestingConnectionCloseWillReplyWithConnectionCloseWhenPipeliningIsAllowed() throws Exception {
+		when(toadletContainer.enablePersistentConnections()).thenReturn(true);
+		when(toadletContainer.findToadlet(URI.create("/requesting-connection-close"))).thenReturn(homepageToadlet);
+		sendRequest("GET /requesting-connection-close HTTP/1.1\r\nConnection: close\r\n\r\n", httpResponses -> {
+			assertThat(httpResponses, contains(
+					hasHeader("Connection", contains(equalToIgnoringCase("close")))
+			));
+		});
+	}
+
+	@Test
+	public void requestingConnectionKeepAliveWillReplyWithConnectionKeepAliveWhenPipeliningIsAllowed() throws Exception {
+		when(toadletContainer.enablePersistentConnections()).thenReturn(true);
+		when(toadletContainer.findToadlet(URI.create("/requesting-connection-keep-alive"))).thenReturn(homepageToadlet);
+		sendRequest("GET /requesting-connection-keep-alive HTTP/1.1\r\nConnection: keep-alive\r\n\r\n", httpResponses -> {
+			assertThat(httpResponses, contains(
+					hasHeader("Connection", contains(equalToIgnoringCase("keep-alive")))
 			));
 		});
 	}
