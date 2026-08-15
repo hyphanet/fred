@@ -38,8 +38,7 @@ public class ProbeTest {
     Node node = mock(Node.class, RETURNS_DEEP_STUBS);
     when(node.getLocation()).thenReturn(0.5);
     when(node.getConnectedPeers()).thenReturn(new PeerNode[]{});
-    when(node.getRandom().nextDouble()).thenReturn(0.5);
-    when(node.getRandom().nextGaussian()).thenReturn(0.1);
+    when(node.getRandom().nextDouble()).thenReturn(0.4);
     when(node.getConfig().get("node").getBoolean("probeLocation")).thenReturn(true);
 
     // and a listener that throws when receiving an invalid value
@@ -54,7 +53,7 @@ public class ProbeTest {
     probe.start((byte)1, 12345L, Type.LOCATION, listener);
 
     // and that the listener does throw when the location is not randomized
-    when(node.getRandom().nextGaussian()).thenReturn(0.0);
+    when(node.getRandom().nextDouble()).thenReturn(0.5);
     assertThrows(DoesNotRandomizeLocationException.class,
         () -> probe.start((byte)1, 12345L, Type.LOCATION, listener));
   }

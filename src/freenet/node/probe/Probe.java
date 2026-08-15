@@ -145,7 +145,7 @@ public class Probe implements ByteCounter {
 
 	private double randomLocationNoise(final double input, final double sigma) {
 		// additive shift, because node locations are all equal
-		double randomShift = node.getRandom().nextGaussian() * sigma;
+		double randomShift = (node.getRandom().nextDouble() - 0.5) * sigma;
 		double location = input + randomShift;
 		// address edge cases
 		if (location < 0.) {
