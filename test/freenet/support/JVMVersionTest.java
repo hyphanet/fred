@@ -13,6 +13,22 @@ public class JVMVersionTest {
 		assertTrue(JVMVersion.isEOL("1.5"));
 		assertTrue(JVMVersion.isEOL("1.7.0_65"));
 		assertTrue(JVMVersion.isEOL("1.7"));
+		assertTrue(JVMVersion.isEOL("10"));
+		assertTrue(JVMVersion.isEOL("16"));
+	}
+
+	@Test
+	public void testTooOldUpdaterBefore17() {
+		assertTrue(JVMVersion.needsLegacyUpdaterJava8("1.6.0_32"));
+		assertTrue(JVMVersion.needsLegacyUpdaterJava8("1.6"));
+		assertTrue(JVMVersion.needsLegacyUpdaterJava8("1.5"));
+		assertTrue(JVMVersion.needsLegacyUpdaterJava8("1.7.0_65"));
+		assertTrue(JVMVersion.needsLegacyUpdaterJava8("1.7"));
+		assertTrue(JVMVersion.needsLegacyUpdaterJava8("1.8"));
+		assertTrue(JVMVersion.needsLegacyUpdaterJava8("9"));
+		assertTrue(JVMVersion.needsLegacyUpdaterJava8("16"));
+		assertFalse(JVMVersion.needsLegacyUpdaterJava8("17"));
+		assertFalse(JVMVersion.needsLegacyUpdaterJava8(null));
 	}
 
 	@Test
@@ -26,9 +42,10 @@ public class JVMVersionTest {
 
 	@Test
 	public void testRecentEnoughWarning() {
-		assertFalse(JVMVersion.isEOL("1.8.0_9"));
-		assertFalse(JVMVersion.isEOL("9-ea"));
-		assertFalse(JVMVersion.isEOL("10"));
+		assertTrue(JVMVersion.isEOL("1.8.0_9"));
+		assertTrue(JVMVersion.isEOL("9-ea"));
+		assertTrue(JVMVersion.isEOL("10"));
+		assertTrue(JVMVersion.isEOL("16.999"));
 	}
 
 	@Test
@@ -36,6 +53,7 @@ public class JVMVersionTest {
 		assertFalse(JVMVersion.needsLegacyUpdater("1.8.0_9"));
 		assertFalse(JVMVersion.needsLegacyUpdater("9-ea"));
 		assertFalse(JVMVersion.needsLegacyUpdater("10"));
+		assertFalse(JVMVersion.needsLegacyUpdater("16"));
 	}
 
 	@Test

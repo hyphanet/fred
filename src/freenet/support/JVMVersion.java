@@ -17,7 +17,12 @@ public class JVMVersion {
 	 * Java version before which to display an End-of-Life warning. Subsequent releases of Freenet will function with
 	 * them, but that may soon not be the case.
 	 */
-	public static final String EOL_THRESHOLD = "1.8";
+	public static final String EOL_THRESHOLD = "17";
+
+	/**
+	 * Java version before which to use the Java8 legacy updater URI.
+	 */
+	public static final String UPDATER_THRESHOLD_JAVA17 = "17";
 
 	/**
 	 * Java version before which to use the legacy updater URI.
@@ -45,6 +50,10 @@ public class JVMVersion {
 			&& isEOL(getCurrent());
 	}
 
+	public static boolean needsLegacyUpdaterJava8() {
+		return needsLegacyUpdaterJava8(getCurrent());
+	}
+
 	public static boolean needsLegacyUpdater() {
 		return needsLegacyUpdater(getCurrent());
 	}
@@ -57,6 +66,14 @@ public class JVMVersion {
 		if (version == null) return false;
 
 		return compareVersion(version, EOL_THRESHOLD) < 0;
+	}
+
+	static boolean needsLegacyUpdaterJava8(String version) {
+		if (version == null) {
+			return false;
+		}
+
+		return compareVersion(version, UPDATER_THRESHOLD_JAVA17) < 0;
 	}
 
 	static boolean needsLegacyUpdater(String version) {
