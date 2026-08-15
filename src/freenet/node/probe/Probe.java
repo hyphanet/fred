@@ -145,7 +145,7 @@ public class Probe implements ByteCounter {
 
 	private double randomLocationNoise(final double input, final double sigma) {
 		// additive shift, because node locations are all equal
-		double randomShift = node.getRandom().nextGaussian() * sigma;
+		double randomShift = (node.getRandom().nextDouble() - 0.5) * sigma;
 		double location = input + randomShift;
 		// address edge cases
 		if (location < 0.) {
@@ -463,7 +463,7 @@ public class Probe implements ByteCounter {
 		if (htl == 0 || !route(type, uid, htl, listener)) {
 			long wait = WAIT_MAX;
 			while (wait >= WAIT_MAX) {
-				wait = (long)(-Math.log(node.getRandom().nextDouble() + 0.0000001) * WAIT_BASE / Math.E);
+				wait = getRandomizedWaitStepTime();
 			}
 			timer.schedule(new TimerTask() {
 				@Override
@@ -472,6 +472,10 @@ public class Probe implements ByteCounter {
 				}
 			}, wait);
 		}
+	}
+
+	private long getRandomizedWaitStepTime() {
+		return (long) (-Math.log(node.getRandom().nextDouble() + 0.0000001) * WAIT_BASE / Math.E);
 	}
 
 	/**
