@@ -266,7 +266,7 @@ dependencies {
     testImplementation('junit:junit:4.13.2') {
         exclude(group: "org.hamcrest", module: "hamcrest-core")
     }
-    testImplementation "org.mockito:mockito-inline:2.28.2"
+    testImplementation "org.mockito:mockito-core:2.28.2"
     testImplementation "org.hamcrest:hamcrest:3.0"
     testImplementation "org.jsoup:jsoup:1.21.2"
     testImplementation "jakarta.activation:jakarta.activation-api:2.1.4"

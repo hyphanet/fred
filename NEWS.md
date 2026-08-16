@@ -1,29 +1,140 @@
 next:
 
-- Update Actions version. Thanks to qupo1!
-- Update the plugin WebOfTrust to 0.4.5 build 21 with dead seed IDs replaced by active ones. Thanks to xor!
-- Update the plugin JSTUN to version 1.5 (6) with dead JSTUN servers replaced. Thanks to Bombe!
-- Update MIME types, thanks to torusrxxx
-- Cleanup PeerManager and version transition, thanks to torusrxxx
-- Continue securely deleting the file if IOException occurred and add logging, thanks to torusrxxx
-- Link bugs via bugs.hyphanet.org, replace dead URIs, Suggest IRC username SecRabbit in SECURITY.md, replace mailing lists reference by FMS
-- Remove files used in tests, thanks to Bombe
-- CONTRIBUTING: Add "no spurious changes" note
+- Remove old statistics site from bookmarks.
+- Improve test coverage of DNS throttling -- thanks to Bombe!
+- improve DNS check: fast during startup, throttle after first connection, do not stall on IPs. This should significantly speed up the initial connection.
+- Open plain text as UTF-8 by default (should make most text files much easier to read)
+- update Gradle to 8.14.5
+- Improve Italian localization -- thanks to Tristano!
+- Add “must understand your code changes” rule to CONTRIBUTING and link High Impact tasks page
+
+1506:
+
+Side-effects in the improvements from 1504 caused regressions that
+lead to uploads with compression for large files sometimes get broken
+hashes or different keys. These were fixed in 1506:
+
+- fix upload hashing input stream regression. Thanks to Bombe!
+- fix concurrent access regression in SkipShieldingInputStream. Thanks to Bertm!
+- do not embed the shorthands for new MIME types into compressed uploads. Thanks to Bertm!
+
+This fixes an issue with downloads failing with the error
+"The hashes in the metadata do not match the actual data".
+It wasn’t an issue in the network, but a problem in the
+hashing during upload compression where multiple uploads
+interfered with each other and the input stream wasn’t always
+drained completely.
+
+The cause were regressions due to side effects of performance
+optimization and refactorings. Also added MIME types had a side effect
+on compressed uploads, because with compression known MIME types get
+replaced with an index to save space. But this changed upload keys for
+files that had already used these newly added MIME types from an older
+version.
+
+All three issues are fixed now: the keys generated during upload are
+hashed consistently and match the old keys again. To create the same
+key as from 1506 if the file has a mime-type not yet recognized in
+1506, you can use the new option `--mimetype-send-octet-stream` in
+fcpupload from pyfreenet.
+
+A big thank you to everyone who tested the release and reported the
+regressions!
+
+1505:
+
+This release fixes a vulnerability in the progress bar of downloads
+via the web interface (fproxy).
+
+The Javascript code for updating the progress bar used the innerHTML
+selector to show updates from the server without protecting these with
+a server key, so a finishing download could be interpreted as new
+content, injecting arbitrary code into the download page.
+
+This code existed since 2009. Nowadays you’d use server-sent-events
+(SSE) or a websocket for this, but when the code was added, those were
+not available yet.
+
+This was exploitable by getting someone to access a file within
+Hyphanet so it was a critical problem for us. Luckily this was found ,
+disclosed responsibly, and fixed by bertm, and not by an attacker. It
+is fixed now.
+
+We organized with the Linux packagers (Gentoo, Arch AUR, Nix) to
+enable all nodes to update at the same time, so none would be
+vulnerable once the the release got out.
+
+The whole Javascript file is removed and more legacy Javascript will
+get removed in future releases.
+
+We checked all data we could reach with a dedicated crawler and did
+not find any exploit.
+
+A takeaway is that reviewing old code is worthwhile. While we hope
+that there aren’t more vulnerabilities of this scope, there are surely
+chances for optimization, because the JVM got a long way in the 25
+years since Hyphanet started (under the name Freenet) and parts of our
+code were still optimized for JVM 1.4. But please doublecheck whether
+it actually brings benefits, to avoid causing instability needlessly:
+if you want to optimize, start with profiling.
+
+1504:
+
+** Optimization
+
+Bertm did multiple performance optimizations deep in our core:
+MultiHash{Input,Output}Stream, BlockTransmitter, MersenneTwister, and
+RunningAverage. Thank you!
+
+** Cleanups
+
+- Torusrxxx polished PeerManager and version transitions
+- Bombe made tests cleanup files after the run
+- Bombe removed translation strings of removed features
+- 🚸 Build source JAR in a more reproducible way, thanks to Bombe!
+
+** State of the Art upkeep
+
+- The PNG filter supports HDR chunks, thanks to Bombe and torusrxxx!
+- Translations and the Localization Labs tooling setup are up to date again
+- Update MIME types, thanks to torusrxxx!
+- Bump Gradle to 8.14.3, thanks to qupo1!
+- Update Github Actions versions. Thanks to qupo1!
+- CONTRIBUTING file: Add "no spurious changes" note
+- Link bugs via bugs.hyphanet.org, replace dead URIs, Suggest IRC
+  username SecRabbit in SECURITY.md, replace mailing lists reference
+  by FMS
+- Update debian package to 1506, thanks to qupo1!
+
+** Fixes
+
+- Continue securely deleting a file if an IOException occurred and add logging, thanks to torusrxxx!
 - Preserve the order of peers when updating handshake IPs
-- 🚸 Build source JAR in a more reproducible way, thanks to Bombe
 - Show radiobuttons on sky dark static theme for WoT
-- update translations from transifex, fix transifex config, remove l10n for removed feature. Thanks to Bombe!
-- Update github actions/checkout to v5, thanks to qupo1
-- Improve PNG filter: support HDR chunks, thanks to Bombe and torusrxxx
-- Simplify MultiHash{Input,Output}Stream, thanks to bertm
-- BlockTransmitter: delay BlockSenderJob asynchronously on the Ticker, thanks to bertm
-- Reduce synchronization in MersenneTwister for efficiency, thanks to bertm
-- Bump Gradle to 8.14.3, thanks to qupo1
-- Update debian package to 1503, thanks to qupo1
-- Speed up and fix RunningAverage, thanks to bertm
+
+** Installers
+
+- Add more seednodes
+- java_installer: Disable verifyjar due to glitches
+
+** Plugin updates
+
+*** WebOfTrust plugin (thanks to xor!):
+
+- Replace old seed IDs by active ones
+  - New seeds: Adilson_Lanpo, ArneBab, HieronymusCH
+  - Removed seeds (haven't been active in a long time): operhiem1, toad_, zidel
+- Update github actions
+- Require Java 8
+
+*** JSTUN plugin (thanks to Bombe!):
+
+- Use a public always-online STUN server list (makes JSTUN accesses harder to identify as Hyphanet)
+- Remove Dead STUN Servers
+- Require Java 8
+
 
 1503:
-
 
 This is a hotfix release that fixes regressions in 1502:
 

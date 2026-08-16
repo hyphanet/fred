@@ -6,7 +6,6 @@
       <trusted-artifacts>
          <trust file="apache-4.pom"/>
          <trust file="kxml2-2.3.0-sources.jar"/>
-         <trust file="kxml2-2.3.0-sources.jar"/>
          <trust file="commons-codec-1.4(-sources)*[.](jar|pom)" regex="true"/>
          <trust file="commons-logging-1.1.1(-sources)*[.](jar|pom)" regex="true"/>
          <trust file="commons-parent-[1-9]*[.]pom" regex="true"/>

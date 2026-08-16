@@ -239,7 +239,18 @@ public class ToadletContextImpl implements ToadletContext {
 		}
 		sendReplyHeaders(sockOutputStream, replyCode, replyDescription, mvt, mimeType, contentLength, mTime, shouldDisconnect, enableJavascript, allowFrames);
 	}
-	
+
+	/**
+	 * Returns whether one of the {@code sendReplyHeaders} methods has been
+	 * called.
+	 *
+	 * @return {@code true} if reply headers have been sent,
+	 *        {@code false} otherwise
+	 */
+	private boolean hasSentReplyHeaders() {
+		return firstReplySendingException != null;
+	}
+
 	@Override
 	public PageMaker getPageMaker() {
 		return pagemaker;
@@ -511,10 +522,22 @@ public class ToadletContextImpl implements ToadletContext {
 			InputStream is = new BufferedInputStream(sock.getInputStream(), 4096);
 			LineReadingInputStream lis = new LineReadingInputStream(is)
 		) {
+			try {
+				handleInner(sock, is, lis, container, pageMaker, userAlertManager, bookmarkManager);
+			} finally {
+				sock.shutdownOutput();
+			}
+		} catch (IOException e) {
+			// can only be triggered by the try-block, in which case
+			// we can’t even start reading the request.
+		}
+	}
+
+	private static void handleInner(Socket sock, InputStream is, LineReadingInputStream lis, ToadletContainer container, PageMaker pageMaker, UserAlertManager userAlertManager, BookmarkManager bookmarkManager) {
+		try {
 			while(true) {
 				String firstLine = lis.readLine(32768, 128, false); // ISO-8859-1 or US-ASCII, _not_ UTF-8
 				if (firstLine == null) {
-					sock.close();
 					return;
 				} else if (firstLine.isEmpty()) {
 					continue;
@@ -546,7 +569,6 @@ public class ToadletContextImpl implements ToadletContext {
 				while(true) {
 					String line = lis.readLine(32768, 128, false); // ISO-8859 or US-ASCII, not UTF-8
 					if (line == null) {
-						sock.close();
 						return;
 					}
 					//System.out.println("Length="+line.length()+": "+line);
@@ -673,6 +695,10 @@ public class ToadletContextImpl implements ToadletContext {
 						
 						try {
 							callToadletMethod(t, method, uri, req, ctx, data, sock, redirect);
+
+							if (!ctx.hasSentReplyHeaders()) {
+								ctx.sendReplyHeaders(204, "No Content", null, null, 0);
+							}
 						} catch (RedirectException re) {
 							uri = re.newuri;
 							redirect = true;
@@ -681,7 +707,6 @@ public class ToadletContextImpl implements ToadletContext {
 						}
 					}
 					if(ctx.shouldDisconnect) {
-						sock.close();
 						return;
 					}
 				} finally {
@@ -701,8 +726,6 @@ public class ToadletContextImpl implements ToadletContext {
 			} catch (IOException e1) {
 				// Ignore
 			}
-		} catch (IOException e) {
-			// ignore and return
 		} catch (ToadletContextClosedException e) {
 			Logger.error(ToadletContextImpl.class, "ToadletContextClosedException while handling connection!");
 		} catch (Throwable t) {
