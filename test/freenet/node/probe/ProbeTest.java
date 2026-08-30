@@ -34,7 +34,7 @@ public class ProbeTest {
 	@Test
 	public void underflowOnNodeLocationRandomizationIsHandledCorrectly() {
 		when(node.getLocation()).thenReturn(0.001);
-    // the fake nextDouble is also used for wait, so we cannot go below Probe.getRandomizedWaitStepTime()
+		// the fake nextDouble is also used for wait, so we cannot go below Probe.getRandomizedWaitStepTime()
 		when(node.getRandom().nextDouble()).thenReturn(0.1);
 
 		probe.start((byte) 1, 12345L, Type.LOCATION, listener);
