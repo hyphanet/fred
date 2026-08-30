@@ -3,6 +3,11 @@
    <configuration>
       <verify-metadata>true</verify-metadata>
       <verify-signatures>true</verify-signatures>
+      <!-- ignore javadoc and sources, because they do not get compiled in. Prevents IntelliJ from failing to build from gradle. -->
+      <trusted-artifacts>
+         <trust file=".*-javadoc[.]jar" regex="true"/>
+         <trust file=".*-sources[.]jar" regex="true"/>
+      </trusted-artifacts>
       <trusted-artifacts>
          <trust file="apache-4.pom"/>
          <trust file="kxml2-2.3.0-sources.jar"/>
