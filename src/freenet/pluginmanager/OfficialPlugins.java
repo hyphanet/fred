@@ -118,8 +118,8 @@ public class OfficialPlugins {
 					.advanced();
 			addPlugin("WebOfTrust")
 					.inGroup("communication")
-					.minimumVersion(18)
-					.recommendedVersion(20)
+					.minimumVersion(20)
+					.recommendedVersion(21)
 					.usesXml()
 					.loadedFrom("CHK@ic-xihD6BzLwqxuI27CVvDCa71jF39Vs8bWPP00c8II,vgL-dISouZD7NyfpHSE8sVccQP5242dvpvV2XfCilqs,AAMC--8/WebOfTrust.jar");
 			addPlugin("WebOfTrustTesting")
@@ -128,8 +128,8 @@ public class OfficialPlugins {
 					.experimental()
 					.usesXml()
 					.alwaysFetchLatestVersion()
-					.minimumVersion(17) // When changing this also update edition of USK below!
-					.loadedFrom("USK@QeTBVWTwBldfI-lrF~xf0nqFVDdQoSUghT~PvhyJ1NE,OjEywGD063La2H-IihD7iYtZm3rC0BP6UTvvwyF5Zh4,AQACAAE/WebOfTrustTesting.jar/17");
+					.minimumVersion(21) // When changing this also update edition of USK below!
+					.loadedFrom("USK@QeTBVWTwBldfI-lrF~xf0nqFVDdQoSUghT~PvhyJ1NE,OjEywGD063La2H-IihD7iYtZm3rC0BP6UTvvwyF5Zh4,AQACAAE/WebOfTrustTesting.jar/21");
 			addPlugin("FlogHelper")
 					.inGroup("communication")
 					.minimumVersion(36)
