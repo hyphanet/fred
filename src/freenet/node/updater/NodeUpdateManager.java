@@ -77,16 +77,26 @@ import freenet.support.io.FileUtil;
 public class NodeUpdateManager {
 
 	/**
+	 * The last build on the previous key with Java 8 support. Older nodes can
+	 * update to this point via old UOM.
+	 */
+	public final static int TRANSITION_VERSION_JAVA8 = 1507;
+
+	/**
 	 * The last build on the previous key with Java 7 support. Older nodes can
 	 * update to this point via old UOM.
 	 */
 	public final static int TRANSITION_VERSION = 1481;
 
-	/** The URI for post-TRANSITION_VERSION builds' freenet.jar on modern JVMs. */
-	public final static String UPDATE_URI = "USK@vCKGjQtKuticcaZ-dwOgmkYPVLj~N1dm9mb3j3Smg4Y,-wz5IYtd7PlhI2Kx4cAwpUu13fW~XBglPyOn8wABn60,AQACAAE/jar/"
+	/** The URI for post-TRANSITION_VERSION_JAVA8 builds' freenet.jar on modern JVMs. */
+	public final static String UPDATE_URI = "USK@rW3wdla3fvFIBcMyl1xyd8umjiQQaZaQ-UqaZQCDOMQ,FfihUHiGuHNgNchv5paweQV5oHD0k4~MdlS-eNXcDF0,AQACAAE/jar/"
 			+ Version.buildNumber();
 
-	/** The URI for post-TRANSITION_VERSION builds' freenet.jar on EoL JVMs. */
+	/** The URI for post-TRANSITION_VERSION_JAVA8 builds' freenet.jar on EoL JVMs up to Java 8. */
+	public final static String LEGACY_UPDATE_URI_JAVA8 = "SSK@vCKGjQtKuticcaZ-dwOgmkYPVLj~N1dm9mb3j3Smg4Y,-wz5IYtd7PlhI2Kx4cAwpUu13fW~XBglPyOn8wABn60,AQACAAE/jar-"
+			+ TRANSITION_VERSION_JAVA8;
+
+	/** The URI for post-TRANSITION_VERSION builds' freenet.jar on EoL JVM up to Java 7. */
 	public final static String LEGACY_UPDATE_URI = "SSK@ugWS2VICgMcQ5ptmEE1mAvHgUn2OSCOogJIUAvbL090,ZKO1pZRI9oaBuBQuWFL4bK3K0blvmEdqYgiIJF5GcjQ,AQACAAE/jar-"
 			+ TRANSITION_VERSION;
 
@@ -108,6 +118,9 @@ public class NodeUpdateManager {
 	public static final long MAX_IP_TO_COUNTRY_LENGTH = 24 * 1024 * 1024;
 	public static final long MAX_SEEDNODES_LENGTH = 3 * 1024 * 1024;
 
+	static final FreenetURI legacyJava8MainJarSSK;
+	static final FreenetURI legacyJava8MainJarUSK;
+
 	static final FreenetURI legacyMainJarSSK;
 	static final FreenetURI legacyMainJarUSK;
 
@@ -121,6 +134,8 @@ public class NodeUpdateManager {
 
 	static {
 		try {
+			legacyJava8MainJarSSK = new FreenetURI(LEGACY_UPDATE_URI_JAVA8);
+			legacyJava8MainJarUSK = legacyJava8MainJarSSK.uskForSSK();
 			legacyMainJarSSK = new FreenetURI(LEGACY_UPDATE_URI);
 			legacyMainJarUSK = legacyMainJarSSK.uskForSSK();
 			previousMainJarSSK = new FreenetURI(PREVIOUS_UPDATE_URI);
@@ -274,8 +289,12 @@ public class NodeUpdateManager {
 		 */
 		if (JVMVersion.needsLegacyUpdater()) {
 			transitionKey(updaterConfig, previousMainJarSSK, legacyMainJarUSK.toString());
+		} else if (JVMVersion.needsLegacyUpdaterJava8()) {
+			transitionKey(updaterConfig, previousMainJarSSK, legacyJava8MainJarUSK.toString());
+			transitionKey(updaterConfig, legacyMainJarSSK, legacyJava8MainJarUSK.toString());
 		} else {
 			transitionKey(updaterConfig, previousMainJarSSK, UPDATE_URI);
+			transitionKey(updaterConfig, legacyJava8MainJarSSK, UPDATE_URI);
 			transitionKey(updaterConfig, legacyMainJarSSK, UPDATE_URI);
 		}
 
