@@ -680,7 +680,7 @@ public class Probe implements ByteCounter {
 		case LOCATION:
 			/*
 			 * Noise that stays within 50% of the peers short distance connections: shift the location
-			 * by a value drawn from a gaussian distribution with mean 0 and std 0.005 (long_distance/2).
+			 * by a value drawn from a linear distribution between -0.0025 and +0.0025 (long_distance/2).
 			 */
 			listener.onLocation((float)randomLocationNoise(node.getLocation(), OpennetManager.LONG_DISTANCE / 2));
 			break;
