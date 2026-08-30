@@ -88,7 +88,7 @@ public class NodeUpdateManager {
 	 */
 	public final static int TRANSITION_VERSION = 1481;
 
-	/** The URI for post-TRANSITION_VERSION builds' freenet.jar on modern JVMs. */
+	/** The URI for post-TRANSITION_VERSION_JAVA8 builds' freenet.jar on modern JVMs. */
 	public final static String UPDATE_URI = "USK@rW3wdla3fvFIBcMyl1xyd8umjiQQaZaQ-UqaZQCDOMQ,FfihUHiGuHNgNchv5paweQV5oHD0k4~MdlS-eNXcDF0,AQACAAE/jar/"
 			+ Version.buildNumber();
 
