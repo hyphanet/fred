@@ -92,11 +92,11 @@ public class NodeUpdateManager {
 	public final static String UPDATE_URI = "USK@rW3wdla3fvFIBcMyl1xyd8umjiQQaZaQ-UqaZQCDOMQ,FfihUHiGuHNgNchv5paweQV5oHD0k4~MdlS-eNXcDF0,AQACAAE/jar/"
 			+ Version.buildNumber();
 
-	/** The URI for post-TRANSITION_VERSION builds' freenet.jar on EoL JVMs. */
+	/** The URI for post-TRANSITION_VERSION_JAVA8 builds' freenet.jar on EoL JVMs up to Java 8. */
 	public final static String LEGACY_UPDATE_URI_JAVA8 = "SSK@vCKGjQtKuticcaZ-dwOgmkYPVLj~N1dm9mb3j3Smg4Y,-wz5IYtd7PlhI2Kx4cAwpUu13fW~XBglPyOn8wABn60,AQACAAE/jar-"
 			+ TRANSITION_VERSION_JAVA8;
 
-	/** The URI for post-TRANSITION_VERSION builds' freenet.jar on EoL JVMs. */
+	/** The URI for post-TRANSITION_VERSION builds' freenet.jar on EoL JVM up to Java 7. */
 	public final static String LEGACY_UPDATE_URI = "SSK@ugWS2VICgMcQ5ptmEE1mAvHgUn2OSCOogJIUAvbL090,ZKO1pZRI9oaBuBQuWFL4bK3K0blvmEdqYgiIJF5GcjQ,AQACAAE/jar-"
 			+ TRANSITION_VERSION;
 
