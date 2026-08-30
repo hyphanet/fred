@@ -33,9 +33,9 @@ public class OfficialPlugins {
 					.deprecated();
 			addPlugin("Freemail_wot")
 					.inGroup("communication")
-					.recommendedVersion(33)
-					.minimumVersion(27)
-					.loadedFrom("CHK@SeUdM2xx~Pl9bCt3uzafbVM8HijDpxoQXwTxkkgqeUE,5GCNdPxg649uE~5SicWQSETGa8WVEe0RkIOSIC86UrE,AAMC--8/Freemail.jar");
+					.recommendedVersion(34)
+					.minimumVersion(34)
+					.loadedFrom("CHK@mUJMVySrV1aeI4t6wJ8hMaZz2GYPWcJhghOlhvz6fkk,O-W6NmGdyU4p6p5bv0PfEwIz0qpNrke-oqFsvBovyn0,AAMC--8/Freemail.jar");
 			addPlugin("HelloWorld")
 					.inGroup("example")
 					.loadedFrom("CHK@ZdTXnWV-ikkt25-y8jmhlHjCY-nikDMQwcYlWHww5eg,Usq3uRHpHuIRmMRRlNQE7BNveO1NwNI7oNKdb7cowFM,AAIC--8/HelloWorld.jar")
