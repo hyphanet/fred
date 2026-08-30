@@ -117,7 +117,7 @@ public class OpennetManager {
 	 * (FIXME move to wiki or other permanent storage)
 	 */
 	/** Peers with more than this distance are considered "long links". */
-	static final double LONG_DISTANCE = 0.01;
+	public static final double LONG_DISTANCE = 0.01;
 	/** This proportion of the routing table consists of "long links". */
 	static final double LONG_PROPORTION = 0.3;
 	/** The proportion of the routing table which consists of "short links". */

@@ -118,7 +118,7 @@ public class Probe implements ByteCounter {
 
 	private final Node node;
 
-	private final Timer timer;
+	private Timer timer;
 
 	//Whether to respond to different types of probe requests.
 	private volatile boolean respondBandwidth;
@@ -141,6 +141,20 @@ public class Probe implements ByteCounter {
 	 */
 	private final double randomNoise(final double input, final double sigma) {
 		return node.getNodeStats().randomNoise(input, sigma);
+	}
+
+	private double randomLocationNoise(final double input, final double sigma) {
+		// additive shift, because node locations are all equal
+		double randomShift = (node.getRandom().nextDouble() - 0.5) * sigma;
+		double location = input + randomShift;
+		// address edge cases
+		if (location < 0.) {
+			return location + 1.0;
+		}
+		if (location >= 1.0) {
+			return location - 1.0;
+		}
+		return location;
 	}
 
 	/**
@@ -448,7 +462,9 @@ public class Probe implements ByteCounter {
 		htl = probabilisticDecrement(htl);
 		if (htl == 0 || !route(type, uid, htl, listener)) {
 			long wait = WAIT_MAX;
-			while (wait >= WAIT_MAX) wait = (long)(-Math.log(node.getRandom().nextDouble()) * WAIT_BASE / Math.E);
+			while (wait >= WAIT_MAX) {
+				wait = getRandomizedWaitStepTime();
+			}
 			timer.schedule(new TimerTask() {
 				@Override
 				public void run() {
@@ -456,6 +472,10 @@ public class Probe implements ByteCounter {
 				}
 			}, wait);
 		}
+	}
+
+	private long getRandomizedWaitStepTime() {
+		return (long) (-Math.log(node.getRandom().nextDouble() + 0.0000001) * WAIT_BASE / Math.E);
 	}
 
 	/**
@@ -541,6 +561,15 @@ public class Probe implements ByteCounter {
 
 		listener.onError(Error.CANNOT_FORWARD, null, true);
 		return true;
+	}
+
+	/**
+	 * Set the timer used to relay. Protected for testing.
+     *
+	 * @param timer - the replacement timer to use for scheduling responses and routing
+	 */
+	protected void setTimer(Timer timer) {
+		this.timer = timer;
 	}
 
 	/**
@@ -649,7 +678,11 @@ public class Probe implements ByteCounter {
 			listener.onLinkLengths(linkLengths);
 			break;
 		case LOCATION:
-			listener.onLocation((float)node.getLocation());
+			/*
+			 * Noise that stays within 50% of the peers short distance connections: shift the location
+			 * by a value drawn from a linear distribution between -0.0025 and +0.0025 (long_distance/2).
+			 */
+			listener.onLocation((float)randomLocationNoise(node.getLocation(), OpennetManager.LONG_DISTANCE / 2));
 			break;
 		case STORE_SIZE:
 			/*

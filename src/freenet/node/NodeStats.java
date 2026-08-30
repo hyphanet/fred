@@ -556,17 +556,17 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 		hourlyStatsRT = new HourlyStats(node);
 		hourlyStatsBulk = new HourlyStats(node);
-		
-		if(!NodeStarter.isTestingVM()) {
-			// Normal mode
-			minReportsNoisyRejectStats = 200;
-			rejectStatsUpdateInterval = MINUTES.toMillis(10);
-			rejectStatsFuzz = 10.0;
-		} else {
+
+		if (NodeStarter.isTestingVM()) {
 			// Stuff we only do in testing VMs
 			minReportsNoisyRejectStats = 1;
 			rejectStatsUpdateInterval = SECONDS.toMillis(10);
 			rejectStatsFuzz = -1.0;
+		} else {
+			// Normal mode
+			minReportsNoisyRejectStats = 200;
+			rejectStatsUpdateInterval = MINUTES.toMillis(10);
+			rejectStatsFuzz = 10.0;
 		}
 		statsConfig.finishedInitialization();
 	}
