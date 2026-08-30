@@ -13,8 +13,11 @@ public class JVMVersionTest {
 		assertTrue(JVMVersion.isEOL("1.5"));
 		assertTrue(JVMVersion.isEOL("1.7.0_65"));
 		assertTrue(JVMVersion.isEOL("1.7"));
+		assertTrue(JVMVersion.isEOL("1.8.0_9"));
+		assertTrue(JVMVersion.isEOL("9-ea"));
 		assertTrue(JVMVersion.isEOL("10"));
 		assertTrue(JVMVersion.isEOL("16"));
+		assertTrue(JVMVersion.isEOL("16.999"));
 	}
 
 	@Test
@@ -42,10 +45,10 @@ public class JVMVersionTest {
 
 	@Test
 	public void testRecentEnoughWarning() {
-		assertTrue(JVMVersion.isEOL("1.8.0_9"));
-		assertTrue(JVMVersion.isEOL("9-ea"));
-		assertTrue(JVMVersion.isEOL("10"));
-		assertTrue(JVMVersion.isEOL("16.999"));
+		assertFalse(JVMVersion.isEOL("17"));
+		assertFalse(JVMVersion.isEOL("21"));
+		assertFalse(JVMVersion.isEOL("25"));
+		assertFalse(JVMVersion.isEOL("26"));
 	}
 
 	@Test
