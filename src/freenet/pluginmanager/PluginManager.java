@@ -321,7 +321,9 @@ public class PluginManager {
 			}
 		}
 
-		return startPluginURL(pluginname, store);
+		Logger.debug(this, "Plugin only has a clearnet URL source. Not loading it for safeties sake: " + pluginname);
+		// causes a NoSuchPlugin error in ReloadPlugin.java
+		return null;
 	}
 
 	public PluginInfoWrapper startPluginOfficial(final String pluginname, boolean store) {
@@ -359,8 +361,13 @@ public class PluginManager {
 		return realStartPlugin(new PluginDownLoaderFile(), filename, store, false);
 	}
 
+	/**
+	 * @deprecated this is unused -- keeping it to avoid removing public API that may be in use by plugins
+	 */
+	@Deprecated
 	public PluginInfoWrapper startPluginURL(final String filename, boolean store) {
-		return realStartPlugin(new PluginDownLoaderURL(), filename, store, false);
+		Logger.warning(this, "Tried to download plugin from clearnet URL, but that is removed. Interpreting as FreenetURI instead.");
+		return startPluginFreenet(filename, store);
 	}
 
 	public PluginInfoWrapper startPluginFreenet(final String filename, boolean store) {
