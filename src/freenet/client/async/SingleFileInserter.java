@@ -278,7 +278,8 @@ class SingleFileInserter implements ClientPutState, Serializable {
 				return;
 			}
 		}
-		if (fitsInOneCHK) {
+		if (fitsInOneCHK) {  // && isCHK) { // TODO: adding && isCHK works to turn single inserts into SSK splitfiles, but not for Sharesite inserts.
+			// TODO: do not use single CHK redirect with SSKs that have no metadata: A SSK splitfile has double size, but much better lifetime, because the second CHK can then be healed on access.
 			// Insert single block, then insert pointer to it
 			if(persistent && (data instanceof NotPersistentBucket)) {
 				data = fixNotPersistent(data, context);
