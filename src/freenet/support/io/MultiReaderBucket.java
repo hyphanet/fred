@@ -9,6 +9,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Objects;
 
 import freenet.client.async.ClientContext;
 import freenet.support.LogThresholdCallback;
@@ -24,14 +25,12 @@ import freenet.support.api.Bucket;
  * @author toad
  */
 public class MultiReaderBucket implements Serializable {
-	
-    private static final long serialVersionUID = 1L;
 
-    private final Bucket bucket;
-	
-	// Assume there will be relatively few readers
-	private ArrayList<Bucket> readers;
-	
+	private static final long serialVersionUID = 1L;
+
+	private final Bucket bucket;
+	private final ArrayList<Bucket> readers = new ArrayList<>();
+
 	private boolean closed;
         private static volatile boolean logMINOR;
 
@@ -46,12 +45,8 @@ public class MultiReaderBucket implements Serializable {
         }
 	
 	public MultiReaderBucket(Bucket underlying) {
+		Objects.requireNonNull(underlying);
 		bucket = underlying;
-	}
-	
-	protected MultiReaderBucket() {
-	    // For serialization.
-	    bucket = null;
 	}
 
 	/** Get a reader bucket */
@@ -59,11 +54,7 @@ public class MultiReaderBucket implements Serializable {
 		synchronized(this) {
 			if(closed) return null;
 			Bucket d = new ReaderBucket();
-			if (readers == null)
-				readers = new ArrayList<Bucket>(1);
 			readers.add(d);
-			if(logMINOR)
-				Logger.minor(this, "getReaderBucket() returning "+d+" for "+this+" for "+bucket);
 			return d;
 		}
 	}
@@ -82,7 +73,6 @@ public class MultiReaderBucket implements Serializable {
 				freed = true;
 				ListUtils.removeBySwapLast(readers, this);
 				if(!readers.isEmpty()) return;
-				readers = null;
 				if(closed) return;
 				closed = true;
 			}
