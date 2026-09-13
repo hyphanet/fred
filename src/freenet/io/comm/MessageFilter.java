@@ -42,6 +42,8 @@ public final class MessageFilter {
 
     public static final String VERSION = "$Id: MessageFilter.java,v 1.7 2005/08/25 17:28:19 amphibian Exp $";
 
+    /* Has the filter been matched? LOCKING: Matching can occur off-thread, so please
+     * use synchronized(this). */
     private boolean _matched;
     private PeerContext _droppedConnection;
     private MessageType _type;
@@ -245,7 +247,7 @@ public final class MessageFilter {
 		return MATCHED.MATCHED;
 	}
 
-	public boolean matched() {
+	public synchronized boolean matched() {
 		return _matched;
 	}
 
@@ -268,10 +270,12 @@ public final class MessageFilter {
 	 * remove the filter from _filters if we return true.
 	 */
 	boolean timedOut(long time) {
-		if(_matched) {
-			Logger.error(this, "Impossible: filter already matched in timedOut(): "+this, new Exception("error"));
-			return true; // Remove it.
-		}
+	    synchronized(this) {
+	        if(_matched) {
+	            Logger.error(this, "Impossible: filter already matched in timedOut(): "+this, new Exception("error"));
+	            return true; // Remove it.
+	        }
+	    }
 		return reallyTimedOut(time);
 	}
 
@@ -470,7 +474,9 @@ public final class MessageFilter {
 	 * Returns true if a connection related to this filter has been dropped or restarted.
 	 */
 	public boolean anyConnectionsDropped() {
-		if(_matched) return false;
+	    synchronized(this) {
+	        if(_matched) return false;
+	    }
 		if(_source != null) {
 			if(!_source.isConnected()) {
 				return true;
