@@ -359,6 +359,15 @@ public class Announcer {
 			}
 			return true;
 		}
+		if (shutdownAnnouncement()) return true;
+
+		synchronized(timeGotEnoughPeersLock) {
+			timeGotEnoughPeers = -1;
+		}
+		return false;
+	}
+
+	private boolean shutdownAnnouncement() {
 		boolean killAnnouncement = false;
 		if((!node.getNodeUpdater().isEnabled()) ||
 				(node.getNodeUpdater().canUpdateNow() && !node.getNodeUpdater().isArmed())) {
@@ -382,7 +391,7 @@ public class Announcer {
 			}
 
 		}
-		
+
 		if(killAnnouncement) {
 			node.getExecutor().execute(new Runnable() {
 
@@ -395,7 +404,7 @@ public class Announcer {
 						node.getPeers().disconnectAndRemove(pn, true, true, true);
 					}
 				}
-				
+
 			});
 			return true;
 		} else {
@@ -410,10 +419,6 @@ public class Announcer {
 				// No point announcing at the moment, but we might need to if a transfer falls through.
 				return true;
 			}
-		}
-		
-		synchronized(timeGotEnoughPeersLock) {
-			timeGotEnoughPeers = -1;
 		}
 		return false;
 	}
