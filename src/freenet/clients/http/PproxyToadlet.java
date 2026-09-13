@@ -14,6 +14,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -26,9 +27,11 @@ import freenet.pluginmanager.AccessDeniedPluginHTTPException;
 import freenet.pluginmanager.DownloadPluginHTTPException;
 import freenet.pluginmanager.NotFoundPluginHTTPException;
 import freenet.pluginmanager.OfficialPlugins.OfficialPluginDescription;
+import freenet.pluginmanager.PluginDownLoaderFile;
 import freenet.pluginmanager.PluginHTTPException;
 import freenet.pluginmanager.PluginInfoWrapper;
 import freenet.pluginmanager.PluginManager;
+import freenet.pluginmanager.PluginNotFoundException;
 import freenet.pluginmanager.RedirectPluginHTTPException;
 import freenet.pluginmanager.PluginManager.PluginProgress;
 import freenet.support.HTMLNode;
@@ -156,10 +159,19 @@ public class PproxyToadlet extends Toadlet {
 				node.getExecutor().execute(new Runnable() {
 					@Override
 					public void run() {
-						if (fileonly) 
+						if (fileonly) {
 							pm.startPluginFile(pluginName, true);
-						else
-							pm.startPluginURL(pluginName, true);
+						} else {
+							// first check whether it is a file
+							for(File f : File.listRoots()) {
+								if(!Objects.equals(f.getName(), "") && pluginName.startsWith(f.getName())
+										|| pluginName.startsWith(f.getPath())) {
+									pm.startPluginFile(pluginName, true);
+									return;
+								}
+							}
+							pm.startPluginFreenet(pluginName, true);
+						}
 					}
 				});
 

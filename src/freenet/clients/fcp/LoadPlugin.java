@@ -117,7 +117,8 @@ public class LoadPlugin extends FCPMessage {
 						pi = node.getPluginManager().startPluginFreenet(pluginURL, store);
 						break;
 					case TYPENAME_URL:
-						pi = node.getPluginManager().startPluginURL(pluginURL, store);
+						// only support Hyphanet URLs, because others are a privacy risk
+						pi = node.getPluginManager().startPluginFreenet(pluginURL, store);
 						break;
 					default:
 						Logger.error(this, "This should really not happen!", new Exception("FIXME"));
