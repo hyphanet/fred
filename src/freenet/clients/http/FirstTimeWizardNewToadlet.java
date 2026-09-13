@@ -6,6 +6,8 @@ import freenet.clients.http.wizardsteps.BandwidthManipulator;
 import freenet.clients.http.wizardsteps.DATASTORE_SIZE;
 import freenet.config.Config;
 import freenet.config.ConfigException;
+import freenet.config.InvalidConfigValueException;
+import freenet.config.NodeNeedRestartException;
 import freenet.config.Option;
 import freenet.l10n.NodeL10n;
 import freenet.node.*;
@@ -21,6 +23,7 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -33,6 +36,10 @@ public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
     public static final String TOADLET_URL = "/wiz/";
 
     private static final long MIN_STORAGE_LIMIT = Node.MIN_STORE_SIZE * 5 / 4;  // min store size + 10% for client cache + 10% for slashdot cache
+    private static final String CLIENT_CACHE_TYPE_KEY = "clientCacheType";
+    private static final String STORE_TYPE_KEY = "storeType";
+    private static final String STORE_TYPE_VALUE_RAM = "ram";
+    private static final String STORE_TYPE_SALT_HASH = "salt-hash";
 
     private final NodeClientCore core;
 
@@ -117,6 +124,8 @@ public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
 
         private String bandwidthMonthlyLimit = "500";
 
+        private String donateDiskSpace = "checked";
+
         private String storageLimit;
 
         private final String minStorageLimit = String.format(Locale.ENGLISH, "%.2f", (float) MIN_STORAGE_LIMIT / DatastoreUtil.oneGiB);
@@ -132,6 +141,13 @@ public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
         private Map<String, String> errors = new HashMap<>();
 
         FormModel() {
+            String storeType = config.get("node").getString(STORE_TYPE_KEY);
+            String cacheType = config.get("node").getString(CLIENT_CACHE_TYPE_KEY);
+            donateDiskSpace = (
+                Objects.equals(storeType, STORE_TYPE_VALUE_RAM)
+                && Objects.equals(cacheType, STORE_TYPE_VALUE_RAM))
+                ? ""
+                : "checked" ;
             float storage = 100;
             @SuppressWarnings("unchecked")
             Option<Long> sizeOption = (Option<Long>) config.get("node").getOption("storeSize");
@@ -168,6 +184,7 @@ public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
             downloadLimit = request.getPartAsStringFailsafe("downLimit", 100);
             uploadLimit = request.getPartAsStringFailsafe("upLimit", 100);
             bandwidthMonthlyLimit = request.getPartAsStringFailsafe("monthlyLimit", 100);
+            donateDiskSpace = request.getPartAsStringFailsafe("donateDiskSpace", 20);
             storageLimit = request.getPartAsStringFailsafe("storage", 100);
             setPassword = request.getPartAsStringFailsafe("setPassword", 20);
             password = request.getPartAsStringFailsafe("password", SecurityLevelsToadlet.MAX_PASSWORD_LENGTH + 1);
@@ -273,6 +290,7 @@ public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
             model.put("uploadLimit", uploadLimit);
             model.put("bandwidthMonthlyLimit", bandwidthMonthlyLimit);
             model.put("minBandwidthMonthlyLimit", String.format("%.2f", BandwidthLimit.minMonthlyLimit));
+            model.put("donateDiskSpace", donateDiskSpace);
             model.put("storageLimit", storageLimit);
             model.put("minStorageLimit", minStorageLimit);
             if (!isPasswordAlreadySet) {
@@ -318,7 +336,27 @@ public class FirstTimeWizardNewToadlet extends WebTemplateToadlet {
                 Logger.error(this, "Should not happen, please report! " + e, e);
             }
 
-            DATASTORE_SIZE.setDatastoreSize(storageLimit + "GiB", config, this);
+            try {
+                if (donateDiskSpace.isEmpty()) {
+                    // set a fixed size: large RAM stores aren't useful. Storage limit must be hidden if donate disk space is disabled.
+                    DATASTORE_SIZE.setDatastoreSize( "128MiB", false, config, this);
+                    try {
+                        config.get("node").set(STORE_TYPE_KEY, STORE_TYPE_VALUE_RAM);
+                    } catch (NodeNeedRestartException e) {
+                        // ignore: can only happen when switching from ram store to salt-hash.
+                    }
+                    try {
+                        config.get("node").set(CLIENT_CACHE_TYPE_KEY, STORE_TYPE_VALUE_RAM);
+                    } catch (NodeNeedRestartException e) {
+                        // ignore: can only happen when switching from ram store to salt-hash.
+                    }
+                } else {
+                    // sets the store to salt-hash internally
+                    DATASTORE_SIZE.setDatastoreSize(storageLimit + "GiB", config, this);
+                }
+            } catch (InvalidConfigValueException e) {
+                Logger.warning(this, "Should not happen, please report! " + e, e);
+            }
 
             if (!isPasswordAlreadySet) {
                 try {
