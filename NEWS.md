@@ -1,5 +1,14 @@
 next:
 
+- build-offline.sh: update to gradle 8.14.5 and propagate the error from the gradle invocation
+- Update Freemail to 0.3.0 -- thanks to Bombe!
+- prepare version switch with Java 17, with 1507 the last version on Java 8
+- Increase minimum and recommended Version for plugin-WebOfTrust to 20 and 21
+- fix persistent connections -- thanks to Bombe!
+- fix: randomize location value returned to probes -- thanks for Bombe for great tests!
+- fix: avoid negative infinity math edge case
+- Show that removed bookmarks are removed from default bookmarks in their description
+- recover bookmark localization of removed default bookmarks that may still be shown in old nodes -- thanks to TheSeeker
 - Remove old statistics site from bookmarks.
 - Improve test coverage of DNS throttling -- thanks to Bombe!
 - improve DNS check: fast during startup, throttle after first connection, do not stall on IPs. This should significantly speed up the initial connection.
