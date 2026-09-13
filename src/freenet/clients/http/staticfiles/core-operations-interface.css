@@ -1,0 +1,8 @@
+.core-operations-interface--container {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+}
+.core-operations-interface--column {
+    flex-grow: 1;
+}
