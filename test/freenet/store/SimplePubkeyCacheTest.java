@@ -1,12 +1,10 @@
 package freenet.store;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
-
-import org.junit.Test;
 
 import freenet.crypt.DSAGroup;
 import freenet.crypt.DSAPrivateKey;
@@ -14,6 +12,7 @@ import freenet.crypt.DSAPublicKey;
 import freenet.crypt.Global;
 import freenet.support.ByteArrayWrapper;
 import freenet.support.math.MersenneTwister;
+import org.junit.Test;
 
 public class SimplePubkeyCacheTest {
 	
@@ -31,7 +30,7 @@ public class SimplePubkeyCacheTest {
 			DSAPublicKey key = new DSAPublicKey(group, privKey);
 			byte[] hash = key.asBytesHash();
 			ByteArrayWrapper w = new ByteArrayWrapper(hash);
-			map.put(w, key.cloneKey());
+			map.put(w, key);
 			pubkeys.cacheKey(hash, key, false, false, false, false, false);
 			assertTrue(pubkeys.getKey(hash, false, false, null).equals(key));
 		}
