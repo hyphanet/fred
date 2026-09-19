@@ -6,6 +6,7 @@ package freenet.crypt;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
+import java.util.Objects;
 
 import freenet.node.FSParseException;
 import freenet.support.Base64;
@@ -19,8 +20,6 @@ import freenet.support.SimpleFieldSet;
  */
 public class DSAGroup extends CryptoKey {
 	private static final long serialVersionUID = -1;
-	
-	protected static final int Q_BIT_LENGTH = 256;
 
     private final BigInteger p, q, g;
 
@@ -32,33 +31,7 @@ public class DSAGroup extends CryptoKey {
         	throw new IllegalArgumentException();
     }
 
-    private DSAGroup(DSAGroup group) {
-        this.p = new BigInteger(1, group.p.toByteArray());
-        this.q = new BigInteger(1, group.q.toByteArray());
-        this.g = new BigInteger(1, group.g.toByteArray());
-	}
-    
-    protected DSAGroup() {
-        // For serialization.
-        p = null;
-        q = null;
-        g = null;
-    }
-
-	/**
-     * Parses a DSA Group from a string, where p, q, and g are in unsigned
-     * hex-strings, separated by a commas
-     */
-    // see readFromField() below
-    //public static DSAGroup parse(String grp) {
-    //    StringTokenizer str=new StringTokenizer(grp, ",");
-    //    BigInteger p,q,g;
-    //    p = new BigInteger(str.nextToken(), 16);
-    //    q = new BigInteger(str.nextToken(), 16);
-    //    g = new BigInteger(str.nextToken(), 16);
-    //    return new DSAGroup(p,q,g);
-    //}
-    public static CryptoKey read(InputStream i) throws IOException, CryptFormatException {
+    public static DSAGroup read(InputStream i) throws IOException, CryptFormatException {
         BigInteger p, q, g;
         p = Util.readMPI(i);
         q = Util.readMPI(i);
@@ -91,11 +64,7 @@ public class DSAGroup extends CryptoKey {
 
     @Override
 	public byte[] fingerprint() {
-        BigInteger fp[] = new BigInteger[3];
-        fp[0] = p;
-        fp[1] = q;
-        fp[2] = g;
-        return fingerprint(fp);
+        return fingerprint(p, q, g);
     }
 
     @Override
@@ -112,21 +81,19 @@ public class DSAGroup extends CryptoKey {
 
     @Override
 	public boolean equals(Object o) {
-        if (this == o) // Not necessary, but a very cheap optimization
-                return true;
-        return (o instanceof DSAGroup) && p.equals(((DSAGroup) o).p)
-                && q.equals(((DSAGroup) o).q) && g.equals(((DSAGroup) o).g);
+        return (o instanceof DSAGroup) && equals((DSAGroup) o);
     }
 
     public boolean equals(DSAGroup o) {
-        if (this == o) // Not necessary, but a very cheap optimization
-                return true;
-        return p.equals(o.p) && q.equals(o.q) && g.equals(o.g);
+        if (this == o) {
+            return true;
+        }
+        return Objects.equals(p, o.p) && Objects.equals(q, o.q) && Objects.equals(g, o.g);
     }
 
     @Override
 	public int hashCode() {
-        return p.hashCode() ^ q.hashCode() ^ g.hashCode();
+        return Objects.hash(p, q, g);
     }
     
 	public SimpleFieldSet asFieldSet() {
@@ -162,11 +129,6 @@ public class DSAGroup extends CryptoKey {
 		if(this == Global.DSAgroupBigA)
 			return "Global.DSAgroupBigA";
 		return "p="+HexUtil.biToHex(p)+", q="+HexUtil.biToHex(q)+", g="+HexUtil.biToHex(g);
-	}
-
-	public DSAGroup cloneKey() {
-		if(this == Global.DSAgroupBigA) return this;
-		return new DSAGroup(this);
 	}
 
 }
