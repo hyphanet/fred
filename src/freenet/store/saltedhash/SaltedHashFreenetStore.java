@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
 import java.util.Arrays;
 import java.util.Deque;
@@ -571,10 +572,13 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 	private File metaFile;
 	private RandomAccessFile metaRAF;
 	private FileChannel metaFC;
+	private FileLock metaFCLock;
+
 	// header+data file
 	private File hdFile;
 	private RandomAccessFile hdRAF;
 	private FileChannel hdFC;
+	private FileLock hdFCLock;
 	private final int hdPadding;
 
 	/**
@@ -842,7 +846,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		metaFC = metaRAF.getChannel();
 
 		try {
-			metaFC.lock();
+			metaFCLock = metaFC.lock();
 		} catch(OverlappingFileLockException ex) {
 			throw new Error("Could not aquire lock for file " + baseDir.toPath().resolve(name + ".metadata"), ex);
 		}
@@ -850,7 +854,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		hdRAF = new RandomAccessFile(hdFile, "rw");
 		hdFC = hdRAF.getChannel();
 		try {
-			hdFC.lock();
+			hdFCLock = hdFC.lock();
 		} catch(OverlappingFileLockException ex) {
 			throw new Error("Could not aquire lock for file " + baseDir.toPath().resolve(name + ".hd"), ex);
 		}
@@ -1040,12 +1044,18 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		Logger.normal(this, "Flush and closing this store: " + name);
 		try {
 			metaFC.force(true);
+			if (metaFCLock.isValid()) {
+				metaFCLock.release();
+			}
 			metaFC.close();
 		} catch (Exception e) {
 			Logger.error(this, "error flusing store", e);
 		}
 		try {
 			hdFC.force(true);
+			if (hdFCLock.isValid()) {
+				hdFCLock.release();
+			}
 			hdFC.close();
 		} catch (Exception e) {
 			Logger.error(this, "error flusing store", e);
