@@ -511,29 +511,8 @@ public class DarknetPeerNode extends PeerNode {
 		}
 		Logger.normal(this, "extraPeerDataFile: "+extraPeerDataFile.getPath());
 		FileInputStream fis;
-		try {
-			fis = new FileInputStream(extraPeerDataFile);
-		} catch (FileNotFoundException e1) {
-			Logger.normal(this, "Extra peer data file not found: "+extraPeerDataFile.getPath());
-			return false;
-		}
-		InputStreamReader isr = new InputStreamReader(fis, StandardCharsets.UTF_8);
-		BufferedReader br = new BufferedReader(isr);
-		SimpleFieldSet fs = null;
-		try {
-			// Read in the single SimpleFieldSet
-			fs = new SimpleFieldSet(br, false, true);
-		} catch (EOFException e3) {
-			// End of file, fine
-		} catch (IOException e4) {
-			Logger.error(this, "Could not read extra peer data file: "+e4, e4);
-		} finally {
-			try {
-				br.close();
-			} catch (IOException e5) {
-				Logger.error(this, "Ignoring "+e5+" caught reading "+extraPeerDataFile.getPath(), e5);
-			}
-		}
+		SimpleFieldSet fs = readFile(extraPeerDataFile);
+		if (fs == null) return false;
 		if(fs == null) {
 			Logger.normal(this, "Deleting corrupt (too short?) file: "+extraPeerDataFile);
 			deleteExtraPeerDataFile(fileNumber);
@@ -550,6 +529,34 @@ public class DarknetPeerNode extends PeerNode {
 			gotError = true;
 		}
 		return !gotError;
+	}
+
+	private SimpleFieldSet readFile(File extraPeerDataFile) {
+		FileInputStream fis;
+		try {
+			fis = new FileInputStream(extraPeerDataFile);
+		} catch (FileNotFoundException e1) {
+			Logger.normal(this, "Extra peer data file not found: "+ extraPeerDataFile.getPath());
+			return null;
+		}
+		InputStreamReader isr = new InputStreamReader(fis, StandardCharsets.UTF_8);
+		BufferedReader br = new BufferedReader(isr);
+		SimpleFieldSet fs = null;
+		try {
+			// Read in the single SimpleFieldSet
+			fs = new SimpleFieldSet(br, false, true);
+		} catch (EOFException e3) {
+			// End of file, fine
+		} catch (IOException e4) {
+			Logger.error(this, "Could not read extra peer data file: "+e4, e4);
+		} finally {
+			try {
+				br.close();
+			} catch (IOException e5) {
+				Logger.error(this, "Ignoring "+e5+" caught reading "+ extraPeerDataFile.getPath(), e5);
+			}
+		}
+		return fs;
 	}
 
 	private boolean parseExtraPeerData(SimpleFieldSet fs, File extraPeerDataFile, int fileNumber) throws FSParseException {
