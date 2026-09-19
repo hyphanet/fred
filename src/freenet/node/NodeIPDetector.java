@@ -67,6 +67,8 @@ public class NodeIPDetector {
 	boolean allowBindToLocalhost;
 	/** IP address from last time */
 	FreenetInetAddress oldIPAddress;
+	/** Whether the oldIPAddress comes from an address hint */
+	boolean hasIPAddressHint = false;
 	/** Detected IP's and their NAT status from plugins */
 	DetectedIP[] pluginDetectedIPs;
 	/** Last detected IP address */
@@ -345,7 +347,11 @@ public class NodeIPDetector {
 		}
 		
 		// Add the old address only if we have no choice, or if we only have the word of two peers to go on.
-		if((!(hadAddedValidIP || confidence > 2)) && (oldIPAddress != null) && !oldIPAddress.equals(overrideIPAddress)) {
+		// except if it is the ip address hint
+		if((!hadAddedValidIP || confidence <= 2 || hasIPAddressHint)
+			&& oldIPAddress != null
+			&& !oldIPAddress.equals(overrideIPAddress)
+		    && !addresses.contains(oldIPAddress)) {
 			addresses.add(oldIPAddress);
 			// Don't set addedValidIP.
 			// There is an excellent chance that this is out of date.
@@ -512,7 +518,9 @@ public class NodeIPDetector {
 				if(overrideIPAddress != null) return;
 				try {
 					oldIPAddress = new FreenetInetAddress(val, false);
+					hasIPAddressHint = true;
 				} catch (UnknownHostException e) {
+					hasIPAddressHint = false;
 					throw new InvalidConfigValueException("Unknown host: "+e.getMessage());
 				}
 				redetectAddress();
@@ -523,11 +531,13 @@ public class NodeIPDetector {
 		if(!ipHintString.isEmpty()) {
 			try {
 				oldIPAddress = new FreenetInetAddress(ipHintString, false);
+				hasIPAddressHint = true;
 			} catch (UnknownHostException e) {
 				String msg = "Unknown host: "+ipHintString+" in config: "+e.getMessage();
 				Logger.error(this, msg);
 				System.err.println(msg);
 				oldIPAddress = null;
+				hasIPAddressHint = false;
 			}
 		}
 
