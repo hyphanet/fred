@@ -15,6 +15,8 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.HashSet;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import freenet.client.ClientMetadata;
 import freenet.client.HighLevelSimpleClient;
@@ -39,6 +41,12 @@ public class WelcomeToadlet extends Toadlet {
 
     /** Suffix {@link #path()} with "#" + BOOKMARKS_ANCHOR to deep link to the bookmark list */
     public static final String BOOKMARKS_ANCHOR = "bookmarks";
+
+    // Regex Patterns to use when generating keys for activelinks.
+    // For USK and SSK we want to match from the start of the key to the first instance of -#/ or /#/.
+    protected static final Pattern PATTERN_USK_SSK = Pattern.compile("^[^/]*/[^/]+/?[/-]?[0-9]+/");
+    // For bare SSK, CHK, and KSK we match from the start of the key to the first slash and append the activelink there.
+    protected static final Pattern PATTERN_BARE_SSK_CHK_KSK = Pattern.compile("^[^/]*/");
 
     final Node node;
 
@@ -78,7 +86,42 @@ public class WelcomeToadlet extends Toadlet {
                 HTMLNode cell = row.addChild("td", "style", "border: none;");
                 if (item.hasAnActivelink() && !noActiveLinks) {
                     String initialKey = item.getKey();
-                    String key = '/' + initialKey + (initialKey.endsWith("/") ? "" : "/") + "activelink.png";
+                    // extract the key type
+                    String keyType = initialKey.substring(1,3);
+                    String key = '/' + initialKey + (initialKey.endsWith("/") ? "" : "/");
+					Matcher match = null;
+                    switch (keyType) {
+                        case "USK":
+                        case "SSK": 
+                            match = PATTERN_USK_SSK.matcher(key);
+                            if (match.matches()) {
+                                key = match.group(1) + "activelink.png";
+                            }
+                            else { // If no edition # exists, assume bare SSK and just append the activelink.
+                                match = PATTERN_BARE_SSK_CHK_KSK.matcher(key);
+	                            if (match.matches()) {
+	                                key = match.group(1) + "activelink.png";
+	                            }
+                                else {
+                                    Logger.minor(this, "Impossible: Regex for USK/SSK didn't match.  Key: "+ key);
+                                }
+                            }
+                            break;
+                        case "CHK": 
+                        case "KSK": // This assumes the activelink is in the root of any one-shot directory upload.
+                            match = PATTERN_BARE_SSK_CHK_KSK.matcher(key);
+                            if (match.matches()) {
+                                key = match.group(1) + "activelink.png";
+                            }
+                            else { // we append '/' to key at the start if it isn't already there, so this should never be reachable unless the regex is broken.
+                                Logger.minor(this, "Impossible: Regex for CHK/KSK didn't match.  Key: "+ key);
+                            }
+                            break;
+                        default:
+                            Logger.minor(this, "Unknown key type: " + keyType + "!  Activelink regex needs updating.");
+                            break;
+                    }
+
                     cell.addChild("div", "style", "height: 36px; width: 108px;").addChild("a", "href", '/' + item.getKey()).addChild("img", new String[]{"src", "alt", "style", "title"},
                             new String[]{ key, "activelink", "height: 36px; width: 108px", item.getDescription()});
                 } else {
