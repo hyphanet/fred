@@ -17,7 +17,9 @@ public interface ArchiveExtractCallback extends Serializable {
 	public void notInArchive(ClientContext context);
 	
 	/** Failed: restart */
-	public void onFailed(ArchiveRestartException e, ClientContext context);
+	@Deprecated
+	default void onFailed(ArchiveRestartException e, ClientContext context) {
+	}
 	
 	/** Failed for some other reason */
 	public void onFailed(ArchiveFailureException e, ClientContext context);
