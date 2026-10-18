@@ -147,9 +147,11 @@ public class OggPage {
 			for(int i = 0; i < wholeSegments; i++) {
 				segmentSizes.add(intToUnsignedByte(255));
 			}
-			if(concludingPartialSegment != 0) {
-				segmentSizes.add(intToUnsignedByte(concludingPartialSegment));
-			}
+            // always add a concluding segment size: either the
+            // partial size or zero, because segment sizes divisible by
+            // 255 must be terminated with 0 – see
+            // https://www.rfc-editor.org/info/rfc3533/#:~:text=A%20packet%20of%20255%20bytes,lacing%20value%20of%200%2E
+            segmentSizes.add(intToUnsignedByte(concludingPartialSegment));
 			Logger.minor(this, "Writing packet sized: "+packet.payload.length);
 			payloadStream.write(packet.payload);
 		}
