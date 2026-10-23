@@ -155,10 +155,10 @@ public class OggPage {
 			Logger.minor(this, "Writing packet sized: "+packet.payload.length);
 			payloadStream.write(packet.payload);
 		}
-		this.segments = intToUnsignedByte(segmentSizes.size());
+		this.segments = intToUnsignedByte(Math.min(255, segmentSizes.size())); // this can strip a last zero-length entry
 		this.segmentTable = new byte[byteToUnsigned(segments)];
 		Logger.minor(this, "SegmentSizes len: "+segmentSizes.size()+" SegmentTable size: "+segmentTable.length+" Segments: "+segments);
-		for(int i = 0; i < segmentSizes.size(); i++) {
+		for(int i = 0; i < segmentTable.length; i++) {
 			this.segmentTable[i] = segmentSizes.get(i);
 		}
 
