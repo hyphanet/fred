@@ -288,10 +288,10 @@ public class OggPage {
 				segment++;
 			}
 			int remainder = packet % 255;
+            segmentTable[segment] = intToUnsignedByte(remainder);
+            segment++;
 			if(remainder != 0) {
 				if(logMINOR) Logger.minor(this, "Partially filling segment "+segment);
-				segmentTable[segment] = intToUnsignedByte(remainder);
-				segment++;
 			}
 		}
 	}
